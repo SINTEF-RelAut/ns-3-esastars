@@ -1,0 +1,21 @@
+## -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
+
+def build(bld):
+
+
+    env = bld.env
+    sim = bld.create_ns3_module('SCION', ['core', 'network'])
+    headers = bld(features='ns3header')
+    headers.module = 'SCION'
+
+    obj = bld.create_ns3_program('scion-distributed',
+                                 ['point-to-point', 'mpi'])
+ 
+    obj.source = 'scion-distributed.cc'
+
+    obj = bld.create_ns3_program('scion-baseline',
+                                 ['point-to-point'])
+ 
+    obj.source = 'scion-baseline.cc'
+
+
