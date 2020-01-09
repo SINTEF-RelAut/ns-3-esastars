@@ -18,4 +18,9 @@ def build(bld):
  
     obj.source = 'scion-baseline.cc'
 
+    obj = bld.create_ns3_program('scion_bypass_recent_beacons',
+                                 ['point-to-point'])
+
+    obj.source = 'scion_bypass_recent_beacons.cc'
+
 
