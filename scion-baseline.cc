@@ -354,7 +354,7 @@ main (int argc, char *argv[])
 	std::ostringstream sstr;
 	sstr << fin.rdbuf();
 
-	std::string out_path = "/home/tabaeias/workspace/ns-3-allinone/ns-3-dev/results/bypass_recent_beacons_" + std::string(argv[4]) +  "_" + std::string(argv[1]) + "_" + std::string(argv[2]) + "_" + std::string(argv[3]) + ".txt";
+	std::string out_path = "/home/tabaeias/workspace/ns-3-allinone/ns-3-dev/results/baseline" + std::string(argv[4]) +  "_" + std::string(argv[1]) + "_" + std::string(argv[2]) + "_" + std::string(argv[3]) + ".txt";
 	std::ofstream out(out_path);
 	std::cout.rdbuf(out.rdbuf()); 
 
@@ -479,7 +479,7 @@ main (int argc, char *argv[])
 		t2 = t2 + beaconing_period;
 	}
 
-	std::unordered_map<uint64_t, uint64_t> hop_path_counters;
+	std::map<uint64_t, uint64_t> hop_path_counters;
 	for (int j = 1; j <= 3; ++j){
 		std::cout << "######################################################################################################################################" << std::endl;
 		hop_path_counters.clear();
