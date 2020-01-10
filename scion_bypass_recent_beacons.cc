@@ -21,10 +21,10 @@ using namespace ns3;
 typedef uint16_t* link_information;
 typedef std::vector<link_information> path;
 struct beacon {
-  int64_t initiation_time, expiration_time, next_initiation_time, next_expiration_time, arrival_time, last_time_propagated;
+  int64_t initiation_time, expiration_time, next_initiation_time, next_expiration_time;
   path* the_path;
   std::string key;
-  bool is_new;
+  bool is_new, is_valid;
 };
 
 typedef std::vector <beacon*> beacons_with_same_length;
@@ -64,8 +64,6 @@ namespace ns3 {
       void UpdateBeaconStoreAndCountersBeforeBeaconing()
       {
         now = Simulator::Now().ToInteger(Time::NS);
-        valid_beacons_per_src_as_counters.clear();
-        next_round_valid_beacons_per_src_as_counters.clear();
 
         if (as_number == 0) {
           std::cout << now << std::endl;
@@ -74,35 +72,33 @@ namespace ns3 {
 
         for (auto const & pair:beacon_existence_check_map) {
           beacon *the_beacon = pair.second;
-          if (the_beacon->is_new && the_beacon->arrival_time < now) {
+          if (the_beacon->is_new) {
             the_beacon->is_new = false;
 
+            if (the_beacon->next_expiration_time > now) {
 
-            the_beacon->initiation_time = the_beacon->next_initiation_time;
-            the_beacon->expiration_time = the_beacon->next_expiration_time;
-          }
+              if (!the_beacon->is_valid) {
+                if (valid_beacons_per_src_as_counters.find(*the_beacon->the_path->at(0)) != valid_beacons_per_src_as_counters.end()) {
+                  valid_beacons_per_src_as_counters.at(*the_beacon->the_path->at(0)) = valid_beacons_per_src_as_counters.at(*the_beacon->the_path->at(0)) + 1;
+                } else {
+                  valid_beacons_per_src_as_counters.insert(std::make_pair(*the_beacon->the_path->at(0), 1));
+		}
+	      }
 
-          if (the_beacon->expiration_time > now) {
-            if (valid_beacons_per_src_as_counters.find(*the_beacon->the_path->at(0)) != valid_beacons_per_src_as_counters.end()) {
-              valid_beacons_per_src_as_counters.at(*the_beacon->the_path->at(0)) = valid_beacons_per_src_as_counters.at(*the_beacon->the_path->at(0)) + 1;
-            } else {
-              valid_beacons_per_src_as_counters.insert(std::make_pair(*the_beacon->the_path->at(0), 1));
+              the_beacon->is_valid = true;
+	      the_beacon->initiation_time = the_beacon->next_initiation_time;
+              the_beacon->expiration_time = the_beacon->next_expiration_time;
             }
+	  }
 
+          if (the_beacon->expiration_time <= now && the_beacon->is_valid) {
+            the_beacon->is_valid = false;
+            valid_beacons_per_src_as_counters.at(*the_beacon->the_path->at(0)) = valid_beacons_per_src_as_counters.at(*the_beacon->the_path->at(0)) - 1;
+            next_round_valid_beacons_per_src_as_counters.at(*the_beacon->the_path->at(0)) = next_round_valid_beacons_per_src_as_counters.at(*the_beacon->the_path->at(0)) - 1;
           }
-
-          if (the_beacon->expiration_time > now || the_beacon->expiration_time == -1) {
-            if (next_round_valid_beacons_per_src_as_counters.find(*the_beacon->the_path->at(0)) != next_round_valid_beacons_per_src_as_counters.end()) {
-              next_round_valid_beacons_per_src_as_counters.at(*the_beacon->the_path->at(0)) = next_round_valid_beacons_per_src_as_counters.at(*the_beacon->the_path->at(0)) + 1;
-            } else {
-              next_round_valid_beacons_per_src_as_counters.insert(std::make_pair(*the_beacon->the_path->at(0), 1));
-            }
-
-          }
-
         }
 
-        std::cout << valid_beacons_per_src_as_counters.size() << std::endl;
+        //std::cout << valid_beacons_per_src_as_counters.size() << std::endl;
       }
 
 
@@ -122,8 +118,11 @@ namespace ns3 {
       void DoBeaconing()
       {
 
-	UpdateBeaconStoreAndCountersBeforeBeaconing();
+	//UpdateBeaconStoreAndCountersBeforeBeaconing();
+        
+	std::cout << valid_beacons_per_src_as_counters.size() << std::endl;
 
+	now = Simulator::Now().ToInteger(Time::NS);
 #pragma omp parallel for
         for (uint32_t i = 0; i < GetNDevices(); ++i) {
           Ptr<PointToPointNetDevice> device_to_send_to =  DynamicCast<PointToPointNetDevice> (GetDevice(i));
@@ -160,9 +159,6 @@ namespace ns3 {
               continue;
             }
 
-	    if (now - the_beacon->last_time_propagated < Time("3h").ToInteger(Time::NS)) {
-              continue;
-	    }
 
             bool generates_loop = false;
             for (auto const & link_info : *the_beacon->the_path) { // remove loops
@@ -174,7 +170,6 @@ namespace ns3 {
 
             if (!generates_loop) {
               GenerateBeaconAndSend (the_beacon, src_if_index, dst_as_number, dst_if_index, dst_as);
-              the_beacon->last_time_propagated = now;
 	      counter++;
             }
           }
@@ -205,11 +200,6 @@ namespace ns3 {
 
 
         if (dst_as->beacon_existence_check_map.find(key) != dst_as->beacon_existence_check_map.end()) {
-          if (dst_as->beacon_existence_check_map.at(key)->is_new) {
-            dst_as->beacon_existence_check_map.at(key)->initiation_time = dst_as->beacon_existence_check_map.at(key)->next_initiation_time;
-            dst_as->beacon_existence_check_map.at(key)->expiration_time = dst_as->beacon_existence_check_map.at(key)->next_expiration_time;
-          }
-
           if (old_beacon == NULL) {
             dst_as->beacon_existence_check_map.at(key)->next_initiation_time = now;
             dst_as->beacon_existence_check_map.at(key)->next_expiration_time = now + expiration_period;
@@ -218,12 +208,10 @@ namespace ns3 {
             dst_as->beacon_existence_check_map.at(key)->next_expiration_time = old_beacon->expiration_time;
           }
           dst_as->beacon_existence_check_map.at(key)->is_new = true;              
-          dst_as->beacon_existence_check_map.at(key)->arrival_time = now;
           return;
         }
 
         if (dst_as->next_round_valid_beacons_per_src_as_counters.find(src_as) != dst_as->next_round_valid_beacons_per_src_as_counters.end()) {
-
           if (dst_as->next_round_valid_beacons_per_src_as_counters.at(src_as) >= FIXED_BEACONS_NUMBER_TO_STORE) {
             return;
           }
@@ -247,9 +235,9 @@ namespace ns3 {
 
         new_beacon->initiation_time = -1;
         new_beacon->expiration_time = -1;
-        new_beacon->arrival_time = now;
         new_beacon->key = key;
         new_beacon->is_new = true;
+	new_beacon->is_valid = false;
 
         if (old_beacon == NULL) {
           new_beacon->next_initiation_time = now;
@@ -263,7 +251,6 @@ namespace ns3 {
 
         new_path->push_back(link_info);
         dst_as->beacon_existence_check_map.insert(std::make_pair(key, new_beacon));
-        new_beacon->last_time_propagated = - (Time("6h").ToInteger(Time::NS));
 
         if (dst_as->beacon_store.find(src_as) != dst_as->beacon_store.end() && dst_as->beacon_store.at(src_as)->find(path_len) != dst_as->beacon_store.at(src_as)->end()) {
           dst_as->beacon_store.at(src_as)->at(path_len)->push_back(new_beacon);
@@ -343,6 +330,16 @@ PropertyContainer parseProperties(rapidxml::xml_node<>* node) {
   }
 
   return p;
+}
+
+
+void ProcessReceivedPacketsParallel (NodeContainer nodes) {
+  uint32_t node_number = nodes.GetN();
+
+#pragma omp parallel for 
+  for (uint32_t i = 0; i < node_number; ++i) {
+    DynamicCast<myNode> (nodes.Get(i))->UpdateBeaconStoreAndCountersBeforeBeaconing();
+  }
 }
 
   int
@@ -437,6 +434,8 @@ main (int argc, char *argv[])
 
   Time t = Seconds(0.0);
   while (t < Time(argv[3])) {
+    Simulator::Schedule (t + Seconds(30.0), &ProcessReceivedPacketsParallel, nodes);
+
     for (uint32_t i = 0; i < nodes.GetN(); ++i) {
       Ptr<myNode> the_node = DynamicCast<myNode> (nodes.Get(i));
       Simulator::Schedule (t, &myNode::DoBeaconing, the_node);
@@ -480,6 +479,20 @@ main (int argc, char *argv[])
     t2 = t2 + beaconing_period;
   }
 
+  for (uint32_t i = 0; i < nodes.GetN(); ++i) {
+    for (auto const & src_as_beacons_pair:DynamicCast<myNode> (nodes.Get(i))->beacon_store) {
+      double total_paths = 0;
+      double paths_with_len_two = 0;
+      for (auto const & path_length_path_array_pair:*src_as_beacons_pair.second) {
+        if (path_length_path_array_pair.first == 1 || path_length_path_array_pair.first == 2 || path_length_path_array_pair.first == 3) {
+          paths_with_len_two = (double)  (*path_length_path_array_pair.second).size();
+	}
+        total_paths += (double)  (*path_length_path_array_pair.second).size();
+      }
+      std::cout << paths_with_len_two/total_paths << std::endl;
+
+    }
+  }
 
 
 
