@@ -18,9 +18,9 @@ def build(bld):
  
     obj.source = 'scion-baseline.cc'
 
-    obj = bld.create_ns3_program('scion_bypass_recent_beacons',
+    obj = bld.create_ns3_program('scion-criteria-matching',
                                  ['point-to-point'])
 
-    obj.source = 'scion_bypass_recent_beacons.cc'
+    obj.source = 'scion-criteria-matching.cc'
 
 
