@@ -18,6 +18,11 @@ def build(bld):
  
     obj.source = 'scion-baseline.cc'
 
+    obj = bld.create_ns3_program('scion-baseline-multiple-links',
+                                     ['point-to-point'])
+
+    obj.source = 'scion-baseline-multiple-links.cc'
+
     obj = bld.create_ns3_program('scion-criteria-matching',
                                  ['point-to-point'])
 
