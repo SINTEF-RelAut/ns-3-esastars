@@ -12,6 +12,9 @@
 #include <fstream>
 #include <istream>
 #include <sstream>
+#include <chrono>
+#include <algorithm>
+#include <random>
 
 #define FIXED_BEACONS_NUMBER_TO_SEND 5
 #define FIXED_BEACONS_NUMBER_TO_STORE 50
@@ -83,30 +86,30 @@ namespace ns3 {
 
             for (uint64_t i = 0; i < GetNDevices(); ++i) {
                 beacons_sent_per_link[i] = 0;
-                intra_as_latencies[i].resize(GetNDevices(), 0);
-                intra_as_bwds[i].resize(GetNDevices(), 0);
+                intra_as_latencies.at(i).resize(GetNDevices());
+                intra_as_bwds.at(i).resize(GetNDevices());
 
                 unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
                 std::mt19937_64 generator (seed);
 
                 std::normal_distribution<double> latency_distribution(10000, 200000000); //in nanoseconds (10 mu s, 200 ms) normal distribution
 
-                int min_bwd = inter_as_bwds[i];
+                int min_bwd = inter_as_bwds.at(i);
 
-                for (int j = 0; j < GetNDevices(); ++j) {
-                    if (min_bwd > inter_as_bwds[j]) {
-                        min_bwd = inter_as_bwds[j];
+                for (uint32_t j = 0; j < GetNDevices(); ++j) {
+                    if (min_bwd > inter_as_bwds.at(j)) {
+                        min_bwd = inter_as_bwds.at(j);
                     }
                     std::uniform_int_distribution<int> bwd_distribution(10, min_bwd); //in Gbps
 
-                    if (i != j && intra_as_latencies[i][j] == 0) {
-                        intra_as_latencies[i][j] = latency_distribution(generator);
-                        intra_as_latencies[j][i] = intra_as_latencies[i][j];
+                    if (i != j && intra_as_latencies.at(i).at(j) == 0) {
+                        intra_as_latencies.at(i).at(j) = latency_distribution(generator);
+                        intra_as_latencies.at(j).at(i) = intra_as_latencies.at(i).at(j);
                     }
 
-                    if (i != j && intra_as_bwds[i][j] == 0) {
-                        intra_as_bwds[i][j] = bwd_distribution(generator);
-                        intra_as_bwds[j][i] = bwd_distribution(generator);
+                    if (i != j && intra_as_bwds.at(i).at(j) == 0) {
+                        intra_as_bwds.at(i).at(j) = bwd_distribution(generator);
+                        intra_as_bwds.at(j).at(i) = intra_as_bwds.at(i).at(j);
                     }
                 }
             }
@@ -172,12 +175,12 @@ namespace ns3 {
             now = Simulator::Now().ToInteger(Time::NS);
 
             int neighbors_num = (int) interfaces_per_neighbor_as.size();
-            std::unordered_map<uint16_t, std::vector<uint32_t> >::iterator neighbor_iterator = interfaces_per_neighbor_as.begin();
+            std::unordered_map<uint16_t, std::vector<uint16_t> >::iterator neighbor_iterator = interfaces_per_neighbor_as.begin();
 
 #pragma omp parallel for
             for (int idx = 0; idx < neighbors_num; ++idx) { // Per destination AS
 
-                uint16_t dst_as_number = neighbor_iterator.first;
+                uint16_t dst_as_number = neighbor_iterator->first;
 
                 for (auto const & beacon_store_entry : beacon_store) { // Per source AS
                     uint16_t src_as_number = beacon_store_entry.first;
@@ -190,7 +193,7 @@ namespace ns3 {
                     int total_path = 0;
 
                     for (auto const& equal_from_if_beacons : *equal_src_as_beacons) { // each iface from which a beacon received
-                        uint16_t from_if = *equal_from_if_beacons.first;
+                        uint16_t from_if = equal_from_if_beacons.first;
                         for (auto const& the_beacon : *equal_from_if_beacons.second) { // for each beacon from same source AS and interface
                             bool generates_loop = false;
                             for (auto const & link_info : *the_beacon->the_path) { // remove loops
@@ -204,9 +207,9 @@ namespace ns3 {
                                 continue;
                             }
 
-                            for (auto const & src_if_index : neighbor_iterator.second) {
+                            for (auto const & src_if_index : neighbor_iterator->second) {
                                 Ptr<PointToPointNetDevice> device_to_send_to =  DynamicCast<PointToPointNetDevice> (GetDevice(src_if_index));
-                                assert(src_if_index == (uint16_t) device_to_send_to->GetIfIndex();
+                                assert(src_if_index == (uint16_t) device_to_send_to->GetIfIndex());
 
                                 Ptr<PointToPointChannel> channel = DynamicCast<PointToPointChannel> (device_to_send_to->GetChannel());
                                 uint32_t wire = device_to_send_to == channel->GetSource (0) ? 0 : 1;
@@ -224,7 +227,7 @@ namespace ns3 {
                                     bwd = (double) intra_as_bwds.at(from_if).at(src_if_index);
                                 }
 
-                                if (bwd > (double) inter_as_bwds.at(src_if_index))) {
+                                if (bwd > (double) inter_as_bwds.at(src_if_index)) {
                                     bwd = (double) inter_as_bwds.at(src_if_index);
                                 }
 
@@ -270,7 +273,7 @@ namespace ns3 {
             }
 
 #pragma omp parallel for
-            for (int i = 0; i < GetNDevices(); ++i) {
+            for (uint32_t i = 0; i < GetNDevices(); ++i) {
                 Ptr<PointToPointNetDevice> device_to_send_to =  DynamicCast<PointToPointNetDevice> (GetDevice(i));
                 uint16_t src_if_index = device_to_send_to->GetIfIndex();
 
@@ -540,20 +543,20 @@ main (int argc, char *argv[])
             double rand_delay = delay_distribution(generator);
             int rand_bwd = bwd_distribution(generator);
 
-            ns3::myNode *to_my_node = (DynamicCast<ns3::myNode> (toNode));
-            ns3::myNode *from_my_node = (DynamicCast<ns3::myNode> (fromNode));
+            Ptr<myNode> to_my_node = (DynamicCast<ns3::myNode> (toNode));
+            Ptr<myNode> from_my_node = (DynamicCast<ns3::myNode> (fromNode));
 
-            to_my_node->inter_as_latencies->push_back(rand_delay);
-            from_my_node->inter_as_latencies->push_back(rand_delay);
+            to_my_node->inter_as_latencies.push_back(rand_delay);
+            from_my_node->inter_as_latencies.push_back(rand_delay);
 
-            to_my_node->inter_as_bwds->push_back(rand_bwd);
-            from_my_node->inter_as_bwds->push_back(rand_bwd);
+            to_my_node->inter_as_bwds.push_back(rand_bwd);
+            from_my_node->inter_as_bwds.push_back(rand_bwd);
 
             if (to_my_node->interfaces_per_neighbor_as.find(from_my_node->as_number) != to_my_node->interfaces_per_neighbor_as.end()) {
                 to_my_node->interfaces_per_neighbor_as.at(from_my_node->as_number).push_back(to_my_node->GetNDevices() - 1);
             } else {
-                std::vector<uint32_t> tmp;
-                tmp.push_back(to_my_node->GetNDevices() - 1);
+                std::vector<uint16_t> tmp;
+                tmp.push_back((uint16_t)to_my_node->GetNDevices() - 1);
                 to_my_node->interfaces_per_neighbor_as.insert(std::make_pair(from_my_node->as_number, tmp));
             }
 
@@ -561,19 +564,22 @@ main (int argc, char *argv[])
             if (from_my_node->interfaces_per_neighbor_as.find(to_my_node->as_number) != from_my_node->interfaces_per_neighbor_as.end()) {
                 from_my_node->interfaces_per_neighbor_as.at(to_my_node->as_number).push_back(from_my_node->GetNDevices() - 1);
             } else {
-                std::vector<uint32_t> tmp;
-                tmp.push_back(from_my_node->GetNDevices() - 1);
+                std::vector<uint16_t> tmp;
+                tmp.push_back((uint16_t)from_my_node->GetNDevices() - 1);
                 from_my_node->interfaces_per_neighbor_as.insert(std::make_pair(to_my_node->as_number, tmp));
             }
         }
 
+	std::cout << "HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH" << std::endl;
         curNode = curNode->next_sibling("link");
     }
 
+    std::cout << "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM" << std::endl;
     for (uint64_t i = 0; i < nodes.GetN(); ++i) {
         DynamicCast<myNode> (nodes.Get(i))->set_beacons_sent_per_link();
     }
 
+    std::cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << std::endl;
     Time t = Seconds(0.0);
     while (t < Time(argv[3])) {
         Simulator::Schedule (t + Seconds(30.0), &ProcessReceivedPacketsParallel, nodes);

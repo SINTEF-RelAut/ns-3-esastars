@@ -12,6 +12,9 @@
 #include <fstream>
 #include <istream>
 #include <sstream>
+#include <chrono>
+#include <algorithm>
+#include <random>
 
 #define FIXED_BEACONS_NUMBER_TO_SEND 5
 #define FIXED_BEACONS_NUMBER_TO_STORE 50
@@ -93,7 +96,7 @@ namespace ns3 {
 
                 int min_bwd = inter_as_bwds[i];
 
-                for (int j = 0; j < GetNDevices(); ++j) {
+                for (uint32_t j = 0; j < GetNDevices(); ++j) {
                     if (min_bwd > inter_as_bwds[j]) {
                         min_bwd = inter_as_bwds[j];
                     }
@@ -481,14 +484,14 @@ main (int argc, char *argv[])
             double rand_delay = delay_distribution(generator);
             int rand_bwd = bwd_distribution(generator);
 
-            ns3::myNode *to_my_node = (DynamicCast<ns3::myNode> (toNode));
-            ns3::myNode *from_my_node = (DynamicCast<ns3::myNode> (fromNode));
+            Ptr<myNode> to_my_node = (DynamicCast<myNode> (toNode));
+            Ptr<myNode> from_my_node = (DynamicCast<myNode> (fromNode));
 
-            to_my_node->inter_as_latencies->push_back(rand_delay);
-            from_my_node->inter_as_latencies->push_back(rand_delay);
+            to_my_node->inter_as_latencies.push_back(rand_delay);
+            from_my_node->inter_as_latencies.push_back(rand_delay);
 
-            to_my_node->inter_as_bwds->push_back(rand_bwd);
-            from_my_node->inter_as_bwds->push_back(rand_bwd);
+            to_my_node->inter_as_bwds.push_back(rand_bwd);
+            from_my_node->inter_as_bwds.push_back(rand_bwd);
 
             if (to_my_node->interfaces_per_neighbor_as.find(from_my_node->as_number) != to_my_node->interfaces_per_neighbor_as.end()) {
                 to_my_node->interfaces_per_neighbor_as.at(from_my_node->as_number).push_back(to_my_node->GetNDevices() - 1);
