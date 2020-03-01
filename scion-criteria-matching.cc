@@ -468,10 +468,9 @@ namespace ns3 {
                 remote_as->beacon_store.at(src_as)->insert(std::make_pair(as_number, new beacons_received_from_same_as (1, new_beacon)));
 
             } else {
-                beacons_with_same_src_as tmp;
-                tmp.insert(std::make_pair(as_number, new beacons_received_from_same_as (1, new_beacon)));
-                remote_as->beacon_store.insert(std::make_pair(src_as, &tmp));
-            }
+		remote_as->beacon_store.insert(std::make_pair(src_as, new beacons_with_same_src_as));
+                remote_as->beacon_store.at(src_as)->insert(std::make_pair(as_number, new beacons_received_from_same_as(1, new_beacon)));
+	    }
         }
 
         std::pair<ld, ld> calculate_final_diversity_scores(beacon *the_beacon) {
