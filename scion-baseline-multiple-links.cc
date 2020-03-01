@@ -627,9 +627,11 @@ main(int argc, char *argv[]) {
 
         PropertyContainer p = parseProperties(curNode);
 
+
         ld latitude = std::stod(p.getProperty("latitude"));
-        ld longitude = std::stod(p.getProperty("longitude"));
-        int32_t bwd = std::stoi(p.getProperty("capacity"));
+	ld longitude = std::stod(p.getProperty("longitude"));
+	int32_t bwd = std::stoi(p.getProperty("capacity"));
+
 
         Ptr<Node> fromNode;
         Ptr<Node> toNode;
@@ -641,6 +643,7 @@ main(int argc, char *argv[]) {
             }
 
         }
+
 
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             if ((DynamicCast<myNode>(nodes.Get(i)))->as_number == ASes.at(from)) {
