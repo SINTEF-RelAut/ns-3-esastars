@@ -325,7 +325,7 @@ namespace ns3 {
 
 
                 GenerateBeaconAndSend(the_beacon, self_egress_if_no, remote_as_no, remote_ingress_if_no,
-                                      remote_as, latency_coef, bwd);
+                                      remote_as, latency, bwd);
             }
         }
 
@@ -572,7 +572,7 @@ main(int argc, char *argv[]) {
     sstr << fin.rdbuf();
 
     std::string out_path =
-            "/home/tabaeias/workspace/ns-3-allinone/ns-3-dev/results/criteria-matching_" + std::string(argv[4]) + "_" +
+            "/home/tabaeias/workspace/ns-3-allinone/ns-3-dev/results/baseline_multi_link_" + std::string(argv[4]) + "_" +
             std::string(argv[1]) + "_" + std::string(argv[2]) + "_" + std::string(argv[3]) + ".txt";
     std::ofstream out(out_path);
     std::cout.rdbuf(out.rdbuf());

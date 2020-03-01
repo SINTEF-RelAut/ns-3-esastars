@@ -226,7 +226,7 @@ namespace ns3 {
                     std::map<int64_t, std::vector<std::tuple<beacon*, uint16_t, uint16_t, Ptr<myNode>, ld , ld> > >beacons_ifaces_matchings_scores;
                     int32_t total_path = 0;
 
-                    int32_t min_len = 10000;
+                    uint32_t min_len = 10000;
                     for (auto const &ingress_if_beacons_pair : *equal_src_as_beacons) {
                         for (auto const &the_beacon : *ingress_if_beacons_pair.second) {
                             if (the_beacon->the_path->size() < min_len) {
@@ -784,7 +784,7 @@ main(int argc, char *argv[]) {
     }
 
     //############################################################################################################################################################
-    for (int path_length = 1; path_length <= 4; ++path_length) {
+    for (uint32_t path_length = 1; path_length <= 4; ++path_length) {
         std::cout
                 << "######################################### frequencies of path counts per source AS with length "
                 << path_length - 1
