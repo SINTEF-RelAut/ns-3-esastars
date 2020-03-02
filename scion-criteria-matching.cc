@@ -171,7 +171,7 @@ namespace ns3 {
             }
 
 
-            for (auto const &[path, the_beacon]:paths_map_to_beacons) {
+            for (auto const &[__, the_beacon]:paths_map_to_beacons) {
                 if (the_beacon->is_new) {
                     the_beacon->is_new = false;
 
