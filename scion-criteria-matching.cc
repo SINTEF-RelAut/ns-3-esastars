@@ -140,11 +140,8 @@ namespace ns3 {
                                                link_level_diversity_coef(link_level_diversity_coef) {}
 
         void DoInitializations() {
-
             intra_as_latencies.resize(GetNDevices());
-
             for (uint64_t i = 0; i < GetNDevices(); ++i) {
-
                 intra_as_latencies.at(i).resize(GetNDevices());
             }
 
@@ -153,10 +150,8 @@ namespace ns3 {
                     intra_as_latencies.at(i).at(j) = calculate_great_circle_latency(interfaces_coordinates.at(i).first,
                                                                                     interfaces_coordinates.at(i).second,
                                                                                     interfaces_coordinates.at(j).first,
-                                                                                    interfaces_coordinates.at(
-                                                                                            j).second);
+                                                                                    interfaces_coordinates.at(j).second);
                     intra_as_latencies.at(j).at(i) = intra_as_latencies.at(i).at(j);
-
                 }
             }
 
@@ -175,8 +170,8 @@ namespace ns3 {
                 std::cout << "################################## " << now << " #########################################" << std::endl;
             }
 
-            for (auto const &pair:paths_map_to_beacons) {
-                beacon *the_beacon = pair.second;
+
+            for (auto const &[path, the_beacon]:paths_map_to_beacons) {
                 if (the_beacon->is_new) {
                     the_beacon->is_new = false;
 
