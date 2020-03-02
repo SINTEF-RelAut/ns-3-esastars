@@ -740,7 +740,12 @@ main(int argc, char *argv[]) {
         std::map<uint64_t, uint64_t> frequencies_of_path_counts_per_src_as_with_certain_length;
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             for (auto const &src_as_beacons_pair : DynamicCast<myNode>(nodes.Get(i))->beacon_store) {
-                uint64_t number_of_paths_with_certain_length = src_as_beacons_pair.second->at(path_length)->size();
+                uint64_t number_of_paths_with_certain_length;
+                try {
+                    number_of_paths_with_certain_length = src_as_beacons_pair.second->at(path_length)->size();
+                } catch (std::out_of_range) {
+                    continue;
+                }
 
                 if (frequencies_of_path_counts_per_src_as_with_certain_length.find(
                         number_of_paths_with_certain_length) != frequencies_of_path_counts_per_src_as_with_certain_length.end()) {
