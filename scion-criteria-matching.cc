@@ -19,6 +19,7 @@
 #include <set>
 #include <list>
 #include <iostream>
+#include <cassert>
 
 #define FIXED_BEACONS_NUMBER_TO_SEND 5
 #define FIXED_BEACONS_NUMBER_TO_STORE 50
@@ -171,20 +172,22 @@ namespace ns3 {
             }
 
 
-            for (auto const &[__, the_beacon]:paths_map_to_beacons) {
+            for (auto const &pair:paths_map_to_beacons) {
+                beacon *the_beacon = pair.second;
+
+                assert(the_beacon != NULL);
+                assert(the_beacon->the_path != NULL);
+
+                uint16_t src_as = the_beacon->the_path->at(0)[0];
                 if (the_beacon->is_new) {
                     the_beacon->is_new = false;
 
                     if (the_beacon->next_expiration_time > now) {
-
                         if (!the_beacon->is_valid) {
-                            if (valid_beacons_count_per_src_as.find(*the_beacon->the_path->at(0)) !=
-                                valid_beacons_count_per_src_as.end()) {
-                                valid_beacons_count_per_src_as.at(*the_beacon->the_path->at(0)) =
-                                        valid_beacons_count_per_src_as.at(*the_beacon->the_path->at(0)) + 1;
-                            } else {
-                                valid_beacons_count_per_src_as.insert(
-                                        std::make_pair(*the_beacon->the_path->at(0), 1));
+                            try {
+                                valid_beacons_count_per_src_as.at(src_as)++;
+                            } catch (std::out_of_range){
+                                valid_beacons_count_per_src_as.insert(std::make_pair(src_as, 1));
                             }
                         }
 
@@ -196,10 +199,8 @@ namespace ns3 {
 
                 if (the_beacon->expiration_time <= now && the_beacon->is_valid) {
                     the_beacon->is_valid = false;
-                    valid_beacons_count_per_src_as.at(*the_beacon->the_path->at(0)) =
-                            valid_beacons_count_per_src_as.at(*the_beacon->the_path->at(0)) - 1;
-                    next_round_valid_beacons_count_per_src_as.at(*the_beacon->the_path->at(0)) =
-                            next_round_valid_beacons_count_per_src_as.at(*the_beacon->the_path->at(0)) - 1;
+                    valid_beacons_count_per_src_as.at(src_as)--;
+                    next_round_valid_beacons_count_per_src_as.at(src_as)--;
                 }
             }
 
@@ -209,11 +210,7 @@ namespace ns3 {
 #pragma omp parallel for
             for (uint32_t i = 0; i < neighbors.size(); ++i) { // Per destination AS
                 uint16_t remote_as_no = neighbors.at(i);
-
-                for (auto const &beacon_store_entry : beacon_store) { // Per source AS
-                    uint16_t src_as_no = beacon_store_entry.first;
-                    beacons_with_same_src_as *equal_src_as_beacons = beacon_store_entry.second;
-
+                for (auto const &[src_as_no, equal_src_as_beacons] : beacon_store) { // Per source AS
                     if (remote_as_no == src_as_no) {
                         continue;
                     }
@@ -224,8 +221,11 @@ namespace ns3 {
                     uint32_t min_len = 10000;
                     for (auto const &ingress_if_beacons_pair : *equal_src_as_beacons) {
                         for (auto const &the_beacon : *ingress_if_beacons_pair.second) {
+                            assert(the_beacon != NULL);
+                            assert(the_beacon->the_path != NULL);
+
                             if (the_beacon->the_path->size() < min_len) {
-                                if (the_beacon->is_valid == false) {
+                                if (!the_beacon->is_valid) {
                                     continue;
                                 }
                                 min_len = the_beacon->the_path->size();
@@ -234,9 +234,11 @@ namespace ns3 {
                     }
 
                     for (auto const &sender_as_beacons_pair : *equal_src_as_beacons) {
-
                         for (auto const &the_beacon : *sender_as_beacons_pair.second) {
-                            if (the_beacon->is_valid == false) {
+                            assert(the_beacon != NULL);
+                            assert(the_beacon->the_path != NULL);
+
+                            if (!the_beacon->is_valid ) {
                                 continue;
                             }
 
@@ -277,29 +279,39 @@ namespace ns3 {
 
                                 Ptr<myNode> remote_as = (DynamicCast<myNode>(remote_device->GetNode()));
 
-                                ld latency = the_beacon->latency_stat + intra_as_latencies.at(the_beacon->the_path->back()[3]).at(self_egress_if_no);
-                                ld bwd = the_beacon->bwd_stat;
-
-                                if (bwd > (ld) inter_as_bwds.at(self_egress_if_no)) {
-                                    bwd = (ld) inter_as_bwds.at(self_egress_if_no);
+                                ld latency = 0;
+                                ld bwd = 0;
+                                try {
+                                    latency = the_beacon->latency_stat + intra_as_latencies.at(the_beacon->the_path->back()[3]).at(self_egress_if_no);
+                                } catch (std::out_of_range) {
+                                    assert(false);
                                 }
+
+                                try {
+                                   bwd  = the_beacon->bwd_stat > (ld) inter_as_bwds.at(self_egress_if_no)
+                                             ? (ld) inter_as_bwds.at(self_egress_if_no)
+                                             : the_beacon->bwd_stat;
+                                } catch (std::out_of_range) {
+                                    assert(false);
+                                }
+
+                                assert(remote_as->latency_coef + remote_as->bandwidth_coef != 0);
 
                                 ld score = ((1 - latency / 1000) * remote_as->latency_coef +
                                            (bwd / 400) * remote_as->bandwidth_coef)
                                            /
                                            (remote_as->latency_coef + remote_as->bandwidth_coef);
 
-                                if (beacons_ifaces_matchings_scores.find(score) !=
-                                    beacons_ifaces_matchings_scores.end()) {
+                                if (total_path >= FIXED_BEACONS_NUMBER_TO_SEND && score <= beacons_ifaces_matchings_scores.begin()->first) {
+                                    continue;
+                                }
+
+                                try {
                                     beacons_ifaces_matchings_scores.at(score).push_back(
-                                            std::make_tuple(the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as, latency,
-                                                            bwd));
-                                } else {
-                                    std::vector<std::tuple<beacon *, uint16_t, uint16_t, Ptr<myNode>, ld,
-                                            ld> > v;
-                                    v.push_back(std::make_tuple(the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as, latency,
-                                                                bwd));
-                                    beacons_ifaces_matchings_scores.insert(std::make_pair(score, v));
+                                            std::make_tuple(the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as, latency, bwd));
+                                } catch (std::out_of_range) {
+                                    beacons_ifaces_matchings_scores.insert(std::make_pair(score, std::vector<std::tuple<beacon *, uint16_t, uint16_t, Ptr<myNode>, ld,
+                                            ld>>(1, std::make_tuple(the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as, latency, bwd))));
                                 }
                                 total_path++;
 
@@ -324,14 +336,7 @@ namespace ns3 {
                             ld latency;
                             ld bwd;
 
-
                             std::tie(the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as, latency, bwd) = the_tuple;
-
-                            if (remote_as->paths_map_to_beacons.find(
-                                    the_beacon->key + std::string((char *) &as_number, 2) + std::string((char *) &self_egress_if_no, 2)) !=
-                                remote_as->paths_map_to_beacons.end()) {
-                                continue;
-                            }
 
                             GenerateBeaconAndSend(the_beacon, self_egress_if_no, remote_as_no, remote_ingress_if_no, remote_as,
                                                   latency, bwd);
@@ -390,11 +395,11 @@ namespace ns3 {
 
             if (old_beacon == NULL) {
                 src_as = as_number;
-                bytes_sent_per_interface_per_period.at(now).at(self_egress_if_no) += (70 + 330);
+
             } else {
                 key = old_beacon->key;
                 src_as = *old_beacon->the_path->at(0);
-                bytes_sent_per_interface_per_period.at(now).at(self_egress_if_no) += (70 + 330 + 330 * old_beacon->the_path->size());
+
             }
 
             key = key + std::string((char *) &as_number, 2) + std::string((char *) &self_egress_if_no, 2);
@@ -445,11 +450,25 @@ namespace ns3 {
             if (old_beacon == NULL) {
                 new_beacon->next_initiation_time = now;
                 new_beacon->next_expiration_time = now + expiration_period;
+                try {
+                    bytes_sent_per_interface_per_period.at(now).at(self_egress_if_no) += (70 + 330);
+                } catch (std::out_of_range) {
+                    assert(false);
+                }
+
+
             } else {
                 new_beacon->next_initiation_time = old_beacon->initiation_time;
                 new_beacon->next_expiration_time = old_beacon->expiration_time;
 
                 *new_path = *(old_beacon->the_path);
+                try {
+                    bytes_sent_per_interface_per_period.at(now).at(self_egress_if_no) += (70 + 330 + 330 * old_beacon->the_path->size());
+                } catch (std::out_of_range) {
+                    assert(false);
+                }
+
+
             }
 
             new_path->push_back(link_info);
