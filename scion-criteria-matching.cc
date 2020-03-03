@@ -630,17 +630,18 @@ void ProcessReceivedPacketsParallel(NodeContainer nodes) {
 int
 main(int argc, char *argv[]) {
 
-    beaconing_period = Time(argv[1]);
-    expiration_period = Time(argv[2]).ToInteger(Time::NS);
-    std::string file = "/home/tabaeias/workspace/ns-3-allinone/ns-3-dev/topology/" + std::string(argv[4]) + ".xml";
+
+    beaconing_period = Time("10min");
+    expiration_period = Time("6h").ToInteger(Time::NS);
+    std::string file = "/home/tabaeias/workspace/ns-3-allinone/ns-3-dev/topology/" + std::string("caida2000") + ".xml";
 
     std::ifstream fin(file.c_str());
     std::ostringstream sstr;
     sstr << fin.rdbuf();
 
     std::string out_path =
-            "/home/tabaeias/workspace/ns-3-allinone/ns-3-dev/results/criteria-matching_" + std::string(argv[4]) + "_" +
-            std::string(argv[1]) + "_" + std::string(argv[2]) + "_" + std::string(argv[3]) + ".txt";
+            "/home/tabaeias/workspace/ns-3-allinone/ns-3-dev/results/criteria-matching_" + std::string("caida2000") + "_" +
+            std::string("10min") + "_" + std::string("6h") + "_" + std::string("1h") + ".txt";
     std::ofstream out(out_path);
     std::cout.rdbuf(out.rdbuf());
 
@@ -758,7 +759,7 @@ main(int argc, char *argv[]) {
         DynamicCast<myNode>(nodes.Get(i))->DoInitializations();
     }
 
-    for (Time t = Seconds(0.0); t < Time(argv[3]); t += beaconing_period) {
+    for (Time t = Seconds(0.0); t < Time("1h"); t += beaconing_period) {
         Simulator::Schedule(t + Seconds(30.0), &ProcessReceivedPacketsParallel, nodes);
 
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
@@ -767,11 +768,11 @@ main(int argc, char *argv[]) {
         }
     }
 
-    Simulator::Stop(Time(argv[3]));
+    Simulator::Stop(Time("1h"));
     Simulator::Run();
 
     //############################################################################################################################################################
-    for (Time t = Seconds(0.0); t < Time(argv[3]); t += beaconing_period) {
+    for (Time t = Seconds(0.0); t < Time("1h"); t += beaconing_period) {
         std::cout << "####################################### frequencies of consumed bandwidth at Time "
                   << t
                   << "#######################################" << std::endl;
