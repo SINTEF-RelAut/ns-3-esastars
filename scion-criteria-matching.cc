@@ -256,7 +256,7 @@ namespace ns3 {
                                         if (start == -1 && (link_info[0] == remote_as_no || link_info[0] == src_as_no)) {
                                             start = counter;
                                         } else if (start != -1  && (link_info[0] == remote_as_no || link_info[0] == src_as_no)) {
-                                            if (counter - start <= the_beacon->the_path->size()) {
+                                            if (counter - start <= (int) the_beacon->the_path->size()) {
                                                 has_shorter_path = true;
                                                 break;
                                             }
