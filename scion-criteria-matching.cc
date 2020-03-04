@@ -232,7 +232,7 @@ namespace ns3 {
                                 continue;
                             }
 
-                            if (the_beacon->the_path->size() > 2) {
+                            if (the_beacon->the_path->size() >= 2) {
                                 continue;
                             }
 
