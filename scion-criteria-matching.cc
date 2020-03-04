@@ -19,7 +19,6 @@
 #include <set>
 #include <list>
 #include <iostream>
-#include <cassert>
 
 #define FIXED_BEACONS_NUMBER_TO_SEND 5
 #define FIXED_BEACONS_NUMBER_TO_STORE 50
@@ -175,9 +174,6 @@ namespace ns3 {
             for (auto const &pair:paths_map_to_beacons) {
                 beacon *the_beacon = pair.second;
 
-                assert(the_beacon != NULL);
-                assert(the_beacon->the_path != NULL);
-
                 uint16_t src_as = the_beacon->the_path->at(0)[0];
                 if (the_beacon->is_new) {
                     the_beacon->is_new = false;
@@ -219,11 +215,8 @@ namespace ns3 {
                     int32_t total_path = 0;
 
                     uint32_t min_len = 10000;
-                    for (auto const &ingress_if_beacons_pair : *equal_src_as_beacons) {
-                        for (auto const &the_beacon : *ingress_if_beacons_pair.second) {
-                            assert(the_beacon != NULL);
-                            assert(the_beacon->the_path != NULL);
-
+                    for (auto const &sender_as_beacons_pair : *equal_src_as_beacons) {
+                        for (auto const &the_beacon : *sender_as_beacons_pair.second) {
                             if (the_beacon->the_path->size() < min_len) {
                                 if (!the_beacon->is_valid) {
                                     continue;
@@ -235,9 +228,6 @@ namespace ns3 {
 
                     for (auto const &sender_as_beacons_pair : *equal_src_as_beacons) {
                         for (auto const &the_beacon : *sender_as_beacons_pair.second) {
-                            assert(the_beacon != NULL);
-                            assert(the_beacon->the_path != NULL);
-
                             if (!the_beacon->is_valid ) {
                                 continue;
                             }
@@ -247,6 +237,10 @@ namespace ns3 {
                             }
 
                             if (the_beacon->the_path->size() == 2 && min_len < 2) {
+                                continue;
+                            }
+
+                            if (the_beacon->the_path->size() == 2 && beacon_store.at(src_as_no)->find(remote_as_no) != beacon_store.at(src_as_no)->end()) {
                                 continue;
                             }
 
@@ -266,8 +260,6 @@ namespace ns3 {
                                 Ptr<PointToPointNetDevice> self_egress_device = DynamicCast<PointToPointNetDevice>(
                                         GetDevice(self_egress_if_no));
 
-                                assert(self_egress_if_no == (uint16_t) self_egress_device->GetIfIndex());
-
                                 Ptr<PointToPointChannel> channel = DynamicCast<PointToPointChannel>(
                                         self_egress_device->GetChannel());
                                 uint32_t wire = self_egress_device == channel->GetSource(0) ? 0 : 1;
@@ -275,34 +267,23 @@ namespace ns3 {
 
                                 uint16_t remote_ingress_if_no = (uint16_t) remote_device->GetIfIndex();
 
-                                assert(remote_as_no == (DynamicCast<myNode> (remote_device->GetNode ()))->as_number);
-
                                 Ptr<myNode> remote_as = (DynamicCast<myNode>(remote_device->GetNode()));
 
-                                ld latency = 0;
-                                ld bwd = 0;
-                                try {
-                                    latency = the_beacon->latency_stat + intra_as_latencies.at(the_beacon->the_path->back()[3]).at(self_egress_if_no);
-                                } catch (std::out_of_range) {
-                                    assert(false);
-                                }
-
-                                try {
-                                   bwd  = the_beacon->bwd_stat > (ld) inter_as_bwds.at(self_egress_if_no)
+                                ld latency = the_beacon->latency_stat + intra_as_latencies.at(the_beacon->the_path->back()[3]).at(self_egress_if_no);
+                                ld bwd  = the_beacon->bwd_stat > (ld) inter_as_bwds.at(self_egress_if_no)
                                              ? (ld) inter_as_bwds.at(self_egress_if_no)
                                              : the_beacon->bwd_stat;
-                                } catch (std::out_of_range) {
-                                    assert(false);
-                                }
 
-                                assert(remote_as->latency_coef + remote_as->bandwidth_coef != 0);
+
+
 
                                 ld score = ((1 - latency / 1000) * remote_as->latency_coef +
                                            (bwd / 400) * remote_as->bandwidth_coef)
                                            /
                                            (remote_as->latency_coef + remote_as->bandwidth_coef);
 
-                                if (total_path >= FIXED_BEACONS_NUMBER_TO_SEND && score <= beacons_ifaces_matchings_scores.begin()->first) {
+                                if (total_path >= FIXED_BEACONS_NUMBER_TO_SEND && !beacons_ifaces_matchings_scores.empty()
+                                && score <= beacons_ifaces_matchings_scores.begin()->first) {
                                     continue;
                                 }
 
@@ -315,7 +296,7 @@ namespace ns3 {
                                 }
                                 total_path++;
 
-                                if (total_path > FIXED_BEACONS_NUMBER_TO_SEND) {
+                                if ((min_len >= 2 && total_path > 1) || total_path > FIXED_BEACONS_NUMBER_TO_SEND) {
                                     beacons_ifaces_matchings_scores.begin()->second.pop_back();
                                     if (beacons_ifaces_matchings_scores.begin()->second.empty()) {
                                         beacons_ifaces_matchings_scores.erase(beacons_ifaces_matchings_scores.begin());
@@ -355,7 +336,7 @@ namespace ns3 {
                     Ptr<PointToPointNetDevice> self_egress_device = DynamicCast<PointToPointNetDevice>(
                             GetDevice(self_egress_if_no));
 
-                    assert(self_egress_if_no == self_egress_device->GetIfIndex());
+
 
                     Ptr<PointToPointChannel> channel = DynamicCast<PointToPointChannel>(
                             self_egress_device->GetChannel());
@@ -366,7 +347,7 @@ namespace ns3 {
 
                     Ptr<myNode> remote_as = (DynamicCast<myNode>(remote_device->GetNode()));
 
-                    assert(remote_as_no == remote_as->as_number);
+
 
                     GenerateBeaconAndSend(NULL, self_egress_if_no, remote_as_no, remote_if_no, remote_as,
                                           0.0, inter_as_bwds.at(self_egress_if_no));
@@ -450,25 +431,14 @@ namespace ns3 {
             if (old_beacon == NULL) {
                 new_beacon->next_initiation_time = now;
                 new_beacon->next_expiration_time = now + expiration_period;
-                try {
-                    bytes_sent_per_interface_per_period.at(now).at(self_egress_if_no) += (70 + 330);
-                } catch (std::out_of_range) {
-                    assert(false);
-                }
 
-
+                bytes_sent_per_interface_per_period.at(now).at(self_egress_if_no) += (70 + 330);
             } else {
                 new_beacon->next_initiation_time = old_beacon->initiation_time;
                 new_beacon->next_expiration_time = old_beacon->expiration_time;
 
                 *new_path = *(old_beacon->the_path);
-                try {
-                    bytes_sent_per_interface_per_period.at(now).at(self_egress_if_no) += (70 + 330 + 330 * old_beacon->the_path->size());
-                } catch (std::out_of_range) {
-                    assert(false);
-                }
-
-
+                bytes_sent_per_interface_per_period.at(now).at(self_egress_if_no) += (70 + 330 + 330 * old_beacon->the_path->size());
             }
 
             new_path->push_back(link_info);
@@ -630,18 +600,17 @@ void ProcessReceivedPacketsParallel(NodeContainer nodes) {
 int
 main(int argc, char *argv[]) {
 
-
-    beaconing_period = Time("10min");
-    expiration_period = Time("6h").ToInteger(Time::NS);
-    std::string file = "/home/tabaeias/workspace/ns-3-allinone/ns-3-dev/topology/" + std::string("caida2000") + ".xml";
+    beaconing_period = Time(argv[1]);
+    expiration_period = Time(argv[2]).ToInteger(Time::NS);
+    std::string file = "/home/tabaeias/workspace/ns-3-allinone/ns-3-dev/topology/" + std::string(argv[4]) + ".xml";
 
     std::ifstream fin(file.c_str());
     std::ostringstream sstr;
     sstr << fin.rdbuf();
 
     std::string out_path =
-            "/home/tabaeias/workspace/ns-3-allinone/ns-3-dev/results/criteria-matching_" + std::string("caida2000") + "_" +
-            std::string("10min") + "_" + std::string("6h") + "_" + std::string("1h") + ".txt";
+            "/home/tabaeias/workspace/ns-3-allinone/ns-3-dev/results/criteria-matching_" + std::string(argv[4]) + "_" +
+            std::string(argv[1]) + "_" + std::string(argv[2]) + "_" + std::string(argv[3]) + ".txt";
     std::ofstream out(out_path);
     std::cout.rdbuf(out.rdbuf());
 
@@ -759,7 +728,7 @@ main(int argc, char *argv[]) {
         DynamicCast<myNode>(nodes.Get(i))->DoInitializations();
     }
 
-    for (Time t = Seconds(0.0); t < Time("1h"); t += beaconing_period) {
+    for (Time t = Seconds(0.0); t < Time(argv[3]); t += beaconing_period) {
         Simulator::Schedule(t + Seconds(30.0), &ProcessReceivedPacketsParallel, nodes);
 
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
@@ -768,11 +737,11 @@ main(int argc, char *argv[]) {
         }
     }
 
-    Simulator::Stop(Time("1h"));
+    Simulator::Stop(Time(argv[3]));
     Simulator::Run();
 
     //############################################################################################################################################################
-    for (Time t = Seconds(0.0); t < Time("1h"); t += beaconing_period) {
+    for (Time t = Seconds(0.0); t < Time(argv[3]); t += beaconing_period) {
         std::cout << "####################################### frequencies of consumed bandwidth at Time "
                   << t
                   << "#######################################" << std::endl;
