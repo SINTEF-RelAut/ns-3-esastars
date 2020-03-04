@@ -200,6 +200,8 @@ namespace ns3 {
                 }
             }
 
+            std::cout << valid_beacons_count_per_src_as.size() << std::endl; // Print number of source ASes
+
         }
 
         void DisseminateBeacons() {
@@ -232,15 +234,43 @@ namespace ns3 {
                                 continue;
                             }
 
-                            if (the_beacon->the_path->size() >= 2) {
+                            if (the_beacon->the_path->size() > 3) {
                                 continue;
                             }
 
-                            if (the_beacon->the_path->size() == 2 && min_len < 2) {
+                            if (the_beacon->the_path->size() > 1 && min_len < the_beacon->the_path->size()) {
                                 continue;
                             }
 
-                            if (the_beacon->the_path->size() == 2 && beacon_store.at(src_as_no)->find(remote_as_no) != beacon_store.at(src_as_no)->end()) {
+                            if (the_beacon->the_path->size() > 1 && beacon_store.at(src_as_no)->find(remote_as_no) != beacon_store.at(src_as_no)->end()) {
+                                continue;
+                            }
+
+                            bool has_shorter_path = false;
+                            if (the_beacon->the_path->size() > 1) {
+                                for (auto const & key_other_beacon_pair : paths_map_to_beacons) {
+                                    beacon* other_beacon = key_other_beacon_pair.second;
+                                    int start = -1;
+                                    int counter = 0;
+                                    for (auto const & link_info:*other_beacon->the_path) {
+                                        if (start == -1 && (link_info[0] == remote_as_no || link_info[0] == src_as_no)) {
+                                            start = counter;
+                                        } else if (start != -1  && (link_info[0] == remote_as_no || link_info[0] == src_as_no)) {
+                                            if (counter - start <= the_beacon->the_path->size()) {
+                                                has_shorter_path = true;
+                                                break;
+                                            }
+                                        }
+                                        counter++;
+                                    }
+
+                                    if (has_shorter_path) {
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (has_shorter_path) {
                                 continue;
                             }
 
@@ -356,7 +386,6 @@ namespace ns3 {
         }
 
         void DoBeaconing() {
-            std::cout << valid_beacons_count_per_src_as.size() << std::endl; // Print number of source ASes
             now = Simulator::Now().ToInteger(Time::NS);
 
             bytes_sent_per_interface_per_period.insert(std::make_pair(now, std::vector<uint32_t > (GetNDevices(), 0)));
