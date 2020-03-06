@@ -401,7 +401,6 @@ main(int argc, char *argv[]) {
         std::string relation = p.getProperty("rel");
         double_t latitude = std::stod(p.getProperty("latitude"));
         double_t longitude = std::stod(p.getProperty("longitude"));
-        uint16_t bwd = std::stoi(p.getProperty("capacity"));
 
         Ptr<Node> fromNode;
         Ptr<Node> toNode;
