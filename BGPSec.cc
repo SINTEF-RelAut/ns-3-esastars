@@ -381,7 +381,7 @@ main(int argc, char *argv[]) {
 
 
     curNode = rootNode->first_node("node");
-    int32_t prefix_counter = 0;
+    uint32_t prefix_counter = 0;
     while (curNode) {
         int32_t as_number = std::stoi(getAttribute(curNode, "id"));
 
