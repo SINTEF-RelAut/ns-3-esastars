@@ -384,12 +384,6 @@ main(int argc, char *argv[]) {
     int32_t prefix_counter = 0;
     while (curNode) {
         int32_t as_number = std::stoi(getAttribute(curNode, "id"));
-        PropertyContainer p = parseProperties(curNode);
-
-        double_t latency_coef = std::stod(p.getProperty("latency_coef"));
-        double_t bandwidth_coef = std::stod(p.getProperty("bandwidth_coef"));
-        double_t AS_level_diversity_coef = std::stod(p.getProperty("AS_level_diversity_coef"));
-        double_t link_level_diversity_coef = std::stod(p.getProperty("link_level_diversity_coef"));
 
         nodes.Add(CreateObject<myNode>(node_counter, 0, &prefix_counter));
         ASes.insert(std::make_pair(as_number, node_counter));
