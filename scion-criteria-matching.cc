@@ -20,6 +20,7 @@
 #include <list>
 #include <iostream>
 #include <unordered_set>
+#include <tuple>
 
 #define FIXED_BEACONS_NUMBER_TO_SEND 5
 #define FIXED_BEACONS_NUMBER_TO_STORE 50
@@ -127,7 +128,7 @@ namespace ns3 {
         std::unordered_map<uint16_t, beacons_with_same_src_as *> beacon_store;
         std::unordered_set<beacon*> all_received_beacons;
 
-        std::unordered_map<std::pair<beacon*, uint16_t>, beacon*> beacons_sent;
+        std::unordered_map<beacon*, std::unordered_map<uint16_t, beacon*>* > beacons_sent;
         // helper structures ******************************************************************************************************** 
         std::unordered_map<uint16_t, uint64_t> next_round_valid_beacons_count_per_src_as;
 
@@ -400,7 +401,6 @@ namespace ns3 {
 
 
             uint16_t src_as;
-            std::pair<beacon*, uint16_t> key = std::make_pair(old_beacon, self_egress_if_no);
 
             if (old_beacon == NULL) {
                 src_as = as_number;
@@ -413,15 +413,17 @@ namespace ns3 {
 
 
 
-            if (beacons_sent.find(key) != beacons_sent.end()) {
+            if (beacons_sent.find(old_beacon) != beacons_sent.end()
+                && beacons_sent.at(old_beacon)->find(self_egress_if_no) != beacons_sent.at(old_beacon)->end()) {
+
                 if (old_beacon == NULL) {
-                    beacons_sent.at(key)->next_initiation_time = now;
-                    beacons_sent.at(key)->next_expiration_time = now + expiration_period;
+                    beacons_sent.at(old_beacon)->at(self_egress_if_no)->next_initiation_time = now;
+                    beacons_sent.at(old_beacon)->at(self_egress_if_no)->next_expiration_time = now + expiration_period;
                 } else {
-                    beacons_sent.at(key)->next_initiation_time = old_beacon->initiation_time;
-                    beacons_sent.at(key)->next_expiration_time = old_beacon->expiration_time;
+                    beacons_sent.at(old_beacon)->at(self_egress_if_no)->next_initiation_time = old_beacon->initiation_time;
+                    beacons_sent.at(old_beacon)->at(self_egress_if_no)->next_expiration_time = old_beacon->expiration_time;
                 }
-                beacons_sent.at(key)->is_new = true;
+                beacons_sent.at(old_beacon)->at(self_egress_if_no)->is_new = true;
                 return;
             }
 
@@ -439,7 +441,13 @@ namespace ns3 {
 //            }
 
             beacon *new_beacon = new beacon;
-            beacons_sent.insert(std::make_pair(std::make_pair(old_beacon, self_egress_if_no), new_beacon));
+            if (beacons_sent.find(old_beacon) != beacons_sent.end()) {
+                beacons_sent.at(old_beacon)->insert(std::make_pair( self_egress_if_no, new_beacon));
+            } else {
+                beacons_sent.insert(std::make_pair(old_beacon, new std::unordered_map<uint16_t , beacon*>()));
+                beacons_sent.at(old_beacon)->insert(std::make_pair( self_egress_if_no, new_beacon));
+            }
+
 
             path *new_path = new path;
             new_beacon->the_path = new_path;
