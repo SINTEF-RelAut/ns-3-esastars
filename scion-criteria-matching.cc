@@ -413,18 +413,22 @@ namespace ns3 {
 
 
 
-            if (beacons_sent.find(old_beacon) != beacons_sent.end()
-                && beacons_sent.at(old_beacon)->find(self_egress_if_no) != beacons_sent.at(old_beacon)->end()) {
+            if (beacons_sent.find(old_beacon) != beacons_sent.end()) {
+                if( beacons_sent.at(old_beacon)->find(self_egress_if_no) != beacons_sent.at(old_beacon)->end()) {
 
-                if (old_beacon == &initiatorBeacon) {
-                    beacons_sent.at(old_beacon)->at(self_egress_if_no)->next_initiation_time = now;
-                    beacons_sent.at(old_beacon)->at(self_egress_if_no)->next_expiration_time = now + expiration_period;
-                } else {
-                    beacons_sent.at(old_beacon)->at(self_egress_if_no)->next_initiation_time = old_beacon->initiation_time;
-                    beacons_sent.at(old_beacon)->at(self_egress_if_no)->next_expiration_time = old_beacon->expiration_time;
+                    if (old_beacon == &initiatorBeacon) {
+                        beacons_sent.at(old_beacon)->at(self_egress_if_no)->next_initiation_time = now;
+                        beacons_sent.at(old_beacon)->at(self_egress_if_no)->next_expiration_time =
+                                now + expiration_period;
+                    } else {
+                        beacons_sent.at(old_beacon)->at(
+                                self_egress_if_no)->next_initiation_time = old_beacon->initiation_time;
+                        beacons_sent.at(old_beacon)->at(
+                                self_egress_if_no)->next_expiration_time = old_beacon->expiration_time;
+                    }
+                    beacons_sent.at(old_beacon)->at(self_egress_if_no)->is_new = true;
+                    return;
                 }
-                beacons_sent.at(old_beacon)->at(self_egress_if_no)->is_new = true;
-                return;
             }
 
 //            if (remote_as->next_round_valid_beacons_count_per_src_as.find(src_as) !=
