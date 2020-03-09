@@ -117,7 +117,8 @@ namespace ns3 {
         }
 
         void advertise_prefixes() {
-#pragma omp parallel for
+//#pragma omp parallel for
+	    
             for (uint32_t i = 0; i < neighbors.size(); ++i) {
                 as_number_t remote_as_no = neighbors.at(i);
                 for (auto const & self_egress_if_no : interfaces_per_neighbor_as.at(remote_as_no)) {
@@ -148,7 +149,11 @@ namespace ns3 {
         }
 
         void receive_update_message (update_message_t* update_message, as_number_t previous_as_no, interface_idx_t self_ingress_if_idx) {
-            try {
+
+	    if (Simulator::Now() > 0) {
+		std::cout << Simulator::Now() << std::endl;
+	    }
+   	    try {
                 bytes_sent_per_interface_per_period.at(Simulator::Now().ToInteger(Time::S)).at(self_ingress_if_idx) += 400;
             } catch (std::out_of_range) {
                 bytes_sent_per_interface_per_period.insert(std::make_pair(Simulator::Now().ToInteger(Time::S), std::vector <uint64_t >(GetNDevices(), 0)));
@@ -163,27 +168,32 @@ namespace ns3 {
 
                     if (update_message->expiration_time > Simulator::Now()) {
                         discovered_prefixes.at(prefix) = update_message;
-                        delete tmp;
+                        free(tmp->path);
+			free(tmp);
                         disseminate_prefix(update_message, previous_as_no, self_ingress_if_idx);
                         return;
                     }
 
                     discovered_prefixes.erase(discovered_prefixes.find(prefix));
-                    delete update_message;
-                    delete tmp;
+                    free(update_message->path);
+		    free(update_message);
+                    free(tmp->path);
+		    free(tmp);
                     return;
 
                 }
 
                 if (update_message->expiration_time <= Simulator::Now()) {
-                    delete update_message;
+                    free(update_message->path);
+		    free(update_message);
                     return;
                 }
 
                 if (update_message->path->size() < discovered_prefixes.at(prefix)->path->size()) {
                     update_message_t* tmp = discovered_prefixes.at(prefix);
                     discovered_prefixes.at(prefix) = update_message;
-                    delete tmp;
+                    free(tmp->path);
+		    free(tmp);
                     disseminate_prefix(update_message, previous_as_no, self_ingress_if_idx);
                     return;
                 }
@@ -192,12 +202,14 @@ namespace ns3 {
                     && discovered_prefixes.at(prefix)->initiation_time < update_message->initiation_time) {
                     update_message_t* tmp = discovered_prefixes.at(prefix);
                     discovered_prefixes.at(prefix) = update_message;
-                    delete tmp;
+                    free(tmp->path);
+		    free(tmp);
                     disseminate_prefix(update_message, previous_as_no, self_ingress_if_idx);
                     return;
                 }
+                free(update_message->path);
+                free(update_message);
 
-                delete update_message;
                 return;
             } else {
                 discovered_prefixes.insert(std::make_pair(prefix, update_message));
@@ -207,7 +219,7 @@ namespace ns3 {
 
         void disseminate_prefix (update_message_t* update_message, as_number_t previous_as_no, interface_idx_t self_ingress_if_idx) {
             relation_t relation_with_previous_as = relations.at(previous_as_no);
-#pragma omp parallel for
+//#pragma omp parallel for
             for (uint32_t i = 0; i < neighbors.size(); ++i) {
                 as_number_t next_as_no = neighbors.at(i);
                 if (next_as_no == previous_as_no) {
@@ -354,7 +366,7 @@ main(int argc, char *argv[]) {
     sstr << fin.rdbuf();
 
     std::string out_path =
-            "/home/tabaeias/workspace/ns-3-allinone/ns-3-dev/results/baseline_multi_link_" + std::string(argv[4]) + "_" +
+            "/home/tabaeias/workspace/ns-3-allinone/ns-3-dev/results/BGPSec_" + std::string(argv[4]) + "_" +
             std::string(argv[1]) + "_" + std::string(argv[2]) + "_" + std::string(argv[3]) + ".txt";
     std::ofstream out(out_path);
     std::cout.rdbuf(out.rdbuf());
@@ -374,11 +386,9 @@ main(int argc, char *argv[]) {
         return 1;
     }
 
-
     NodeContainer nodes;
     int16_t node_counter = 0;
     std::map<int32_t, uint16_t> ASes;
-
 
     curNode = rootNode->first_node("node");
     uint32_t prefix_counter = 0;
@@ -395,8 +405,7 @@ main(int argc, char *argv[]) {
     while (curNode) {
         int32_t from = std::stoi(curNode->first_node("from")->value());
         int32_t to = std::stoi(curNode->first_node("to")->value());
-
-
+        
         PropertyContainer p = parseProperties(curNode);
         std::string relation = p.getProperty("rel");
         double_t latitude = std::stod(p.getProperty("latitude"));
@@ -466,13 +475,15 @@ main(int argc, char *argv[]) {
 
         curNode = curNode->next_sibling("link");
     }
-    
+
     for (uint64_t i = 0; i < nodes.GetN(); ++i) {
+        printf("%ld\n", i);
         DynamicCast<myNode>(nodes.Get(i))->DoInitializations();
     }
 
     for (Time t = Seconds(0.0); t < Time(argv[3]); t += advertisement_period) {
-        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
+        printf("heloo");
+	for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             Ptr<myNode> the_node = DynamicCast<myNode>(nodes.Get(i));
             Simulator::Schedule(t, &myNode::advertise_prefixes, the_node);
         }
