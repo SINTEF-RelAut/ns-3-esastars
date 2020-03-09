@@ -131,7 +131,7 @@ namespace ns3 {
         std::unordered_map<beacon*, std::unordered_map<uint16_t, beacon*>* > beacons_sent;
         // helper structures ******************************************************************************************************** 
         std::unordered_map<uint16_t, uint64_t> next_round_valid_beacons_count_per_src_as;
-
+        beacon initiatorBeacon;
         // statistics ***************************************************************************************************************
         std::unordered_map<uint16_t, uint64_t> valid_beacons_count_per_src_as;
         std::unordered_map<int64_t, std::vector<uint32_t> > bytes_sent_per_interface_per_period;
@@ -247,32 +247,32 @@ namespace ns3 {
                                 continue;
                             }
 
-                            bool has_shorter_path = false;
-                            if (the_beacon->the_path->size() > 1) {
-                                for (auto const & other_beacon : all_received_beacons) {
-                                    int start = -1;
-                                    int counter = 0;
-                                    for (auto const & link_info:*other_beacon->the_path) {
-                                        if (start == -1 && (link_info[0] == remote_as_no || link_info[0] == src_as_no)) {
-                                            start = counter;
-                                        } else if (start != -1  && (link_info[0] == remote_as_no || link_info[0] == src_as_no)) {
-                                            if (counter - start <= (int) the_beacon->the_path->size()) {
-                                                has_shorter_path = true;
-                                                break;
-                                            }
-                                        }
-                                        counter++;
-                                    }
-
-                                    if (has_shorter_path) {
-                                        break;
-                                    }
-                                }
-                            }
-
-                            if (has_shorter_path) {
-                                continue;
-                            }
+//                            bool has_shorter_path = false;
+//                            if (the_beacon->the_path->size() > 1) {
+//                                for (auto const & other_beacon : all_received_beacons) {
+//                                    int start = -1;
+//                                    int counter = 0;
+//                                    for (auto const & link_info:*other_beacon->the_path) {
+//                                        if (start == -1 && (link_info[0] == remote_as_no || link_info[0] == src_as_no)) {
+//                                            start = counter;
+//                                        } else if (start != -1  && (link_info[0] == remote_as_no || link_info[0] == src_as_no)) {
+//                                            if (counter - start <= (int) the_beacon->the_path->size()) {
+//                                                has_shorter_path = true;
+//                                                break;
+//                                            }
+//                                        }
+//                                        counter++;
+//                                    }
+//
+//                                    if (has_shorter_path) {
+//                                        break;
+//                                    }
+//                                }
+//                            }
+//
+//                            if (has_shorter_path) {
+//                                continue;
+//                            }
 
                             bool generates_loop = false;
                             for (auto const &link_info : *the_beacon->the_path) { // remove loops
@@ -379,7 +379,7 @@ namespace ns3 {
 
 
 
-                    GenerateBeaconAndSend(NULL, self_egress_if_no, remote_as_no, remote_if_no, remote_as,
+                    GenerateBeaconAndSend(&initiatorBeacon, self_egress_if_no, remote_as_no, remote_if_no, remote_as,
                                           0.0, inter_as_bwds.at(self_egress_if_no));
                 }
             }
@@ -402,7 +402,7 @@ namespace ns3 {
 
             uint16_t src_as;
 
-            if (old_beacon == NULL) {
+            if (old_beacon == &initiatorBeacon) {
                 src_as = as_number;
 
             } else {
@@ -416,7 +416,7 @@ namespace ns3 {
             if (beacons_sent.find(old_beacon) != beacons_sent.end()
                 && beacons_sent.at(old_beacon)->find(self_egress_if_no) != beacons_sent.at(old_beacon)->end()) {
 
-                if (old_beacon == NULL) {
+                if (old_beacon == &initiatorBeacon) {
                     beacons_sent.at(old_beacon)->at(self_egress_if_no)->next_initiation_time = now;
                     beacons_sent.at(old_beacon)->at(self_egress_if_no)->next_expiration_time = now + expiration_period;
                 } else {
@@ -465,7 +465,7 @@ namespace ns3 {
             new_beacon->is_new = true;
             new_beacon->is_valid = false;
 
-            if (old_beacon == NULL) {
+            if (old_beacon == &initiatorBeacon) {
                 new_beacon->next_initiation_time = now;
                 new_beacon->next_expiration_time = now + expiration_period;
 
