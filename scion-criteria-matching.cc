@@ -128,7 +128,7 @@ namespace ns3 {
         std::unordered_map<uint16_t, beacons_with_same_src_as *> beacon_store;
         std::unordered_set<beacon*> all_received_beacons;
 
-        std::unordered_map<beacon*, std::unordered_map<uint16_t, beacon*>* > beacons_sent;
+        std::map<beacon*, std::map<uint16_t, beacon*>* > beacons_sent;
         // helper structures ******************************************************************************************************** 
         std::unordered_map<uint16_t, uint64_t> next_round_valid_beacons_count_per_src_as;
         beacon initiatorBeacon;
@@ -448,7 +448,7 @@ namespace ns3 {
             if (beacons_sent.find(old_beacon) != beacons_sent.end()) {
                 beacons_sent.at(old_beacon)->insert(std::make_pair( self_egress_if_no, new_beacon));
             } else {
-                beacons_sent.insert(std::make_pair(old_beacon, new std::unordered_map<uint16_t , beacon*>()));
+                beacons_sent.insert(std::make_pair(old_beacon, new std::map<uint16_t , beacon*>()));
                 beacons_sent.at(old_beacon)->insert(std::make_pair( self_egress_if_no, new_beacon));
             }
 
