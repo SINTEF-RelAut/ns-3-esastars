@@ -131,7 +131,7 @@ namespace ns3 {
         std::map<beacon*, std::map<uint16_t, beacon*>* > beacons_sent;
         // helper structures ******************************************************************************************************** 
         std::unordered_map<uint16_t, uint64_t> next_round_valid_beacons_count_per_src_as;
-        beacon initiatorBeacon;
+        beacon *initiatorBeacon;
         // statistics ***************************************************************************************************************
         std::unordered_map<uint16_t, uint64_t> valid_beacons_count_per_src_as;
         std::unordered_map<int64_t, std::vector<uint32_t> > bytes_sent_per_interface_per_period;
@@ -140,7 +140,9 @@ namespace ns3 {
                ld link_level_diversity_coef) : Node(
                 system_id), as_number(as_number), latency_coef(latency_coef), bandwidth_coef(bandwidth_coef),
                                                AS_level_diversity_coef(AS_level_diversity_coef),
-                                               link_level_diversity_coef(link_level_diversity_coef) {}
+                                               link_level_diversity_coef(link_level_diversity_coef) {
+            initiatorBeacon = new beacon;
+        }
 
         void DoInitializations() {
             intra_as_latencies.resize(GetNDevices());
@@ -379,7 +381,7 @@ namespace ns3 {
 
 
 
-                    GenerateBeaconAndSend(&initiatorBeacon, self_egress_if_no, remote_as_no, remote_if_no, remote_as,
+                    GenerateBeaconAndSend(initiatorBeacon, self_egress_if_no, remote_as_no, remote_if_no, remote_as,
                                           0.0, inter_as_bwds.at(self_egress_if_no));
                 }
             }
@@ -402,7 +404,7 @@ namespace ns3 {
 
             uint16_t src_as;
 
-            if (old_beacon == &initiatorBeacon) {
+            if (old_beacon == initiatorBeacon) {
                 src_as = as_number;
 
             } else {
@@ -415,7 +417,7 @@ namespace ns3 {
 
             if (beacons_sent.find(old_beacon) != beacons_sent.end()) {
                 if(beacons_sent.at(old_beacon)->find(self_egress_if_no) != beacons_sent.at(old_beacon)->end()) {
-                    if (old_beacon == &initiatorBeacon) {
+                    if (old_beacon == initiatorBeacon) {
                         beacons_sent.at(old_beacon)->at(self_egress_if_no)->next_initiation_time = now;
                         beacons_sent.at(old_beacon)->at(self_egress_if_no)->next_expiration_time =
                                 now + expiration_period;
@@ -468,7 +470,7 @@ namespace ns3 {
             new_beacon->is_new = true;
             new_beacon->is_valid = false;
 
-            if (old_beacon == &initiatorBeacon) {
+            if (old_beacon == initiatorBeacon) {
                 new_beacon->next_initiation_time = now;
                 new_beacon->next_expiration_time = now + expiration_period;
 
