@@ -126,7 +126,7 @@ namespace ns3 {
 
         // beacon store structures ***************************************************************************************************
         std::unordered_map<uint16_t, beacons_with_same_src_as *> beacon_store;
-        std::unordered_set<beacon*> all_received_beacons;
+        std::set<beacon*> all_received_beacons;
 
         std::map<beacon*, std::map<uint16_t, beacon*>* > beacons_sent;
         // helper structures ******************************************************************************************************** 
