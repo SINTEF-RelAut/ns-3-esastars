@@ -118,14 +118,14 @@ namespace ns3 {
 
         void advertise_prefixes() {
 //#pragma omp parallel for
-            for (auto const & prefix : own_prefixes) {
-                update_message_t *new_update_message = new update_message_t;
+            update_message_t new_update_message;
+            path_t new_path(as_number);
+            new_update_message.path = &new_path;
+            new_update_message.initiation_time = Simulator::Now();
+            new_update_message.expiration_time = Simulator::Now() + expiration_period;
 
-                new_update_message->prefix = prefix;
-                path_t * new_path = new path_t(as_number);
-                new_update_message->path = new_path;
-                new_update_message->initiation_time = Simulator::Now();
-                new_update_message->expiration_time = Simulator::Now() + expiration_period;
+            for (auto const & prefix : own_prefixes) {
+                new_update_message.prefix = prefix;
 
                 for (uint32_t i = 0; i < neighbors.size(); ++i) {
                     as_number_t remote_as_no = neighbors.at(i);
@@ -142,14 +142,14 @@ namespace ns3 {
 
                         Ptr<myNode> remote_as = (DynamicCast<myNode>(remote_device->GetNode()));
 
-                        remote_as->receive_update_message(new_update_message, as_number, remote_if_no);
+                        remote_as->receive_update_message(&new_update_message, as_number, remote_if_no);
 
                     }
                 }
             }
         }
 
-        bool receive_update_message (update_message_t* update_message, as_number_t previous_as_no, interface_idx_t self_ingress_if_idx) {
+        void receive_update_message (update_message_t* update_message, as_number_t previous_as_no, interface_idx_t self_ingress_if_idx) {
 
 	    if (Simulator::Now() > 0) {
 		std::cout << Simulator::Now() << std::endl;
@@ -170,25 +170,25 @@ namespace ns3 {
                     if (update_message->expiration_time > Simulator::Now()) {
                         *discovered_prefixes.at(prefix) = *update_message;
                         disseminate_prefix(discovered_prefixes.at(prefix), previous_as_no, self_ingress_if_idx);
-                        return true;
+                        return;
                     }
 
                     update_message_t *tmp = discovered_prefixes.at(prefix);
                     discovered_prefixes.erase(discovered_prefixes.find(prefix));
                     free(tmp->path);
 		            free(tmp);
-                    return true;
+                    return;
 
                 }
 
                 if (update_message->expiration_time <= Simulator::Now()) {
-                    return true;
+                    return;
                 }
 
                 if (update_message->path->size() < discovered_prefixes.at(prefix)->path->size()) {
                     *discovered_prefixes.at(prefix) = *update_message;
                     disseminate_prefix(discovered_prefixes.at(prefix), previous_as_no, self_ingress_if_idx);
-                    return true;
+                    return;
                 }
 
                 if (discovered_prefixes.at(prefix)->path->size() == update_message->path->size()
@@ -196,14 +196,15 @@ namespace ns3 {
                     *discovered_prefixes.at(prefix) = *update_message;
 
                     disseminate_prefix(discovered_prefixes.at(prefix), previous_as_no, self_ingress_if_idx);
-                    return true;
+                    return;
                 }
 
-                return true;
+                return;
             } else {
-                discovered_prefixes.insert(std::make_pair(prefix, update_message));
+
+                discovered_prefixes.insert(std::make_pair(prefix, new update_message_t(*update_message)));
                 disseminate_prefix(update_message, previous_as_no, self_ingress_if_idx);
-                return false;
+                return;
             }
         }
 
@@ -243,42 +244,40 @@ namespace ns3 {
 
         void send_to_all_interfaces_with_same_remote_as(update_message_t* update_message, interface_idx_t self_ingress_if_idx,
                                                         as_number_t next_as_no) {
-            for (auto const &self_egress_if_no : interfaces_per_neighbor_as.at(next_as_no)) {
-                Ptr<PointToPointNetDevice> self_egress_device = DynamicCast<PointToPointNetDevice>(
-                        GetDevice(self_egress_if_no));
-
-                Ptr<PointToPointChannel> channel = DynamicCast<PointToPointChannel>(
-                        self_egress_device->GetChannel());
-                uint32_t wire = self_egress_device == channel->GetSource(0) ? 0 : 1;
-                Ptr<PointToPointNetDevice> remote_device = channel->GetDestination(wire);
-
-                uint16_t remote_ingress_if_no = (uint16_t) remote_device->GetIfIndex();
-                Ptr<myNode> remote_as = (DynamicCast<myNode>(remote_device->GetNode()));
-
-                Simulator::Schedule(Simulator::Now() + Time(intra_as_latencies.at(self_ingress_if_idx).at(self_egress_if_no)) ,
-                                    &myNode::send_update_message,
-                                    this,
-                                    update_message, remote_as, remote_ingress_if_no);
-            }
+//            for (auto const &self_egress_if_no : interfaces_per_neighbor_as.at(next_as_no)) {
+//                Ptr<PointToPointNetDevice> self_egress_device = DynamicCast<PointToPointNetDevice>(
+//                        GetDevice(self_egress_if_no));
+//
+//                Ptr<PointToPointChannel> channel = DynamicCast<PointToPointChannel>(
+//                        self_egress_device->GetChannel());
+//                uint32_t wire = self_egress_device == channel->GetSource(0) ? 0 : 1;
+//                Ptr<PointToPointNetDevice> remote_device = channel->GetDestination(wire);
+//
+//                uint16_t remote_ingress_if_no = (uint16_t) remote_device->GetIfIndex();
+//                Ptr<myNode> remote_as = (DynamicCast<myNode>(remote_device->GetNode()));
+//
+//                Simulator::Schedule(Simulator::Now() + Time(intra_as_latencies.at(self_ingress_if_idx).at(self_egress_if_no)) ,
+//                                    &myNode::send_update_message,
+//                                    this,
+//                                    update_message, remote_as, remote_ingress_if_no);
+//            }
         }
 
         void
         send_update_message(update_message_t *old_update_message,
                             Ptr<myNode> remote_as, interface_idx_t remote_ingress_if_no) {
-            update_message_t *new_update_message = new update_message_t;
+            update_message_t new_update_message;
 
-            new_update_message->prefix = old_update_message->prefix;
-            path_t *new_path = new path_t(old_update_message->path->begin(), old_update_message->path->end());
-            new_update_message->path = new_path;
-            new_update_message->path->push_back(as_number);
+            new_update_message.prefix = old_update_message->prefix;
+            path_t new_path = path_t(old_update_message->path->begin(), old_update_message->path->end());
+            new_update_message.path = &new_path;
+            new_update_message.path->push_back(as_number);
 
-            new_update_message->initiation_time = old_update_message->initiation_time;
-            new_update_message->expiration_time = old_update_message->expiration_time;
+            new_update_message.initiation_time = old_update_message->initiation_time;
+            new_update_message.expiration_time = old_update_message->expiration_time;
 
-            if (remote_as->receive_update_message(new_update_message, as_number, remote_ingress_if_no)) {
-                delete new_path;
-                delete new_update_message;
-            }
+            remote_as->receive_update_message(&new_update_message, as_number, remote_ingress_if_no);
+
         }
 
     };
@@ -474,13 +473,14 @@ main(int argc, char *argv[]) {
         DynamicCast<myNode>(nodes.Get(i))->DoInitializations();
     }
 
-    std::default_random_engine generator;
-    std::uniform_int_distribution<int64_t> distribution(0, 500000000);
+//    std::default_random_engine generator;
+//    std::uniform_int_distribution<int64_t> distribution(0, 500000000);
     for (Time t = Seconds(0.0); t < Time(argv[3]); t += advertisement_period) {
 	    for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             Ptr<myNode> the_node = DynamicCast<myNode>(nodes.Get(i));
-            Simulator::Schedule(t + Time(distribution(generator)), &myNode::advertise_prefixes, the_node);
-        }
+//            Simulator::Schedule(t + Time(distribution(generator)), &myNode::advertise_prefixes, the_node);
+            Simulator::Schedule(t , &myNode::advertise_prefixes, the_node);
+	    }
     }
 
     Simulator::Stop(Time(argv[3]));
