@@ -118,37 +118,38 @@ namespace ns3 {
 
         void advertise_prefixes() {
 //#pragma omp parallel for
-	    
-            for (uint32_t i = 0; i < neighbors.size(); ++i) {
-                as_number_t remote_as_no = neighbors.at(i);
-                for (auto const & self_egress_if_no : interfaces_per_neighbor_as.at(remote_as_no)) {
-                    Ptr<PointToPointNetDevice> self_egress_device = DynamicCast<PointToPointNetDevice>(
+            for (auto const & prefix : own_prefixes) {
+                update_message_t *new_update_message = new update_message_t;
+
+                new_update_message->prefix = prefix;
+                path_t * new_path = new path_t(as_number);
+                new_update_message->path = new_path;
+                new_update_message->initiation_time = Simulator::Now();
+                new_update_message->expiration_time = Simulator::Now() + expiration_period;
+
+                for (uint32_t i = 0; i < neighbors.size(); ++i) {
+                    as_number_t remote_as_no = neighbors.at(i);
+                    for (auto const & self_egress_if_no : interfaces_per_neighbor_as.at(remote_as_no)) {
+                        Ptr<PointToPointNetDevice> self_egress_device = DynamicCast<PointToPointNetDevice>(
                             GetDevice(self_egress_if_no));
 
-                    Ptr<PointToPointChannel> channel = DynamicCast<PointToPointChannel>(
+                        Ptr<PointToPointChannel> channel = DynamicCast<PointToPointChannel>(
                             self_egress_device->GetChannel());
-                    uint32_t wire = self_egress_device == channel->GetSource(0) ? 0 : 1;
-                    Ptr<PointToPointNetDevice> remote_device = channel->GetDestination(wire);
+                        uint32_t wire = self_egress_device == channel->GetSource(0) ? 0 : 1;
+                        Ptr<PointToPointNetDevice> remote_device = channel->GetDestination(wire);
 
-                    interface_idx_t remote_if_no = (uint16_t) remote_device->GetIfIndex();
+                        interface_idx_t remote_if_no = (uint16_t) remote_device->GetIfIndex();
 
-                    Ptr<myNode> remote_as = (DynamicCast<myNode>(remote_device->GetNode()));
-
-                    for (auto const & prefix : own_prefixes) {
-                        update_message_t *new_update_message = new update_message_t;
-
-                        new_update_message->prefix = prefix;
-                        new_update_message->path = new path_t(as_number);
-                        new_update_message->initiation_time = Simulator::Now();
-                        new_update_message->expiration_time = Simulator::Now() + expiration_period;
+                        Ptr<myNode> remote_as = (DynamicCast<myNode>(remote_device->GetNode()));
 
                         remote_as->receive_update_message(new_update_message, as_number, remote_if_no);
+
                     }
                 }
             }
         }
 
-        void receive_update_message (update_message_t* update_message, as_number_t previous_as_no, interface_idx_t self_ingress_if_idx) {
+        bool receive_update_message (update_message_t* update_message, as_number_t previous_as_no, interface_idx_t self_ingress_if_idx) {
 
 	    if (Simulator::Now() > 0) {
 		std::cout << Simulator::Now() << std::endl;
@@ -164,56 +165,45 @@ namespace ns3 {
 
             if (discovered_prefixes.find(prefix) != discovered_prefixes.end()) {
                 if (discovered_prefixes.at(prefix)->expiration_time <= Simulator::Now()) {
-                    update_message_t *tmp = discovered_prefixes.at(prefix);
+
 
                     if (update_message->expiration_time > Simulator::Now()) {
-                        discovered_prefixes.at(prefix) = update_message;
-                        free(tmp->path);
-			free(tmp);
-                        disseminate_prefix(update_message, previous_as_no, self_ingress_if_idx);
-                        return;
+                        *discovered_prefixes.at(prefix) = *update_message;
+                        disseminate_prefix(discovered_prefixes.at(prefix), previous_as_no, self_ingress_if_idx);
+                        return true;
                     }
 
+                    update_message_t *tmp = discovered_prefixes.at(prefix);
                     discovered_prefixes.erase(discovered_prefixes.find(prefix));
-                    free(update_message->path);
-		    free(update_message);
                     free(tmp->path);
-		    free(tmp);
-                    return;
+		            free(tmp);
+                    return true;
 
                 }
 
                 if (update_message->expiration_time <= Simulator::Now()) {
-                    free(update_message->path);
-		    free(update_message);
-                    return;
+                    return true;
                 }
 
                 if (update_message->path->size() < discovered_prefixes.at(prefix)->path->size()) {
-                    update_message_t* tmp = discovered_prefixes.at(prefix);
-                    discovered_prefixes.at(prefix) = update_message;
-                    free(tmp->path);
-		    free(tmp);
-                    disseminate_prefix(update_message, previous_as_no, self_ingress_if_idx);
-                    return;
+                    *discovered_prefixes.at(prefix) = *update_message;
+                    disseminate_prefix(discovered_prefixes.at(prefix), previous_as_no, self_ingress_if_idx);
+                    return true;
                 }
 
                 if (discovered_prefixes.at(prefix)->path->size() == update_message->path->size()
                     && discovered_prefixes.at(prefix)->initiation_time < update_message->initiation_time) {
-                    update_message_t* tmp = discovered_prefixes.at(prefix);
-                    discovered_prefixes.at(prefix) = update_message;
-                    free(tmp->path);
-		    free(tmp);
-                    disseminate_prefix(update_message, previous_as_no, self_ingress_if_idx);
-                    return;
-                }
-                free(update_message->path);
-                free(update_message);
+                    *discovered_prefixes.at(prefix) = *update_message;
 
-                return;
+                    disseminate_prefix(discovered_prefixes.at(prefix), previous_as_no, self_ingress_if_idx);
+                    return true;
+                }
+
+                return true;
             } else {
                 discovered_prefixes.insert(std::make_pair(prefix, update_message));
                 disseminate_prefix(update_message, previous_as_no, self_ingress_if_idx);
+                return false;
             }
         }
 
@@ -278,13 +268,17 @@ namespace ns3 {
             update_message_t *new_update_message = new update_message_t;
 
             new_update_message->prefix = old_update_message->prefix;
-            new_update_message->path = new path_t(old_update_message->path->begin(), old_update_message->path->end());
+            path_t *new_path = new path_t(old_update_message->path->begin(), old_update_message->path->end());
+            new_update_message->path = new_path;
             new_update_message->path->push_back(as_number);
 
             new_update_message->initiation_time = old_update_message->initiation_time;
             new_update_message->expiration_time = old_update_message->expiration_time;
 
-            remote_as->receive_update_message(new_update_message, as_number, remote_ingress_if_no);
+            if (remote_as->receive_update_message(new_update_message, as_number, remote_ingress_if_no)) {
+                delete new_path;
+                delete new_update_message;
+            }
         }
 
     };
@@ -477,15 +471,15 @@ main(int argc, char *argv[]) {
     }
 
     for (uint64_t i = 0; i < nodes.GetN(); ++i) {
-        printf("%ld\n", i);
         DynamicCast<myNode>(nodes.Get(i))->DoInitializations();
     }
 
+    std::default_random_engine generator;
+    std::uniform_int_distribution<int64_t> distribution(0, 500000000);
     for (Time t = Seconds(0.0); t < Time(argv[3]); t += advertisement_period) {
-        printf("heloo");
-	for (uint32_t i = 0; i < nodes.GetN(); ++i) {
+	    for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             Ptr<myNode> the_node = DynamicCast<myNode>(nodes.Get(i));
-            Simulator::Schedule(t, &myNode::advertise_prefixes, the_node);
+            Simulator::Schedule(t + Time(distribution(generator)), &myNode::advertise_prefixes, the_node);
         }
     }
 
