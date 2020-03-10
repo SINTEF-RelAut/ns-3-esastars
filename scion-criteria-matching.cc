@@ -128,7 +128,7 @@ namespace ns3 {
         std::unordered_map<uint16_t, beacons_with_same_src_as *> beacon_store;
         std::unordered_set<beacon*> all_received_beacons;
 
-        std::unordered_set<beacon*, std::unordered_set<uint16_t, beacon*>* > previous_beacon_last_egress_if_map_to_beacons;
+        std::unordered_map<beacon*, std::unordered_map<uint16_t, beacon*>* > previous_beacon_last_egress_if_map_to_beacons;
         // helper structures ********************************************************************************************************
         std::unordered_map<uint16_t, uint64_t> next_round_valid_beacons_count_per_src_as;
         beacon *initiatorBeacon;
@@ -449,7 +449,7 @@ namespace ns3 {
             if (remote_as->previous_beacon_last_egress_if_map_to_beacons.find(old_beacon) != remote_as->previous_beacon_last_egress_if_map_to_beacons.end()) {
                 remote_as->previous_beacon_last_egress_if_map_to_beacons.at(old_beacon)->insert(std::make_pair( self_egress_if_no, new_beacon));
             } else {
-                remote_as->previous_beacon_last_egress_if_map_to_beacons.insert(std::make_pair(old_beacon, new std::map<uint16_t , beacon*>()));
+                remote_as->previous_beacon_last_egress_if_map_to_beacons.insert(std::make_pair(old_beacon, new std::unordered_map<uint16_t , beacon*>()));
                 remote_as->previous_beacon_last_egress_if_map_to_beacons.at(old_beacon)->insert(std::make_pair( self_egress_if_no, new_beacon));
             }
 
