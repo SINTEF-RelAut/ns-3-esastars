@@ -265,9 +265,9 @@ namespace ns3 {
                 uint16_t remote_ingress_if_no = (uint16_t) remote_device->GetIfIndex();
                 Ptr<myNode> remote_as = (DynamicCast<myNode>(remote_device->GetNode()));
 
-                Simulator::Schedule(Simulator::Now() + Time(intra_as_latencies.at(self_ingress_if_idx).at(self_egress_if_no)) ,
-                                    &myNode::send_update_message,
-                                    this,
+                Simulator::Schedule(Time(intra_as_latencies.at(self_ingress_if_idx).at(self_egress_if_no)) ,
+                                    &ns3::myNode::send_update_message,
+                                    Ptr<myNode> (this),
                                     update_message, remote_as, remote_ingress_if_no);
             }
         }
