@@ -165,10 +165,11 @@ namespace ns3 {
 
             if (discovered_prefixes.find(prefix) != discovered_prefixes.end()) {
                 if (discovered_prefixes.at(prefix)->expiration_time <= Simulator::Now()) {
-
-
                     if (update_message->expiration_time > Simulator::Now()) {
-                        *discovered_prefixes.at(prefix) = *update_message;
+                        discovered_prefixes.at(prefix)->initiation_time = update_message->initiation_time;
+                        discovered_prefixes.at(prefix)->expiration_time = update_message->expiration_time;
+                        discovered_prefixes.at(prefix)->path->assign(update_message->path->begin(), update_message->path->end());
+
                         disseminate_prefix(discovered_prefixes.at(prefix), previous_as_no, self_ingress_if_idx);
                         return;
                     }
@@ -186,14 +187,19 @@ namespace ns3 {
                 }
 
                 if (update_message->path->size() < discovered_prefixes.at(prefix)->path->size()) {
-                    *discovered_prefixes.at(prefix) = *update_message;
+                    discovered_prefixes.at(prefix)->initiation_time = update_message->initiation_time;
+                    discovered_prefixes.at(prefix)->expiration_time = update_message->expiration_time;
+                    discovered_prefixes.at(prefix)->path->assign(update_message->path->begin(), update_message->path->end());
+
                     disseminate_prefix(discovered_prefixes.at(prefix), previous_as_no, self_ingress_if_idx);
                     return;
                 }
 
                 if (discovered_prefixes.at(prefix)->path->size() == update_message->path->size()
                     && discovered_prefixes.at(prefix)->initiation_time < update_message->initiation_time) {
-                    *discovered_prefixes.at(prefix) = *update_message;
+                    discovered_prefixes.at(prefix)->initiation_time = update_message->initiation_time;
+                    discovered_prefixes.at(prefix)->expiration_time = update_message->expiration_time;
+                    discovered_prefixes.at(prefix)->path->assign(update_message->path->begin(), update_message->path->end());
 
                     disseminate_prefix(discovered_prefixes.at(prefix), previous_as_no, self_ingress_if_idx);
                     return;
@@ -202,7 +208,10 @@ namespace ns3 {
                 return;
             } else {
 
-                discovered_prefixes.insert(std::make_pair(prefix, new update_message_t(*update_message)));
+                discovered_prefixes.insert(std::make_pair(prefix, new update_message_t));
+                discovered_prefixes.at(prefix)->initiation_time = update_message->initiation_time;
+                discovered_prefixes.at(prefix)->expiration_time = update_message->expiration_time;
+                discovered_prefixes.at(prefix)->path->assign(update_message->path->begin(), update_message->path->end());
                 disseminate_prefix(discovered_prefixes.at(prefix), previous_as_no, self_ingress_if_idx);
                 return;
             }
