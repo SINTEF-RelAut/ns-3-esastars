@@ -203,7 +203,7 @@ namespace ns3 {
             } else {
 
                 discovered_prefixes.insert(std::make_pair(prefix, new update_message_t(*update_message)));
-                disseminate_prefix(update_message, previous_as_no, self_ingress_if_idx);
+                disseminate_prefix(discovered_prefixes.at(prefix), previous_as_no, self_ingress_if_idx);
                 return;
             }
         }
