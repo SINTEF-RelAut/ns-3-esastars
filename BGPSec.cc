@@ -210,7 +210,7 @@ namespace ns3 {
 
         void disseminate_prefix (update_message_t* update_message, as_number_t previous_as_no, interface_idx_t self_ingress_if_idx) {
             relation_t relation_with_previous_as = relations.at(previous_as_no);
-#pragma omp parallel for
+//#pragma omp parallel for
             for (uint32_t i = 0; i < neighbors.size(); ++i) {
                 as_number_t next_as_no = neighbors.at(i);
                 if (next_as_no == previous_as_no) {
@@ -238,50 +238,30 @@ namespace ns3 {
                     continue;
                 }
 
-//                this->send_to_all_interfaces_with_same_remote_as (update_message, self_ingress_if_idx, next_as_no);
-
-                for (auto const &self_egress_if_no : interfaces_per_neighbor_as.at(next_as_no)) {
-                    Ptr<PointToPointNetDevice> self_egress_device = DynamicCast<PointToPointNetDevice>(
-                            GetDevice(self_egress_if_no));
-
-                    Ptr<PointToPointChannel> channel = DynamicCast<PointToPointChannel>(
-                            self_egress_device->GetChannel());
-                    uint32_t wire = self_egress_device == channel->GetSource(0) ? 0 : 1;
-                    Ptr<PointToPointNetDevice> remote_device = channel->GetDestination(wire);
-
-                    uint16_t remote_ingress_if_no = (uint16_t) remote_device->GetIfIndex();
-                    Ptr<myNode> remote_as = (DynamicCast<myNode>(remote_device->GetNode()));
-                    #pragma omp critical (scheduling) {
-                    Simulator::Schedule(
-                            Simulator::Now() + Time(intra_as_latencies.at(self_ingress_if_idx).at(self_egress_if_no)),
-                            &myNode::send_update_message,
-                            this,
-                            update_message, remote_as, remote_ingress_if_no);
-                   }
-                }
+                this->send_to_all_interfaces_with_same_remote_as (update_message, self_ingress_if_idx, next_as_no);
             }
         }
 
-//        void send_to_all_interfaces_with_same_remote_as(update_message_t* update_message, interface_idx_t self_ingress_if_idx,
-//                                                        as_number_t next_as_no) {
-//            for (auto const &self_egress_if_no : interfaces_per_neighbor_as.at(next_as_no)) {
-//                Ptr<PointToPointNetDevice> self_egress_device = DynamicCast<PointToPointNetDevice>(
-//                        GetDevice(self_egress_if_no));
-//
-//                Ptr<PointToPointChannel> channel = DynamicCast<PointToPointChannel>(
-//                        self_egress_device->GetChannel());
-//                uint32_t wire = self_egress_device == channel->GetSource(0) ? 0 : 1;
-//                Ptr<PointToPointNetDevice> remote_device = channel->GetDestination(wire);
-//
-//                uint16_t remote_ingress_if_no = (uint16_t) remote_device->GetIfIndex();
-//                Ptr<myNode> remote_as = (DynamicCast<myNode>(remote_device->GetNode()));
-//#pragma omp critical
-//                Simulator::Schedule(Simulator::Now() + Time(intra_as_latencies.at(self_ingress_if_idx).at(self_egress_if_no)) ,
-//                                    &myNode::send_update_message,
-//                                    this,
-//                                    update_message, remote_as, remote_ingress_if_no);
-//            }
-//        }
+        void send_to_all_interfaces_with_same_remote_as(update_message_t* update_message, interface_idx_t self_ingress_if_idx,
+                                                        as_number_t next_as_no) {
+            for (auto const &self_egress_if_no : interfaces_per_neighbor_as.at(next_as_no)) {
+                Ptr<PointToPointNetDevice> self_egress_device = DynamicCast<PointToPointNetDevice>(
+                        GetDevice(self_egress_if_no));
+
+                Ptr<PointToPointChannel> channel = DynamicCast<PointToPointChannel>(
+                        self_egress_device->GetChannel());
+                uint32_t wire = self_egress_device == channel->GetSource(0) ? 0 : 1;
+                Ptr<PointToPointNetDevice> remote_device = channel->GetDestination(wire);
+
+                uint16_t remote_ingress_if_no = (uint16_t) remote_device->GetIfIndex();
+                Ptr<myNode> remote_as = (DynamicCast<myNode>(remote_device->GetNode()));
+
+                Simulator::Schedule(Simulator::Now() + Time(intra_as_latencies.at(self_ingress_if_idx).at(self_egress_if_no)) ,
+                                    &myNode::send_update_message,
+                                    this,
+                                    update_message, remote_as, remote_ingress_if_no);
+            }
+        }
 
         void
         send_update_message(update_message_t *old_update_message,
