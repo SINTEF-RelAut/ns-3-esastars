@@ -265,7 +265,7 @@ namespace ns3 {
                 uint16_t remote_ingress_if_no = (uint16_t) remote_device->GetIfIndex();
                 Ptr<myNode> remote_as = (DynamicCast<myNode>(remote_device->GetNode()));
 
-                Simulator::Schedule(Time(intra_as_latencies.at(self_ingress_if_idx).at(self_egress_if_no)) ,
+                Simulator::Schedule(NanoSeconds(intra_as_latencies.at(self_ingress_if_idx).at(self_egress_if_no)) ,
                                     &ns3::myNode::send_update_message,
                                     Ptr<myNode> (this),
                                     update_message, remote_as, remote_ingress_if_no);
@@ -487,7 +487,7 @@ main(int argc, char *argv[]) {
     for (Time t = Seconds(0.0); t < Time(argv[3]); t += advertisement_period) {
 	    for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             Ptr<myNode> the_node = DynamicCast<myNode>(nodes.Get(i));
-            Simulator::Schedule(t + Time(distribution(generator)), &myNode::advertise_prefixes, the_node);
+            Simulator::Schedule(t + NanoSeconds(distribution(generator)), &myNode::advertise_prefixes, the_node);
 //            Simulator::Schedule(t , &myNode::advertise_prefixes, the_node);
 	    }
     }
