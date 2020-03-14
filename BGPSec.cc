@@ -175,9 +175,9 @@ namespace ns3 {
                     }
 
                     update_message_t *tmp = discovered_prefixes.at(prefix);
-                    discovered_prefixes.erase(discovered_prefixes.find(prefix));
+                    discovered_prefixes.erase(prefix);
                     free(tmp->path);
-		            free(tmp);
+		    free(tmp);
                     return;
 
                 }
@@ -209,9 +209,9 @@ namespace ns3 {
             } else {
 
                 discovered_prefixes.insert(std::make_pair(prefix, new update_message_t));
-                discovered_prefixes.at(prefix)->initiation_time = update_message->initiation_time;
+                discovered_prefixes.at(prefix)->path = new path_t(update_message->path->begin(), update_message->path->end());
+		discovered_prefixes.at(prefix)->initiation_time = update_message->initiation_time;
                 discovered_prefixes.at(prefix)->expiration_time = update_message->expiration_time;
-                discovered_prefixes.at(prefix)->path->assign(update_message->path->begin(), update_message->path->end());
                 disseminate_prefix(discovered_prefixes.at(prefix), previous_as_no, self_ingress_if_idx);
                 return;
             }
@@ -481,6 +481,8 @@ main(int argc, char *argv[]) {
     for (uint64_t i = 0; i < nodes.GetN(); ++i) {
         DynamicCast<myNode>(nodes.Get(i))->DoInitializations();
     }
+
+    Simulator::SetScheduler(ns3::ObjectFactory(MapScheduler::GetTypeId().GetName()));
 
     std::random_device generator;
     std::uniform_int_distribution<int64_t> distribution(0, 500000000);
