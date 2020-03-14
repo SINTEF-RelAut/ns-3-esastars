@@ -10,7 +10,6 @@
 #include "ns3/rapidxml.hpp"
 #include <vector>
 #include <stdio.h>
-#include <omp.h>
 #include <map>
 #include <unordered_map>
 #include <fstream>
@@ -117,9 +116,8 @@ namespace ns3 {
         }
 
         void advertise_prefixes() {
-//#pragma omp parallel for
             update_message_t new_update_message;
-            path_t new_path(as_number);
+            path_t new_path;
             new_update_message.path = &new_path;
             new_update_message.initiation_time = Simulator::Now();
             new_update_message.expiration_time = Simulator::Now() + expiration_period;
@@ -152,14 +150,14 @@ namespace ns3 {
         void receive_update_message (update_message_t* update_message, as_number_t previous_as_no, interface_idx_t self_ingress_if_idx) {
 
 	    if (Simulator::Now() > 0) {
-		std::cout << Simulator::Now() << std::endl;
+		    std::cout << Simulator::Now() << std::endl;
 	    }
-   	    try {
-                bytes_sent_per_interface_per_period.at(Simulator::Now().ToInteger(Time::S)).at(self_ingress_if_idx) += 400;
-            } catch (std::out_of_range) {
-                bytes_sent_per_interface_per_period.insert(std::make_pair(Simulator::Now().ToInteger(Time::S), std::vector <uint64_t >(GetNDevices(), 0)));
-                bytes_sent_per_interface_per_period.at(Simulator::Now().ToInteger(Time::S)).at(self_ingress_if_idx) += 400;
-            }
+//   	    try {
+//                bytes_sent_per_interface_per_period.at(Simulator::Now().ToInteger(Time::S)).at(self_ingress_if_idx) += 400;
+//            } catch (std::out_of_range) {
+//                bytes_sent_per_interface_per_period.insert(std::make_pair(Simulator::Now().ToInteger(Time::S), std::vector <uint64_t >(GetNDevices(), 0)));
+//                bytes_sent_per_interface_per_period.at(Simulator::Now().ToInteger(Time::S)).at(self_ingress_if_idx) += 400;
+//            }
 
             prefix_t prefix = update_message->prefix;
 
@@ -169,7 +167,7 @@ namespace ns3 {
                         discovered_prefixes.at(prefix)->initiation_time = update_message->initiation_time;
                         discovered_prefixes.at(prefix)->expiration_time = update_message->expiration_time;
                         discovered_prefixes.at(prefix)->path->assign(update_message->path->begin(), update_message->path->end());
-
+                        discovered_prefixes.at(prefix)->path->push_back(previous_as_no);
                         disseminate_prefix(discovered_prefixes.at(prefix), previous_as_no, self_ingress_if_idx);
                         return;
                     }
@@ -177,7 +175,7 @@ namespace ns3 {
                     update_message_t *tmp = discovered_prefixes.at(prefix);
                     discovered_prefixes.erase(prefix);
                     free(tmp->path);
-		    free(tmp);
+		            free(tmp);
                     return;
 
                 }
@@ -190,7 +188,7 @@ namespace ns3 {
                     discovered_prefixes.at(prefix)->initiation_time = update_message->initiation_time;
                     discovered_prefixes.at(prefix)->expiration_time = update_message->expiration_time;
                     discovered_prefixes.at(prefix)->path->assign(update_message->path->begin(), update_message->path->end());
-
+                    discovered_prefixes.at(prefix)->path->push_back(previous_as_no);
                     disseminate_prefix(discovered_prefixes.at(prefix), previous_as_no, self_ingress_if_idx);
                     return;
                 }
@@ -200,7 +198,7 @@ namespace ns3 {
                     discovered_prefixes.at(prefix)->initiation_time = update_message->initiation_time;
                     discovered_prefixes.at(prefix)->expiration_time = update_message->expiration_time;
                     discovered_prefixes.at(prefix)->path->assign(update_message->path->begin(), update_message->path->end());
-
+                    discovered_prefixes.at(prefix)->path->push_back(previous_as_no);
                     disseminate_prefix(discovered_prefixes.at(prefix), previous_as_no, self_ingress_if_idx);
                     return;
                 }
@@ -210,8 +208,9 @@ namespace ns3 {
 
                 discovered_prefixes.insert(std::make_pair(prefix, new update_message_t));
                 discovered_prefixes.at(prefix)->path = new path_t(update_message->path->begin(), update_message->path->end());
-		discovered_prefixes.at(prefix)->initiation_time = update_message->initiation_time;
+                discovered_prefixes.at(prefix)->initiation_time = update_message->initiation_time;
                 discovered_prefixes.at(prefix)->expiration_time = update_message->expiration_time;
+                discovered_prefixes.at(prefix)->path->push_back(previous_as_no);
                 disseminate_prefix(discovered_prefixes.at(prefix), previous_as_no, self_ingress_if_idx);
                 return;
             }
@@ -219,7 +218,6 @@ namespace ns3 {
 
         void disseminate_prefix (update_message_t* update_message, as_number_t previous_as_no, interface_idx_t self_ingress_if_idx) {
             relation_t relation_with_previous_as = relations.at(previous_as_no);
-//#pragma omp parallel for
             for (uint32_t i = 0; i < neighbors.size(); ++i) {
                 as_number_t next_as_no = neighbors.at(i);
                 if (next_as_no == previous_as_no) {
@@ -266,29 +264,11 @@ namespace ns3 {
                 Ptr<myNode> remote_as = (DynamicCast<myNode>(remote_device->GetNode()));
 
                 Simulator::Schedule(NanoSeconds(intra_as_latencies.at(self_ingress_if_idx).at(self_egress_if_no)) ,
-                                    &ns3::myNode::send_update_message,
-                                    Ptr<myNode> (this),
-                                    update_message, remote_as, remote_ingress_if_no);
+                                    &ns3::myNode::receive_update_message,
+                                    remote_as,
+                                    update_message, as_number, remote_ingress_if_no);
             }
         }
-
-        void
-        send_update_message(update_message_t *old_update_message,
-                            Ptr<myNode> remote_as, interface_idx_t remote_ingress_if_no) {
-            update_message_t new_update_message;
-
-            new_update_message.prefix = old_update_message->prefix;
-            path_t new_path = path_t(old_update_message->path->begin(), old_update_message->path->end());
-            new_update_message.path = &new_path;
-            new_update_message.path->push_back(as_number);
-
-            new_update_message.initiation_time = old_update_message->initiation_time;
-            new_update_message.expiration_time = old_update_message->expiration_time;
-
-            remote_as->receive_update_message(&new_update_message, as_number, remote_ingress_if_no);
-
-        }
-
     };
 }
 
