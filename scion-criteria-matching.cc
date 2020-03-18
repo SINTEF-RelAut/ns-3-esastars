@@ -126,8 +126,8 @@ namespace ns3 {
         std::vector<int32_t> inter_as_bwds;
 
         // beacon store structures ***************************************************************************************************
-        std::unordered_map<beacon*, std::tuple<uint16_t, uint16_t, uint16_t, ld, beacon*> > beacons_metadata; // senderAS, last egress_if, ingress_if, score, previous_beacon
         std::unordered_map<uint16_t, beacons_with_same_src_as *> beacon_store;
+        std::unordered_map<beacon*, std::tuple<uint16_t, uint16_t, uint16_t, ld, beacon*> > beacons_metadata; // senderAS, last egress_if, ingress_if, score, previous_beacon
         std::unordered_map<uint16_t, std::multimap <ld, beacon* > > beacons_sorted_by_score;
         std::unordered_set<beacon*> all_received_beacons;
         std::unordered_map<beacon*, std::unordered_map<uint16_t, beacon*>* > previous_beacon_last_egress_if_map_to_beacons;
@@ -438,7 +438,6 @@ namespace ns3 {
                         beacon* lower_score_beacon = it->second;
                         remote_as->beacons_sorted_by_score.at(src_as).erase(it);
 
-
                         std::tuple<uint16_t, uint16_t, uint16_t, ld, beacon*> removed_beacon_metadata = remote_as->beacons_metadata.at(lower_score_beacon);
 
                         remote_as->beacon_store.at(src_as)->at(std::get<0>(removed_beacon_metadata))->erase(lower_score_beacon);
@@ -486,11 +485,9 @@ namespace ns3 {
                             remote_as->previous_beacon_last_egress_if_map_to_beacons.at(old_beacon)->insert(std::make_pair( self_egress_if_no, lower_score_beacon));
                         }
 
-                        if (remote_as->beacon_store.at(src_as)->find(as_number) == remote_as->beacon_store.at(src_as)->end()) {
-                            remote_as->beacon_store.at(src_as)->insert(std::make_pair(as_number, new beacons_received_from_same_as ()));
+                        if (remote_as->beacon_store.at(src_as)->find(as_number) != remote_as->beacon_store.at(src_as)->end()) {
                             remote_as->beacon_store.at(src_as)->at(as_number)->insert(lower_score_beacon);
                         } else {
-                            remote_as->beacon_store.insert(std::make_pair(src_as, new beacons_with_same_src_as));
                             remote_as->beacon_store.at(src_as)->insert(std::make_pair(as_number, new beacons_received_from_same_as()));
                             remote_as->beacon_store.at(src_as)->at(as_number)->insert(lower_score_beacon);
                         }
