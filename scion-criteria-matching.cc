@@ -433,7 +433,7 @@ namespace ns3 {
 
             if (remote_as->next_round_valid_beacons_count_per_src_as.find(src_as) != remote_as->next_round_valid_beacons_count_per_src_as.end()) {
                 if (remote_as->next_round_valid_beacons_count_per_src_as.at(src_as) >= FIXED_BEACONS_NUMBER_TO_STORE) {
-                    std::multimap <ld, beacon* >::iterator it = remote_as->beacons_sorted_by_score.at(src_as).begin();
+                    std::multimap <ld, beacon* >::iterator it = remote_as->beacons_sorted_by_score.at(src_as)->begin();
                     if (it->first < score) {
                         beacon* lower_score_beacon = it->second;
                         remote_as->beacons_sorted_by_score.at(src_as)->erase(it);
