@@ -127,7 +127,7 @@ namespace ns3 {
 
         // beacon store structures ***************************************************************************************************
         std::unordered_map<uint16_t, beacons_with_same_src_as *> beacon_store;
-        std::unordered_map<beacon*, std::tuple<uint16_t, uint16_t, uint16_t, ld, beacon*> > beacons_metadata; // senderAS, last egress_if, ingress_if, score, previous_beacon
+        std::map<beacon*, std::tuple<uint16_t, uint16_t, uint16_t, ld, beacon*> > beacons_metadata; // senderAS, last egress_if, ingress_if, score, previous_beacon
         std::unordered_map<uint16_t, std::multimap <ld, beacon* >* > beacons_sorted_by_score;
         std::unordered_set<beacon*> all_received_beacons;
         std::unordered_map<beacon*, std::unordered_map<uint16_t, beacon*>* > previous_beacon_last_egress_if_map_to_beacons;
