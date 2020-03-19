@@ -438,6 +438,10 @@ namespace ns3 {
                         beacon* lower_score_beacon = it->second;
                         remote_as->beacons_sorted_by_score.at(src_as)->erase(it);
 
+                        if (lower_score_beacon == initiatorBeacon) {
+                            printf("HEY %ld\n", interfaces_per_neighbor_as.at(remote_as_no).size());
+                        }
+
                         std::tuple<uint16_t, uint16_t, uint16_t, ld, beacon*> removed_beacon_metadata = remote_as->beacons_metadata.at(lower_score_beacon);
 
                         remote_as->beacon_store.at(src_as)->at(std::get<0>(removed_beacon_metadata))->erase(lower_score_beacon);
