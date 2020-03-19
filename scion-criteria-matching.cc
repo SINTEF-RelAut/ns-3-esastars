@@ -472,7 +472,7 @@ namespace ns3 {
                         lower_score_beacon->bwd_stat = bwd;
                         lower_score_beacon->latency_stat = latency;
 
-                        remote_as->beacons_metadata.at(lower_score_beacon) = std::make_tuple(as_number, self_egress_if_no, remote_ingress_if_no, score, old_beacon);
+                        remote_as->beacons_metadata.at(lower_score_beacon) = std::tuple <uint16_t, uint16_t, uint16_t, ld, beacon*>(as_number, self_egress_if_no, remote_ingress_if_no, score, old_beacon);
 
 
                         remote_as->beacons_sorted_by_score.at(src_as)->insert(std::make_pair(score, lower_score_beacon));
@@ -560,7 +560,7 @@ namespace ns3 {
                 remote_as->beacon_store.at(src_as)->at(as_number)->insert(new_beacon);
             }
 
-            beacons_metadata.insert(std::make_pair(new_beacon, std::make_tuple(as_number, self_egress_if_no, remote_ingress_if_no, score, old_beacon)));
+            beacons_metadata.insert(std::make_pair(new_beacon, std::tuple <uint16_t, uint16_t, uint16_t, ld, beacon*>(as_number, self_egress_if_no, remote_ingress_if_no, score, old_beacon)));
 
             if (remote_as->beacons_sorted_by_score.find(src_as) != remote_as->beacons_sorted_by_score.end()) {
                 remote_as->beacons_sorted_by_score.at(src_as)->insert(std::make_pair(score, new_beacon));
