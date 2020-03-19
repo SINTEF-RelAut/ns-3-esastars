@@ -127,7 +127,7 @@ namespace ns3 {
 
         // beacon store structures ***************************************************************************************************
         std::unordered_map<uint16_t, beacons_with_same_src_as *> beacon_store;
-        std::map<beacon*, std::tuple<uint16_t, uint16_t, uint16_t, ld, beacon*> > beacons_metadata; // senderAS, last egress_if, ingress_if, score, previous_beacon
+        std::unordered_map<beacon*, std::tuple<uint16_t, uint16_t, uint16_t, ld, beacon*> > beacons_metadata; // senderAS, last egress_if, ingress_if, score, previous_beacon
         std::unordered_map<uint16_t, std::multimap <ld, beacon* >* > beacons_sorted_by_score;
         std::unordered_set<beacon*> all_received_beacons;
         std::unordered_map<beacon*, std::unordered_map<uint16_t, beacon*>* > previous_beacon_last_egress_if_map_to_beacons;
@@ -560,7 +560,7 @@ namespace ns3 {
                 remote_as->beacon_store.at(src_as)->at(as_number)->insert(new_beacon);
             }
 
-            beacons_metadata.insert(std::make_pair(new_beacon, std::tuple <uint16_t, uint16_t, uint16_t, ld, beacon*>(as_number, self_egress_if_no, remote_ingress_if_no, score, old_beacon)));
+            remote_as->beacons_metadata.insert(std::make_pair(new_beacon, std::tuple <uint16_t, uint16_t, uint16_t, ld, beacon*>(as_number, self_egress_if_no, remote_ingress_if_no, score, old_beacon)));
 
             if (remote_as->beacons_sorted_by_score.find(src_as) != remote_as->beacons_sorted_by_score.end()) {
                 remote_as->beacons_sorted_by_score.at(src_as)->insert(std::make_pair(score, new_beacon));
