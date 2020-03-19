@@ -23,7 +23,7 @@
 
 
 #define FIXED_BEACONS_NUMBER_TO_SEND 5
-#define FIXED_BEACONS_NUMBER_TO_STORE 50
+#define FIXED_BEACONS_NUMBER_TO_STORE 30
 using namespace ns3;
 using namespace std;
 
