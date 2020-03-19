@@ -330,8 +330,10 @@ namespace ns3 {
             uint16_t src_as;
             std::string key;
             if (old_beacon == NULL) {
+                bytes_sent_per_interface_per_period.at(now).at(self_egress_if_no) += (70 + 330);
                 src_as = as_number;
             } else {
+                bytes_sent_per_interface_per_period.at(now).at(self_egress_if_no) += (70 + 330 + 330 * old_beacon->the_path->size());
                 src_as = *old_beacon->the_path->at(0);
                 key = old_beacon->key;
             }
@@ -350,8 +352,7 @@ namespace ns3 {
                 return;
             }
 
-            ld score = ((1 - latency / 1000) * remote_as->latency_coef +
-                        (bwd / 400) * remote_as->bandwidth_coef)
+            ld score = ((1 - latency / 1000) * remote_as->latency_coef + (bwd / 400) * remote_as->bandwidth_coef)
                        /
                        (remote_as->latency_coef + remote_as->bandwidth_coef);
 
@@ -403,14 +404,10 @@ namespace ns3 {
                             remote_as->beacon_store.at(src_as)->insert(std::make_pair(as_number, new beacons_received_from_same_as()));
                             remote_as->beacon_store.at(src_as)->at(as_number)->insert(lower_score_beacon);
                         }
-                        bytes_sent_per_interface_per_period.at(now).at(self_egress_if_no) += (70 + 330 + 330 * old_beacon->the_path->size());
+
                         return;
 
                     } else {
-                        if (old_beacon == NULL && src_as == as_number) {
-                            printf("%ld %ld\n", now, interfaces_per_neighbor_as.at(remote_as_no).size());
-                        }
-                        bytes_sent_per_interface_per_period.at(now).at(self_egress_if_no) += (70 + 330 + 330 * old_beacon->the_path->size());
                         return;
                     }
                 }
@@ -442,14 +439,11 @@ namespace ns3 {
             if (old_beacon == NULL) {
                 new_beacon->next_initiation_time = now;
                 new_beacon->next_expiration_time = now + expiration_period;
-
-                bytes_sent_per_interface_per_period.at(now).at(self_egress_if_no) += (70 + 330);
             } else {
                 new_beacon->next_initiation_time = old_beacon->initiation_time;
                 new_beacon->next_expiration_time = old_beacon->expiration_time;
 
                 *new_path = *(old_beacon->the_path);
-                bytes_sent_per_interface_per_period.at(now).at(self_egress_if_no) += (70 + 330 + 330 * old_beacon->the_path->size());
             }
 
             new_path->push_back(link_info);
