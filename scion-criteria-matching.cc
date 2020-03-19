@@ -500,7 +500,7 @@ namespace ns3 {
 
                     } else {
                         if (old_beacon == initiatorBeacon && src_as == as_number) {
-                            printf("%lld %ld\n", now, interfaces_per_neighbor_as.at(remote_as_no).size());
+                            printf("%ld %ld\n", now, interfaces_per_neighbor_as.at(remote_as_no).size());
                         }
                         bytes_sent_per_interface_per_period.at(now).at(self_egress_if_no) += (70 + 330 + 330 * old_beacon->the_path->size());
                         return;
