@@ -372,10 +372,6 @@ namespace ns3 {
                             remote_as->valid_beacons_count_per_src_as.at(src_as)--;
                         }
 
-                        if (lower_score_beacon->the_path->size() == 1) {
-                            printf("removing path directly from source AS\n");
-                        }
-
                         *lower_score_beacon->the_path = *old_beacon->the_path;
 
                         uint16_t *link_info = new uint16_t[4];
@@ -404,16 +400,11 @@ namespace ns3 {
                             remote_as->beacon_store.at(src_as)->insert(std::make_pair(as_number, new beacons_received_from_same_as()));
                             remote_as->beacon_store.at(src_as)->at(as_number)->insert(lower_score_beacon);
                         }
-
-                        return;
-
-                    } else {
                         return;
                     }
+                    return;
                 }
-
                 remote_as->next_round_valid_beacons_count_per_src_as.at(src_as)++;
-
             } else {
                 remote_as->next_round_valid_beacons_count_per_src_as.insert(std::make_pair(src_as, 1));
             }
