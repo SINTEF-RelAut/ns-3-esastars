@@ -201,7 +201,7 @@ namespace ns3 {
                 }
             }
 
-            std::cout << valid_beacons_count_per_src_as.size() << std::endl; // Print number of source ASes
+            std::cout << as_number << "\t" <<valid_beacons_count_per_src_as.size() << std::endl; // Print number of source ASes
 
         }
 
