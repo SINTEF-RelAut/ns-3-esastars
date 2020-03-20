@@ -133,7 +133,7 @@ namespace ns3 {
         std::unordered_map<uint16_t, uint64_t> next_round_valid_beacons_count_per_src_as;
         // statistics ***************************************************************************************************************
         std::unordered_map<uint16_t, uint64_t> valid_beacons_count_per_src_as;
-        std::unordered_map<int64_t, std::vector<uint16_t> > bytes_sent_per_interface_per_period;
+        std::unordered_map<int64_t, std::vector<uint32_t> > bytes_sent_per_interface_per_period;
 
         myNode(uint16_t as_number, uint32_t system_id, ld latency_coef, ld bandwidth_coef, ld AS_level_diversity_coef,
                ld link_level_diversity_coef) : Node(
@@ -317,7 +317,7 @@ namespace ns3 {
         void DoBeaconing() {
             now = Simulator::Now().ToInteger(Time::NS);
 
-            bytes_sent_per_interface_per_period.insert(std::make_pair(now, std::vector<uint16_t > (GetNDevices(), 0)));
+            bytes_sent_per_interface_per_period.insert(std::make_pair(now, std::vector<uint32_t > (GetNDevices(), 0)));
 
             this->DisseminateBeacons();
             this->InitiateBeacons();
