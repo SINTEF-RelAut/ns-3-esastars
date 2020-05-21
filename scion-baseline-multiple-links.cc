@@ -79,7 +79,7 @@ ld AS_level_jaccard_distance_between_two_paths(beacon *beacon1, beacon *beacon2)
 }
 
 typedef std::vector<beacon *> beacons_with_equal_length;
-typedef std::unordered_map<uint16_t, beacons_with_equal_length *> beacons_with_same_src_as;
+typedef std::map<uint16_t, beacons_with_equal_length *> beacons_with_same_src_as;
 
 
 Time beaconing_period;
