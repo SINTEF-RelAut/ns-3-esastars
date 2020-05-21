@@ -291,7 +291,7 @@ namespace ns3 {
         }
 
         void x() {
-            std::cout << "x" << std::endl;
+            std::cout << "x " << Simulator::Now().ToInteger(Time::NS) << std::endl;
         }
         void DoBeaconing() {
             Simulator::Schedule(Seconds(10.0), &myNode::x, this);
