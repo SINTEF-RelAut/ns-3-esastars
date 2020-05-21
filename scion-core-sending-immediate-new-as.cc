@@ -126,7 +126,7 @@ namespace ns3 {
         // beacon store structures ***************************************************************************************************
         std::unordered_map<uint16_t, beacons_with_same_src_as *> beacon_store;
         std::unordered_map<std::string, beacon *> path_map_to_beacon;
-
+        std::unordered_map<uint16_t, std::unordered_map<uint16_t, beacon*> > src_iface_beacon_map;
         std::unordered_map<uint32_t, std::set<uint16_t> > ASes_on_advertised_paths;//key = Src AS | Dst AS, value = set of ASes on all advertised path to Dst AS from Src AS
 
         // helper structures ********************************************************************************************************
@@ -287,14 +287,11 @@ namespace ns3 {
                     GenerateBeaconAndSend(NULL, self_egress_if_no, remote_as_no, remote_if_no, remote_as,
                                           0.0, inter_as_bwds.at(self_egress_if_no));
                 }
+
             }
         }
 
-        void x() {
-            std::cout << "x " << Simulator::Now().ToInteger(Time::NS) << std::endl;
-        }
         void DoBeaconing() {
-            Simulator::Schedule(Seconds(10.0), &myNode::x, this);
             std::cout << valid_beacons_count_per_src_as.size() << std::endl; // Print number of source ASes
             now = Simulator::Now().ToInteger(Time::NS);
 
@@ -342,6 +339,10 @@ namespace ns3 {
 
             uint16_t src_as;
             std::string key;
+
+            if (old_beacon == NULL && remote_as->valid_beacons_count_per_src_as.find(as_number) == remote_as->valid_beacons_count_per_src_as.end() && remote_as->next_round_valid_beacons_count_per_src_as.find(as_number) == remote_as->next_round_valid_beacons_count_per_src_as.end()) {
+                Simulator::Schedule(Millisecods(1.0), &myNode.BeaconFromSrcFirstTime, remote_as);
+            }
 
             if (old_beacon == NULL) {
                 src_as = as_number;
@@ -407,8 +408,16 @@ namespace ns3 {
             new_path->push_back(link_info);
             remote_as->path_map_to_beacon.insert(std::make_pair(key, new_beacon));
             uint16_t path_len = new_path->size();
+    
+        if (old_beacon == NULL) {
+            if (remote_as->src_iface_beacon_map.find(src_as) == remote_as->src_iface_beacon_map.end()) { 
 
-	    if (remote_as->beacon_store.find(src_as) != remote_as->beacon_store.end() &&
+            } else {
+                
+            }
+        }
+
+        if (remote_as->beacon_store.find(src_as) != remote_as->beacon_store.end() &&
                 remote_as->beacon_store.at(src_as)->find(path_len) != remote_as->beacon_store.at(src_as)->end()) {
 		remote_as->beacon_store.at(src_as)->at(path_len)->push_back(new_beacon);
             } else if (remote_as->beacon_store.find(src_as) != remote_as->beacon_store.end() &&
