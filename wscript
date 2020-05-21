@@ -33,3 +33,8 @@ def build(bld):
                                  ['point-to-point'])
 
     obj.source = 'BGPSec.cc'
+
+    obj = bld.create_ns3_program('scion-core-sending-immediate-new-as',
+                                 ['point-to-point'])
+
+    obj.source = 'scion-core-sending-immediate-new-as.cc'
