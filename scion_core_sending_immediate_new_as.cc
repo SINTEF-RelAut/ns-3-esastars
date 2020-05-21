@@ -290,7 +290,11 @@ namespace ns3 {
             }
         }
 
+        void x() {
+            std::cout << "x" << std::endl;
+        }
         void DoBeaconing() {
+            Simulator::Schedule(Seconds(10.0), &myNode::x, this);
             std::cout << valid_beacons_count_per_src_as.size() << std::endl; // Print number of source ASes
             now = Simulator::Now().ToInteger(Time::NS);
 
