@@ -354,11 +354,13 @@ namespace ns3 {
 
             if (old_beacon == NULL) {
                 src_as = this->as_number;
-                bytes_sent_per_interface_per_period.at(now).at(self_egress_if_no) += (70 + 330);
+                int64_t t = now - now % 600000000000;
+                bytes_sent_per_interface_per_period.at(t).at(self_egress_if_no) += (70 + 330);
             } else {
                 key = old_beacon->key;
                 src_as = *old_beacon->the_path->at(0);
-                bytes_sent_per_interface_per_period.at(now).at(self_egress_if_no) += (70 + 330 + 330 * old_beacon->the_path->size());
+                int64_t t = now - now % 600000000000;
+                bytes_sent_per_interface_per_period.at(t).at(self_egress_if_no) += (70 + 330 + 330 * old_beacon->the_path->size());
             }
 
             // *** For immediately disseminating beacons received from neighbor source as
