@@ -594,6 +594,7 @@ main(int argc, char *argv[]) {
     NodeContainer nodes;
     int16_t node_counter = 0;
     std::map<int32_t, uint16_t> ASes;
+    std::map<uint16_t, int32_t> index_to_AS_no;
 
 
     curNode = rootNode->first_node("node");
@@ -610,7 +611,7 @@ main(int argc, char *argv[]) {
                                        link_level_diversity_coef));
 
         ASes.insert(std::make_pair(as_number, node_counter));
-
+        index_to_AS_no.insert(std::make_pair(node_counter, as_number));
         node_counter++;
 
 
@@ -808,10 +809,10 @@ main(int argc, char *argv[]) {
     for (uint32_t i = 0; i < nodes.GetN(); ++i) {
         Ptr<myNode> the_node = DynamicCast<myNode>(nodes.Get(i));
 
-        std::cout << "From: " << ASes.at(the_node->as_number) << std::endl;
+        std::cout << "From: " << index_to_AS_no.at(the_node->as_number) << std::endl;
 
         for (auto const & [src_as, same_src_as_beacons] : the_node->beacon_store) {
-            std::cout << "\t" << "To: " << ASes.at(ASes.at(src_as)) << std::endl;
+            std::cout << "\t" << "To: " << index_to_AS_no.at(index_to_AS_no.at(src_as)) << std::endl;
 
             for (auto const & same_len_beacons : *same_src_as_beacons) {
                 for (auto const & the_beacon : *same_len_beacons.second) {
@@ -821,7 +822,7 @@ main(int argc, char *argv[]) {
                         if (hop_cnt != 0) {
                             std::cout << ", ";
                         }
-                        std::cout << ASes.at(hop[2]) << ":" << hop[3] << ", " << ASes.at(hop[0]) << ":" << hop[1];
+                        std::cout << index_to_AS_no.at(hop[2]) << ":" << hop[3] << ", " << index_to_AS_no.at(hop[0]) << ":" << hop[1];
                         hop_cnt++;
                     }
                     std::cout << std::endl;
