@@ -803,6 +803,34 @@ main(int argc, char *argv[]) {
         std::cout << diversity_pair.first << "\t" << diversity_pair.second << std::endl;
     }
 
+    std::cout << "################################################ Paths Information ##############################################################" << std::endl;
+
+    for (uint32_t i = 0; i < nodes.GetN(); ++i) {
+        Ptr<myNode> the_node = DynamicCast<myNode>(nodes.Get(i));
+
+        std::cout << "From: " << ASes.at(the_node->as_number) << std::endl;
+
+        for (auto const & [src_as, same_src_as_beacons] : the_node->beacon_store) {
+            std::cout << "\t" << "To: " << ASes.at(ASes.at(src_as)) << std::endl;
+
+            for (auto const & same_len_beacons : *same_src_as_beacons) {
+                for (auto const & the_beacon : *same_len_beacons.second) {
+                    std::cout << "\t" << "\t";
+                    int hop_cnt = 0;
+                    for (auto const & hop : *the_beacon->the_path) {
+                        if (hop_cnt != 0) {
+                            std::cout << ", ";
+                        }
+                        std::cout << ASes.at(hop[2]) << ":" << hop[3] << ", " << ASes.at(hop[0]) << ":" << hop[1];
+                        hop_cnt++;
+                    }
+                    std::cout << std::endl;
+                }
+
+            }
+        }
+
+    }
     Simulator::Destroy();
     return 0;
 }
