@@ -823,7 +823,7 @@ main(int argc, char *argv[]) {
                         if (hop_cnt != 0) {
                             std::cout << ", ";
                         }
-                        std::cout << index_to_AS_no.at(*hop[2]) << ":" << *hop[3] << ", " << index_to_AS_no.at(*hop[0]) << ":" << *hop[1];
+                        std::cout << index_to_AS_no.at((*hop)[2]) << ":" << (*hop)[3] << ", " << index_to_AS_no.at((*hop)[0]) << ":" << (*hop)[1];
                         hop_cnt++;
                     }
                     std::cout << std::endl;
