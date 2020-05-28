@@ -818,11 +818,12 @@ main(int argc, char *argv[]) {
                 for (auto const & the_beacon : *same_len_beacons.second) {
                     std::cout << "\t" << "\t";
                     int hop_cnt = 0;
-                    for (auto const & hop : *the_beacon->the_path) {
+                    std::vector<link_information>::reverse_iterator hop = the_beacon->the_path->rbegin();
+                    for (; hop!= the_beacon->the_path->rend(); ++hop) {
                         if (hop_cnt != 0) {
                             std::cout << ", ";
                         }
-                        std::cout << index_to_AS_no.at(hop[2]) << ":" << hop[3] << ", " << index_to_AS_no.at(hop[0]) << ":" << hop[1];
+                        std::cout << index_to_AS_no.at(*hop[2]) << ":" << *hop[3] << ", " << index_to_AS_no.at(*hop[0]) << ":" << *hop[1];
                         hop_cnt++;
                     }
                     std::cout << std::endl;
