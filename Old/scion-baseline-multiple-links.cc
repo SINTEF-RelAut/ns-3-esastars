@@ -31,10 +31,12 @@ typedef uint16_t *link_information;
 typedef std::vector<link_information> path;
 
 struct beacon {
-    int64_t initiation_time, expiration_time, next_initiation_time, next_expiration_time;
+    int64_t initiation_time, expiration_time, next_initiation_time, next_expiration_time; // TODO: Why is there a next here?
     ld latency_stat, bwd_stat;
     path *the_path;
-    std::string key;
+    std::string key; // TODO: Shortened version of path (only AS-nr and egress-nr, non of the remote data)
+    // Maybe we can call this forward_path or sth? Or we could even have a neat function computing this on the fly?..
+    // depends if memory or computation time is more critical.
     bool is_new, is_valid;
 };
 
@@ -86,6 +88,7 @@ Time beaconing_period;
 int64_t expiration_period;
 
 ld calculate_great_circle_latency(ld lat1_deg, ld long1_deg, ld lat2_deg, ld long2_deg) {
+    // TODO: Approximation. This same one needs to be used for the BGP simulation parts to make the two comparable
     ld lat1 = lat1_deg * (M_PI) / 180;
     ld long1 = long1_deg * (M_PI) / 180;
     ld lat2 = lat2_deg * (M_PI) / 180;
@@ -106,12 +109,15 @@ ld calculate_great_circle_latency(ld lat1_deg, ld long1_deg, ld lat2_deg, ld lon
 namespace ns3 {
 
     class myNode : public Node {
+        // TODO: Consider using aggregation instead of extension. But might be overkill for our purposes
+        // https://www.nsnam.org/docs/manual/html/object-model.html
+        // Many problems cause of scaling => This is why the typical ns-3 framework was not used.
 
     public:
 
         //AS properties
         uint16_t as_number;
-        int64_t now;
+        int64_t now; // TODO: Why is this part of the node?
         ld latency_coef, bandwidth_coef, AS_level_diversity_coef, link_level_diversity_coef;
         int32_t AS_max_bwd;
 
@@ -159,7 +165,8 @@ namespace ns3 {
                                                                                     interfaces_coordinates.at(
                                                                                             j).second);
                     intra_as_latencies.at(j).at(i) = intra_as_latencies.at(i).at(j);
-
+                    // TODO: This thing could be halved in size since it's symmetrical. Just call an index function which orders
+                    // the AS numbers and you only need half the memory. Since this is on every node, might make a difference
                 }
             }
 
@@ -177,20 +184,20 @@ namespace ns3 {
             if (as_number == 0) {
                 std::cout << "################################## " << now << " #########################################" << std::endl;
             }
-
             for (auto const &pair:path_map_to_beacon) {
-                beacon *the_beacon = pair.second;
-                if (the_beacon->is_new) {
+                // TODO: Consider saving source AS. => We could have a function directly on the beacon
+                beacon *the_beacon = pair.second; // ptr
+                if (the_beacon->is_new) { // process => otherwise old beacon
                     the_beacon->is_new = false;
 
                     if (the_beacon->next_expiration_time > now) {
 
                         if (!the_beacon->is_valid) {
                             if (valid_beacons_count_per_src_as.find(*the_beacon->the_path->at(0)) !=
-                                valid_beacons_count_per_src_as.end()) {
+                                valid_beacons_count_per_src_as.end()) { // Entry exists
                                 valid_beacons_count_per_src_as.at(*the_beacon->the_path->at(0))++;
                             } else {
-                                valid_beacons_count_per_src_as.insert(
+                                valid_beacons_count_per_src_as.insert( // new Entry
                                         std::make_pair(*the_beacon->the_path->at(0), 1));
                             }
                         }
@@ -200,26 +207,24 @@ namespace ns3 {
                         the_beacon->expiration_time = the_beacon->next_expiration_time;
                     }
                 }
-
-                if (the_beacon->expiration_time <= now && the_beacon->is_valid) {
-                    the_beacon->is_valid = false;
+                if (the_beacon->expiration_time <= now && the_beacon->is_valid) { // TODO: should be the other way round for efficiency?
+                    the_beacon->is_valid = false; // Check for validity and invalidate if expiration time is up
                     valid_beacons_count_per_src_as.at(*the_beacon->the_path->at(0)) =
                             valid_beacons_count_per_src_as.at(*the_beacon->the_path->at(0)) - 1;
                     next_round_valid_beacons_count_per_src_as.at(*the_beacon->the_path->at(0)) =
                             next_round_valid_beacons_count_per_src_as.at(*the_beacon->the_path->at(0)) - 1;
                 }
             }
-
         }
 
         void DisseminateBeacons() {
 #pragma omp parallel for
             for (uint32_t i = 0; i < neighbors.size(); ++i) { // Per destination AS
-		uint16_t remote_as_no = neighbors.at(i);
+		        uint16_t remote_as_no = neighbors.at(i);
 
                 for (auto const &beacon_store_entry : beacon_store) { // Per source AS
                     uint16_t src_as_no = beacon_store_entry.first;
-                    beacons_with_same_src_as *equal_src_as_beacons = beacon_store_entry.second;
+                    beacons_with_same_src_as *equal_src_as_beacons = beacon_store_entry.second; // get all beacons to source as
 
                     int16_t  sent_count = 0;
 
@@ -243,7 +248,7 @@ namespace ns3 {
 
                             bool generates_loop = false;
                             for (auto const &link_info : *the_beacon->the_path) { // remove loops
-                                if (link_info[0] == remote_as_no) {
+                                if (link_info[0] == remote_as_no) { // Look at every hop and check if neighbour already present
                                     generates_loop = true;
                                     break;
                                 }
@@ -274,7 +279,7 @@ namespace ns3 {
 
                     Ptr<PointToPointChannel> channel = DynamicCast<PointToPointChannel>(
                             self_egress_device->GetChannel());
-                    uint32_t wire = self_egress_device == channel->GetSource(0) ? 0 : 1;
+                    uint32_t wire = self_egress_device == channel->GetSource(0) ? 0 : 1; // 0 if the same, 1 otherwise
                     Ptr<PointToPointNetDevice> remote_device = channel->GetDestination(wire);
 
                     uint16_t remote_if_no = (uint16_t) remote_device->GetIfIndex();
@@ -291,7 +296,7 @@ namespace ns3 {
         }
 
         void DoBeaconing() {
-            std::cout << valid_beacons_count_per_src_as.size() << std::endl; // Print number of source ASes
+            std::cout << valid_beacons_count_per_src_as.size() << std::endl; // Print size of storage (from how many ASes have we already gotten beacons)
             now = Simulator::Now().ToInteger(Time::NS);
 
             bytes_sent_per_interface_per_period.insert(std::make_pair(now, std::vector<uint32_t > (GetNDevices(), 0)));
@@ -341,7 +346,7 @@ namespace ns3 {
 
             if (old_beacon == NULL) {
                 src_as = as_number;
-                bytes_sent_per_interface_per_period.at(now).at(self_egress_if_no) += (70 + 330);
+                bytes_sent_per_interface_per_period.at(now).at(self_egress_if_no) += (70 + 330); // TODO: Seyedali explained, make descriptive constants
             } else {
                 key = old_beacon->key;
                 src_as = *old_beacon->the_path->at(0);
@@ -351,33 +356,32 @@ namespace ns3 {
             key = key + std::string((char *) &as_number, 2) + std::string((char *) &self_egress_if_no, 2);
 
             if (remote_as->path_map_to_beacon.find(key) != remote_as->path_map_to_beacon.end()) {
-                if (old_beacon == NULL) {
+                if (old_beacon == NULL) { // First time this is sent
                     remote_as->path_map_to_beacon.at(key)->next_initiation_time = now;
-		    remote_as->path_map_to_beacon.at(key)->next_expiration_time = now + expiration_period;
+		            remote_as->path_map_to_beacon.at(key)->next_expiration_time = now + expiration_period;
                 } else {
                     remote_as->path_map_to_beacon.at(key)->next_initiation_time = old_beacon->initiation_time;
                     remote_as->path_map_to_beacon.at(key)->next_expiration_time = old_beacon->expiration_time;
                 }
-                remote_as->path_map_to_beacon.at(key)->is_new = true;
-                return;
+                remote_as->path_map_to_beacon.at(key)->is_new = true; // declare that this already seen beacon was sent again at dest AS
+                return; // TODO: Consider just enveloping the rest in an else block? This is slightly confusing...
             }
-
             if (remote_as->next_round_valid_beacons_count_per_src_as.find(src_as) !=
                     remote_as->next_round_valid_beacons_count_per_src_as.end()) {
                 if (remote_as->next_round_valid_beacons_count_per_src_as.at(src_as) >= FIXED_BEACONS_NUMBER_TO_STORE) {
-                    return;
+                    return; // If limit reached, ignore?? TODO: (is this done consistently?)
                 }
-                remote_as->next_round_valid_beacons_count_per_src_as.at(src_as)++;
+                remote_as->next_round_valid_beacons_count_per_src_as.at(src_as)++; // update
             } else {
-                remote_as->next_round_valid_beacons_count_per_src_as.insert(std::make_pair(src_as, 1));
+                remote_as->next_round_valid_beacons_count_per_src_as.insert(std::make_pair(src_as, 1)); // update if first entry
             }
-
+            // Copy beacon
             beacon *new_beacon = new beacon;
             path *new_path = new path;
             new_beacon->the_path = new_path;
             new_beacon->bwd_stat = bwd;
             new_beacon->latency_stat = latency;
-
+            // update new link info (this should prolly be at the start for legibility's sake as a comment)
             uint16_t *link_info = new uint16_t[4];
             link_info[0] = as_number;
             link_info[1] = self_egress_if_no;
@@ -404,18 +408,18 @@ namespace ns3 {
             remote_as->path_map_to_beacon.insert(std::make_pair(key, new_beacon));
             uint16_t path_len = new_path->size();
 
-	    if (remote_as->beacon_store.find(src_as) != remote_as->beacon_store.end() &&
-                remote_as->beacon_store.at(src_as)->find(path_len) != remote_as->beacon_store.at(src_as)->end()) {
-		remote_as->beacon_store.at(src_as)->at(path_len)->push_back(new_beacon);
-            } else if (remote_as->beacon_store.find(src_as) != remote_as->beacon_store.end() &&
-                       remote_as->beacon_store.at(src_as)->find(path_len) == remote_as->beacon_store.at(src_as)->end()) {
-		    remote_as->beacon_store.at(src_as)->insert(std::make_pair(path_len, new beacons_with_equal_length(1, new_beacon)));
-
-            } else {
-                remote_as->beacon_store.insert(std::make_pair(src_as, new beacons_with_same_src_as));
-		remote_as->beacon_store.at(src_as)->insert(std::make_pair(path_len, new beacons_with_equal_length(1, new_beacon)));
+            // TODO: declutter this if (one more lvl of nesting would be more clear)
+            if (remote_as->beacon_store.find(src_as) != remote_as->beacon_store.end() && // there is already an entry for the as, & the path length
+                    remote_as->beacon_store.at(src_as)->find(path_len) != remote_as->beacon_store.at(src_as)->end()) {
+                    remote_as->beacon_store.at(src_as)->at(path_len)->push_back(new_beacon);
+                } else if (remote_as->beacon_store.find(src_as) != remote_as->beacon_store.end() && // there is an entry for AS, but not path length
+                           remote_as->beacon_store.at(src_as)->find(path_len) == remote_as->beacon_store.at(src_as)->end()) {
+                    remote_as->beacon_store.at(src_as)->insert(std::make_pair(path_len, new beacons_with_equal_length(1, new_beacon)));
+                } else { // None of the entries exist yet
+                    remote_as->beacon_store.insert(std::make_pair(src_as, new beacons_with_same_src_as));
+                    remote_as->beacon_store.at(src_as)->insert(std::make_pair(path_len, new beacons_with_equal_length(1, new_beacon)));
+                }
             }
-        }
 
         std::pair<ld, ld> calculate_final_diversity_scores(beacon *the_beacon) {
             ld AS_level_diversity_score = 0;
@@ -445,6 +449,7 @@ namespace ns3 {
             for (auto const &pair:path_map_to_beacon) {
                 beacon *the_beacon = pair.second;
                 if (the_beacon->is_valid) {
+                    // (AS-lvl average jaccard distance, link-lvl average jaccard distance)
                     std::pair<ld, ld> diversity_scores = this->calculate_final_diversity_scores(the_beacon);
                     ld AS_level_diversity_score = diversity_scores.first;
                     ld link_level_diversity_score = diversity_scores.second;
@@ -495,7 +500,7 @@ public:
         if (it != this->properties.end())
             return it->second;
         else
-            exit(1);
+            exit(1); // TODO: How about throwing an error message here?
 
     }
 
@@ -579,10 +584,11 @@ main(int argc, char *argv[]) {
     fin.close();
 
     std::string xmlData = sstr.str();
+
     rapidxml::xml_document<> doc;
     doc.parse<0>(&xmlData[0]);
 
-    rapidxml::xml_node<> *rootNode = doc.first_node("topology");
+    rapidxml::xml_node<> *rootNode = doc.first_node("topology"); // the first node is a 'topology' node
     rapidxml::xml_node<> *curNode;
 /**/
     if (!rootNode) {
@@ -601,6 +607,8 @@ main(int argc, char *argv[]) {
         int32_t as_number = std::stoi(getAttribute(curNode, "id"));
         PropertyContainer p = parseProperties(curNode);
 
+        // REQUIRED:
+        // If these coefficients are not defined in the xml file as properties, the program will abort.
         ld latency_coef = std::stod(p.getProperty("latency_coef"));
         ld bandwidth_coef = std::stod(p.getProperty("bandwidth_coef"));
         ld AS_level_diversity_coef = std::stod(p.getProperty("AS_level_diversity_coef"));
@@ -613,7 +621,6 @@ main(int argc, char *argv[]) {
 
         node_counter++;
 
-
         curNode = curNode->next_sibling("node");
     }
 
@@ -625,10 +632,9 @@ main(int argc, char *argv[]) {
 
         PropertyContainer p = parseProperties(curNode);
 
-
         ld latitude = std::stod(p.getProperty("latitude"));
-	ld longitude = std::stod(p.getProperty("longitude"));
-	int32_t bwd = std::stoi(p.getProperty("capacity"));
+	    ld longitude = std::stod(p.getProperty("longitude"));
+	    int32_t bwd = std::stoi(p.getProperty("capacity"));
 
 
         Ptr<Node> fromNode;
@@ -653,6 +659,10 @@ main(int argc, char *argv[]) {
         PointToPointHelper helper;
         helper.Install(fromNode, toNode);
 
+        // TODO: Why are we doing the dynamic cast twice?
+        // If you need to dynamic cast anyways in the loops to get to as_nr, just save them directly??
+        // Especially if you say you have memory issues.. the 'fromNode', 'toNode' pointers never get deleted
+        // They do get reassigned after each while tho, but is this enough in CPP to prevent memory leaks? (look up)
         Ptr<myNode> to_my_node = (DynamicCast<ns3::myNode>(toNode));
         Ptr<myNode> from_my_node = (DynamicCast<ns3::myNode>(fromNode));
 
@@ -694,6 +704,9 @@ main(int argc, char *argv[]) {
 
     for (Time t = Seconds(0.0); t < Time(argv[3]); t += beaconing_period) {
         Simulator::Schedule(t + Seconds(30.0), &ProcessReceivedPacketsParallel, nodes);
+        // TODO: 30 Seconds is chosen as an arbitrary time after the beaconing period => Should prolly be
+        // relative to the actual beaconing period, or it might end up happening after if the beaconing period is chosen small
+        // See Seyedali's explanation on Riot.
 
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             Ptr<myNode> the_node = DynamicCast<myNode>(nodes.Get(i));
@@ -731,7 +744,7 @@ main(int argc, char *argv[]) {
     }
 
     //############################################################################################################################################################
-    for (int path_length = 1; path_length <= 4; ++path_length) {
+    for (int path_length = 1; path_length <= 4; ++path_length) { // TODO: Why is this 4 hardcoded? shouldn't we look for the longest possible path instead? (check with Seyedali)
         std::cout
                 << "######################################### frequencies of path counts per source AS with length "
                 << path_length - 1
