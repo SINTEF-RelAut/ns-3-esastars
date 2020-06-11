@@ -10,9 +10,9 @@
 
 class BeaconingStrategy{
 public:
-    virtual void InitiateBeacons(std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces, SCION_Node *node) = 0;
-    virtual void DisseminateBeacons(std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces, SCION_Node *node) = 0;
-    virtual void processImmediateReceive() = 0;
+    virtual void InitiateBeacons(std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces, SCION_Node* node) = 0;
+    virtual void DisseminateBeacons(std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces, SCION_Node* node) = 0;
+    virtual void processImmediateReceive(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon, std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces, SCION_Node* node) = 0;
 
 protected:
     static bool generates_loop(beacon const* the_beacon, uint16_t remote_as_no);
