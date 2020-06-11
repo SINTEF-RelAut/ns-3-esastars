@@ -51,7 +51,7 @@ void BeaconingStrategy::DoBeaconing(SCION_Node* node) { // TODO: Second argument
     this->InitiateBeacons();
 }
 
-bool BeaconingStrategy::generates_loop(beacon * the_beacon, uint16_t remote_as_no){
+bool BeaconingStrategy::generates_loop(beacon const* the_beacon, uint16_t remote_as_no){
     for (auto const &link_info : *the_beacon->the_path) { // remove loops
         if (link_info[0] == remote_as_no) {
             return true;
