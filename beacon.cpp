@@ -3,3 +3,4 @@
 //
 
 #include "beacon.h"
+// TODO: Implement key member function here if we decide to do this
