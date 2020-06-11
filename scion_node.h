@@ -2,6 +2,11 @@
 // Created by chrissy on 10.06.20.
 //
 
+// TODO: Should this really be here? Or is that something we wanna customize on the node?
+// TODO: Also why not use constants?
+#define FIXED_BEACONS_NUMBER_TO_SEND 5
+#define FIXED_BEACONS_NUMBER_TO_STORE 50
+
 #ifndef SCION_BEACONING_SIMMULATOR_SCION_NODE_H
 #define SCION_BEACONING_SIMMULATOR_SCION_NODE_H
 //#include "ns3/core-module.h"
