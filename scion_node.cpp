@@ -4,10 +4,12 @@
 
 #include "scion_node.h"
 #include "utils.h"
+#include "ns3/core-module.h"
+#include "beacon.h"
 
 void SCION_Node::DoInitializations() {
     intra_as_latencies.resize(GetNDevices());
-    for (uint64_t i = 0; i < GetNDevices(); ++i) {
+    for (uint64_t i = 0; i < Node::GetNDevices(); ++i) {
         intra_as_latencies.at(i).resize(GetNDevices());
     }
 

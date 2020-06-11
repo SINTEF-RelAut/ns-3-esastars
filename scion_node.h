@@ -6,11 +6,12 @@
 #define SCION_BEACONING_SIMMULATOR_SCION_NODE_H
 //#include "ns3/core-module.h"
 #include "beacon.h"
+#include "beaconing_strategy.h"
 #include "ns3/network-module.h"
-#include <unordered_set>
 //#include "ns3/point-to-point-helper.h"
 //#include "ns3/point-to-point-net-device.h"
 //#include "ns3/point-to-point-channel.h"
+#include <unordered_set>
 
 // TODO: Think about how to unify these?? Seyedali proposed to change all to set
 typedef std::unordered_set<beacon *> beacons_received_from_same_as;
@@ -47,7 +48,7 @@ public:
     std::unordered_map<uint16_t, uint64_t> next_round_valid_beacons_count_per_src_as;
 
     // statistics ***************************************************************************************************************
-    BeaconingStrategy stragegy; // TODO
+    BeaconingStrategy stragegy; // TODO: Initialize somewhere
 
     // statistics ***************************************************************************************************************
     std::unordered_map<uint16_t, uint64_t> valid_beacons_count_per_src_as;
