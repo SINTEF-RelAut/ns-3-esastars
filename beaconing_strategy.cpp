@@ -4,13 +4,13 @@
 
 #include "beaconing_strategy.h"
 
-void BeaconingStrategy::AdjustBeaconValidity (beacon* the_beacon, SCION_Node* node) {
-        node->now = Simulator::Now().ToInteger(Time::NS);
+void BeaconingStrategy::AdjustBeaconValidity (SCION_Node* node) {
+        node->now = ns3::Simulator::Now().ToInteger(ns3::Time::NS);
+        uint16_t src_as = node->as_number;
 
-        if (node->as_number == 0) {
+        if (src_as == 0) { // TODO: Move one lvl up to avoid race condition
             std::cout << "################################## " << node->now << " #########################################" << std::endl;
         }
-
 
         for (auto const &the_beacon_pair:node->path_map_to_beacon) {
             beacon* the_beacon = the_beacon_pair.second;
@@ -40,18 +40,17 @@ void BeaconingStrategy::AdjustBeaconValidity (beacon* the_beacon, SCION_Node* no
             }
         }
 
+        if (node->valid_beacons_count_per_src_as.at(src_as) == 0) {
+             node->valid_beacons_count_per_src_as.erase(src_as);
+        }
+
+        if (node->next_round_valid_beacons_count_per_src_as.at(src_as) == 0) {
+             node->next_round_valid_beacons_count_per_src_as.erase(src_as);
+         }
+
         std::cout << node->as_number << "\t" <<node->valid_beacons_count_per_src_as.size() << std::endl; // Print number of source ASes
 
 }
-
-
-//if (node->valid_beacons_count_per_src_as.at(src_as) == 0) {
-//    node->valid_beacons_count_per_src_as.erase(src_as);
-//}
-
-//if (node->next_round_valid_beacons_count_per_src_as.at(src_as) == 0) {
-//    node->next_round_valid_beacons_count_per_src_as.erase(src_as);
-//}
 
 // TODO: Is this needed here? Or will this functionality be in the Core & Leaf AS?
 void BeaconingStrategy::DoBeaconing(SCION_Node* node) { // TODO: Second argument for the "allowed interfaces"?

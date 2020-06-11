@@ -16,7 +16,7 @@ public:
 
 protected:
     static bool generates_loop(beacon const* the_beacon, uint16_t remote_as_no);
-    static void AdjustBeaconValidity (beacon* the_beacon, SCION_Node* node);
+    static void AdjustBeaconValidity (SCION_Node* node);
     static void DoBeaconing(SCION_Node* node);
 };
 #endif //SCION_BEACONING_SIMMULATOR_BEACONING_STRATEGY_H
