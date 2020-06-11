@@ -109,3 +109,17 @@ void Baseline::processImmediateReceive(uint16_t src_as_no, uint16_t ingress_if, 
 
     }
 }
+
+void Baseline::UpdateBeaconStoreAndCountersBeforeBeaconing(SCION_Node* node) {
+    node->now = ns3::Simulator::Now().ToInteger(ns3::Time::NS);
+
+    if (node->as_number == 0) { // TODO: Move this to avoid race condition
+        std::cout << "################################## " << node->now << " #########################################" << std::endl;
+    }
+
+    for (auto const &pair:node->path_map_to_beacon) {
+        beacon *the_beacon = pair.second;
+        AdjustBeaconValidity(the_beacon, node);
+    }
+
+}
