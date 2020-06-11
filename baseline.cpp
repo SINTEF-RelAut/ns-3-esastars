@@ -57,7 +57,27 @@ void Baseline::DisseminateBeacons(std::unordered_map<uint16_t, std::vector<uint1
 
                     sent_count++;
 
-                    this->send_beacon_to_all_interfaces_with_same_remote_as(the_beacon, remote_as_no);
+                    // Iterate over all the valid interfaces of this remote AS and send the beacons
+                    for (auto egress_interface_no: interfaces){
+                        ns3::Ptr<ns3::PointToPointNetDevice> self_egress_device = DynamicCast<ns3::PointToPointNetDevice>(node->GetDevice(egress_interface_no));
+
+                        ns3::Ptr<ns3::PointToPointChannel> channel = DynamicCast<ns3::PointToPointChannel>(self_egress_device->GetChannel());
+                        uint32_t wire = self_egress_device == channel->GetSource(0) ? 0 : 1;
+                        ns3::Ptr<ns3::PointToPointNetDevice> remote_device = channel->GetDestination(wire);
+
+                        uint16_t remote_ingress_if_no = (uint16_t) remote_device->GetIfIndex();
+
+                        ns3::Ptr<SCION_Node> remote_as = (DynamicCast<SCION_Node>(remote_device->GetNode()));
+
+                        ld latency = the_beacon->latency_stat + node->intra_as_latencies.at(the_beacon->the_path->back()[3]).at(egress_interface_no);
+                        ld bwd = the_beacon->bwd_stat > (ld) node->inter_as_bwds.at(egress_interface_no)
+                                 ? (ld) node->inter_as_bwds.at(egress_interface_no)
+                                 : the_beacon->bwd_stat;
+
+
+                        GenerateBeaconAndSend(the_beacon, egress_interface_no, remote_as_no, remote_ingress_if_no,
+                                              remote_as, latency, bwd, false, 0.0);
+                    }
                 }
             }
         }
@@ -109,3 +129,4 @@ void Baseline::processImmediateReceive(uint16_t src_as_no, uint16_t ingress_if, 
 
     }
 }
+
