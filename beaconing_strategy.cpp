@@ -72,6 +72,6 @@ void BeaconingStrategy::UpdateBeaconStoreAndCountersBeforeBeaconing(SCION_Node *
         beacon* the_beacon = the_beacon_pair.second;
         AdjustBeaconValidity(the_beacon, node);
     }
-    
+
     std::cout << node->as_number << "\t" <<node->valid_beacons_count_per_src_as.size() << std::endl; // Print number of source ASes
 }
