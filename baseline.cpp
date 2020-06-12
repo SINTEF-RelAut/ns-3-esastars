@@ -84,6 +84,130 @@ void Baseline::DisseminateBeacons(std::unordered_map<uint16_t, std::vector<uint1
     }
 }
 
+void Baseline::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_as_no, uint16_t remote_ingress_if_no,
+                      SCION_Node* node, ns3::Ptr<SCION_Node> remote_as,
+                      ld latency, ld bwd, bool immediate, ld latency_for_immediate) {
+
+
+    uint16_t src_as;
+    std::string key;
+
+    bool immediate_src = false;
+    bool immediate_non_src = false;
+
+    if (old_beacon == NULL) {
+        src_as = node->as_number;
+        // TODO: Have some descriptive constants somewhere
+        int64_t t = node->now - node->now % 600000000000;
+        node->bytes_sent_per_interface_per_period.at(t).at(self_egress_if_no) += (70 + 330);
+    } else {
+        key = old_beacon->key;
+        src_as = *old_beacon->the_path->at(0);
+        int64_t t = node->now - node->now % 600000000000;
+        node->bytes_sent_per_interface_per_period.at(t).at(self_egress_if_no) += (70 + 330 + 330 * old_beacon->the_path->size());
+    }
+
+    // *** For immediately disseminating beacons received from neighbor source as
+    if (old_beacon == NULL
+        && remote_as->valid_beacons_count_per_src_as.find(src_as) == remote_as->valid_beacons_count_per_src_as.end()
+        && remote_as->next_round_valid_beacons_count_per_src_as.find(src_as) == remote_as->next_round_valid_beacons_count_per_src_as.end()) {
+        immediate_src = true;
+
+    }
+
+    if (immediate) {
+        if (remote_as->next_round_valid_beacons_count_per_src_as.find(src_as) == remote_as->next_round_valid_beacons_count_per_src_as.end() ||
+            remote_as->next_round_valid_beacons_count_per_src_as.at(src_as) < 5) {
+            immediate_non_src = true;
+        }
+    }
+    // ***
+
+    key = key + std::string((char *) &node->as_number, 2) + std::string((char *) &self_egress_if_no, 2);
+
+    if (remote_as->path_map_to_beacon.find(key) != remote_as->path_map_to_beacon.end()) {
+        if (old_beacon == NULL) {
+            remote_as->path_map_to_beacon.at(key)->next_initiation_time = now;
+            remote_as->path_map_to_beacon.at(key)->next_expiration_time = now + expiration_period;
+        } else {
+            remote_as->path_map_to_beacon.at(key)->next_initiation_time = old_beacon->initiation_time;
+            remote_as->path_map_to_beacon.at(key)->next_expiration_time = old_beacon->expiration_time;
+        }
+        remote_as->path_map_to_beacon.at(key)->is_new = true;
+        return;
+    }
+
+    if (remote_as->next_round_valid_beacons_count_per_src_as.find(src_as) !=
+        remote_as->next_round_valid_beacons_count_per_src_as.end()) {
+        if (remote_as->next_round_valid_beacons_count_per_src_as.at(src_as) >= FIXED_BEACONS_NUMBER_TO_STORE) {
+            return;
+        }
+        remote_as->next_round_valid_beacons_count_per_src_as.at(src_as)++;
+    } else {
+        remote_as->next_round_valid_beacons_count_per_src_as.insert(std::make_pair(src_as, 1));
+    }
+
+    beacon *new_beacon = new beacon;
+    path *new_path = new path;
+    new_beacon->the_path = new_path;
+    new_beacon->bwd_stat = bwd;
+    new_beacon->latency_stat = latency;
+
+    uint16_t *link_info = new uint16_t[4];
+    link_info[0] = node->as_number;
+    link_info[1] = self_egress_if_no;
+    link_info[2] = remote_as_no;
+    link_info[3] = remote_ingress_if_no;
+
+    new_beacon->initiation_time = -1;
+    new_beacon->expiration_time = -1;
+    new_beacon->key = key;
+    new_beacon->is_new = true;
+    new_beacon->is_valid = false;
+
+    if (old_beacon == NULL) {
+        new_beacon->next_initiation_time = node->now;
+        new_beacon->next_expiration_time = node->now + node->expiration_period;
+    } else {
+        new_beacon->next_initiation_time = old_beacon->initiation_time;
+        new_beacon->next_expiration_time = old_beacon->expiration_time;
+
+        *new_path = *(old_beacon->the_path);
+    }
+
+    new_path->push_back(link_info);
+    remote_as->path_map_to_beacon.insert(std::make_pair(key, new_beacon));
+    uint16_t path_len = new_path->size();
+
+    if (remote_as->beacon_store.find(src_as) != remote_as->beacon_store.end() &&
+        remote_as->beacon_store.at(src_as)->find(path_len) != remote_as->beacon_store.at(src_as)->end()) {
+        // TODO: Unification
+        remote_as->beacon_store.at(src_as)->at(path_len)->push_back(new_beacon);
+    } else if (remote_as->beacon_store.find(src_as) != remote_as->beacon_store.end() &&
+               remote_as->beacon_store.at(src_as)->find(path_len) == remote_as->beacon_store.at(src_as)->end()) {
+        // TODO: Unification
+        remote_as->beacon_store.at(src_as)->insert(std::make_pair(path_len, new beacons_with_equal_length(1, new_beacon)));
+
+    } else {
+        remote_as->beacon_store.insert(std::make_pair(src_as, new beacons_with_same_src_as));
+        // TODO: Unification
+        remote_as->beacon_store.at(src_as)->insert(std::make_pair(path_len, new beacons_with_equal_length(1, new_beacon)));
+    }
+
+    if (immediate_src) {
+        // TODO: Call right function once you have implemented the core & non-core AS classes (type of remote AS!)
+        // virtual void processImmediateReceive(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon, std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces, SCION_Node* node) = 0;
+        ns3::Simulator::Schedule(ns3::MilliSeconds(1), &myNode::processImmediateReceive, remote_as, src_as, remote_ingress_if_no, new_beacon);
+    }
+
+    if (immediate_non_src) {
+        uint64_t delay = (uint64_t) (latency_for_immediate * 1000000);
+        // TODO: Call right function once you have implemented the core & non-core AS classes
+        ns3::Simulator::Schedule(ns3::NanoSeconds(delay), &myNode::processImmediateReceive, remote_as, src_as, remote_ingress_if_no, new_beacon);
+    }
+
+}
+
 void Baseline::processImmediateReceive(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon, std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces, SCION_Node* node){
     if (node->valid_beacons_count_per_src_as.find(src_as_no) != node->valid_beacons_count_per_src_as.end()) {
         return; // only process unknown beacons immediately

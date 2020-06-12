@@ -7,13 +7,12 @@
 #include "beaconing_strategy.h"
 class Baseline : public BeaconingStrategy{
 public:
-    virtual void InitiateBeacons(std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces, SCION_Node* node);
-    virtual void DisseminateBeacons(std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces, SCION_Node* node);
-    virtual void processImmediateReceive(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon, std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces,SCION_Node* node);
+    void InitiateBeacons(std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces, SCION_Node* node) override;
+    void DisseminateBeacons(std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces, SCION_Node* node) override;
+    void processImmediateReceive(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon, std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces,SCION_Node* node) override;
 private:
-    void UpdateBeaconStoreAndCountersBeforeBeaconing(SCION_Node* node);
-    void GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_as_no,
-            uint16_t remote_ingress_if_no, ns3::Ptr<SCION_Node> remote_as, ld latency, ld bwd,
-            bool immediate, ld latency_for_immediate);
+    static void GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_as_no, uint16_t remote_ingress_if_no,
+                               SCION_Node* node, ns3::Ptr<SCION_Node> remote_as,
+                               ld latency, ld bwd, bool immediate, ld latency_for_immediate);
 };
 #endif //SCION_BEACONING_SIMMULATOR_BASELINE_H
