@@ -195,15 +195,13 @@ void Baseline::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if
     }
 
     if (immediate_src) {
-        // TODO: Call right function once you have implemented the core & non-core AS classes (type of remote AS!)
         // virtual void processImmediateReceive(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon, std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces, SCION_Node* node) = 0;
-        ns3::Simulator::Schedule(ns3::MilliSeconds(1), &myNode::processImmediateReceive, remote_as, src_as, remote_ingress_if_no, new_beacon);
+        ns3::Simulator::Schedule(ns3::MilliSeconds(1), &SCION_Node::ProcessReceivedBeacons, remote_as, src_as, remote_ingress_if_no, new_beacon);
     }
 
     if (immediate_non_src) {
         uint64_t delay = (uint64_t) (latency_for_immediate * 1000000);
-        // TODO: Call right function once you have implemented the core & non-core AS classes
-        ns3::Simulator::Schedule(ns3::NanoSeconds(delay), &myNode::processImmediateReceive, remote_as, src_as, remote_ingress_if_no, new_beacon);
+        ns3::Simulator::Schedule(ns3::NanoSeconds(delay), &SCION_Node::ProcessReceivedBeacons, remote_as, src_as, remote_ingress_if_no, new_beacon);
     }
 
 }
