@@ -3,3 +3,15 @@
 //
 
 #include "scion_as.h"
+
+void SCION_As::CoreBeaconing() {
+
+}
+
+void SCION_As::IntraISDBeaconing() {
+
+}
+
+void SCION_As::ProcessReceivedBeacons() {
+    
+}
