@@ -12,10 +12,6 @@ void SCION_Core_As::IntraISDBeaconing() {
 
 }
 
-void SCION_Core_As::ProcessReceivedBeacons() {
-
-}
-
 std::unordered_map<uint16_t, std::vector<uint16_t>> SCION_Core_As::select_valid_interfaces(){
 
 }

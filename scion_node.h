@@ -73,7 +73,7 @@ public:
 
     virtual void IntraISDBeaconing() = 0;
 
-    virtual void ProcessReceivedBeacons() = 0;
+    void ProcessReceivedBeacons(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon);
 
     void FinalPathEvaluation(std::map<ld, uint64_t> &satisfaction_stat,
                              std::map<ld, uint64_t> &AS_level_diversity_stat,
