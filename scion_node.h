@@ -79,6 +79,9 @@ public:
                              std::map<ld, uint64_t> &AS_level_diversity_stat,
                              std::map<ld, uint64_t> &link_level_diversity_stat);
 
+protected:
+    virtual std::unordered_map<uint16_t, std::vector<uint16_t>> select_valid_interfaces() = 0;
+
 private:
     std::pair<ld, ld> calculate_final_diversity_scores(beacon *the_beacon);
 };

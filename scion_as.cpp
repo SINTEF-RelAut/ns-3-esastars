@@ -15,3 +15,7 @@ void SCION_As::IntraISDBeaconing() {
 void SCION_As::ProcessReceivedBeacons() {
 
 }
+
+std::unordered_map<uint16_t, std::vector<uint16_t>> SCION_As::select_valid_interfaces(){
+
+}

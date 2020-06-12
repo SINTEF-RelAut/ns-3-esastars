@@ -12,5 +12,8 @@ public:
     void IntraISDBeaconing() override;
 
     void ProcessReceivedBeacons() override;
+
+protected:
+    std::unordered_map<uint16_t, std::vector<uint16_t>> select_valid_interfaces() override;
 };
 #endif //SCION_BEACONING_SIMMULATOR_SCION_AS_H
