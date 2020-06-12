@@ -69,10 +69,17 @@ public:
 
     void DoInitializations();
 
-    std::pair<ld, ld> calculate_final_diversity_scores(beacon *the_beacon);
+    virtual void CoreBeaconing() = 0;
+
+    virtual void IntraISDBeaconing() = 0;
+
+    virtual void ProcessReceivedBeacons() = 0;
 
     void FinalPathEvaluation(std::map<ld, uint64_t> &satisfaction_stat,
                              std::map<ld, uint64_t> &AS_level_diversity_stat,
                              std::map<ld, uint64_t> &link_level_diversity_stat);
+
+private:
+    std::pair<ld, ld> calculate_final_diversity_scores(beacon *the_beacon);
 };
 #endif //SCION_BEACONING_SIMMULATOR_SCION_NODE_H
