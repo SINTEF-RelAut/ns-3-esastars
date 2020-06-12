@@ -13,5 +13,5 @@ void SCION_As::IntraISDBeaconing() {
 }
 
 void SCION_As::ProcessReceivedBeacons() {
-    
+
 }
