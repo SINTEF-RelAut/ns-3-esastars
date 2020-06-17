@@ -100,19 +100,16 @@ void Baseline::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if
         // TODO: Have some descriptive constants somewhere
         int64_t t = node->now - node->now % 600000000000;
         node->bytes_sent_per_interface_per_period.at(t).at(self_egress_if_no) += (70 + 330);
+        // *** For immediately disseminating beacons received from neighbor source as
+        if(remote_as->valid_beacons_count_per_src_as.find(src_as) == remote_as->valid_beacons_count_per_src_as.end()
+           && remote_as->next_round_valid_beacons_count_per_src_as.find(src_as) == remote_as->next_round_valid_beacons_count_per_src_as.end()){
+            immediate_src = true;
+        }
     } else {
         key = old_beacon->key;
         src_as = *old_beacon->the_path->at(0);
         int64_t t = node->now - node->now % 600000000000;
         node->bytes_sent_per_interface_per_period.at(t).at(self_egress_if_no) += (70 + 330 + 330 * old_beacon->the_path->size());
-    }
-
-    // *** For immediately disseminating beacons received from neighbor source as
-    if (old_beacon == NULL
-        && remote_as->valid_beacons_count_per_src_as.find(src_as) == remote_as->valid_beacons_count_per_src_as.end()
-        && remote_as->next_round_valid_beacons_count_per_src_as.find(src_as) == remote_as->next_round_valid_beacons_count_per_src_as.end()) {
-        immediate_src = true;
-
     }
 
     if (immediate) {
@@ -246,7 +243,7 @@ void Baseline::processImmediateReceive(uint16_t src_as_no, uint16_t ingress_if, 
                  ? (ld) node->inter_as_bwds.at(min_egress_if)
                  : the_beacon->bwd_stat;
 
-        GenerateBeaconAndSend(the_beacon, min_egress_if, dst_as_no, remote_ingress_if_no,
+        GenerateBeaconAndSend(the_beacon, min_egress_if, dst_as_no, remote_ingress_if_no, node,
                               remote_as, latency, bwd, true, min_latency);
 
     }
