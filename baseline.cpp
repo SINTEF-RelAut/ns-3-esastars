@@ -103,6 +103,7 @@ void Baseline::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if
         // *** For immediately disseminating beacons received from neighbor source as
         if(remote_as->valid_beacons_count_per_src_as.find(src_as) == remote_as->valid_beacons_count_per_src_as.end()
            && remote_as->next_round_valid_beacons_count_per_src_as.find(src_as) == remote_as->next_round_valid_beacons_count_per_src_as.end()){
+            // Remote as not found in any beacon store. TODO: Should this really be dependent on the next_round store as well?
             immediate_src = true;
         }
     } else {
@@ -113,8 +114,10 @@ void Baseline::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if
     }
 
     if (immediate) {
+        // src_AS_no not found in next_round beacon store. Or less than 5 beacons in next round store from this AS.
+        // TODO: Why is this not dependent on the current beacon store like above?
         if (remote_as->next_round_valid_beacons_count_per_src_as.find(src_as) == remote_as->next_round_valid_beacons_count_per_src_as.end() ||
-            remote_as->next_round_valid_beacons_count_per_src_as.at(src_as) < 5) {
+            remote_as->next_round_valid_beacons_count_per_src_as.at(src_as) < 5) { // TODO: constant
             immediate_non_src = true;
         }
     }
@@ -122,6 +125,7 @@ void Baseline::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if
 
     key = key + std::string((char *) &node->as_number, 2) + std::string((char *) &self_egress_if_no, 2);
 
+    // If the beacon is already in the remote_ases beacon store // TODO: Why is this check needed?
     if (remote_as->path_map_to_beacon.find(key) != remote_as->path_map_to_beacon.end()) {
         if (old_beacon == NULL) {
             remote_as->path_map_to_beacon.at(key)->next_initiation_time = node->now;
@@ -130,18 +134,19 @@ void Baseline::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if
             remote_as->path_map_to_beacon.at(key)->next_initiation_time = old_beacon->initiation_time;
             remote_as->path_map_to_beacon.at(key)->next_expiration_time = old_beacon->expiration_time;
         }
-        remote_as->path_map_to_beacon.at(key)->is_new = true;
+        remote_as->path_map_to_beacon.at(key)->is_new = true; // TODO: Why is it new if we could already find it in remote ases beacon store?
         return;
     }
 
+    // Update statistics & check if you are sending too many beacons
     if (remote_as->next_round_valid_beacons_count_per_src_as.find(src_as) !=
         remote_as->next_round_valid_beacons_count_per_src_as.end()) {
         if (remote_as->next_round_valid_beacons_count_per_src_as.at(src_as) >= FIXED_BEACONS_NUMBER_TO_STORE) {
-            return;
+            return; // Already too many beacons scheduled to disseminate, abort
         }
         remote_as->next_round_valid_beacons_count_per_src_as.at(src_as)++;
     } else {
-        remote_as->next_round_valid_beacons_count_per_src_as.insert(std::make_pair(src_as, 1));
+        remote_as->next_round_valid_beacons_count_per_src_as.insert(std::make_pair(src_as, 1)); // First beacon form this source as
     }
 
     beacon *new_beacon = new beacon;
@@ -150,7 +155,7 @@ void Baseline::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if
     new_beacon->bwd_stat = bwd;
     new_beacon->latency_stat = latency;
 
-    uint16_t *link_info = new uint16_t[4];
+    uint16_t *link_info = new uint16_t[4]; // TODO: Actually use the typedef you created for this.
     link_info[0] = node->as_number;
     link_info[1] = self_egress_if_no;
     link_info[2] = remote_as_no;
@@ -173,18 +178,18 @@ void Baseline::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if
     }
 
     new_path->push_back(link_info);
+    // Here we can be sure, that the beacon is not in the path map yet (checked before).
     remote_as->path_map_to_beacon.insert(std::make_pair(key, new_beacon));
     uint16_t path_len = new_path->size();
 
-    if (remote_as->beacon_store.find(src_as) != remote_as->beacon_store.end() &&
-        remote_as->beacon_store.at(src_as)->find(path_len) != remote_as->beacon_store.at(src_as)->end()) {
-        // TODO: Unification
-        remote_as->beacon_store.at(src_as)->at(path_len)->push_back(new_beacon);
-    } else if (remote_as->beacon_store.find(src_as) != remote_as->beacon_store.end() &&
-               remote_as->beacon_store.at(src_as)->find(path_len) == remote_as->beacon_store.at(src_as)->end()) {
-        // TODO: Unification
-        remote_as->beacon_store.at(src_as)->insert(std::make_pair(path_len, new beacons_with_equal_length(1, new_beacon)));
-
+    if (remote_as->beacon_store.find(src_as) != remote_as->beacon_store.end()){
+        if (remote_as->beacon_store.at(src_as)->find(path_len) != remote_as->beacon_store.at(src_as)->end()){
+            // TODO: Unification
+            remote_as->beacon_store.at(src_as)->at(path_len)->push_back(new_beacon);
+        } else{
+            // TODO: Unification
+            remote_as->beacon_store.at(src_as)->insert(std::make_pair(path_len, new beacons_with_equal_length(1, new_beacon)));
+        }
     } else {
         remote_as->beacon_store.insert(std::make_pair(src_as, new beacons_with_same_src_as));
         // TODO: Unification
