@@ -128,7 +128,7 @@ void Baseline::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if
     if (remote_as->path_map_to_beacon.find(key) != remote_as->path_map_to_beacon.end()) {
         if (old_beacon == NULL) {
             remote_as->path_map_to_beacon.at(key)->next_initiation_time = node->now;
-            remote_as->path_map_to_beacon.at(key)->next_expiration_time = node->now + expiration_period;
+            remote_as->path_map_to_beacon.at(key)->next_expiration_time = node->now + node->expiration_period;
         } else {
             remote_as->path_map_to_beacon.at(key)->next_initiation_time = old_beacon->initiation_time;
             remote_as->path_map_to_beacon.at(key)->next_expiration_time = old_beacon->expiration_time;
