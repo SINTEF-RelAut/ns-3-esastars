@@ -21,7 +21,7 @@ void Baseline::InitiateBeacons(std::unordered_map<uint16_t, std::vector<uint16_t
 
             ns3::Ptr<SCION_Node> remote_as = (DynamicCast<SCION_Node>(remote_device->GetNode()));
 
-            GenerateBeaconAndSend(NULL, self_egress_if_no, remote_as_no, remote_if_no, remote_as,
+            GenerateBeaconAndSend(NULL, self_egress_if_no, remote_as_no, remote_if_no, node,remote_as,
                                   0.0, node->inter_as_bwds.at(self_egress_if_no), false, 0.0);
         }
 
@@ -75,7 +75,7 @@ void Baseline::DisseminateBeacons(std::unordered_map<uint16_t, std::vector<uint1
                                  : the_beacon->bwd_stat;
 
 
-                        GenerateBeaconAndSend(the_beacon, egress_interface_no, remote_as_no, remote_ingress_if_no,
+                        GenerateBeaconAndSend(the_beacon, egress_interface_no, remote_as_no, remote_ingress_if_no, node,
                                               remote_as, latency, bwd, false, 0.0);
                     }
                 }
