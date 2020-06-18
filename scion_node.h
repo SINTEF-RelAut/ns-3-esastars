@@ -14,16 +14,12 @@
 #include "ns3/network-module.h"
 #include <unordered_set>
 #include <unordered_map>
-// Forward declarations because of circular dependency
+// Forward declaration because of circular dependency
+// TODO: Could implement a Factory to get rid of this => low priority
 class BeaconingStrategy;
 
-
-
-// TODO: Think about how to unify these?? Seyedali proposed to change all to set
 typedef std::unordered_set<beacon *> beacons_received_from_same_as;
 typedef std::unordered_map<uint16_t, beacons_received_from_same_as *> beacons_with_same_src_as;
-//typedef std::vector<beacon *> beacons_with_equal_length;
-//typedef std::map<uint16_t, beacons_with_equal_length *> beacons_with_same_src_as;
 
 class SCION_Node : public ns3::Node { // TODO: How about aggregating instead?
 
@@ -50,14 +46,11 @@ public:
     std::unordered_map<uint16_t, beacons_with_same_src_as *> beacon_store;
     std::unordered_map<uint16_t, std::multimap <ld, beacon* >* > beacons_sorted_by_score;
     std::unordered_map<std::string, beacon*> path_map_to_beacon;
-    // TODO: Think about how to best unify this?
-    //std::unordered_map<uint16_t, beacons_with_same_src_as *> beacon_store;
-    //std::unordered_map<std::string, beacon *> path_map_to_beacon;
     // helper structures ********************************************************************************************************
     std::unordered_map<uint16_t, uint64_t> next_round_valid_beacons_count_per_src_as;
 
     // Beaconing Algorithm ***************************************************************************************************************
-    BeaconingStrategy* strategy; // TODO: Initialize somewhere
+    BeaconingStrategy* strategy;
 
     // statistics ***************************************************************************************************************
     std::unordered_map<uint16_t, uint64_t> valid_beacons_count_per_src_as;
