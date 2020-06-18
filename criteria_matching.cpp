@@ -6,7 +6,7 @@
 #include "ns3/point-to-point-net-device.h"
 #include "ns3/point-to-point-channel.h"
 
-void CriteriaMatching::DisseminateBeacons(std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces, SCION_Node *node){
+void CriteriaMatching::DisseminateBeacons(std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces, ns3::Ptr<SCION_Node> node){
 #pragma omp parallel for
     for (auto const& [remote_as_no, interfaces]: valid_interfaces){
         for (auto const [src_as_no, equal_src_as_beacons]: node->beacon_store) { // Per source AS
@@ -77,7 +77,7 @@ void CriteriaMatching::DisseminateBeacons(std::unordered_map<uint16_t, std::vect
 }
 
 void CriteriaMatching::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_as_no, uint16_t remote_ingress_if_no,
-                                     SCION_Node* node, ns3::Ptr<SCION_Node> remote_as,
+                                             ns3::Ptr<SCION_Node> node, ns3::Ptr<SCION_Node> remote_as,
                                      ld latency, ld bwd, bool immediate, ld latency_for_immediate) {
     uint16_t src_as;
     std::string key;
@@ -247,7 +247,6 @@ void CriteriaMatching::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_e
     }
 
     if (immediate_src) {
-        // virtual void processImmediateReceive(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon, std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces, SCION_Node* node) = 0;
         ns3::Simulator::Schedule(ns3::MilliSeconds(1), &SCION_Node::ProcessReceivedBeacons, remote_as, src_as, remote_ingress_if_no, new_beacon);
     }
 
