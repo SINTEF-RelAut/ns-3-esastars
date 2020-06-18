@@ -7,6 +7,11 @@
 #include "scion_node.h"
 class SCION_As : public SCION_Node{
 public:
+    SCION_As(uint16_t as_number, uint32_t system_id, ld latency_coef, ld bandwidth_coef, ld AS_level_diversity_coef,
+             ld link_level_diversity_coef, ns3::Time beaconing_period, int64_t expiration_period) :
+            SCION_Node(as_number, system_id, latency_coef, bandwidth_coef, AS_level_diversity_coef,
+            link_level_diversity_coef, beaconing_period, expiration_period) {}
+
     void IntraISDBeaconing() override;
 
 protected:

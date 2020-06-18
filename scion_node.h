@@ -9,13 +9,9 @@
 
 #ifndef SCION_BEACONING_SIMMULATOR_SCION_NODE_H
 #define SCION_BEACONING_SIMMULATOR_SCION_NODE_H
-//#include "ns3/core-module.h"
 #include "beacon.h"
 #include "beaconing_strategy.h"
 #include "ns3/network-module.h"
-//#include "ns3/point-to-point-helper.h"
-//#include "ns3/point-to-point-net-device.h"
-//#include "ns3/point-to-point-channel.h"
 #include <unordered_set>
 
 // TODO: Think about how to unify these?? Seyedali proposed to change all to set
