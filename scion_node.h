@@ -73,8 +73,6 @@ public:
 
     void DoInitializations();
 
-    virtual void CoreBeaconing() = 0;
-
     virtual void IntraISDBeaconing() = 0;
 
     void ProcessReceivedBeacons(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon);

@@ -7,8 +7,6 @@
 #include "scion_node.h"
 class SCION_As : public SCION_Node{
 public:
-    void CoreBeaconing() override;
-
     void IntraISDBeaconing() override;
 
 protected:

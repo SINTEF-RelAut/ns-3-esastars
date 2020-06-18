@@ -8,8 +8,7 @@
 
 class SCION_Core_As : public SCION_Node{
 public:
-    void CoreBeaconing() override;
-
+    void CoreBeaconing();
     void IntraISDBeaconing() override;
 
 protected:
