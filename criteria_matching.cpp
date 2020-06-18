@@ -258,9 +258,4 @@ void CriteriaMatching::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_e
 
 }
 
-void CriteriaMatching::processImmediateReceive(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon, std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces, SCION_Node* node){
-// TODO: Can we just move the implementation in baseline up to parent? Or do we need to do some kind of criteria matching
-// here as well?
-}
-
 
