@@ -64,12 +64,13 @@ public:
     std::unordered_map<int64_t, std::vector<uint32_t> > bytes_sent_per_interface_per_period;
 
     SCION_Node(uint16_t as_number, uint32_t system_id, ld latency_coef, ld bandwidth_coef, ld AS_level_diversity_coef,
-           ld link_level_diversity_coef, ns3::Time beaconing_period, int64_t expiration_period) : Node(
+           ld link_level_diversity_coef, ns3::Time beaconing_period, int64_t expiration_period, BeaconingStrategy* strategy) : Node(
             system_id), as_number(as_number), latency_coef(latency_coef), bandwidth_coef(bandwidth_coef),
                                            AS_level_diversity_coef(AS_level_diversity_coef),
                                            link_level_diversity_coef(link_level_diversity_coef),
                                            beaconing_period(beaconing_period),
-                                           expiration_period(expiration_period) {}
+                                           expiration_period(expiration_period),
+                                           strategy(strategy){}
 
     void DoInitializations();
 
