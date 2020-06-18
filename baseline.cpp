@@ -34,7 +34,7 @@ void Baseline::DisseminateBeacons(std::unordered_map<uint16_t, std::vector<uint1
 
                     // Iterate over all the valid interfaces of this remote AS and send the beacons
                     for (auto egress_interface_no: interfaces){
-                        ns3::Ptr<ns3::PointToPointNetDevice> self_egress_device = DynamicCast<ns3::PointToPointNetDevice>(node->GetDevice(egress_interface_no));
+                        ns3::Ptr<ns3::PointToPointNetDevice> self_egress_device = ns3::DynamicCast<ns3::PointToPointNetDevice>(node->GetDevice(egress_interface_no));
 
                         auto [remote_ingress_if_no, remote_as] = GetRemoteAsInfo(node, egress_interface_no);
 
