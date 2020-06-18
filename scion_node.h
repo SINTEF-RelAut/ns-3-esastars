@@ -52,7 +52,7 @@ public:
     //std::unordered_map<uint16_t, beacons_with_same_src_as *> beacon_store;
     //std::unordered_map<std::string, beacon *> path_map_to_beacon;
     // TODO: Is this the right spot? This would probably be better suited in a centralized "config" object
-    int64_t expiration_period; // TODO: Initialize if you want to keep this on the node
+    int64_t expiration_period;
     // helper structures ********************************************************************************************************
     std::unordered_map<uint16_t, uint64_t> next_round_valid_beacons_count_per_src_as;
 

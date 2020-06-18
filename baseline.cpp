@@ -100,7 +100,7 @@ void Baseline::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if
         // TODO: Have some descriptive constants somewhere
         int64_t t = node->now - node->now % 600000000000;
         node->bytes_sent_per_interface_per_period.at(t).at(self_egress_if_no) += (70 + 330);
-        // *** For immediately disseminating beacons received from neighbor source as
+        // *** For immediately disseminating beacons received from neighbor source as // TODO: double check this. Was remote as modified before this check?
         if(remote_as->valid_beacons_count_per_src_as.find(src_as) == remote_as->valid_beacons_count_per_src_as.end()
            && remote_as->next_round_valid_beacons_count_per_src_as.find(src_as) == remote_as->next_round_valid_beacons_count_per_src_as.end()){
             // Remote as not found in any beacon store. TODO: Should this really be dependent on the next_round store as well?
@@ -113,6 +113,7 @@ void Baseline::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if
         node->bytes_sent_per_interface_per_period.at(t).at(self_egress_if_no) += (70 + 330 + 330 * old_beacon->the_path->size());
     }
 
+    //TODO: Does it make sense to choose how to disseminate based on the remote_ases beacon store? What does this model in the real deployment?
     if (immediate) {
         // src_AS_no not found in next_round beacon store. Or less than 5 beacons in next round store from this AS.
         // TODO: Why is this not dependent on the current beacon store like above?
@@ -134,14 +135,14 @@ void Baseline::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if
             remote_as->path_map_to_beacon.at(key)->next_initiation_time = old_beacon->initiation_time;
             remote_as->path_map_to_beacon.at(key)->next_expiration_time = old_beacon->expiration_time;
         }
-        remote_as->path_map_to_beacon.at(key)->is_new = true; // TODO: Why is it new if we could already find it in remote ases beacon store?
+        remote_as->path_map_to_beacon.at(key)->is_new = true;
         return;
     }
 
     // Update statistics & check if you are sending too many beacons
     if (remote_as->next_round_valid_beacons_count_per_src_as.find(src_as) !=
         remote_as->next_round_valid_beacons_count_per_src_as.end()) {
-        if (remote_as->next_round_valid_beacons_count_per_src_as.at(src_as) >= FIXED_BEACONS_NUMBER_TO_STORE) {
+        if (remote_as->next_round_valid_beacons_count_per_src_as.at(src_as) >= FIXED_BEACONS_NUMBER_TO_STORE) { // TODO: There seems to be a mismatch here? next round vs storing?
             return; // Already too many beacons scheduled to disseminate, abort
         }
         remote_as->next_round_valid_beacons_count_per_src_as.at(src_as)++;
@@ -184,16 +185,13 @@ void Baseline::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if
 
     if (remote_as->beacon_store.find(src_as) != remote_as->beacon_store.end()){
         if (remote_as->beacon_store.at(src_as)->find(path_len) != remote_as->beacon_store.at(src_as)->end()){
-            // TODO: Unification
-            remote_as->beacon_store.at(src_as)->at(path_len)->push_back(new_beacon);
+            remote_as->beacon_store.at(src_as)->at(path_len)->insert(new_beacon);
         } else{
-            // TODO: Unification
-            remote_as->beacon_store.at(src_as)->insert(std::make_pair(path_len, new beacons_with_equal_length(1, new_beacon)));
+            remote_as->beacon_store.at(src_as)->insert(std::make_pair(path_len, new beacons_received_from_same_as({new_beacon})));
         }
     } else {
         remote_as->beacon_store.insert(std::make_pair(src_as, new beacons_with_same_src_as));
-        // TODO: Unification
-        remote_as->beacon_store.at(src_as)->insert(std::make_pair(path_len, new beacons_with_equal_length(1, new_beacon)));
+        remote_as->beacon_store.at(src_as)->insert(std::make_pair(path_len, new beacons_received_from_same_as({new_beacon})));
     }
 
     if (immediate_src) {
