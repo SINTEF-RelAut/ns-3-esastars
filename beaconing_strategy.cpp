@@ -97,3 +97,17 @@ void BeaconingStrategy::UpdateBeaconStoreAndCountersBeforeBeaconing(SCION_Node *
 
     std::cout << node->as_number << "\t" <<node->valid_beacons_count_per_src_as.size() << std::endl; // Print number of source ASes
 }
+
+std::tuple<uint16_t, ns3::Ptr<SCION_Node>> BeaconingStrategy::GetRemoteAsInfo(SCION_Node *node, uint16_t egress_interface_no){
+    ns3::Ptr<ns3::PointToPointNetDevice> self_egress_device = DynamicCast<ns3::PointToPointNetDevice>(node->GetDevice(egress_interface_no));
+
+    ns3::Ptr<ns3::PointToPointChannel> channel = DynamicCast<ns3::PointToPointChannel>(self_egress_device->GetChannel());
+    uint32_t wire = self_egress_device == channel->GetSource(0) ? 0 : 1;
+    ns3::Ptr<ns3::PointToPointNetDevice> remote_device = channel->GetDestination(wire);
+
+    uint16_t remote_ingress_if_no = (uint16_t) remote_device->GetIfIndex();
+
+    ns3::Ptr<SCION_Node> remote_as = (DynamicCast<SCION_Node>(remote_device->GetNode()));
+
+    return std::make_tuple(remote_ingress_if_no, remote_as);
+}

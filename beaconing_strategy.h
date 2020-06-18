@@ -7,6 +7,9 @@
 
 #include "beacon.h"
 #include "scion_node.h"
+#include "ns3/point-to-point-helper.h"
+#include "ns3/point-to-point-net-device.h"
+#include "ns3/point-to-point-channel.h"
 
 class BeaconingStrategy{
 public:
@@ -22,5 +25,6 @@ protected:
     static void DoBeaconing(SCION_Node* node);
     static bool generates_loop(beacon const* the_beacon, uint16_t remote_as_no);
     static void UpdateBeaconStoreAndCountersBeforeBeaconing(SCION_Node* node);
+    static std::tuple<uint16_t, ns3::Ptr<SCION_Node>> GetRemoteAsInfo(SCION_Node *node, uint16_t egress_interface_no);
 };
 #endif //SCION_BEACONING_SIMMULATOR_BEACONING_STRATEGY_H

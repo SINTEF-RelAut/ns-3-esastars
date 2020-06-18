@@ -36,13 +36,7 @@ void Baseline::DisseminateBeacons(std::unordered_map<uint16_t, std::vector<uint1
                     for (auto egress_interface_no: interfaces){
                         ns3::Ptr<ns3::PointToPointNetDevice> self_egress_device = DynamicCast<ns3::PointToPointNetDevice>(node->GetDevice(egress_interface_no));
 
-                        ns3::Ptr<ns3::PointToPointChannel> channel = DynamicCast<ns3::PointToPointChannel>(self_egress_device->GetChannel());
-                        uint32_t wire = self_egress_device == channel->GetSource(0) ? 0 : 1;
-                        ns3::Ptr<ns3::PointToPointNetDevice> remote_device = channel->GetDestination(wire);
-
-                        uint16_t remote_ingress_if_no = (uint16_t) remote_device->GetIfIndex();
-
-                        ns3::Ptr<SCION_Node> remote_as = (DynamicCast<SCION_Node>(remote_device->GetNode()));
+                        auto [remote_ingress_if_no, remote_as] = GetRemoteAsInfo(node, egress_interface_no);
 
                         ld latency = the_beacon->latency_stat + node->intra_as_latencies.at(the_beacon->the_path->back()[3]).at(egress_interface_no);
                         ld bwd = the_beacon->bwd_stat > (ld) node->inter_as_bwds.at(egress_interface_no)
