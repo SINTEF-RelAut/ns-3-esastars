@@ -10,12 +10,8 @@
 void Baseline::DisseminateBeacons(std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces, SCION_Node *node){
 #pragma omp parallel for
     for (auto const& [remote_as_no, interfaces]: valid_interfaces){
-        for (auto const &beacon_store_entry : node->beacon_store) { // Per source AS
-            uint16_t src_as_no = beacon_store_entry.first;
-            beacons_with_same_src_as *equal_src_as_beacons = beacon_store_entry.second;
-
+        for (auto const [src_as_no, equal_src_as_beacons] : node->beacon_store) { // Per source AS
             int16_t  sent_count = 0;
-
             if (remote_as_no == src_as_no) {
                 continue;
             }
