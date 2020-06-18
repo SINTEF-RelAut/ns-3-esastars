@@ -108,6 +108,9 @@ void Baseline::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if
         return;
     }
 
+    // TODO: From start until here, the functions are identical => make a common function in base class?
+    // Might get a bit spaghetticody because of return? Would have to make an if-else block out of it.
+
     // Update statistics & check if you are sending too many beacons
     if (remote_as->next_round_valid_beacons_count_per_src_as.find(src_as) !=
         remote_as->next_round_valid_beacons_count_per_src_as.end()) {
@@ -150,6 +153,7 @@ void Baseline::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if
     new_path->push_back(link_info);
     // Here we can be sure, that the beacon is not in the path map yet (checked before).
     remote_as->path_map_to_beacon.insert(std::make_pair(key, new_beacon));
+    // TODO: from "beacon *new_beacon = new beacon;" until here functions are identical again
     uint16_t path_len = new_path->size();
 
     if (remote_as->beacon_store.find(src_as) != remote_as->beacon_store.end()){
