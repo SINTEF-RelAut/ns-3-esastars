@@ -65,16 +65,6 @@ void BeaconingStrategy::AdjustBeaconValidity(beacon* the_beacon, SCION_Node *nod
 
 }
 
-// TODO: Is this needed here? Or will this functionality be in the Core & Leaf AS?
-/*void BeaconingStrategy::DoBeaconing(SCION_Node* node) { // TODO: Second argument for the "allowed interfaces"?
-    node->now = ns3::Simulator::Now().ToInteger(ns3::Time::NS);
-
-    node->bytes_sent_per_interface_per_period.insert(std::make_pair(node->now, std::vector<uint32_t > (node->GetNDevices(), 0)));
-
-    this->DisseminateBeacons();
-    this->InitiateBeacons();
-}*/
-
 bool BeaconingStrategy::generates_loop(beacon const* the_beacon, uint16_t remote_as_no){
     for (auto const &link_info : *the_beacon->the_path) { // remove loops
         if (link_info[0] == remote_as_no) {
