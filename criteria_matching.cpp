@@ -3,10 +3,9 @@
 //
 #include "criteria_matching.h"
 #include "ns3/point-to-point-helper.h"
-#include "ns3/point-to-point-net-device.h"
 #include "ns3/point-to-point-channel.h"
 
-void CriteriaMatching::DisseminateBeacons(std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces, ns3::Ptr<SCION_Node> node){
+void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, ns3::Ptr<SCION_Node> node){
 #pragma omp parallel for
     for (auto const& [remote_as_no, interfaces]: valid_interfaces){
         for (auto const [src_as_no, equal_src_as_beacons]: node->beacon_store) { // Per source AS

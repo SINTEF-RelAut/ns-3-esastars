@@ -6,7 +6,7 @@
 #include "beaconing_strategy.h"
 #include "ns3/ptr.h"
 
-void BeaconingStrategy::InitiateBeacons(std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces, ns3::Ptr<SCION_Node> node){
+void BeaconingStrategy::InitiateBeacons(const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, ns3::Ptr<SCION_Node> node){
     for (auto const& [remote_as_no, interfaces]: valid_interfaces){
         for (auto const & self_egress_if_no : interfaces) {
             ns3::Ptr<ns3::PointToPointNetDevice> self_egress_device = ns3::DynamicCast<ns3::PointToPointNetDevice>(
@@ -103,7 +103,7 @@ std::tuple<uint16_t, ns3::Ptr<SCION_Node>> BeaconingStrategy::GetRemoteAsInfo(ns
     return std::make_tuple(remote_ingress_if_no, remote_as);
 }
 
-void BeaconingStrategy::processImmediateReceive(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon, std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces, ns3::Ptr<SCION_Node> node){
+void BeaconingStrategy::processImmediateReceive(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon, const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, ns3::Ptr<SCION_Node> node){
     if (node->valid_beacons_count_per_src_as.find(src_as_no) != node->valid_beacons_count_per_src_as.end()) {
         return; // only process unknown beacons immediately
     }

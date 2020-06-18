@@ -7,7 +7,7 @@
 #include "beaconing_strategy.h"
 class CriteriaMatching : public BeaconingStrategy{
 public:
-    void DisseminateBeacons(std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces, ns3::Ptr<SCION_Node> node) override;
+    void DisseminateBeacons(const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, ns3::Ptr<SCION_Node> node) override;
 protected:
     void GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_as_no, uint16_t remote_ingress_if_no,
                                ns3::Ptr<SCION_Node> node, ns3::Ptr<SCION_Node> remote_as,
