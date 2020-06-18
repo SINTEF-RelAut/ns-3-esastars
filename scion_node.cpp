@@ -6,10 +6,11 @@
 #include "utils.h"
 #include "ns3/core-module.h"
 #include "beacon.h"
+#include "beaconing_strategy.h"
 
 void SCION_Node::ProcessReceivedBeacons(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon){
     std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces = this->select_valid_interfaces();
-    this->stragegy->processImmediateReceive(src_as_no, ingress_if, the_beacon, valid_interfaces, this);
+    this->strategy->processImmediateReceive(src_as_no, ingress_if, the_beacon, valid_interfaces, this);
 }
 
 void SCION_Node::DoInitializations() {

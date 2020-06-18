@@ -10,9 +10,14 @@
 #ifndef SCION_BEACONING_SIMMULATOR_SCION_NODE_H
 #define SCION_BEACONING_SIMMULATOR_SCION_NODE_H
 #include "beacon.h"
-#include "beaconing_strategy.h"
+//#include "beaconing_strategy.h"
 #include "ns3/network-module.h"
 #include <unordered_set>
+#include <unordered_map>
+// Forward declarations because of circular dependency
+class BeaconingStrategy;
+
+
 
 // TODO: Think about how to unify these?? Seyedali proposed to change all to set
 typedef std::unordered_set<beacon *> beacons_received_from_same_as;
@@ -27,7 +32,8 @@ public:
     //AS properties
     uint16_t as_number;
     int64_t now;
-    Time beaconing_period;
+    ns3::Time beaconing_period;
+    // TODO: Is this the right spot? This would probably be better suited in a centralized "config" object
     int64_t expiration_period;
     ld latency_coef, bandwidth_coef, AS_level_diversity_coef, link_level_diversity_coef;
     int32_t AS_max_bwd;
@@ -47,20 +53,18 @@ public:
     // TODO: Think about how to best unify this?
     //std::unordered_map<uint16_t, beacons_with_same_src_as *> beacon_store;
     //std::unordered_map<std::string, beacon *> path_map_to_beacon;
-    // TODO: Is this the right spot? This would probably be better suited in a centralized "config" object
-    int64_t expiration_period;
     // helper structures ********************************************************************************************************
     std::unordered_map<uint16_t, uint64_t> next_round_valid_beacons_count_per_src_as;
 
     // Beaconing Algorithm ***************************************************************************************************************
-    BeaconingStrategy stragegy; // TODO: Initialize somewhere
+    BeaconingStrategy* strategy; // TODO: Initialize somewhere
 
     // statistics ***************************************************************************************************************
     std::unordered_map<uint16_t, uint64_t> valid_beacons_count_per_src_as;
     std::unordered_map<int64_t, std::vector<uint32_t> > bytes_sent_per_interface_per_period;
 
     SCION_Node(uint16_t as_number, uint32_t system_id, ld latency_coef, ld bandwidth_coef, ld AS_level_diversity_coef,
-           ld link_level_diversity_coef, Time beaconing_period, int64_t expiration_period) : Node(
+           ld link_level_diversity_coef, ns3::Time beaconing_period, int64_t expiration_period) : Node(
             system_id), as_number(as_number), latency_coef(latency_coef), bandwidth_coef(bandwidth_coef),
                                            AS_level_diversity_coef(AS_level_diversity_coef),
                                            link_level_diversity_coef(link_level_diversity_coef),
