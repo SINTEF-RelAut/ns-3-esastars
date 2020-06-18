@@ -4,7 +4,7 @@
 
 #include "scion_core_as.h"
 
-void SCION_Core_As::CoreBeaconing() {
+void SCION_Core_As::CoreBeaconing(){
 
 }
 

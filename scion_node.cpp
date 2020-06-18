@@ -13,13 +13,13 @@ void SCION_Node::ProcessReceivedBeacons(uint16_t src_as_no, uint16_t ingress_if,
 }
 
 void SCION_Node::DoInitializations() {
-    intra_as_latencies.resize(GetNDevices());
-    for (uint64_t i = 0; i < Node::GetNDevices(); ++i) {
-        intra_as_latencies.at(i).resize(GetNDevices());
+    intra_as_latencies.resize(this->Node::GetNDevices());
+    for (uint64_t i = 0; i < this->Node::GetNDevices(); ++i) {
+        intra_as_latencies.at(i).resize(this->Node::GetNDevices());
     }
 
-    for (uint32_t i = 0; i < GetNDevices(); ++i) {
-        for (uint32_t j = i + 1; j < GetNDevices(); ++j) {
+    for (uint32_t i = 0; i < this->Node::GetNDevices(); ++i) {
+        for (uint32_t j = i + 1; j < this->Node::GetNDevices(); ++j) {
             intra_as_latencies.at(i).at(j) = calculate_great_circle_latency(interfaces_coordinates.at(i).first,
                                                                             interfaces_coordinates.at(i).second,
                                                                             interfaces_coordinates.at(j).first,
