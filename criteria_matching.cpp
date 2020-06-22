@@ -222,7 +222,7 @@ void CriteriaMatching::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_e
     }
 
     new_path->push_back(link_info);
-    path_len = new_beacon->the_path->size();
+    uint16_t path_len = new_beacon->the_path->size();
     // Here we can be sure, that the beacon is not in the path map yet (checked before).
     remote_as->path_map_to_beacon.insert(std::make_pair(key, new_beacon));
 
