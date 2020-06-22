@@ -144,9 +144,9 @@ void CriteriaMatching::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_e
                 beacon* lower_score_beacon = it->second;
                 remote_as->beacons_sorted_by_score.at(src_as)->erase(it);
                 remote_as->path_map_to_beacon.erase(lower_score_beacon->key);
-                remote_as->beacon_store.at(src_as)->at(lower_score_beacon->the_path->back()[0])->erase(lower_score_beacon);
-                if (remote_as->beacon_store.at(src_as)->at(lower_score_beacon->the_path->back()[0])->empty()) {
-                    remote_as->beacon_store.at(src_as)->erase(lower_score_beacon->the_path->back()[0]);
+                remote_as->beacon_store.at(src_as)->at(lower_score_beacon->the_path->size())->erase(lower_score_beacon);
+                if (remote_as->beacon_store.at(src_as)->at(lower_score_beacon->the_path->size())->empty()) {
+                    remote_as->beacon_store.at(src_as)->erase(lower_score_beacon->the_path->size());
                 }
 
                 if (lower_score_beacon->is_valid) {
@@ -171,15 +171,16 @@ void CriteriaMatching::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_e
                 lower_score_beacon->is_valid = false;
                 lower_score_beacon->bwd_stat = bwd;
                 lower_score_beacon->latency_stat = latency;
+                uint16_t lower_score_beacon_size = lower_score_beacon->the_path->size();
 
                 remote_as->beacons_sorted_by_score.at(src_as)->insert(std::make_pair(score, lower_score_beacon));
                 remote_as->path_map_to_beacon.insert(std::make_pair(key, lower_score_beacon));
 
-                if (remote_as->beacon_store.at(src_as)->find(node->as_number) != remote_as->beacon_store.at(src_as)->end()) {
-                    remote_as->beacon_store.at(src_as)->at(node->as_number)->insert(lower_score_beacon);
+                if (remote_as->beacon_store.at(src_as)->find(lower_score_beacon_size) != remote_as->beacon_store.at(src_as)->end()) {
+                    remote_as->beacon_store.at(src_as)->at(lower_score_beacon_size)->insert(lower_score_beacon);
                 } else {
-                    remote_as->beacon_store.at(src_as)->insert(std::make_pair(node->as_number, new beacons_with_equal_length()));
-                    remote_as->beacon_store.at(src_as)->at(node->as_number)->insert(lower_score_beacon);
+                    remote_as->beacon_store.at(src_as)->insert(std::make_pair(lower_score_beacon_size, new beacons_with_equal_length()));
+                    remote_as->beacon_store.at(src_as)->at(lower_score_beacon_size)->insert(lower_score_beacon);
                 }
                 return;
             }
