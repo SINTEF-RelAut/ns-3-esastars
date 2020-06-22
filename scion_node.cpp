@@ -8,11 +8,6 @@
 #include "beacon.h"
 #include "beaconing_strategy.h"
 
-void SCION_Node::ProcessReceivedBeacons(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon){
-    std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces = this->select_valid_interfaces();
-    this->strategy->processImmediateReceive(src_as_no, ingress_if, the_beacon, valid_interfaces, this);
-}
-
 void SCION_Node::DoInitializations() {
     intra_as_latencies.resize(this->Node::GetNDevices());
     for (uint64_t i = 0; i < this->Node::GetNDevices(); ++i) {
@@ -98,6 +93,27 @@ void SCION_Node::FinalPathEvaluation(std::map<ld, uint64_t> &satisfaction_stat,
             } else {
                 link_level_diversity_stat.insert(std::make_pair(link_level_diversity_score, 1));
             }
+        }
+    }
+}
+
+void SCION_Node::UpdateTimeAndStats(){
+    this->now = ns3::Simulator::Now().ToInteger(ns3::Time::NS);
+    this->bytes_sent_per_interface_per_period.insert(std::make_pair(this->now, std::vector<uint32_t > (this->GetNDevices(), 0)));
+}
+
+std::unordered_map<uint16_t, std::vector<uint16_t>> SCION_Node::GetValidInterfaces(SCION_Node::neighbour_relation rel){
+    // Select the valid interfaces
+    std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces_per_as = std::unordered_map<uint16_t, std::vector<uint16_t>>();
+    for( auto [neighbour_as_no, interfaces]: this->interfaces_per_neighbor_as ){
+        std::vector<uint16_t> valid_interfaces = std::vector<uint16_t>();
+        for( auto [intf_no, relation]: interfaces ){
+            if ( relation == rel ){
+                valid_interfaces.push_back(intf_no);
+            }
+        }
+        if(!valid_interfaces.empty()){
+            valid_interfaces_per_as.insert({neighbour_as_no, valid_interfaces});
         }
     }
 }

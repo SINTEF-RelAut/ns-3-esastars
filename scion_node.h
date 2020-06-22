@@ -69,15 +69,15 @@ public:
 
     virtual void IntraISDBeaconing() = 0;
 
-    void ProcessReceivedBeacons(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon);
+    virtual void ProcessReceivedBeacons(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon) = 0;
 
     void FinalPathEvaluation(std::map<ld, uint64_t> &satisfaction_stat,
                              std::map<ld, uint64_t> &AS_level_diversity_stat,
                              std::map<ld, uint64_t> &link_level_diversity_stat);
 
 protected:
-    virtual std::unordered_map<uint16_t, std::vector<uint16_t>> select_valid_interfaces() = 0;
-
+    void UpdateTimeAndStats();
+    std::unordered_map<uint16_t, std::vector<uint16_t>> GetValidInterfaces(SCION_Node::neighbour_relation rel);
 private:
     std::pair<ld, ld> calculate_final_diversity_scores(beacon *the_beacon);
 };
