@@ -18,8 +18,8 @@
 // TODO: Could implement a Factory to get rid of this => low priority
 class BeaconingStrategy;
 
-typedef std::unordered_set<beacon *> beacons_received_from_same_as;
-typedef std::unordered_map<uint16_t, beacons_received_from_same_as *> beacons_with_same_src_as;
+typedef std::unordered_set<beacon *> beacons_with_equal_length;
+typedef std::map<uint16_t, beacons_with_equal_length *> beacons_with_same_src_as;
 
 class SCION_Node : public ns3::Node { // TODO: How about aggregating instead?
 
