@@ -221,22 +221,23 @@ void CriteriaMatching::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_e
     }
 
     new_path->push_back(link_info);
+    uint16_t new_beacon_size = new_beacon->the_path->size();
     // Here we can be sure, that the beacon is not in the path map yet (checked before).
     remote_as->path_map_to_beacon.insert(std::make_pair(key, new_beacon));
 
     // TODO: from "beacon *new_beacon = new beacon;" until here functions are identical again
 
     if (remote_as->beacon_store.find(src_as) != remote_as->beacon_store.end()){
-        if (remote_as->beacon_store.at(src_as)->find(node->as_number) != remote_as->beacon_store.at(src_as)->end()){
-            remote_as->beacon_store.at(src_as)->at(node->as_number)->insert(new_beacon);
+        if (remote_as->beacon_store.at(src_as)->find(new_beacon_size) != remote_as->beacon_store.at(src_as)->end()){
+            remote_as->beacon_store.at(src_as)->at(new_beacon_size)->insert(new_beacon);
         } else{
-            remote_as->beacon_store.at(src_as)->insert(std::make_pair(node->as_number, new beacons_with_equal_length ()));
-            remote_as->beacon_store.at(src_as)->at(node->as_number)->insert(new_beacon);
+            remote_as->beacon_store.at(src_as)->insert(std::make_pair(new_beacon_size, new beacons_with_equal_length ()));
+            remote_as->beacon_store.at(src_as)->at(new_beacon_size)->insert(new_beacon);
         }
     } else {
         remote_as->beacon_store.insert(std::make_pair(src_as, new equal_as_beacons_sorted_by_length));
-        remote_as->beacon_store.at(src_as)->insert(std::make_pair(node->as_number, new beacons_with_equal_length()));
-        remote_as->beacon_store.at(src_as)->at(node->as_number)->insert(new_beacon);
+        remote_as->beacon_store.at(src_as)->insert(std::make_pair(new_beacon_size, new beacons_with_equal_length()));
+        remote_as->beacon_store.at(src_as)->at(new_beacon_size)->insert(new_beacon);
     }
 
     if (remote_as->beacons_sorted_by_score.find(src_as) != remote_as->beacons_sorted_by_score.end()) {
