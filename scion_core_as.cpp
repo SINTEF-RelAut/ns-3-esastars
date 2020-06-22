@@ -26,8 +26,24 @@ void SCION_Core_As::IntraISDBeaconing() {
 }
 
 std::unordered_map<uint16_t, std::vector<uint16_t>> SCION_Core_As::select_valid_interfaces(){
-    // TODO: Implement
-    uint16_t dummy = 0;
-    std::vector<uint16_t> dummy_v = std::vector<uint16_t>();
-    return std::unordered_map<uint16_t, std::vector<uint16_t>>({{dummy, dummy_v}});
+    // TODO: This should probably be done at instantiation time and already saved in this form. Then we can just
+    // send it directly instead of recomputing every time..
+    std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces_per_as = std::unordered_map<uint16_t, std::vector<uint16_t>>();
+    for( auto [neighbour_as_no, interfaces]: this->interfaces_per_neighbor_as ){
+        std::vector<uint16_t> valid_interfaces = std::vector<uint16_t>();
+        for( auto [intf_no, relation]: interfaces ){
+            switch(relation){
+                case PEER:
+                    valid_interfaces.push_back(intf_no);
+                case PROVIDER:
+                    valid_interfaces.push_back(intf_no);
+                case CUSTOMER:
+                    valid_interfaces.push_back(intf_no);
+            }
+        }
+        if(!valid_interfaces.empty()){
+            valid_interfaces_per_as.insert({neighbour_as_no, valid_interfaces});
+        }
+    }
+    return valid_interfaces_per_as;
 }

@@ -21,12 +21,9 @@ class BeaconingStrategy;
 typedef std::unordered_set<beacon *> beacons_with_equal_length;
 typedef std::map<uint16_t, beacons_with_equal_length *> equal_as_beacons_sorted_by_length;
 
-enum neighbour_relation {PEER, CUSTOMER, PROVIDER};
-
 class SCION_Node : public ns3::Node { // TODO: How about aggregating instead?
 
 public:
-
     //AS properties
     uint16_t as_number;
     int64_t now;
@@ -37,6 +34,7 @@ public:
     int32_t AS_max_bwd;
 
     // Interfaces Properties *****************************************************************************************************
+    enum neighbour_relation {PEER, CUSTOMER, PROVIDER};
     std::vector<uint16_t> neighbors;
     std::unordered_map<uint16_t, std::vector<std::pair<uint16_t, neighbour_relation>>> interfaces_per_neighbor_as;
 
