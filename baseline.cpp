@@ -53,128 +53,15 @@ void Baseline::DisseminateBeacons(const std::unordered_map<uint16_t, std::vector
     }
 }
 
-void Baseline::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_as_no, uint16_t remote_ingress_if_no,
-        ns3::Ptr<SCION_Node> node, ns3::Ptr<SCION_Node> remote_as,
-        ld latency, ld bwd, bool immediate, ld latency_for_immediate) {
+void Baseline::HandleFullBeaconStore(std::string key, uint16_t src_as, beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_as_no, uint16_t remote_ingress_if_no,
+                                             ns3::Ptr<SCION_Node> node, ns3::Ptr<SCION_Node> remote_as,
+                                             ld latency, ld bwd) {
+    // In this case, we don't evict any beacons but simply ignore the new one
+    return;
+}
 
-
-    uint16_t src_as;
-    std::string key;
-
-    bool immediate_src = false;
-    bool immediate_non_src = false;
-
-    if (old_beacon == NULL) {
-        src_as = node->as_number;
-        // TODO: Have some descriptive constants somewhere
-        int64_t t = node->now - node->now % 600000000000;
-        node->bytes_sent_per_interface_per_period.at(t).at(self_egress_if_no) += (70 + 330);
-        // *** For immediately disseminating beacons received from neighbor source as // TODO: double check this. Was remote as modified before this check?
-        if(remote_as->valid_beacons_count_per_src_as.find(src_as) == remote_as->valid_beacons_count_per_src_as.end()
-           && remote_as->next_round_valid_beacons_count_per_src_as.find(src_as) == remote_as->next_round_valid_beacons_count_per_src_as.end()){
-            // Remote as not found in any beacon store. TODO: Should this really be dependent on the next_round store as well?
-            immediate_src = true;
-        }
-    } else {
-        key = old_beacon->key;
-        src_as = *old_beacon->the_path->at(0);
-        int64_t t = node->now - node->now % 600000000000;
-        node->bytes_sent_per_interface_per_period.at(t).at(self_egress_if_no) += (70 + 330 + 330 * old_beacon->the_path->size());
-    }
-
-    //TODO: Does it make sense to choose how to disseminate based on the remote_ases beacon store? What does this model in the real deployment?
-    if (immediate) {
-        // src_AS_no not found in next_round beacon store. Or less than 5 beacons in next round store from this AS.
-        // TODO: Why is this not dependent on the current beacon store like above?
-        if (remote_as->next_round_valid_beacons_count_per_src_as.find(src_as) == remote_as->next_round_valid_beacons_count_per_src_as.end() ||
-            remote_as->next_round_valid_beacons_count_per_src_as.at(src_as) < 5) { // TODO: constant
-            immediate_non_src = true;
-        }
-    }
-    // ***
-
-    key = key + std::string((char *) &node->as_number, 2) + std::string((char *) &self_egress_if_no, 2);
-
-    // If the beacon is already in the remote_ases beacon store // TODO: Why is this check needed?
-    if (remote_as->path_map_to_beacon.find(key) != remote_as->path_map_to_beacon.end()) {
-        if (old_beacon == NULL) {
-            remote_as->path_map_to_beacon.at(key)->next_initiation_time = node->now;
-            remote_as->path_map_to_beacon.at(key)->next_expiration_time = node->now + node->expiration_period;
-        } else {
-            remote_as->path_map_to_beacon.at(key)->next_initiation_time = old_beacon->initiation_time;
-            remote_as->path_map_to_beacon.at(key)->next_expiration_time = old_beacon->expiration_time;
-        }
-        remote_as->path_map_to_beacon.at(key)->is_new = true;
-        return;
-    }
-
-    // TODO: From start until here, the functions are identical => make a common function in base class?
-    // Might get a bit spaghetticody because of return? Would have to make an if-else block out of it.
-
-    // Update statistics & check if you are sending too many beacons
-    if (remote_as->next_round_valid_beacons_count_per_src_as.find(src_as) !=
-        remote_as->next_round_valid_beacons_count_per_src_as.end()) {
-        if (remote_as->next_round_valid_beacons_count_per_src_as.at(src_as) >= FIXED_BEACONS_NUMBER_TO_STORE) { // TODO: There seems to be a mismatch here? next round vs storing?
-            return; // Already too many beacons scheduled to disseminate, abort
-        }
-        remote_as->next_round_valid_beacons_count_per_src_as.at(src_as)++;
-    } else {
-        remote_as->next_round_valid_beacons_count_per_src_as.insert(std::make_pair(src_as, 1)); // First beacon form this source as
-    }
-
-    beacon *new_beacon = new beacon;
-    path *new_path = new path;
-    new_beacon->the_path = new_path;
-    new_beacon->bwd_stat = bwd;
-    new_beacon->latency_stat = latency;
-
-    uint16_t *link_info = new uint16_t[4]; // TODO: Actually use the typedef you created for this.
-    link_info[0] = node->as_number;
-    link_info[1] = self_egress_if_no;
-    link_info[2] = remote_as_no;
-    link_info[3] = remote_ingress_if_no;
-
-    new_beacon->initiation_time = -1;
-    new_beacon->expiration_time = -1;
-    new_beacon->key = key;
-    new_beacon->is_new = true;
-    new_beacon->is_valid = false;
-
-    if (old_beacon == NULL) {
-        new_beacon->next_initiation_time = node->now;
-        new_beacon->next_expiration_time = node->now + node->expiration_period;
-    } else {
-        new_beacon->next_initiation_time = old_beacon->initiation_time;
-        new_beacon->next_expiration_time = old_beacon->expiration_time;
-
-        *new_path = *(old_beacon->the_path);
-    }
-
-    new_path->push_back(link_info);
-    // Here we can be sure, that the beacon is not in the path map yet (checked before).
-    remote_as->path_map_to_beacon.insert(std::make_pair(key, new_beacon));
-    // TODO: from "beacon *new_beacon = new beacon;" until here functions are identical again
-    uint16_t path_len = new_path->size();
-
-    if (remote_as->beacon_store.find(src_as) != remote_as->beacon_store.end()){
-        if (remote_as->beacon_store.at(src_as)->find(path_len) != remote_as->beacon_store.at(src_as)->end()){
-            remote_as->beacon_store.at(src_as)->at(path_len)->insert(new_beacon);
-        } else{
-            remote_as->beacon_store.at(src_as)->insert(std::make_pair(path_len, new beacons_with_equal_length({new_beacon})));
-        }
-    } else {
-        remote_as->beacon_store.insert(std::make_pair(src_as, new equal_as_beacons_sorted_by_length));
-        remote_as->beacon_store.at(src_as)->insert(std::make_pair(path_len, new beacons_with_equal_length({new_beacon})));
-    }
-
-    if (immediate_src) {
-        // virtual void processImmediateReceive(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon, std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces, SCION_Node* node) = 0;
-        ns3::Simulator::Schedule(ns3::MilliSeconds(1), &SCION_Node::ProcessReceivedBeacons, remote_as, src_as, remote_ingress_if_no, new_beacon);
-    }
-
-    if (immediate_non_src) {
-        uint64_t delay = (uint64_t) (latency_for_immediate * 1000000);
-        ns3::Simulator::Schedule(ns3::NanoSeconds(delay), &SCION_Node::ProcessReceivedBeacons, remote_as, src_as, remote_ingress_if_no, new_beacon);
-    }
-
+void Baseline::UpdateSpecializedBeaconStore(ns3::Ptr<SCION_Node> remote_as, ld latency, ld bwd, uint16_t src_as_no,
+                                  beacon *new_beacon){
+    // We do not use a specialized beacon store structure for this strategy
+    return;
 }

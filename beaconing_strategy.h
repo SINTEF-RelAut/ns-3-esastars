@@ -25,9 +25,14 @@ protected:
     static void UpdateBeaconStoreAndCountersBeforeBeaconing(ns3::Ptr<SCION_Node> node);
     static std::tuple<uint16_t, ns3::Ptr<SCION_Node>> GetRemoteAsInfo(ns3::Ptr<SCION_Node> node, uint16_t egress_interface_no);
 
-    virtual void GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_as_no, uint16_t remote_ingress_if_no,
+    void GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_as_no, uint16_t remote_ingress_if_no,
                                        ns3::Ptr<SCION_Node> node, ns3::Ptr<SCION_Node> remote_as,
                                        ld latency, ld bwd, bool immediate, ld latency_for_immediate);
+    // TODO: Better name?
+    virtual void HandleFullBeaconStore(std::string key, uint16_t src_as, beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_as_no, uint16_t remote_ingress_if_no,
+                                       ns3::Ptr<SCION_Node> node, ns3::Ptr<SCION_Node> remote_as,
+                                       ld latency, ld bwd) = 0;
+    virtual void UpdateSpecializedBeaconStore(ns3::Ptr<SCION_Node> remote_as, ld latency, ld bwd, uint16_t src_as_no, beacon *new_beacon) = 0;
 
 };
 #endif //SCION_BEACONING_SIMMULATOR_BEACONING_STRATEGY_H
