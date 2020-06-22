@@ -160,11 +160,11 @@ void Baseline::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if
         if (remote_as->beacon_store.at(src_as)->find(path_len) != remote_as->beacon_store.at(src_as)->end()){
             remote_as->beacon_store.at(src_as)->at(path_len)->insert(new_beacon);
         } else{
-            remote_as->beacon_store.at(src_as)->insert(std::make_pair(path_len, new beacons_received_from_same_as({new_beacon})));
+            remote_as->beacon_store.at(src_as)->insert(std::make_pair(path_len, new beacons_with_equal_length({new_beacon})));
         }
     } else {
         remote_as->beacon_store.insert(std::make_pair(src_as, new beacons_with_same_src_as));
-        remote_as->beacon_store.at(src_as)->insert(std::make_pair(path_len, new beacons_received_from_same_as({new_beacon})));
+        remote_as->beacon_store.at(src_as)->insert(std::make_pair(path_len, new beacons_with_equal_length({new_beacon})));
     }
 
     if (immediate_src) {
