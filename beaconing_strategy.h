@@ -27,7 +27,7 @@ protected:
 
     virtual void GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_as_no, uint16_t remote_ingress_if_no,
                                        ns3::Ptr<SCION_Node> node, ns3::Ptr<SCION_Node> remote_as,
-                                       ld latency, ld bwd, bool immediate, ld latency_for_immediate) = 0;
+                                       ld latency, ld bwd, bool immediate, ld latency_for_immediate);
 
 };
 #endif //SCION_BEACONING_SIMMULATOR_BEACONING_STRATEGY_H
