@@ -233,7 +233,7 @@ void CriteriaMatching::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_e
             remote_as->beacon_store.at(src_as)->at(node->as_number)->insert(new_beacon);
         }
     } else {
-        remote_as->beacon_store.insert(std::make_pair(src_as, new beacons_with_same_src_as));
+        remote_as->beacon_store.insert(std::make_pair(src_as, new equal_as_beacons_sorted_by_length));
         remote_as->beacon_store.at(src_as)->insert(std::make_pair(node->as_number, new beacons_with_equal_length()));
         remote_as->beacon_store.at(src_as)->at(node->as_number)->insert(new_beacon);
     }

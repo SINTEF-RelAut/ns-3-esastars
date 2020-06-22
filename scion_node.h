@@ -19,7 +19,7 @@
 class BeaconingStrategy;
 
 typedef std::unordered_set<beacon *> beacons_with_equal_length;
-typedef std::map<uint16_t, beacons_with_equal_length *> beacons_with_same_src_as;
+typedef std::map<uint16_t, beacons_with_equal_length *> equal_as_beacons_sorted_by_length;
 
 class SCION_Node : public ns3::Node { // TODO: How about aggregating instead?
 
@@ -43,7 +43,7 @@ public:
     std::vector<int32_t> inter_as_bwds;
 
     // beacon store structures ***************************************************************************************************
-    std::unordered_map<uint16_t, beacons_with_same_src_as *> beacon_store;
+    std::unordered_map<uint16_t, equal_as_beacons_sorted_by_length *> beacon_store;
     std::unordered_map<uint16_t, std::multimap <ld, beacon* >* > beacons_sorted_by_score;
     std::unordered_map<std::string, beacon*> path_map_to_beacon;
     // helper structures ********************************************************************************************************

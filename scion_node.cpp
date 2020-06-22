@@ -42,7 +42,7 @@ std::pair<ld, ld> SCION_Node::calculate_final_diversity_scores(beacon *the_beaco
     ld link_level_diversity_score = 0;
     int32_t counter = 0;
     uint16_t src_as = *the_beacon->the_path->at(0);
-    beacons_with_same_src_as *equal_scr_as_beacons = beacon_store.at(src_as);
+    equal_as_beacons_sorted_by_length *equal_scr_as_beacons = beacon_store.at(src_as);
     for (auto const &received_if_beacon_vector_pair : *equal_scr_as_beacons) {
         for (auto const &curr_beacon : *received_if_beacon_vector_pair.second) {
             if (curr_beacon != the_beacon) {
