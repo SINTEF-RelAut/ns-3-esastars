@@ -21,6 +21,10 @@ class BeaconingStrategy;
 typedef std::unordered_set<beacon *> beacons_with_equal_length;
 typedef std::map<uint16_t, beacons_with_equal_length *> equal_as_beacons_sorted_by_length;
 
+// typedefs to reduce the number of arguments in constructor
+typedef std::pair<ns3::Time,int64_t> simulator_params; // beaconing_period, expiration_period
+typedef std::tuple<ld, ld, ld, ld> coefficients; // 0:latency_coef, 1:bandwidth_coef, 2:AS_level_diversity_coef, 3:link_level_diversity_coef
+
 class SCION_Node : public ns3::Node { // TODO: How about aggregating instead?
 
 public:
@@ -56,13 +60,13 @@ public:
     std::unordered_map<uint16_t, uint64_t> valid_beacons_count_per_src_as;
     std::unordered_map<int64_t, std::vector<uint32_t> > bytes_sent_per_interface_per_period;
 
-    SCION_Node(uint16_t as_number, uint32_t system_id, ld latency_coef, ld bandwidth_coef, ld AS_level_diversity_coef,
-           ld link_level_diversity_coef, ns3::Time beaconing_period, int64_t expiration_period, BeaconingStrategy* strategy) : Node(
-            system_id), as_number(as_number), latency_coef(latency_coef), bandwidth_coef(bandwidth_coef),
-                                           AS_level_diversity_coef(AS_level_diversity_coef),
-                                           link_level_diversity_coef(link_level_diversity_coef),
-                                           beaconing_period(beaconing_period),
-                                           expiration_period(expiration_period),
+
+    SCION_Node(uint16_t as_number, uint32_t system_id, coefficients coefs, const simulator_params &periods, BeaconingStrategy* strategy) : Node(
+            system_id), as_number(as_number), latency_coef(std::get<0>(coefs)), bandwidth_coef(std::get<1>(coefs)),
+                                           AS_level_diversity_coef(std::get<2>(coefs)),
+                                           link_level_diversity_coef(std::get<3>(coefs)),
+                                           beaconing_period(periods.first),
+                                           expiration_period(periods.second),
                                            strategy(strategy){}
 
     void DoInitializations();
