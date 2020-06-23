@@ -185,11 +185,13 @@ int main(int argc, char *argv[]) {
     for (ns3::Time t = ns3::Seconds(0.0); t < ns3::Time(argv[3]); t += beaconing_period) {
         // ProcessReceivedBeacons(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon) = 0;
         //  ns3::Simulator::Schedule(ns3::MilliSeconds(1), &SCION_Node::ProcessReceivedBeacons, remote_as, src_as_no, remote_ingress_if_no, new_beacon);
-        ns3::Simulator::Schedule(t + ns3::Seconds(30.0), SCION_Node::ProcessReceivedBeacons, nodes);
+        ns3::Simulator::Schedule(t + ns3::Seconds(30.0), &ProcessReceivedPacketsParallel, nodes);
 
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-            Ptr<myNode> the_node = DynamicCast<myNode>(nodes.Get(i));
-            Simulator::Schedule(t, &myNode::DoBeaconing, the_node);
+            ns3::Ptr<SCION_Node> the_node = DynamicCast<SCION_Node>(nodes.Get(i));
+            // TODO: Careful for testing only Core Beaconing
+            ns3::Simulator::Schedule(t, &SCION_Node::CoreBeaconing, the_node);
+            ns3::Simulator::Schedule(t, &SCION_Node::IntraISDBeaconing, the_node);
         }
     }
 

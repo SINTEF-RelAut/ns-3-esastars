@@ -71,6 +71,8 @@ public:
 
     virtual void ProcessReceivedBeacons(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon) = 0;
 
+    virtual void CoreBeaconing() = 0;
+
     void FinalPathEvaluation(std::map<ld, uint64_t> &satisfaction_stat,
                              std::map<ld, uint64_t> &AS_level_diversity_stat,
                              std::map<ld, uint64_t> &link_level_diversity_stat);

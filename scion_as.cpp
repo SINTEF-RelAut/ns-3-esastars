@@ -21,3 +21,7 @@ void SCION_As::ProcessReceivedBeacons(uint16_t src_as_no, uint16_t ingress_if, b
     std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces = this->GetValidInterfaces(neighbour_relation::CUSTOMER);
     this->strategy->processImmediateReceive(src_as_no, ingress_if, the_beacon, valid_interfaces, this);
 }
+
+void SCION_As::CoreBeaconing(){
+    // Leaf ASes do not do any core beaconing
+}
