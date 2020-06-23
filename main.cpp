@@ -4,7 +4,10 @@
 
 #include "utils.h"
 #include "beaconing_strategy.h"
+#include "criteria_matching.h"
+#include "baseline.h"
 #include "scion_core_as.h"
+#include "scion_as.h"
 #include "ns3/ptr.h"
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
@@ -73,10 +76,10 @@ int main(int argc, char *argv[]) {
         ld link_level_diversity_coef = std::stod(p.getProperty("link_level_diversity_coef"));
 
         // TODO: Need to instantiate differently if we want other types of nodes
-        // SCION_Core_As(uint16_t as_number, uint32_t system_id, ld latency_coef, ld bandwidth_coef, ld AS_level_diversity_coef,
-        //    ld link_level_diversity_coef, ns3::Time beaconing_period, int64_t expiration_period, BeaconingStrategy* strategy) :
-        nodes.Add(ns3::CreateObject<SCION_Core_As>(node_counter, 0, latency_coef, bandwidth_coef, AS_level_diversity_coef,
-                                       link_level_diversity_coef));
+        simulator_params periods = std::make_pair(beaconing_period, expiration_period);
+        coefficients coefs = std::make_tuple(latency_coef, bandwidth_coef, AS_level_diversity_coef,
+                                             link_level_diversity_coef);
+        nodes.Add(ns3::CreateObject<SCION_Core_As>(node_counter, 0, coefs, periods, new CriteriaMatching()));
 
         ASes.insert(std::make_pair(as_number, node_counter));
 
