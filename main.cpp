@@ -3,6 +3,7 @@
 //
 
 #include "utils.h"
+#include "beaconing_strategy.h"
 #include "scion_core_as.h"
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
@@ -12,6 +13,16 @@
 #include <ns3/nstime.h>
 #include <fstream>
 #include <istream>
+
+// TODO: Should this be here? or in utils? Or a simulator file with the configs as well?
+void ProcessReceivedPacketsParallel(ns3::NodeContainer nodes) {
+    uint32_t node_number = nodes.GetN();
+
+#pragma omp parallel for
+    for (uint32_t i = 0; i < node_number; ++i) {
+        DynamicCast<SCION_Node>(nodes.Get(i))->strategy->UpdateBeaconStoreAndCountersBeforeBeaconing(DynamicCast<SCION_Node>(nodes.Get(i)));
+    }
+}
 
 int main(int argc, char *argv[]) {
 
@@ -167,13 +178,14 @@ int main(int argc, char *argv[]) {
         curNode = curNode->next_sibling("link");
     }
 
-
     for (uint64_t i = 0; i < nodes.GetN(); ++i) {
         DynamicCast<SCION_Node>(nodes.Get(i))->DoInitializations();
     }
 
-    for (Time t = Seconds(0.0); t < Time(argv[3]); t += beaconing_period) {
-        Simulator::Schedule(t + Seconds(30.0), &ProcessReceivedPacketsParallel, nodes);
+    for (ns3::Time t = ns3::Seconds(0.0); t < ns3::Time(argv[3]); t += beaconing_period) {
+        // ProcessReceivedBeacons(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon) = 0;
+        //  ns3::Simulator::Schedule(ns3::MilliSeconds(1), &SCION_Node::ProcessReceivedBeacons, remote_as, src_as_no, remote_ingress_if_no, new_beacon);
+        ns3::Simulator::Schedule(t + ns3::Seconds(30.0), SCION_Node::ProcessReceivedBeacons, nodes);
 
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             Ptr<myNode> the_node = DynamicCast<myNode>(nodes.Get(i));
