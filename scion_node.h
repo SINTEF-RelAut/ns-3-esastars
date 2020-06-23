@@ -34,7 +34,7 @@ public:
     int32_t AS_max_bwd;
 
     // Interfaces Properties *****************************************************************************************************
-    enum neighbour_relation {PEER, CUSTOMER, PROVIDER};
+    enum neighbour_relation {CORE, PEER, CUSTOMER, PROVIDER};
     std::vector<uint16_t> neighbors;
     std::unordered_map<uint16_t, std::vector<std::pair<uint16_t, neighbour_relation>>> interfaces_per_neighbor_as;
 
