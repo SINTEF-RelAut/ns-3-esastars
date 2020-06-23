@@ -5,13 +5,12 @@
 #include "utils.h"
 #include "beaconing_strategy.h"
 #include "scion_core_as.h"
+#include "ns3/ptr.h"
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
 #include "ns3/point-to-point-helper.h"
-#include "ns3/point-to-point-net-device.h"
 #include "ns3/point-to-point-channel.h"
 #include <ns3/nstime.h>
-#include <fstream>
 #include <istream>
 
 // TODO: Should this be here? or in utils? Or a simulator file with the configs as well?
@@ -20,7 +19,7 @@ void ProcessReceivedPacketsParallel(ns3::NodeContainer nodes) {
 
 #pragma omp parallel for
     for (uint32_t i = 0; i < node_number; ++i) {
-        DynamicCast<SCION_Node>(nodes.Get(i))->strategy->UpdateBeaconStoreAndCountersBeforeBeaconing(DynamicCast<SCION_Node>(nodes.Get(i)));
+        ns3::DynamicCast<SCION_Node>(nodes.Get(i))->strategy->UpdateBeaconStoreAndCountersBeforeBeaconing(ns3::DynamicCast<SCION_Node>(nodes.Get(i)));
     }
 }
 
@@ -74,6 +73,8 @@ int main(int argc, char *argv[]) {
         ld link_level_diversity_coef = std::stod(p.getProperty("link_level_diversity_coef"));
 
         // TODO: Need to instantiate differently if we want other types of nodes
+        // SCION_Core_As(uint16_t as_number, uint32_t system_id, ld latency_coef, ld bandwidth_coef, ld AS_level_diversity_coef,
+        //    ld link_level_diversity_coef, ns3::Time beaconing_period, int64_t expiration_period, BeaconingStrategy* strategy) :
         nodes.Add(ns3::CreateObject<SCION_Core_As>(node_counter, 0, latency_coef, bandwidth_coef, AS_level_diversity_coef,
                                        link_level_diversity_coef));
 
@@ -112,14 +113,14 @@ int main(int argc, char *argv[]) {
         ns3::Ptr<SCION_Node> toNode;
 
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-            if ((DynamicCast<SCION_Node>(nodes.Get(i)))->as_number == ASes.at(to)) {
+            if ((ns3::DynamicCast<SCION_Node>(nodes.Get(i)))->as_number == ASes.at(to)) {
                 toNode = nodes.Get(i);
                 break;
             }
         }
 
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-            if ((DynamicCast<SCION_Node>(nodes.Get(i)))->as_number == ASes.at(from)) {
+            if ((ns3::DynamicCast<SCION_Node>(nodes.Get(i)))->as_number == ASes.at(from)) {
                 fromNode = nodes.Get(i);
                 break;
             }
@@ -128,8 +129,8 @@ int main(int argc, char *argv[]) {
         ns3::PointToPointHelper helper;
         helper.Install(fromNode, toNode);
 
-        ns3::Ptr<SCION_Node> to_my_node = (DynamicCast<SCION_Node>(toNode));
-        ns3::Ptr<SCION_Node> from_my_node = (DynamicCast<SCION_Node>(fromNode));
+        ns3::Ptr<SCION_Node> to_my_node = (ns3::DynamicCast<SCION_Node>(toNode));
+        ns3::Ptr<SCION_Node> from_my_node = (ns3::DynamicCast<SCION_Node>(fromNode));
 
         to_my_node->interfaces_coordinates.push_back(std::pair<ld, ld>(latitude, longitude));
         from_my_node->interfaces_coordinates.push_back(std::pair<ld, ld>(latitude, longitude));
@@ -179,36 +180,34 @@ int main(int argc, char *argv[]) {
     }
 
     for (uint64_t i = 0; i < nodes.GetN(); ++i) {
-        DynamicCast<SCION_Node>(nodes.Get(i))->DoInitializations();
+        ns3::DynamicCast<SCION_Node>(nodes.Get(i))->DoInitializations();
     }
 
     for (ns3::Time t = ns3::Seconds(0.0); t < ns3::Time(argv[3]); t += beaconing_period) {
-        // ProcessReceivedBeacons(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon) = 0;
-        //  ns3::Simulator::Schedule(ns3::MilliSeconds(1), &SCION_Node::ProcessReceivedBeacons, remote_as, src_as_no, remote_ingress_if_no, new_beacon);
         ns3::Simulator::Schedule(t + ns3::Seconds(30.0), &ProcessReceivedPacketsParallel, nodes);
 
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-            ns3::Ptr<SCION_Node> the_node = DynamicCast<SCION_Node>(nodes.Get(i));
+            ns3::Ptr<SCION_Node> the_node = ns3::DynamicCast<SCION_Node>(nodes.Get(i));
             // TODO: Careful for testing only Core Beaconing
             ns3::Simulator::Schedule(t, &SCION_Node::CoreBeaconing, the_node);
             ns3::Simulator::Schedule(t, &SCION_Node::IntraISDBeaconing, the_node);
         }
     }
 
-    Simulator::Stop(Time(argv[3]));
-    Simulator::Run();
+    ns3::Simulator::Stop(ns3::Time(argv[3]));
+    ns3::Simulator::Run();
 
     //############################################################################################################################################################
-    for (Time t = Seconds(0.0); t < Time(argv[3]); t += beaconing_period) {
+    for (ns3::Time t = ns3::Seconds(0.0); t < ns3::Time(argv[3]); t += beaconing_period) {
         std::cout << "####################################### frequencies of consumed bandwidth at Time "
                   << t
                   << "#######################################" << std::endl;
 
         std::map<uint32_t, uint32_t> frequencies_of_consumed_bwd;
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-            Ptr<myNode> the_node = DynamicCast<myNode>(nodes.Get(i));
+            ns3::Ptr<SCION_Node> the_node = ns3::DynamicCast<SCION_Node>(nodes.Get(i));
             for (uint32_t if_index = 0; if_index < the_node->GetNDevices(); ++if_index) {
-                uint32_t consumed_bwd = the_node->bytes_sent_per_interface_per_period.at(t.ToInteger(Time::NS)).at(if_index);
+                uint32_t consumed_bwd = the_node->bytes_sent_per_interface_per_period.at(t.ToInteger(ns3::Time::NS)).at(if_index);
 
                 if (frequencies_of_consumed_bwd.find(consumed_bwd) != frequencies_of_consumed_bwd.end()) {
                     frequencies_of_consumed_bwd.at(consumed_bwd)++;
@@ -233,7 +232,7 @@ int main(int argc, char *argv[]) {
                 << std::endl;
         std::map<uint64_t, uint64_t> frequencies_of_path_counts_per_src_as_with_certain_length;
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-            for (auto const &src_as_beacons_pair : DynamicCast<myNode>(nodes.Get(i))->beacon_store) {
+            for (auto const &src_as_beacons_pair : ns3::DynamicCast<SCION_Node>(nodes.Get(i))->beacon_store) {
                 uint64_t number_of_paths_with_certain_length = 0;
 
                 for (auto const &ingress_if_beacons_pair : *src_as_beacons_pair.second) {
@@ -270,7 +269,7 @@ int main(int argc, char *argv[]) {
     std::map <ld, uint64_t> link_level_diversity_stat;
 
     for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-        DynamicCast<myNode>(nodes.Get(i))->FinalPathEvaluation(satisfaction_stat,
+        ns3::DynamicCast<SCION_Node>(nodes.Get(i))->FinalPathEvaluation(satisfaction_stat,
                                                                AS_level_diversity_stat,
                                                                link_level_diversity_stat);
     }
@@ -300,6 +299,6 @@ int main(int argc, char *argv[]) {
         std::cout << diversity_pair.first << "\t" << diversity_pair.second << std::endl;
     }
 
-    Simulator::Destroy();
+    ns3::Simulator::Destroy();
     return 0;
 }
