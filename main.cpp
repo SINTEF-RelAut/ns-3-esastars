@@ -25,19 +25,39 @@ void ProcessReceivedPacketsParallel(ns3::NodeContainer nodes) {
 
 int main(int argc, char *argv[]) {
 
+    std::string beaconing_period_str;
+    std::string expiration_period_str;
+    std::string simulator_time_str;
+    std::string topology_str;
+
+    // Debugg
+    if (argc >=4) {
+        beaconing_period_str = argv[1];
+        expiration_period_str = argv[2];
+        simulator_time_str = argv[3];
+        topology_str = argv[4];
+    } else {
+        // Initialize with dummy values
+        beaconing_period_str = "20min";
+        expiration_period_str = "40min";
+        simulator_time_str = "5h";
+        topology_str = "15_geo_rel";
+    }
+
     // TODO: Why are they different types?
-    ns3::Time beaconing_period = ns3::Time(argv[1]);
-    int64_t  expiration_period = ns3::Time(argv[2]).ToInteger(ns3::Time::NS);
-    std::string file = "./topology/" + std::string(argv[4]) + ".xml";
+    ns3::Time beaconing_period = ns3::Time(beaconing_period_str);
+    int64_t  expiration_period = ns3::Time(expiration_period_str).ToInteger(ns3::Time::NS);
+    std::string file = "./topology/" + std::string(topology_str) + ".xml";
 
     std::ifstream fin(file.c_str());
     std::ostringstream sstr;
     sstr << fin.rdbuf();
 
     // TODO: Think about how to set these propperly
+
     std::string out_path =
-            "./results/criteria-matching_" + std::string(argv[4]) + "_" +
-            std::string(argv[1]) + "_" + std::string(argv[2]) + "_" + std::string(argv[3]) + ".txt";
+            "./results/main_" + std::string(topology_str) + "_" +
+            std::string(beaconing_period_str) + "_" + std::string(expiration_period_str) + "_" + std::string(simulator_time_str) + ".txt";
     std::ofstream out(out_path);
     std::cout.rdbuf(out.rdbuf());
 
@@ -187,7 +207,7 @@ int main(int argc, char *argv[]) {
         ns3::DynamicCast<SCION_Node>(nodes.Get(i))->DoInitializations();
     }
 
-    for (ns3::Time t = ns3::Seconds(0.0); t < ns3::Time(argv[3]); t += beaconing_period) {
+    for (ns3::Time t = ns3::Seconds(0.0); t < ns3::Time(simulator_time_str); t += beaconing_period) {
         ns3::Simulator::Schedule(t + ns3::Seconds(30.0), &ProcessReceivedPacketsParallel, nodes);
 
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
@@ -198,11 +218,11 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    ns3::Simulator::Stop(ns3::Time(argv[3]));
+    ns3::Simulator::Stop(ns3::Time(simulator_time_str));
     ns3::Simulator::Run();
 
     //############################################################################################################################################################
-    for (ns3::Time t = ns3::Seconds(0.0); t < ns3::Time(argv[3]); t += beaconing_period) {
+    for (ns3::Time t = ns3::Seconds(0.0); t < ns3::Time(simulator_time_str); t += beaconing_period) {
         std::cout << "####################################### frequencies of consumed bandwidth at Time "
                   << t
                   << "#######################################" << std::endl;
