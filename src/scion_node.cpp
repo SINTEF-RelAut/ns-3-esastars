@@ -103,17 +103,29 @@ void SCION_Node::UpdateTimeAndStats(){
 
 std::unordered_map<uint16_t, std::vector<uint16_t>> SCION_Node::GetValidInterfaces(SCION_Node::neighbour_relation rel){
     // Select the valid interfaces
+    // Original Code
+    //std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces_per_as = std::unordered_map<uint16_t, std::vector<uint16_t>>();
+    //for( auto [neighbour_as_no, interfaces]: this->interfaces_per_neighbor_as ){
+    //    std::vector<uint16_t> valid_interfaces = std::vector<uint16_t>();
+    //    for( auto [intf_no, relation]: interfaces ){
+    //        if ( relation == rel ){
+    //           valid_interfaces.push_back(intf_no);
+    //        }
+    //    }
+    //   if(!valid_interfaces.empty()){
+    //        valid_interfaces_per_as.insert({neighbour_as_no, valid_interfaces});
+    //   }
+    //}
+
+    // TODO: Change back
+    // For testing purposes, simply give back the original interface structure
     std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces_per_as = std::unordered_map<uint16_t, std::vector<uint16_t>>();
     for( auto [neighbour_as_no, interfaces]: this->interfaces_per_neighbor_as ){
         std::vector<uint16_t> valid_interfaces = std::vector<uint16_t>();
         for( auto [intf_no, relation]: interfaces ){
-            if ( relation == rel ){
-                valid_interfaces.push_back(intf_no);
-            }
+            valid_interfaces.push_back(intf_no);
         }
-        if(!valid_interfaces.empty()){
-            valid_interfaces_per_as.insert({neighbour_as_no, valid_interfaces});
-        }
+        valid_interfaces_per_as.insert({neighbour_as_no, valid_interfaces});
     }
     return valid_interfaces_per_as;
 }

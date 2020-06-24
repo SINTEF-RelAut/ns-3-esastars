@@ -47,13 +47,21 @@ int main(int argc, char *argv[]) {
     // TODO: Why are they different types?
     ns3::Time beaconing_period = ns3::Time(beaconing_period_str);
     int64_t  expiration_period = ns3::Time(expiration_period_str).ToInteger(ns3::Time::NS);
-    std::string file = "./topology/" + std::string(topology_str) + ".xml";
+    // TODO: Fix absolute path, "./topology/"
+    std::string file = "/home/chrissy/Documents/Multipath-Paper/ns-3_beaconing_simulator/topology/" + std::string(topology_str) + ".xml";
 
     std::ifstream fin(file.c_str());
     std::ostringstream sstr;
     sstr << fin.rdbuf();
 
     // TODO: Think about how to set these propperly
+    // This is the worst in terms of debugging..
+    // TODO: this block ->
+    sstr.flush();
+    fin.close();
+    std::string xmlData = sstr.str();
+    std::cout << "Hello World" << std::endl;
+    std::cout << xmlData.size() << std::endl;
 
     std::string out_path =
             "./results/main_" + std::string(topology_str) + "_" +
@@ -61,10 +69,8 @@ int main(int argc, char *argv[]) {
     std::ofstream out(out_path);
     std::cout.rdbuf(out.rdbuf());
 
-    sstr.flush();
-    fin.close();
+    // TODO: was here
 
-    std::string xmlData = sstr.str();
     rapidxml::xml_document<> doc;
     doc.parse<0>(&xmlData[0]);
 
