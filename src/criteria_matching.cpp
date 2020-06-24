@@ -1,6 +1,7 @@
 //
 // Created by chrissy on 10.06.20.
 //
+#include <omp.h>
 #include "../headers/criteria_matching.h"
 #include "ns3/point-to-point-channel.h"
 

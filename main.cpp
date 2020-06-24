@@ -3,8 +3,12 @@
 //
 
 #include "headers/utils.h"
+#include "headers/beaconing_strategy.h"
 #include "headers/criteria_matching.h"
+#include "headers/baseline.h"
+#include "headers/scion_node.h"
 #include "headers/scion_core_as.h"
+#include "headers/scion_as.h"
 #include "ns3/ptr.h"
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
@@ -12,11 +16,13 @@
 #include "ns3/point-to-point-channel.h"
 #include <ns3/nstime.h>
 #include <istream>
+#include <omp.h>
 
 // TODO: Should this be here? or in utils? Or a simulator file with the configs as well?
 void ProcessReceivedPacketsParallel(ns3::NodeContainer nodes) {
+    // Just do this once instead of checking for node_no == 0 every time one lvl down.
+    std::cout << "################################## " << ns3::DynamicCast<SCION_Node>(nodes.Get(0))->now << " #########################################" << std::endl;
     uint32_t node_number = nodes.GetN();
-
 #pragma omp parallel for
     for (uint32_t i = 0; i < node_number; ++i) {
         ns3::DynamicCast<SCION_Node>(nodes.Get(i))->strategy->UpdateBeaconStoreAndCountersBeforeBeaconing(ns3::DynamicCast<SCION_Node>(nodes.Get(i)));
@@ -55,13 +61,6 @@ int main(int argc, char *argv[]) {
     sstr << fin.rdbuf();
 
     // TODO: Think about how to set these propperly
-    // This is the worst in terms of debugging..
-    // TODO: this block ->
-    sstr.flush();
-    fin.close();
-    std::string xmlData = sstr.str();
-    std::cout << "Hello World" << std::endl;
-    std::cout << xmlData.size() << std::endl;
 
     std::string out_path =
             "./results/main_" + std::string(topology_str) + "_" +
@@ -69,7 +68,9 @@ int main(int argc, char *argv[]) {
     std::ofstream out(out_path);
     std::cout.rdbuf(out.rdbuf());
 
-    // TODO: was here
+    sstr.flush();
+    fin.close();
+    std::string xmlData = sstr.str();
 
     rapidxml::xml_document<> doc;
     doc.parse<0>(&xmlData[0]);
@@ -102,8 +103,7 @@ int main(int argc, char *argv[]) {
         simulator_params periods = std::make_pair(beaconing_period, expiration_period);
         coefficients coefs = std::make_tuple(latency_coef, bandwidth_coef, AS_level_diversity_coef,
                                              link_level_diversity_coef);
-        nodes.Add(ns3::CreateObject<SCION_Core_As>(node_counter, 0, coefs, periods, new CriteriaMatching()));
-
+        nodes.Add(ns3::CreateObject<SCION_Core_As>(node_counter, 0, coefs, periods, new Baseline()));
         ASes.insert(std::make_pair(as_number, node_counter));
 
         node_counter++;
@@ -220,7 +220,8 @@ int main(int argc, char *argv[]) {
             ns3::Ptr<SCION_Node> the_node = ns3::DynamicCast<SCION_Node>(nodes.Get(i));
             // TODO: Careful for testing only Core Beaconing
             ns3::Simulator::Schedule(t, &SCION_Node::CoreBeaconing, the_node);
-            ns3::Simulator::Schedule(t, &SCION_Node::IntraISDBeaconing, the_node);
+            // TODO: Change back after testing
+            //ns3::Simulator::Schedule(t, &SCION_Node::IntraISDBeaconing, the_node);
         }
     }
 

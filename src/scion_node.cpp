@@ -120,10 +120,19 @@ std::unordered_map<uint16_t, std::vector<uint16_t>> SCION_Node::GetValidInterfac
     // TODO: Change back
     // For testing purposes, simply give back the original interface structure
     std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces_per_as = std::unordered_map<uint16_t, std::vector<uint16_t>>();
-    for( auto [neighbour_as_no, interfaces]: this->interfaces_per_neighbor_as ){
+    for( auto &[neighbour_as_no, interfaces]: this->interfaces_per_neighbor_as ){
         std::vector<uint16_t> valid_interfaces = std::vector<uint16_t>();
         for( auto [intf_no, relation]: interfaces ){
-            valid_interfaces.push_back(intf_no);
+            switch(relation){
+                case SCION_Node::neighbour_relation::PROVIDER:
+                    valid_interfaces.push_back(intf_no);
+                case SCION_Node::neighbour_relation::CUSTOMER:
+                    valid_interfaces.push_back(intf_no);
+                case SCION_Node::neighbour_relation::PEER:
+                    valid_interfaces.push_back(intf_no);
+                case SCION_Node::neighbour_relation::CORE:
+                    valid_interfaces.push_back(intf_no);
+            }
         }
         valid_interfaces_per_as.insert({neighbour_as_no, valid_interfaces});
     }
