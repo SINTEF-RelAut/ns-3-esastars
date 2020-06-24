@@ -115,4 +115,5 @@ std::unordered_map<uint16_t, std::vector<uint16_t>> SCION_Node::GetValidInterfac
             valid_interfaces_per_as.insert({neighbour_as_no, valid_interfaces});
         }
     }
+    return valid_interfaces_per_as;
 }
