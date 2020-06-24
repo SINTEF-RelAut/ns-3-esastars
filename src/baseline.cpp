@@ -8,8 +8,13 @@
 
 void Baseline::DisseminateBeacons(const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, ns3::Ptr<SCION_Node> node){
 #pragma omp parallel for
-    for (auto const &[remote_as_no, interfaces]: valid_interfaces){
-        for (auto const [src_as_no, equal_src_as_beacons] : node->beacon_store) { // Per source AS
+    for (uint32_t i = 0; i < node->neighbors.size(); ++i){
+        uint16_t remote_as_no = node->neighbors.at(i);
+        std::vector<uint16_t> interfaces = valid_interfaces.at(remote_as_no);
+        // TODO: Figure out why it is complaining about structured bindings and change back..
+        for (auto const it: node->beacon_store) { // Per source AS
+            auto src_as_no = it.first;
+            auto equal_src_as_beacons = it.second;
             int16_t  sent_count = 0;
             if (remote_as_no == src_as_no) {
                 continue;

@@ -29,12 +29,12 @@ def build(bld):
 
     obj = bld.create_ns3_program('scion-distributed',
                                  ['point-to-point', 'mpi'])
- 
+
     obj.source = 'scion-distributed.cc'
 
     obj = bld.create_ns3_program('scion-baseline',
                                  ['point-to-point'])
- 
+
     obj.source = 'scion-baseline.cc'
 
     obj = bld.create_ns3_program('scion-baseline-multiple-links',
@@ -63,4 +63,5 @@ def build(bld):
                                 ['SCION', 'point-to-point'])
 
     obj.source = 'main.cpp'
+
 
