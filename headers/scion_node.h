@@ -10,7 +10,6 @@
 #ifndef SCION_BEACONING_SIMMULATOR_SCION_NODE_H
 #define SCION_BEACONING_SIMMULATOR_SCION_NODE_H
 #include "beacon.h"
-//#include "beaconing_strategy.h"
 #include "ns3/network-module.h"
 #include "ns3/node.h"
 #include <unordered_set>
@@ -31,9 +30,9 @@ class SCION_Node : public ns3::Node { // TODO: How about aggregating instead?
 public:
     //AS properties
     uint16_t as_number;
+    // TODO: Is this the right spot? This would probably be better suited in a centralized "config" object
     int64_t now;
     ns3::Time beaconing_period;
-    // TODO: Is this the right spot? This would probably be better suited in a centralized "config" object
     int64_t expiration_period;
     ld latency_coef, bandwidth_coef, AS_level_diversity_coef, link_level_diversity_coef;
     int32_t AS_max_bwd;
@@ -61,14 +60,10 @@ public:
     std::unordered_map<uint16_t, uint64_t> valid_beacons_count_per_src_as;
     std::unordered_map<int64_t, std::vector<uint32_t> > bytes_sent_per_interface_per_period;
 
-
-    SCION_Node(uint16_t as_number, uint32_t system_id, coefficients coefs, const simulator_params &periods, BeaconingStrategy* strategy) : Node(
-            system_id), as_number(as_number), latency_coef(std::get<0>(coefs)), bandwidth_coef(std::get<1>(coefs)),
-                                           AS_level_diversity_coef(std::get<2>(coefs)),
-                                           link_level_diversity_coef(std::get<3>(coefs)),
-                                           beaconing_period(periods.first),
-                                           expiration_period(periods.second),
-                                           strategy(strategy){}
+    SCION_Node(uint16_t as_number, uint32_t system_id, coefficients coefs, const simulator_params &periods, BeaconingStrategy* strategy) :
+    Node(   system_id), as_number(as_number), beaconing_period(periods.first), expiration_period(periods.second),
+    latency_coef(std::get<0>(coefs)), bandwidth_coef(std::get<1>(coefs)), AS_level_diversity_coef(std::get<2>(coefs)),
+    link_level_diversity_coef(std::get<3>(coefs)), strategy(strategy){}
 
     void DoInitializations();
 

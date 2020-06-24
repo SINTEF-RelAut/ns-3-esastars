@@ -152,6 +152,10 @@ int main(int argc, char *argv[]) {
             case SCION_Node::neighbour_relation::CUSTOMER:
                 to_rel = SCION_Node::neighbour_relation::PROVIDER;
                 from_rel = SCION_Node::neighbour_relation::CUSTOMER;
+            case SCION_Node::neighbour_relation::PROVIDER:
+                // TODO: Only here cause compiler complained..
+                to_rel = SCION_Node::neighbour_relation::CUSTOMER;
+                from_rel = SCION_Node::neighbour_relation::PROVIDER;
         }
 
         if (to_my_node->interfaces_per_neighbor_as.find(from_my_node->as_number) !=
