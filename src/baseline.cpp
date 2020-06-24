@@ -2,8 +2,7 @@
 // Created by chrissy on 10.06.20.
 //
 
-#include "baseline.h"
-#include "ns3/point-to-point-helper.h"
+#include "../headers/baseline.h"
 #include "ns3/point-to-point-net-device.h"
 #include "ns3/point-to-point-channel.h"
 

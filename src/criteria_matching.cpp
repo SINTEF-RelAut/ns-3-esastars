@@ -1,8 +1,7 @@
 //
 // Created by chrissy on 10.06.20.
 //
-#include "criteria_matching.h"
-#include "ns3/point-to-point-helper.h"
+#include "../headers/criteria_matching.h"
 #include "ns3/point-to-point-channel.h"
 
 void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, ns3::Ptr<SCION_Node> node){

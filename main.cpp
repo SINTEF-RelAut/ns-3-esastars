@@ -2,12 +2,9 @@
 // Created by chrissy on 23.06.20.
 //
 
-#include "utils.h"
-#include "beaconing_strategy.h"
-#include "criteria_matching.h"
-#include "baseline.h"
-#include "scion_core_as.h"
-#include "scion_as.h"
+#include "headers/utils.h"
+#include "headers/criteria_matching.h"
+#include "headers/scion_core_as.h"
 #include "ns3/ptr.h"
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
@@ -117,14 +114,14 @@ int main(int argc, char *argv[]) {
 
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             if ((ns3::DynamicCast<SCION_Node>(nodes.Get(i)))->as_number == ASes.at(to)) {
-                toNode = nodes.Get(i);
+                toNode = ns3::DynamicCast<SCION_Node>(nodes.Get(i));
                 break;
             }
         }
 
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             if ((ns3::DynamicCast<SCION_Node>(nodes.Get(i)))->as_number == ASes.at(from)) {
-                fromNode = nodes.Get(i);
+                fromNode = ns3::DynamicCast<SCION_Node>(nodes.Get(i));
                 break;
             }
         }

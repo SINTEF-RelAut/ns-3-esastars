@@ -12,6 +12,7 @@
 #include "beacon.h"
 //#include "beaconing_strategy.h"
 #include "ns3/network-module.h"
+#include "ns3/node.h"
 #include <unordered_set>
 #include <unordered_map>
 // Forward declaration because of circular dependency

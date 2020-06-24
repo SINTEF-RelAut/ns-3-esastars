@@ -2,20 +2,19 @@
 // Created by chrissy on 10.06.20.
 //
 
-#include "scion_node.h"
-#include "utils.h"
+#include "../headers/scion_node.h"
+#include "../headers/utils.h"
+#include "../headers/beaconing_strategy.h"
 #include "ns3/core-module.h"
-#include "beacon.h"
-#include "beaconing_strategy.h"
 
 void SCION_Node::DoInitializations() {
-    intra_as_latencies.resize(this->Node::GetNDevices());
-    for (uint64_t i = 0; i < this->Node::GetNDevices(); ++i) {
-        intra_as_latencies.at(i).resize(this->Node::GetNDevices());
+    intra_as_latencies.resize(this->ns3::Node::GetNDevices());
+    for (uint64_t i = 0; i < this->ns3::Node::GetNDevices(); ++i) {
+        intra_as_latencies.at(i).resize(this->ns3::Node::GetNDevices());
     }
 
-    for (uint32_t i = 0; i < this->Node::GetNDevices(); ++i) {
-        for (uint32_t j = i + 1; j < this->Node::GetNDevices(); ++j) {
+    for (uint32_t i = 0; i < this->ns3::Node::GetNDevices(); ++i) {
+        for (uint32_t j = i + 1; j < this->ns3::Node::GetNDevices(); ++j) {
             intra_as_latencies.at(i).at(j) = calculate_great_circle_latency(interfaces_coordinates.at(i).first,
                                                                             interfaces_coordinates.at(i).second,
                                                                             interfaces_coordinates.at(j).first,

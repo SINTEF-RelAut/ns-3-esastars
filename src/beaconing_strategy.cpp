@@ -2,8 +2,8 @@
 // Created by chrissy on 10.06.20.
 //
 
-#include <ns3/point-to-point-net-device.h>
-#include "beaconing_strategy.h"
+#include "ns3/point-to-point-net-device.h"
+#include "../headers/beaconing_strategy.h"
 #include "ns3/ptr.h"
 
 void BeaconingStrategy::InitiateBeacons(const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, ns3::Ptr<SCION_Node> node){
