@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
         beaconing_period_str = "20min";
         expiration_period_str = "40min";
         simulator_time_str = "5h";
-        topology_str = "15_geo_rel";
+        topology_str = "5_geo_rel";
     }
 
     // TODO: Why are they different types?

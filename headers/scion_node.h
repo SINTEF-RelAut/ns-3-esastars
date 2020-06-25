@@ -65,6 +65,8 @@ public:
     latency_coef(std::get<0>(coefs)), bandwidth_coef(std::get<1>(coefs)), AS_level_diversity_coef(std::get<2>(coefs)),
     link_level_diversity_coef(std::get<3>(coefs)), strategy(strategy){}
 
+    virtual ~SCION_Node() {}
+
     void DoInitializations();
 
     virtual void IntraISDBeaconing() = 0;

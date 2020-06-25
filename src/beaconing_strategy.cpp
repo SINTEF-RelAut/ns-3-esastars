@@ -75,7 +75,6 @@ bool BeaconingStrategy::generates_loop(beacon const* the_beacon, uint16_t remote
 }
 
 void BeaconingStrategy::UpdateBeaconStoreAndCountersBeforeBeaconing(ns3::Ptr<SCION_Node> node){
-    uint16_t src_as = node->as_number;
 
     for (auto const &the_beacon_pair:node->path_map_to_beacon) {
         beacon* the_beacon = the_beacon_pair.second;

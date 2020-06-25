@@ -5,6 +5,7 @@
 #ifndef SCION_BEACONING_SIMMULATOR_BEACONING_STRATEGY_H
 #define SCION_BEACONING_SIMMULATOR_BEACONING_STRATEGY_H
 
+#include <unordered_map>
 #include "beacon.h"
 #include "scion_node.h"
 #include "ns3/point-to-point-helper.h"
