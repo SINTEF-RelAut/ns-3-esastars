@@ -5,7 +5,7 @@
 #include "../headers/criteria_matching.h"
 #include "ns3/point-to-point-channel.h"
 
-void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, ns3::Ptr<SCION_Node> node){
+void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, SCION_Node* node){
 #pragma omp parallel for
     for (uint32_t i = 0; i < node->neighbors.size(); ++i){
         uint16_t remote_as_no = node->neighbors.at(i);
@@ -17,7 +17,7 @@ void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std
             if (remote_as_no == src_as_no) {
                 continue;
             }
-            std::multimap<int64_t, std::tuple<beacon*, uint16_t, uint16_t, ns3::Ptr<SCION_Node>, ld , ld> > beacons_ifaces_matchings_scores;
+            std::multimap<int64_t, std::tuple<beacon*, uint16_t, uint16_t, SCION_Node*, ld , ld> > beacons_ifaces_matchings_scores;
             int16_t  sent_count = 0;
             for (auto const &len_beacons_pair : *equal_src_as_beacons) { // for each length
                 if (sent_count >= FIXED_BEACONS_NUMBER_TO_SEND) {
@@ -35,8 +35,9 @@ void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std
                     // Iterate over all the valid interfaces of this remote AS and send the beacons
                     for (auto egress_interface_no: interfaces){
 
-                        auto [remote_ingress_if_no, remote_as] = GetRemoteAsInfo(node, egress_interface_no);
+                        auto [remote_ingress_if_no, remote_as_ptr] = GetRemoteAsInfo(node, egress_interface_no);
 
+                        SCION_Node* remote_as = ns3::GetPointer(remote_as_ptr);
                         ld latency = the_beacon->latency_stat + node->intra_as_latencies.at(the_beacon->the_path->back()[3]).at(egress_interface_no);
                         ld bwd = the_beacon->bwd_stat > (ld) node->inter_as_bwds.at(egress_interface_no)
                                  ? (ld) node->inter_as_bwds.at(egress_interface_no)
@@ -51,12 +52,14 @@ void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std
                             continue;
                         }
 
-                        beacons_ifaces_matchings_scores.insert(std::make_pair(score, std::tuple<beacon *, uint16_t, uint16_t, ns3::Ptr<SCION_Node>, ld,
+                        beacons_ifaces_matchings_scores.insert(std::make_pair(score, std::tuple<beacon *, uint16_t, uint16_t, SCION_Node*, ld,
                                                                               ld>(the_beacon, egress_interface_no, remote_ingress_if_no, remote_as, latency, bwd)));
 
                         if (beacons_ifaces_matchings_scores.size() > FIXED_BEACONS_NUMBER_TO_SEND) {
                             beacons_ifaces_matchings_scores.erase(beacons_ifaces_matchings_scores.begin());
                         }
+                        // remote_as is out of scope
+                        remote_as_ptr->Unref();
                     }
                 }
             }
@@ -65,7 +68,7 @@ void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std
                 beacon *the_beacon;
                 uint16_t remote_ingress_if_no;
                 uint16_t egress_interface_no;
-                ns3::Ptr<SCION_Node> remote_as;
+                SCION_Node* remote_as;
                 ld latency;
                 ld bwd;
 
@@ -80,13 +83,13 @@ void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std
     }
 }
 
-ld CriteriaMatching::CalculateBeaconScore(ns3::Ptr<SCION_Node> remote_as, ld latency, ld bwd){
+ld CriteriaMatching::CalculateBeaconScore(SCION_Node* remote_as, ld latency, ld bwd){
     return ((1 - latency / 1000) * remote_as->latency_coef + (bwd / 400) * remote_as->bandwidth_coef)
            / (remote_as->latency_coef + remote_as->bandwidth_coef);
 }
 
 void CriteriaMatching::HandleFullBeaconStore(std::string key, uint16_t src_as, beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_as_no, uint16_t remote_ingress_if_no,
-                                             ns3::Ptr<SCION_Node> node, ns3::Ptr<SCION_Node> remote_as,
+                                             SCION_Node* node, SCION_Node* remote_as,
                                              ld latency, ld bwd){
     // Returns true if the beacon store was full
     ld score = CalculateBeaconScore(remote_as, latency, bwd);
@@ -138,7 +141,7 @@ void CriteriaMatching::HandleFullBeaconStore(std::string key, uint16_t src_as, b
     }
 }
 
-void CriteriaMatching::UpdateSpecializedBeaconStore(ns3::Ptr<SCION_Node> remote_as, ld latency, ld bwd, uint16_t src_as_no, beacon *new_beacon){
+void CriteriaMatching::UpdateSpecializedBeaconStore(SCION_Node* remote_as, ld latency, ld bwd, uint16_t src_as_no, beacon *new_beacon){
     ld score = CalculateBeaconScore(remote_as, latency, bwd);
     if (remote_as->beacons_sorted_by_score.find(src_as_no) != remote_as->beacons_sorted_by_score.end()) {
         remote_as->beacons_sorted_by_score.at(src_as_no)->insert(std::make_pair(score, new_beacon));

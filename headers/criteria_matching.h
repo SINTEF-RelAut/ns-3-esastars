@@ -8,18 +8,18 @@
 class CriteriaMatching : public BeaconingStrategy {
 public:
     void DisseminateBeacons(const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces,
-                            ns3::Ptr<SCION_Node> node) override;
+                            SCION_Node* node) override;
 
 protected:
     void HandleFullBeaconStore(std::string key, uint16_t src_as, beacon *old_beacon, uint16_t self_egress_if_no,
                                uint16_t remote_as_no, uint16_t remote_ingress_if_no,
-                               ns3::Ptr<SCION_Node> node, ns3::Ptr<SCION_Node> remote_as,
+                               SCION_Node* node, SCION_Node* remote_as,
                                ld latency, ld bwd) override;
 
-    void UpdateSpecializedBeaconStore(ns3::Ptr<SCION_Node> remote_as, ld latency, ld bwd, uint16_t src_as_no,
+    void UpdateSpecializedBeaconStore(SCION_Node* remote_as, ld latency, ld bwd, uint16_t src_as_no,
                                       beacon *new_beacon) override;
 
 private:
-    static ld CalculateBeaconScore(ns3::Ptr<SCION_Node> remote_as, ld latency, ld bwd);
+    static ld CalculateBeaconScore(SCION_Node* remote_as, ld latency, ld bwd);
 };
 #endif //SCION_BEACONING_SIMMULATOR_CRITERIA_MATCHING_H

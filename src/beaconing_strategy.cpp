@@ -6,28 +6,24 @@
 #include "../headers/beaconing_strategy.h"
 #include "ns3/ptr.h"
 
-void BeaconingStrategy::InitiateBeacons(const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, ns3::Ptr<SCION_Node> node){
+void BeaconingStrategy::InitiateBeacons(const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, SCION_Node* node){
     for (auto const& [remote_as_no, interfaces]: valid_interfaces){
         for (auto const & self_egress_if_no : interfaces) {
-            ns3::Ptr<ns3::PointToPointNetDevice> self_egress_device = ns3::DynamicCast<ns3::PointToPointNetDevice>(
-                    node->GetDevice(self_egress_if_no));
-            ns3::Ptr<ns3::PointToPointChannel> channel = ns3::DynamicCast<ns3::PointToPointChannel>(
-                    self_egress_device->GetChannel());
-            uint32_t wire = self_egress_device == channel->GetSource(0) ? 0 : 1;
-            ns3::Ptr<ns3::PointToPointNetDevice> remote_device = channel->GetDestination(wire);
+            auto [remote_if_no, remote_as_ptr] = GetRemoteAsInfo(node, self_egress_if_no);
 
-            uint16_t remote_if_no = (uint16_t) remote_device->GetIfIndex();
-
-            ns3::Ptr<SCION_Node> remote_as = (ns3::DynamicCast<SCION_Node>(remote_device->GetNode()));
+            SCION_Node* remote_as = ns3::GetPointer(remote_as_ptr);
 
             GenerateBeaconAndSend(NULL, self_egress_if_no, remote_as_no, remote_if_no, node,remote_as,
                                   0.0, node->inter_as_bwds.at(self_egress_if_no), false, 0.0);
+
+            // remote_as goes out of scope
+            remote_as_ptr->Unref();
         }
 
     }
 }
 
-void BeaconingStrategy::AdjustBeaconValidity(beacon* the_beacon, ns3::Ptr<SCION_Node> node){
+void BeaconingStrategy::AdjustBeaconValidity(beacon* the_beacon, SCION_Node* node){
     node->now = ns3::Simulator::Now().ToInteger(ns3::Time::NS);
 
     uint16_t src_as = the_beacon->the_path->at(0)[0];
@@ -74,7 +70,7 @@ bool BeaconingStrategy::generates_loop(beacon const* the_beacon, uint16_t remote
     return false;
 }
 
-void BeaconingStrategy::UpdateBeaconStoreAndCountersBeforeBeaconing(ns3::Ptr<SCION_Node> node){
+void BeaconingStrategy::UpdateBeaconStoreAndCountersBeforeBeaconing(SCION_Node* node){
 
     for (auto const &the_beacon_pair:node->path_map_to_beacon) {
         beacon* the_beacon = the_beacon_pair.second;
@@ -84,7 +80,7 @@ void BeaconingStrategy::UpdateBeaconStoreAndCountersBeforeBeaconing(ns3::Ptr<SCI
     std::cout << node->as_number << "\t" <<node->valid_beacons_count_per_src_as.size() << std::endl; // Print number of source ASes
 }
 
-std::tuple<uint16_t, ns3::Ptr<SCION_Node>> BeaconingStrategy::GetRemoteAsInfo(ns3::Ptr<SCION_Node> node, uint16_t egress_interface_no){
+std::pair<uint16_t, ns3::Ptr<SCION_Node>> BeaconingStrategy::GetRemoteAsInfo(SCION_Node* node, uint16_t egress_interface_no){
     ns3::Ptr<ns3::PointToPointNetDevice> self_egress_device = ns3::DynamicCast<ns3::PointToPointNetDevice>(node->GetDevice(egress_interface_no));
 
     ns3::Ptr<ns3::PointToPointChannel> channel = ns3::DynamicCast<ns3::PointToPointChannel>(self_egress_device->GetChannel());
@@ -95,10 +91,10 @@ std::tuple<uint16_t, ns3::Ptr<SCION_Node>> BeaconingStrategy::GetRemoteAsInfo(ns
 
     ns3::Ptr<SCION_Node> remote_as = (ns3::DynamicCast<SCION_Node>(remote_device->GetNode()));
 
-    return std::make_tuple(remote_ingress_if_no, remote_as);
+    return std::make_pair(remote_ingress_if_no, remote_as);
 }
 
-void BeaconingStrategy::processImmediateReceive(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon, const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, ns3::Ptr<SCION_Node> node){
+void BeaconingStrategy::processImmediateReceive(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon, const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, SCION_Node* node){
     if (node->valid_beacons_count_per_src_as.find(src_as_no) != node->valid_beacons_count_per_src_as.end()) {
         return; // only process unknown beacons immediately
     }
@@ -120,8 +116,8 @@ void BeaconingStrategy::processImmediateReceive(uint16_t src_as_no, uint16_t ing
             }
         }
 
-        auto [remote_ingress_if_no, remote_as] = GetRemoteAsInfo(node, min_egress_if);
-
+        auto [remote_ingress_if_no, remote_as_ptr] = GetRemoteAsInfo(node, min_egress_if);
+        SCION_Node* remote_as = ns3::GetPointer(remote_as_ptr);
         ld latency = the_beacon->latency_stat
                      + node->intra_as_latencies.at(ingress_if).at(min_egress_if);
         ld bwd = the_beacon->bwd_stat > (ld) node->inter_as_bwds.at(min_egress_if)
@@ -130,12 +126,13 @@ void BeaconingStrategy::processImmediateReceive(uint16_t src_as_no, uint16_t ing
 
         GenerateBeaconAndSend(the_beacon, min_egress_if, dst_as_no, remote_ingress_if_no, node,
                               remote_as, latency, bwd, true, min_latency);
-
+        // remote_as goes out of scope
+        remote_as_ptr->Unref();
     }
 }
 
 void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_as_no, uint16_t remote_ingress_if_no,
-                                             ns3::Ptr<SCION_Node> node, ns3::Ptr<SCION_Node> remote_as,
+                                             SCION_Node* node, SCION_Node* remote_as,
                                              ld latency, ld bwd, bool immediate, ld latency_for_immediate) {
     uint16_t src_as_no;
     std::string key;

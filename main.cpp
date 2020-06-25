@@ -25,7 +25,12 @@ void ProcessReceivedPacketsParallel(ns3::NodeContainer nodes) {
     uint32_t node_number = nodes.GetN();
 #pragma omp parallel for
     for (uint32_t i = 0; i < node_number; ++i) {
-        ns3::DynamicCast<SCION_Node>(nodes.Get(i))->strategy->UpdateBeaconStoreAndCountersBeforeBeaconing(ns3::DynamicCast<SCION_Node>(nodes.Get(i)));
+        ns3::Ptr<SCION_Node> ns3_ptr_to_node = ns3::DynamicCast<SCION_Node>(nodes.Get(i));
+        // Don't wanna pass around their smart pointer, seems to lead to race conditions regarding Uref.
+        SCION_Node* node = ns3::GetPointer(ns3_ptr_to_node);
+        //ns3::DynamicCast<SCION_Node>(nodes.Get(i))->strategy->UpdateBeaconStoreAndCountersBeforeBeaconing(ns3::DynamicCast<SCION_Node>(nodes.Get(i)));
+        node->strategy->UpdateBeaconStoreAndCountersBeforeBeaconing(node);
+        ns3_ptr_to_node->Unref();
     }
 }
 
@@ -47,7 +52,7 @@ int main(int argc, char *argv[]) {
         beaconing_period_str = "20min";
         expiration_period_str = "40min";
         simulator_time_str = "5h";
-        topology_str = "5_geo_rel";
+        topology_str = "10_geo_rel";
     }
 
     // TODO: Why are they different types?
