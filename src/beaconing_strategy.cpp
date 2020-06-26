@@ -31,7 +31,7 @@ void BeaconingStrategy::AdjustBeaconValidity(beacon* the_beacon, SCION_Node* nod
         the_beacon->is_new = false;
 
         if (the_beacon->next_expiration_time > node->now) {
-            if (!the_beacon->is_valid) { 
+            if (!the_beacon->is_valid) {
                 if(node->valid_beacons_count_per_src_as.find(src_as) != node->valid_beacons_count_per_src_as.end()){
                     node->valid_beacons_count_per_src_as.at(src_as)++;
                 } else {
@@ -163,7 +163,7 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
         // src_AS_no not found in next_round beacon store. Or less than 5 beacons in next round store from this AS.
         // TODO: Why is this not dependent on the current beacon store like above?
         if (remote_as->next_round_valid_beacons_count_per_src_as.find(src_as_no) == remote_as->next_round_valid_beacons_count_per_src_as.end() ||
-            remote_as->next_round_valid_beacons_count_per_src_as.at(src_as_no) < 5) { // TODO: constant
+            remote_as->next_round_valid_beacons_count_per_src_as.at(src_as_no) < MAX_IMMEDIATE_BEACONS) {
             immediate_non_src = true;
         }
     }
@@ -183,9 +183,6 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
         remote_as->path_map_to_beacon.at(key)->is_new = true;
         return;
     }
-
-    // TODO: From start until here, the functions are identical => make a common function in base class?
-    // Might get a bit spaghetticody because of return? Would have to make an if-else block out of it.
 
     // Update statistics & check if you are sending too many beacons
     if (remote_as->next_round_valid_beacons_count_per_src_as.find(src_as_no) !=
@@ -231,8 +228,6 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
     uint16_t path_len = new_beacon->the_path->size();
     // Here we can be sure, that the beacon is not in the path map yet (checked before).
     remote_as->path_map_to_beacon.insert(std::make_pair(key, new_beacon));
-
-    // TODO: from "beacon *new_beacon = new beacon;" until here functions are identical again
 
     if (remote_as->beacon_store.find(src_as_no) != remote_as->beacon_store.end()){
         if (remote_as->beacon_store.at(src_as_no)->find(path_len) != remote_as->beacon_store.at(src_as_no)->end()){

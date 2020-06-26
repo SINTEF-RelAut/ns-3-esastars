@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
     std::ostringstream sstr;
     sstr << fin.rdbuf();
 
-    // TODO: Think about how to set these propperly
+    // TODO: Think about how to automatically set an appropriate name, maybe in conjunction with simulator configs?
 
     std::string out_path =
             "./results/main_" + std::string(topology_str) + "_" +
@@ -184,7 +184,6 @@ int main(int argc, char *argv[]) {
                 to_rel = SCION_Node::neighbour_relation::PROVIDER;
                 from_rel = SCION_Node::neighbour_relation::CUSTOMER;
             case SCION_Node::neighbour_relation::PROVIDER:
-                // TODO: Only here cause compiler complained..
                 to_rel = SCION_Node::neighbour_relation::CUSTOMER;
                 from_rel = SCION_Node::neighbour_relation::PROVIDER;
         }

@@ -12,6 +12,9 @@
 #include "ns3/point-to-point-net-device.h"
 #include "ns3/point-to-point-channel.h"
 
+// TODO: Consider moving all the constants and macros into a config file?
+const uint8_t MAX_IMMEDIATE_BEACONS = 5;
+
 class BeaconingStrategy{
 public:
     void InitiateBeacons(const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, SCION_Node* node);
