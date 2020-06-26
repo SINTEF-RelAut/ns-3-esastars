@@ -42,6 +42,7 @@ int main(int argc, char *argv[]) {
     std::string topology_str;
 
     // Debugg
+    // TODO: Remove after testing
     if (argc >=4) {
         beaconing_period_str = argv[1];
         expiration_period_str = argv[2];
@@ -75,8 +76,8 @@ int main(int argc, char *argv[]) {
 
     sstr.flush();
     fin.close();
-    std::string xmlData = sstr.str();
 
+    std::string xmlData = sstr.str();
     rapidxml::xml_document<> doc;
     doc.parse<0>(&xmlData[0]);
 
@@ -98,6 +99,8 @@ int main(int argc, char *argv[]) {
     while (curNode) {
         int32_t as_number = std::stoi(getAttribute(curNode, "id"));
         PropertyContainer p = parseProperties(curNode);
+
+        // TODO: Add the node type once you have an example from Seyedali
 
         ld latency_coef = std::stod(p.getProperty("latency_coef"));
         ld bandwidth_coef = std::stod(p.getProperty("bandwidth_coef"));
@@ -163,6 +166,8 @@ int main(int argc, char *argv[]) {
         ns3::Ptr<SCION_Node> to_my_node = (ns3::DynamicCast<SCION_Node>(toNode));
         ns3::Ptr<SCION_Node> from_my_node = (ns3::DynamicCast<SCION_Node>(fromNode));
 
+        // TODO: Guess we could save some space by computing the intra AS latencies now and only storing one value
+        // Check if we need the lat & long for anything else?
         to_my_node->interfaces_coordinates.push_back(std::pair<ld, ld>(latitude, longitude));
         from_my_node->interfaces_coordinates.push_back(std::pair<ld, ld>(latitude, longitude));
 
@@ -183,14 +188,13 @@ int main(int argc, char *argv[]) {
             case SCION_Node::neighbour_relation::CUSTOMER:
                 to_rel = SCION_Node::neighbour_relation::PROVIDER;
                 from_rel = SCION_Node::neighbour_relation::CUSTOMER;
-            case SCION_Node::neighbour_relation::PROVIDER:
+            case SCION_Node::neighbour_relation::PROVIDER: // Should never happen, there is no "Provider" type in xml files
                 to_rel = SCION_Node::neighbour_relation::CUSTOMER;
                 from_rel = SCION_Node::neighbour_relation::PROVIDER;
         }
 
         if (to_my_node->interfaces_per_neighbor_as.find(from_my_node->as_number) !=
             to_my_node->interfaces_per_neighbor_as.end()) {
-            // std::unordered_map<uint16_t, std::vector<std::pair<uint16_t, neighbour_relation>>> interfaces_per_neighbor_as;
             to_my_node->interfaces_per_neighbor_as.at(from_my_node->as_number).push_back(std::make_pair((uint16_t) to_my_node->GetNDevices() - 1, to_rel));
         } else {
             std::vector<std::pair<uint16_t, SCION_Node::neighbour_relation>> tmp;
@@ -198,7 +202,6 @@ int main(int argc, char *argv[]) {
             to_my_node->interfaces_per_neighbor_as.insert(std::make_pair(from_my_node->as_number, tmp));
             to_my_node->neighbors.push_back(from_my_node->as_number);
         }
-
 
         if (from_my_node->interfaces_per_neighbor_as.find(to_my_node->as_number) !=
             from_my_node->interfaces_per_neighbor_as.end()) {
@@ -217,7 +220,9 @@ int main(int argc, char *argv[]) {
         ns3::DynamicCast<SCION_Node>(nodes.Get(i))->DoInitializations();
     }
 
+    // TODO: beaconing period used for loop, that's why it's an int. How about only casting where it is needed and keeping it as ns::Time further up?
     for (ns3::Time t = ns3::Seconds(0.0); t < ns3::Time(simulator_time_str); t += beaconing_period) {
+        // TODO: Make the scheduling relative to the beaconing period? Or enforce a minimum beaconing period to be passed to avoid nasty errors
         ns3::Simulator::Schedule(t + ns3::Seconds(30.0), &ProcessReceivedPacketsParallel, nodes);
 
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
@@ -236,7 +241,7 @@ int main(int argc, char *argv[]) {
     for (ns3::Time t = ns3::Seconds(0.0); t < ns3::Time(simulator_time_str); t += beaconing_period) {
         std::cout << "####################################### frequencies of consumed bandwidth at Time "
                   << t
-                  << "#######################################" << std::endl;
+                  << " #######################################" << std::endl;
 
         std::map<uint32_t, uint32_t> frequencies_of_consumed_bwd;
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
@@ -260,6 +265,7 @@ int main(int argc, char *argv[]) {
 
     //############################################################################################################################################################
     for (uint32_t path_length = 1; path_length <= 4; ++path_length) {
+        // TODO: Correct this? Not sure anymore how it should be..
         std::cout
                 << "######################################### frequencies of path counts per source AS with length "
                 << path_length - 1
@@ -269,7 +275,6 @@ int main(int argc, char *argv[]) {
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             for (auto const &src_as_beacons_pair : ns3::DynamicCast<SCION_Node>(nodes.Get(i))->beacon_store) {
                 uint64_t number_of_paths_with_certain_length = 0;
-
                 for (auto const &ingress_if_beacons_pair : *src_as_beacons_pair.second) {
                     for (auto const &the_beacon : *ingress_if_beacons_pair.second) {
                         if (the_beacon->the_path->size() == path_length) {

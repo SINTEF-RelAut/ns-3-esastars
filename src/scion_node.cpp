@@ -97,6 +97,8 @@ void SCION_Node::FinalPathEvaluation(std::map<ld, uint64_t> &satisfaction_stat,
 }
 
 void SCION_Node::UpdateTimeAndStats(){
+    // Print statistics until now to see how we are progressing (was in DoBeaconing in Seyedalis code)
+    std::cout << this->as_number << "\t" <<this->valid_beacons_count_per_src_as.size() << std::endl; // Print number of source ASes
     this->now = ns3::Simulator::Now().ToInteger(ns3::Time::NS);
     this->bytes_sent_per_interface_per_period.insert(std::make_pair(this->now, std::vector<uint32_t > (this->GetNDevices(), 0)));
 }
