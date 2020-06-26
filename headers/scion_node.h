@@ -29,8 +29,9 @@ class SCION_Node : public ns3::Node { // TODO: How about aggregating instead?
 
 public:
     //AS properties
+    // TODO: Possibility for some memory optimizations with respect to cache if we think about which values
+    // are used together most often -> reorder
     uint16_t as_number;
-    // TODO: Is this the right spot? This would probably be better suited in a centralized "config" object
     int64_t now;
     ns3::Time beaconing_period;
     int64_t expiration_period;
@@ -38,6 +39,7 @@ public:
     int32_t AS_max_bwd;
 
     // Interfaces Properties *****************************************************************************************************
+    // TODO: Is this enum in the right place?
     enum neighbour_relation {CORE, PEER, CUSTOMER, PROVIDER};
     std::vector<uint16_t> neighbors;
     std::unordered_map<uint16_t, std::vector<std::pair<uint16_t, neighbour_relation>>> interfaces_per_neighbor_as;

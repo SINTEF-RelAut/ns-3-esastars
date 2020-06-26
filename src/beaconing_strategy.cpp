@@ -31,10 +31,10 @@ void BeaconingStrategy::AdjustBeaconValidity(beacon* the_beacon, SCION_Node* nod
         the_beacon->is_new = false;
 
         if (the_beacon->next_expiration_time > node->now) {
-            if (!the_beacon->is_valid) { // TODO: Change to if, faster than throwing exceptions
-                try {
+            if (!the_beacon->is_valid) { 
+                if(node->valid_beacons_count_per_src_as.find(src_as) != node->valid_beacons_count_per_src_as.end()){
                     node->valid_beacons_count_per_src_as.at(src_as)++;
-                } catch (std::out_of_range){
+                } else {
                     node->valid_beacons_count_per_src_as.insert(std::make_pair(src_as, 1));
                 }
             }
