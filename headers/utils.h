@@ -6,6 +6,7 @@
 #define SCION_BEACONING_SIMMULATOR_UTILS_H
 
 #include "beacon.h"
+#include "scion_node.h"
 #include "ns3/rapidxml.hpp"
 #include <map>
 
@@ -32,5 +33,9 @@ class PropertyContainer {
 };
 
 PropertyContainer parseProperties(rapidxml::xml_node<> *node);
+
+// DEBUGG helpers
+void print_consumed_bw_structure(SCION_Node* node);
+void print_valid_intfs(SCION_Node* node, std::unordered_map<uint16_t, std::vector<uint16_t>> valid_intfs);
 
 #endif //SCION_BEACONING_SIMMULATOR_UTILS_H

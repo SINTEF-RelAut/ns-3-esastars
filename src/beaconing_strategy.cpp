@@ -4,6 +4,7 @@
 
 #include "ns3/point-to-point-net-device.h"
 #include "../headers/beaconing_strategy.h"
+#include "../headers/utils.h"
 #include "ns3/ptr.h"
 
 void BeaconingStrategy::InitiateBeacons(const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, SCION_Node* node){
@@ -141,8 +142,13 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
     if (old_beacon == NULL) {
         src_as_no = node->as_number;
         // TODO: Have some descriptive constants somewhere
-        int64_t t = node->now - node->now % 600000000000;
+        int64_t t = node->now - node->now % 600000000000; // 600s? ~ 10h
         node->bytes_sent_per_interface_per_period.at(t).at(self_egress_if_no) += (70 + 330);
+        // TODO: Debugg
+        if(t == 0) {
+            std::cerr << "in GB&S: " << std::endl;
+            print_consumed_bw_structure(node);
+        }
         // *** For immediately disseminating beacons received from neighbor source as // TODO: double check this. Was remote as modified before this check?
         if(remote_as->valid_beacons_count_per_src_as.find(src_as_no) == remote_as->valid_beacons_count_per_src_as.end()
            && remote_as->next_round_valid_beacons_count_per_src_as.find(src_as_no) == remote_as->next_round_valid_beacons_count_per_src_as.end()){

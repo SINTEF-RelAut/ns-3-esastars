@@ -100,7 +100,7 @@ void SCION_Node::UpdateTimeAndStats(){
     // Print statistics until now to see how we are progressing (was in DoBeaconing in Seyedalis code)
     std::cout << this->as_number << "\t" <<this->valid_beacons_count_per_src_as.size() << std::endl; // Print number of source ASes
     this->now = ns3::Simulator::Now().ToInteger(ns3::Time::NS);
-    this->bytes_sent_per_interface_per_period.insert(std::make_pair(this->now, std::vector<uint32_t > (this->GetNDevices(), 0)));
+    this->bytes_sent_per_interface_per_period.insert(std::make_pair(now, std::vector<uint32_t> (this->GetNDevices(), 0)));
 }
 
 std::unordered_map<uint16_t, std::vector<uint16_t>> SCION_Node::GetValidInterfaces(SCION_Node::neighbour_relation rel){
@@ -121,22 +121,45 @@ std::unordered_map<uint16_t, std::vector<uint16_t>> SCION_Node::GetValidInterfac
 
     // TODO: Change back
     // For testing purposes, simply give back the original interface structure
+    std::cerr << "\nIn GetValidIntfs, node: " << this->as_number << std::endl;
     std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces_per_as = std::unordered_map<uint16_t, std::vector<uint16_t>>();
+    // std::unordered_map<uint16_t, std::vector<std::pair<uint16_t, neighbour_relation>>> interfaces_per_neighbor_as;
     for( auto &[neighbour_as_no, interfaces]: this->interfaces_per_neighbor_as ){
         std::vector<uint16_t> valid_interfaces = std::vector<uint16_t>();
+        std::cerr << neighbour_as_no << ":";
         for( auto [intf_no, relation]: interfaces ){
+            std::cerr << "Relation: " << relation << std::endl;
             switch(relation){
                 case SCION_Node::neighbour_relation::PROVIDER:
+                    std::cerr << intf_no << ":PROVIDER " << SCION_Node::neighbour_relation::PROVIDER << std::endl;
                     valid_interfaces.push_back(intf_no);
+                    break;
                 case SCION_Node::neighbour_relation::CUSTOMER:
+                    std::cerr << intf_no << ":CUSTOMER " << SCION_Node::neighbour_relation::CUSTOMER << std::endl;
                     valid_interfaces.push_back(intf_no);
+                    break;
                 case SCION_Node::neighbour_relation::PEER:
+                    std::cerr << intf_no << ":PEER " << SCION_Node::neighbour_relation::PEER << std::endl;
                     valid_interfaces.push_back(intf_no);
+                    break;
                 case SCION_Node::neighbour_relation::CORE:
+                    std::cerr << intf_no << ":CORE " << SCION_Node::neighbour_relation::CORE << std::endl;
                     valid_interfaces.push_back(intf_no);
+                    break;
             }
+            std::cerr << intf_no << ",";
         }
+        std::cerr << std::endl;
         valid_interfaces_per_as.insert({neighbour_as_no, valid_interfaces});
+    }
+    std::cerr << std::endl;
+    // TODO: Debugg
+    for(auto[as_no, intfs]:valid_interfaces_per_as){
+        std::cerr << as_no << ":";
+        for(auto intf:intfs){
+            std::cerr << intf << ",";
+        }
+        std::cerr << std::endl;
     }
     return valid_interfaces_per_as;
 }

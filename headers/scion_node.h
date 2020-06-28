@@ -40,7 +40,7 @@ public:
 
     // Interfaces Properties *****************************************************************************************************
     // TODO: Is this enum in the right place?
-    enum neighbour_relation {CORE, PEER, CUSTOMER, PROVIDER};
+    enum neighbour_relation {CORE = 0, PEER = 1, CUSTOMER = 2, PROVIDER = 3};
     std::vector<uint16_t> neighbors;
     std::unordered_map<uint16_t, std::vector<std::pair<uint16_t, neighbour_relation>>> interfaces_per_neighbor_as;
 

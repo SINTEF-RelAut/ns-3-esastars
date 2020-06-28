@@ -3,8 +3,11 @@
 //
 
 #include "../headers/utils.h"
+#include "../headers/scion_node.h"
 #include <set>
 #include <cmath>
+
+
 
 ld link_level_jaccard_distance_between_two_paths(beacon *beacon1, beacon *beacon2) {
     std::set<uint32_t> set_of_links_on_path1;
@@ -112,4 +115,29 @@ PropertyContainer parseProperties(rapidxml::xml_node<> *node) {
     }
 
     return p;
+}
+
+
+// DEBUGG helpers
+void print_consumed_bw_structure(SCION_Node* node){
+    for(auto const&[time, vector]: node->bytes_sent_per_interface_per_period){
+        if(time == 0){
+
+            std::cerr << "\nNode: " << node->as_number << " at time 0."<<std::endl;
+            for(auto element: vector){
+                std::cerr << element << " ";
+            }
+        }
+    }
+}
+
+void print_valid_intfs(SCION_Node* node, std::unordered_map<uint16_t, std::vector<uint16_t>> valid_intfs){
+    std::cerr << "\n\nNode: " << node->as_number << " Works on the interfaces: " << std::endl;
+    for(auto &[as_no, interface_rel_pairs]:valid_intfs){
+        std::cerr << as_no << ": ";
+        for(auto &intf_no: interface_rel_pairs){
+            std::cerr << "[" << intf_no << "], ";
+        }
+    }
+    std::cerr << std::endl;
 }

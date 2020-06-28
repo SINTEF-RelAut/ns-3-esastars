@@ -50,10 +50,10 @@ int main(int argc, char *argv[]) {
         topology_str = argv[4];
     } else {
         // Initialize with dummy values
-        beaconing_period_str = "20min";
-        expiration_period_str = "40min";
+        beaconing_period_str = "30min";
+        expiration_period_str = "2h";
         simulator_time_str = "5h";
-        topology_str = "10_geo_rel";
+        topology_str = "5_geo_rel";
     }
 
     // TODO: Why are they different types?
@@ -245,7 +245,17 @@ int main(int argc, char *argv[]) {
 
         std::map<uint32_t, uint32_t> frequencies_of_consumed_bwd;
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
+            // TODO: Debugg
+            if(t.ToInteger(ns3::Time::NS) == ns3::Seconds(0.0)){
+                std::cerr << "\n\nGathering bws: Loop nr: " << i << std::endl;
+            }
             ns3::Ptr<SCION_Node> the_node = ns3::DynamicCast<SCION_Node>(nodes.Get(i));
+            // DEBUGG: TODO take out when done
+            if(t.ToInteger(ns3::Time::NS) == ns3::Seconds(0.0)){
+                SCION_Node* n_ptr = ns3::GetPointer(the_node);
+                print_consumed_bw_structure(n_ptr);
+                n_ptr->Unref();
+            }
             for (uint32_t if_index = 0; if_index < the_node->GetNDevices(); ++if_index) {
                 uint32_t consumed_bwd = the_node->bytes_sent_per_interface_per_period.at(t.ToInteger(ns3::Time::NS)).at(if_index);
 

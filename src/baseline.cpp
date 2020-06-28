@@ -2,12 +2,13 @@
 // Created by chrissy on 10.06.20.
 //
 #include <omp.h>
+#include "../headers/utils.h"
 #include "../headers/baseline.h"
 #include "ns3/point-to-point-net-device.h"
 #include "ns3/point-to-point-channel.h"
 
 void Baseline::DisseminateBeacons(const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, SCION_Node* node){
-#pragma omp parallel for
+    #pragma omp parallel for
     for (uint32_t i = 0; i < node->neighbors.size(); ++i){
         uint16_t &remote_as_no = node->neighbors.at(i);
         const std::vector<uint16_t> &interfaces = valid_interfaces.at(remote_as_no);
@@ -46,7 +47,8 @@ void Baseline::DisseminateBeacons(const std::unordered_map<uint16_t, std::vector
                                  ? (ld) node->inter_as_bwds.at(egress_interface_no)
                                  : the_beacon->bwd_stat;
 
-
+                        // TODO: Debugg
+                        //std::cerr << "Node: " << node->as_number << " sending on itf_no: " << egress_interface_no << std::endl;
                         GenerateBeaconAndSend(the_beacon, egress_interface_no, remote_as_no, remote_ingress_if_no, node,
                                               remote_as, latency, bwd, false, 0.0);
                         // remote_as_ptr goes out of scope.
