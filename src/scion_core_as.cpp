@@ -10,7 +10,8 @@ void SCION_Core_As::CoreBeaconing(){
     // TODO: Rethink with "Core" type
     // TODO: Check; Is it possible for Core-ASes to still have providers? Then we need to rethink this.
     std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces_per_as = GetValidInterfaces(neighbour_relation::PEER);
-    print_valid_intfs(this, valid_interfaces_per_as);
+    // TODO: Debugg
+    //print_valid_intfs(this, valid_interfaces_per_as);
     this->strategy->DisseminateBeacons(valid_interfaces_per_as, this);
     this->strategy->InitiateBeacons(valid_interfaces_per_as, this);
 }

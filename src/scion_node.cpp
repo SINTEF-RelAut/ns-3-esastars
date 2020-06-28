@@ -125,7 +125,6 @@ std::unordered_map<uint16_t, std::vector<uint16_t>> SCION_Node::GetValidInterfac
     // std::unordered_map<uint16_t, std::vector<std::pair<uint16_t, neighbour_relation>>> interfaces_per_neighbor_as;
     for( auto &[neighbour_as_no, interfaces]: this->interfaces_per_neighbor_as ){
         std::vector<uint16_t> valid_interfaces = std::vector<uint16_t>();
-        std::cerr << neighbour_as_no << ":";
         for( auto [intf_no, relation]: interfaces ){
             switch(relation){
                 case SCION_Node::neighbour_relation::PROVIDER:
