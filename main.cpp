@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
     // TODO: Think about how to automatically set an appropriate name, maybe in conjunction with simulator configs?
 
     std::string out_path =
-            "./results/main_" + std::string(topology_str) + "_" +
+            "./results/main_crit" + std::string(topology_str) + "_" +
             std::string(beaconing_period_str) + "_" + std::string(expiration_period_str) + "_" + std::string(simulator_time_str) + ".txt";
     std::ofstream out(out_path);
     std::cout.rdbuf(out.rdbuf());
@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
         simulator_params periods = std::make_pair(beaconing_period, expiration_period);
         coefficients coefs = std::make_tuple(latency_coef, bandwidth_coef, AS_level_diversity_coef,
                                              link_level_diversity_coef);
-        nodes.Add(ns3::CreateObject<SCION_Core_As>(node_counter, 0, coefs, periods, new Baseline()));
+        nodes.Add(ns3::CreateObject<SCION_Core_As>(node_counter, 0, coefs, periods, new CriteriaMatching()));
         ASes.insert(std::make_pair(as_number, node_counter));
 
         node_counter++;
@@ -285,12 +285,10 @@ int main(int argc, char *argv[]) {
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             for (auto const &src_as_beacons_pair : ns3::DynamicCast<SCION_Node>(nodes.Get(i))->beacon_store) {
                 uint64_t number_of_paths_with_certain_length = 0;
-                for (auto const &ingress_if_beacons_pair : *src_as_beacons_pair.second) {
-                    for (auto const &the_beacon : *ingress_if_beacons_pair.second) {
-                        if (the_beacon->the_path->size() == path_length) {
-                            number_of_paths_with_certain_length++;
-                        }
-                    }
+                if(src_as_beacons_pair.second->find(path_length) == src_as_beacons_pair.second->end()){
+                    continue;
+                } else {
+                    number_of_paths_with_certain_length = src_as_beacons_pair.second->at(path_length)->size();
                 }
 
                 if (frequencies_of_path_counts_per_src_as_with_certain_length.find(
@@ -347,6 +345,16 @@ int main(int argc, char *argv[]) {
 
     for (auto const &diversity_pair : AS_level_diversity_stat) {
         std::cout << diversity_pair.first << "\t" << diversity_pair.second << std::endl;
+    }
+
+    // TODO: Debugg
+    std::cout << "Beacon Stores\n" << std::endl;
+
+    for (uint32_t i = 0; i < nodes.GetN(); ++i) {
+        auto node_ptr = ns3::DynamicCast<SCION_Node>(nodes.Get(i));
+        SCION_Node* node = ns3::GetPointer(node_ptr);
+        print_beacon_store(node);
+        node_ptr->Unref();
     }
 
     ns3::Simulator::Destroy();

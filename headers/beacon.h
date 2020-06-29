@@ -7,6 +7,10 @@
 #include <string>
 #include <vector>
 typedef long double ld;
+//link_info[0] = node->as_number;
+//    link_info[1] = self_egress_if_no;
+//    link_info[2] = remote_as_no;
+//    link_info[3] = remote_ingress_if_no;
 typedef uint16_t *link_information;
 typedef std::vector<link_information> path;
 
