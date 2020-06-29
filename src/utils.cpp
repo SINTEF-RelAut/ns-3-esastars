@@ -1,13 +1,14 @@
-//
-// Created by chrissy on 10.06.20.
-//
+/**
+ * @file utils.cpp
+ * @see utils.h
+ * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
+ * @date 2020
+ */
 
 #include "../headers/utils.h"
 #include "../headers/scion_node.h"
 #include <set>
 #include <cmath>
-
-
 
 ld link_level_jaccard_distance_between_two_paths(beacon *beacon1, beacon *beacon2) {
     std::set<uint32_t> set_of_links_on_path1;
@@ -146,13 +147,6 @@ void print_beacon_store(SCION_Node* node){
     const std::string first_lvl_offset = "\t";
     const std::string second_lvl_offset = "\t\t";
     const std::string third_lvl_offset = "\t\t\t";
-    //    link_info[0] = node->as_number;
-    //    link_info[1] = self_egress_if_no;
-    //    link_info[2] = remote_as_no;
-    //    link_info[3] = remote_ingress_if_no;
-    //typedef std::unordered_set<beacon *> beacons_with_equal_length;
-    //typedef std::map<uint16_t, beacons_with_equal_length *> equal_as_beacons_sorted_by_length;
-    // std::unordered_map<uint16_t, equal_as_beacons_sorted_by_length *> beacon_store;
     std::cerr << "From: " << node->as_number << std::endl;
     for(auto const [dst_as_no, equal_as_beacons]:node->beacon_store){
         std::cerr << first_lvl_offset << "To: " << dst_as_no << std::endl;

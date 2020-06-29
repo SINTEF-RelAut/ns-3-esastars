@@ -1,6 +1,10 @@
-//
-// Created by chrissy on 10.06.20.
-//
+/**
+ * @file baseline.h
+ * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
+ * @date 2020
+ * @see beaconing_strategy.h
+ * @brief Defines no-ops for the baseline beaconing strategy.
+ */
 
 #ifndef SCION_BEACONING_SIMMULATOR_BASELINE_H
 #define SCION_BEACONING_SIMMULATOR_BASELINE_H

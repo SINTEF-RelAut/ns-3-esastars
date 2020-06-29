@@ -1,6 +1,10 @@
-//
-// Created by chrissy on 10.06.20.
-//
+/**
+ * @file beaconing_strategy.cpp
+ * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
+ * @date 2020
+ * @see beaconing_strategy.h
+ *
+ */
 
 #include "ns3/point-to-point-net-device.h"
 #include "../headers/beaconing_strategy.h"

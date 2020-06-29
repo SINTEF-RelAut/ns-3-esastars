@@ -1,6 +1,10 @@
-//
-// Created by chrissy on 10.06.20.
-//
+/**
+ * @file utils.h
+ * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
+ * @date 2020
+ * @brief Defines functions and classes related to path quality, delay estimation,
+ * parsing xml topologies, and helpers for iterating and printing node structures.
+ */
 
 #ifndef SCION_BEACONING_SIMMULATOR_UTILS_H
 #define SCION_BEACONING_SIMMULATOR_UTILS_H
@@ -34,7 +38,7 @@ class PropertyContainer {
 
 PropertyContainer parseProperties(rapidxml::xml_node<> *node);
 
-// DEBUGG helpers
+// Helpers
 void print_consumed_bw_structure(SCION_Node* node);
 void print_valid_intfs(SCION_Node* node, std::unordered_map<uint16_t, std::vector<uint16_t>> valid_intfs);
 void print_beacon_store(SCION_Node* node);

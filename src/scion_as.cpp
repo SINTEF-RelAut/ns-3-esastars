@@ -1,6 +1,10 @@
-//
-// Created by chrissy on 10.06.20.
-//
+/**
+ * @file scion_as.cpp
+ * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
+ * @date 2020
+ * @see scion_as.h
+ *
+ */
 
 #include "../headers/scion_as.h"
 #include "../headers/beaconing_strategy.h"

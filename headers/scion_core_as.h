@@ -1,6 +1,11 @@
-//
-// Created by chrissy on 10.06.20.
-//
+/**
+ * @file scion_core_as.h
+ * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
+ * @date 2020
+ * @see scion_node.h
+ * @brief Defines the SCION Core AS.
+ *
+ */
 
 #ifndef SCION_BEACONING_SIMMULATOR_SCION_CORE_AS_H
 #define SCION_BEACONING_SIMMULATOR_SCION_CORE_AS_H

@@ -1,6 +1,12 @@
-//
-// Created by chrissy on 10.06.20.
-//
+/**
+ * @file criteria_matching.h
+ * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
+ * @date 2020
+ * @see beaconing_strategy.h
+ * @brief Defines a specialized beaconing strategy and its associated constants which
+ * uses criteria matching (related to bandwidth/latency/disjointness of paths) to choose which
+ * beacons to disseminate.
+ */
 
 #ifndef SCION_BEACONING_SIMMULATOR_CRITERIA_MATCHING_H
 #define SCION_BEACONING_SIMMULATOR_CRITERIA_MATCHING_H

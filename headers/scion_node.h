@@ -1,6 +1,10 @@
-//
-// Created by chrissy on 10.06.20.
-//
+/**
+ * @file scion_node.h
+ * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
+ * @date 2020
+ * @brief Defines SCION_Node and its associated constants and type-definitions.
+ *
+ */
 
 // TODO: Should this really be here? Or is that something we wanna customize on the node?
 // TODO: Also why not use constants?
@@ -22,8 +26,10 @@ typedef std::unordered_set<beacon *> beacons_with_equal_length;
 typedef std::map<uint16_t, beacons_with_equal_length *> equal_as_beacons_sorted_by_length;
 
 // typedefs to reduce the number of arguments in constructor
-typedef std::pair<ns3::Time,int64_t> simulator_params; // beaconing_period, expiration_period
-typedef std::tuple<ld, ld, ld, ld> coefficients; // 0:latency_coef, 1:bandwidth_coef, 2:AS_level_diversity_coef, 3:link_level_diversity_coef
+// beaconing_period, expiration_period
+typedef std::pair<ns3::Time, int64_t> simulator_params;
+// 0:latency_coef, 1:bandwidth_coef, 2:AS_level_diversity_coef, 3:link_level_diversity_coef
+typedef std::tuple<ld, ld, ld, ld> coefficients;
 
 class SCION_Node : public ns3::Node { // TODO: How about aggregating instead?
 
@@ -51,7 +57,7 @@ public:
     // beacon store structures ***************************************************************************************************
     std::unordered_map<uint16_t, equal_as_beacons_sorted_by_length *> beacon_store;
     std::unordered_map<uint16_t, std::multimap <ld, beacon* >* > beacons_sorted_by_score;
-    std::unordered_map<std::string, beacon*> path_map_to_beacon;
+    std::unordered_map<std::string, beacon*> path_map_to_beacon;// See beacon.h key
     // helper structures ********************************************************************************************************
     std::unordered_map<uint16_t, uint64_t> next_round_valid_beacons_count_per_src_as;
 
@@ -71,11 +77,11 @@ public:
 
     void DoInitializations();
 
+    virtual void CoreBeaconing() = 0;
+
     virtual void IntraISDBeaconing() = 0;
 
     virtual void ProcessReceivedBeacons(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon) = 0;
-
-    virtual void CoreBeaconing() = 0;
 
     void FinalPathEvaluation(std::map<ld, uint64_t> &satisfaction_stat,
                              std::map<ld, uint64_t> &AS_level_diversity_stat,

@@ -1,6 +1,9 @@
-//
-// Created by chrissy on 10.06.20.
-//
+/**
+ * @file criteria_matching.cpp
+ * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
+ * @date 2020
+ * @see criteria_matching.h
+ */
 #include <omp.h>
 #include "../headers/criteria_matching.h"
 #include "ns3/point-to-point-channel.h"

@@ -1,6 +1,10 @@
-//
-// Created by chrissy on 10.06.20.
-//
+/**
+ * @file scion_node.cpp
+ * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
+ * @date 2020
+ * @see scion_node.h
+ *
+ */
 
 #include "../headers/scion_node.h"
 #include "../headers/utils.h"

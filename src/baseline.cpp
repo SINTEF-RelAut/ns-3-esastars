@@ -1,6 +1,9 @@
-//
-// Created by chrissy on 10.06.20.
-//
+/**
+ * @file baseline.cpp
+ * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
+ * @date 2020
+ * @see baseline.h
+ */
 #include <omp.h>
 #include "../headers/utils.h"
 #include "../headers/baseline.h"

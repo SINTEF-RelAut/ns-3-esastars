@@ -1,6 +1,10 @@
-//
-// Created by chrissy on 10.06.20.
-//
+/**
+ * @file beaconing_strategy.h
+ * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
+ * @date 2020
+ * @brief Defines the base class and behaviours of a strategy for beaconing & its associated
+ * constants.
+ */
 
 #ifndef SCION_BEACONING_SIMMULATOR_BEACONING_STRATEGY_H
 #define SCION_BEACONING_SIMMULATOR_BEACONING_STRATEGY_H
@@ -20,6 +24,7 @@ public:
     void InitiateBeacons(const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, SCION_Node* node);
     void processImmediateReceive(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon, const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, SCION_Node* node);
     static void UpdateBeaconStoreAndCountersBeforeBeaconing(SCION_Node* node);
+
     virtual void DisseminateBeacons(const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, SCION_Node* node) = 0;
 
 protected:
@@ -31,6 +36,7 @@ protected:
     void GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_as_no, uint16_t remote_ingress_if_no,
                                SCION_Node* node, SCION_Node* remote_as,
                                        ld latency, ld bwd, bool immediate, ld latency_for_immediate);
+
     // TODO: Better name?
     virtual void HandleFullBeaconStore(std::string key, uint16_t src_as, beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_as_no, uint16_t remote_ingress_if_no,
                                        SCION_Node* node, SCION_Node* remote_as,
