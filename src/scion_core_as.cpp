@@ -26,7 +26,7 @@ void SCION_Core_As::CoreBeaconing(){
 }
 
 /**
- * Updates the simulator time & allocates memory for the statistics of this period, queries the interfaces traversed
+ * Updates the simulator time & allocates memory for the statistics of this period, queries the interfaces traversed for
  * intra ISD beaconing and initiates the beacons through the beaconing strategy.
  *
  * @see scion_node UpdateTimeAndStats

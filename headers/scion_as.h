@@ -14,8 +14,18 @@ public:
     SCION_As(uint16_t as_number, uint32_t system_id, coefficients coefs, const simulator_params &periods, BeaconingStrategy* strategy) :
             SCION_Node(as_number, system_id, coefs, periods, strategy) {}
 
-    void IntraISDBeaconing() override;
+    /**
+     * @brief Does nothing. Leaf ASes do not participate in core-beaconing.
+     */
     void CoreBeaconing() override;
+    /**
+    * @brief Starts the intra ISD beaconing process at the beginning of the beaconing period.
+    */
+    void IntraISDBeaconing() override;
+    /**
+     * @brief Starts the processing of beacons for source ASes that had previously not been seen. Gets
+     * scheduled right after receiving such a beacon.
+     */
     void ProcessReceivedBeacons(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon) override;
 
 };
