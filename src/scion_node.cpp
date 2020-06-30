@@ -45,7 +45,7 @@ void SCION_Node::DoInitializations() {
  * Saves the numeric value and the distribution (frequency of occurrence of a certain score) in the passed maps.
  *
  * @see calculate_final_diversity_scores
- * 
+ *
  * @param satisfaction_stat Is filled with the seen satisfaction scores for each beacon.
  * @param AS_level_diversity_stat Is filled with the AS level diversity scores seen for each beacon.
  * @param link_level_diversity_stat Is filled with the link level diversity scores seen for each beacon.
@@ -125,7 +125,7 @@ std::unordered_map<uint16_t, std::vector<uint16_t>> SCION_Node::GetValidInterfac
     //   }
     //}
 
-    // TODO: Change back
+    // TODO: This is still the dummy implementation for testing purposes with the old code
     // For testing purposes, simply give back the original interface structure
     std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces_per_as = std::unordered_map<uint16_t, std::vector<uint16_t>>();
     // std::unordered_map<uint16_t, std::vector<std::pair<uint16_t, neighbour_relation>>> interfaces_per_neighbor_as;
