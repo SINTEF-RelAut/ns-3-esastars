@@ -177,7 +177,8 @@ void print_consumed_bw_structure(SCION_Node* node){
 
 /**
  * @param node The node using these interfaces.
- * @param valid_intfs The valid interfaces returned by calling @see SCION_Node.GetValidInterfaces.
+ * @param valid_intfs The valid interfaces returned by calling SCION_Node.GetValidInterfaces.
+ * @see SCION_Node.GetValidInterfaces
  */
 void print_valid_intfs(SCION_Node* node, std::unordered_map<uint16_t, std::vector<uint16_t>> valid_intfs){
     std::cerr << "\n\nNode: " << node->as_number << " Works on the interfaces: " << std::endl;

@@ -40,7 +40,8 @@ std::string getAttribute(rapidxml::xml_node<> *node, const std::string &name);
 class PropertyContainer {
     public:
         /**
-         * @brief Returns the value of the property defined by name. If not found, *aborts the program*! Use @see hasProperty to check for existence first if you are unsure.
+         * @brief Returns the value of the property defined by name. If not found, *aborts the program*! Use hasProperty to check for existence first if you are unsure.
+         * @see hasProperty
          */
         std::string getProperty(const std::string &name) const;
 
