@@ -37,17 +37,17 @@ typedef std::vector<link_information> path;
  */
 struct beacon {
     int64_t initiation_time, expiration_time;
-    /** Internal helpers*/
+    /** Internal helpers.*/
     int64_t next_initiation_time, next_expiration_time;
-    /** Aggregators holding information about the path latency and bandwidth */
+    /** Aggregators holding information about the path latency and bandwidth. */
     ld latency_stat, bwd_stat;
     /** @see path */
     path *the_path;
-    /** For performant search in the beacon store of the nodes @see SCION_Node.path_map_to_beacon*/
+    /** For performant search in the beacon store of the nodes @see SCION_Node.path_map_to_beacon.*/
     std::string key; // TODO: Maybe this should be a member function instead?
-    /** Internal helper*/
+    /** Internal helper.*/
     bool is_new;
-    /** Internal helper*/
+    /** Internal helper.*/
     bool is_valid;
 };
 #endif //SCION_BEACONING_SIMMULATOR_BEACON_H
