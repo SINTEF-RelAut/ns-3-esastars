@@ -14,9 +14,9 @@
  * Updates the simulator time & allocates memory for the statistics of this period, queries the interfaces traversed
  * for core beaconing and initiates beacon dissemination and initiation through the beaconing strategy.
  *
- * @see scion_node UpdateTimeAndStats
- * @see beaconing_strategy DisseminateBeacons
- * @see beaconing_strategy InitiateBeacons
+ * @see UpdateTimeAndStats
+ * @see DisseminateBeacons
+ * @see InitiateBeacons
  */
 void SCION_Core_As::CoreBeaconing(){
     UpdateTimeAndStats();
@@ -29,8 +29,8 @@ void SCION_Core_As::CoreBeaconing(){
  * Updates the simulator time & allocates memory for the statistics of this period, queries the interfaces traversed for
  * intra ISD beaconing and initiates the beacons through the beaconing strategy.
  *
- * @see scion_node UpdateTimeAndStats
- * @see beaconing_strategy InitiateBeacons
+ * @see UpdateTimeAndStats
+ * @see InitiateBeacons
  */
 void SCION_Core_As::IntraISDBeaconing() {
     UpdateTimeAndStats();

@@ -14,6 +14,8 @@
 /**
  * The intra as latencies are estimated by calculating the great circle latencies
  * based on the interface coordinates.
+ *
+ * @see calculate_great_circle_latency
  */
 void SCION_Node::DoInitializations() {
     intra_as_latencies.resize(this->ns3::Node::GetNDevices());

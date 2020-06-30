@@ -117,7 +117,7 @@ public:
     std::unordered_map<uint16_t, std::multimap <ld, beacon* >* > beacons_sorted_by_score;
     /** @brief Pointers to all the beacons indexable by their key.
      *
-     * This is done for efficiency. @see beacon->key
+     * This is done for efficiency. @see key
      * */
     std::unordered_map<std::string, beacon*> path_map_to_beacon;
     // helper structures ********************************************************************************************************

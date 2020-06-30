@@ -2,7 +2,7 @@
  * @file beacon.h
  * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
  * @date 2020
- * Defines the beacon structure and its associated type-definitions.
+ * @brief Defines the beacon structure and its associated type-definitions.
  */
 
 #ifndef SCION_BEACONING_SIMMULATOR_BEACON_H
