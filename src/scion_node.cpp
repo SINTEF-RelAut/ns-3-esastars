@@ -11,6 +11,10 @@
 #include "../headers/beaconing_strategy.h"
 #include "ns3/core-module.h"
 
+/**
+ * The intra as latencies are estimated by calculating the great circle latencies
+ * based on the interface coordinates.
+ */
 void SCION_Node::DoInitializations() {
     intra_as_latencies.resize(this->ns3::Node::GetNDevices());
     for (uint64_t i = 0; i < this->ns3::Node::GetNDevices(); ++i) {
@@ -23,7 +27,7 @@ void SCION_Node::DoInitializations() {
                                                                             interfaces_coordinates.at(i).second,
                                                                             interfaces_coordinates.at(j).first,
                                                                             interfaces_coordinates.at(j).second);
-            intra_as_latencies.at(j).at(i) = intra_as_latencies.at(i).at(j);
+            intra_as_latencies.at(j).at(i) = intra_as_latencies.at(i).at(j); // TODO this could be half the size since symmetrical.
         }
     }
 
@@ -35,30 +39,20 @@ void SCION_Node::DoInitializations() {
     }
 }
 
-std::pair<ld, ld> SCION_Node::calculate_final_diversity_scores(beacon *the_beacon) {
-    ld AS_level_diversity_score = 0;
-    ld link_level_diversity_score = 0;
-    int32_t counter = 0;
-    uint16_t src_as = *the_beacon->the_path->at(0);
-    equal_as_beacons_sorted_by_length *equal_scr_as_beacons = beacon_store.at(src_as);
-    for (auto const &received_if_beacon_vector_pair : *equal_scr_as_beacons) {
-        for (auto const &curr_beacon : *received_if_beacon_vector_pair.second) {
-            if (curr_beacon != the_beacon) {
-                AS_level_diversity_score += AS_level_jaccard_distance_between_two_paths(the_beacon,
-                                                                                        curr_beacon);
-                link_level_diversity_score += link_level_jaccard_distance_between_two_paths(the_beacon,
-                                                                                            curr_beacon);
-                counter++;
-            }
-        }
-    }
-
-    return (std::make_pair(AS_level_diversity_score / counter, link_level_diversity_score / counter));
-}
-
+/**
+ * Calculates the link-level and as-level path diversity scores and a quality metric
+ * (based on the latency and bandwidth coefficients in the beacons and the node) for each beacon.
+ * Saves the numeric value and the distribution (frequency of occurrence of a certain score) in the passed maps.
+ *
+ * @see calculate_final_diversity_scores
+ * 
+ * @param satisfaction_stat Is filled with the seen satisfaction scores for each beacon.
+ * @param AS_level_diversity_stat Is filled with the AS level diversity scores seen for each beacon.
+ * @param link_level_diversity_stat Is filled with the link level diversity scores seen for each beacon.
+ */
 void SCION_Node::FinalPathEvaluation(std::map<ld, uint64_t> &satisfaction_stat,
-                         std::map<ld, uint64_t> &AS_level_diversity_stat,
-                         std::map<ld, uint64_t> &link_level_diversity_stat) {
+                                     std::map<ld, uint64_t> &AS_level_diversity_stat,
+                                     std::map<ld, uint64_t> &link_level_diversity_stat) {
     for (auto const &the_beacon_pair:path_map_to_beacon) {
         beacon* the_beacon = the_beacon_pair.second;
         if (the_beacon->is_valid) {
@@ -100,13 +94,21 @@ void SCION_Node::FinalPathEvaluation(std::map<ld, uint64_t> &satisfaction_stat,
     }
 }
 
+/**
+ * Prints the number of ASes that are reachable until now, updates the now field of the node to current simulator time and initializes the structure
+ * which will be filled with the number of bytes sent on each interface during the next period.
+ */
 void SCION_Node::UpdateTimeAndStats(){
-    // Print statistics until now to see how we are progressing (was in DoBeaconing in Seyedalis code)
+    // Print statistics until now to see some sense of progress
     std::cout << this->as_number << "\t" <<this->valid_beacons_count_per_src_as.size() << std::endl; // Print number of source ASes
     this->now = ns3::Simulator::Now().ToInteger(ns3::Time::NS);
-    this->bytes_sent_per_interface_per_period.insert(std::make_pair(now, std::vector<uint32_t> (this->GetNDevices(), 0)));
+    this->bytes_sent_per_interface_per_period.insert(std::make_pair(now, std::vector<uint32_t> (this->GetNDevices(), 0))); // TODO fixed size, should we use an array for less overhead?
 }
 
+/**
+ * @param rel The filtering interface relation.
+ * @return All interfaces with the provided relation indexable by the remote AS number.
+ */
 std::unordered_map<uint16_t, std::vector<uint16_t>> SCION_Node::GetValidInterfaces(SCION_Node::neighbour_relation rel){
     // Select the valid interfaces
     // Original Code
@@ -156,4 +158,34 @@ std::unordered_map<uint16_t, std::vector<uint16_t>> SCION_Node::GetValidInterfac
         std::cerr << std::endl;
     }*/
     return valid_interfaces_per_as;
+}
+
+/**
+ *  Iterates over all the beacons which originated at the same source AS then the passed beacon and computes
+ *  the average AS level diversity and link level diversity scores.
+ *  @see AS_level_jaccard_distance_between_two_paths
+ *  @see link_level_jaccard_distance_between_two_paths
+ *
+ * @param the_beacon The beacon holding the path for which you would like to get the diversity scores.
+ * @return Pair(Average as-lvl diversity, Average link-lvl diversity) of the passed beacon.
+ */
+std::pair<ld, ld> SCION_Node::calculate_final_diversity_scores(beacon *the_beacon) {
+    ld AS_level_diversity_score = 0;
+    ld link_level_diversity_score = 0;
+    int32_t counter = 0;
+    uint16_t src_as = *the_beacon->the_path->at(0);
+    equal_as_beacons_sorted_by_length *equal_scr_as_beacons = beacon_store.at(src_as);
+    for (auto const &received_if_beacon_vector_pair : *equal_scr_as_beacons) {
+        for (auto const &curr_beacon : *received_if_beacon_vector_pair.second) {
+            if (curr_beacon != the_beacon) {
+                AS_level_diversity_score += AS_level_jaccard_distance_between_two_paths(the_beacon,
+                                                                                        curr_beacon);
+                link_level_diversity_score += link_level_jaccard_distance_between_two_paths(the_beacon,
+                                                                                            curr_beacon);
+                counter++;
+            }
+        }
+    }
+
+    return (std::make_pair(AS_level_diversity_score / counter, link_level_diversity_score / counter));
 }

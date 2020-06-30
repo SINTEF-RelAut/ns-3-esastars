@@ -15,7 +15,7 @@ typedef long double ld;
  * @brief Holds 0:as_no, 1:egress_intf_no, 2:remote_as_no and 3:remote_ingress_intf_no.
  *
  * We use a small int to store some identifying information on the links used in the beacons.
- * The expected order of information is:
+ * Expected order of information:
  *
  *  - link_info[0] = AS_number
  *  - link_info[1] = egress_interface_number;
@@ -33,7 +33,7 @@ typedef std::vector<link_information> path;
  * @brief Beacons travel from AS to AS, and are appended with the information of the links they
  * traverse. This is how paths get discovered by the ASes in SCION.
  *
- * Beacons are propagated periodically and are not valid indefinitely.
+ * Beacons are propagated periodically and do expire.
  */
 struct beacon {
     int64_t initiation_time, expiration_time;
