@@ -16,10 +16,11 @@ typedef long double ld;
  *
  * We use a small int to store some identifying information on the links used in the beacons.
  * The expected order of information is:
- *  link_info[0] = AS_number
- *  link_info[1] = egress_interface_number;
- *  link_info[2] = remote_as_number;
- *  link_info[3] = remote_ingress_interface_number;
+ *
+ *  - link_info[0] = AS_number
+ *  - link_info[1] = egress_interface_number;
+ *  - link_info[2] = remote_as_number;
+ *  - link_info[3] = remote_ingress_interface_number;
 */
 typedef uint16_t *link_information;
 /**
@@ -40,6 +41,7 @@ struct beacon {
     int64_t next_initiation_time, next_expiration_time;
     /** Aggregators holding information about the path latency and bandwidth */
     ld latency_stat, bwd_stat;
+    /** @see path */
     path *the_path;
     /** For performant search in the beacon store of the nodes @see SCION_Node.path_map_to_beacon*/
     std::string key; // TODO: Maybe this should be a member function instead?
