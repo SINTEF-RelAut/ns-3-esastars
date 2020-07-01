@@ -25,7 +25,7 @@ ld link_level_jaccard_distance_between_two_paths(beacon *beacon1, beacon *beacon
 ld AS_level_jaccard_distance_between_two_paths(beacon *beacon1, beacon *beacon2);
 
 /**
- * @brief Estimates the latency between two routers given their coordinates using the great circle distance.
+ * @brief Estimates the latency [milliseconds] between two routers given their coordinates using the great circle distance.
  */
 ld calculate_great_circle_latency(ld lat1_deg, ld long1_deg, ld lat2_deg, ld long2_deg);
 
