@@ -38,3 +38,14 @@ def build(bld):
                                  ['point-to-point'])
 
     obj.source = 'scion-core-sending-immediate-new-as.cc'
+
+
+    obj = bld.create_ns3_program('scion-intra-isd-baseline',
+                                 ['point-to-point'])
+
+    obj.source = 'scion-intra-isd-baseline.cc'
+
+    obj = bld.create_ns3_program('scion-intra-isd-criteria-matching',
+                                 ['point-to-point'])
+
+    obj.source = 'scion-intra-isd-criteria-matching.cc'
