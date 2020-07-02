@@ -45,9 +45,7 @@ void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std
                                  ? (ld) node->inter_as_bwds.at(egress_interface_no)
                                  : the_beacon->bwd_stat;
 
-                        ld score = ((1 - latency / 1000) * remote_as->latency_coef +
-                                    (bwd / 400) * remote_as->bandwidth_coef)
-                                   / (remote_as->latency_coef + remote_as->bandwidth_coef);
+                        ld score = CalculateBeaconScore(remote_as,latency , bwd);
 
                         if (beacons_ifaces_matchings_scores.size() >= FIXED_BEACONS_NUMBER_TO_SEND
                             && score <= beacons_ifaces_matchings_scores.begin()->first) {
