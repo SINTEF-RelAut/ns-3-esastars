@@ -93,6 +93,7 @@ public:
      */
     enum neighbour_relation {CORE = 0, PEER = 1, CUSTOMER = 2, PROVIDER = 3};
     /** @brief Holds the AS numbers of all the neighbours of the node*/
+    //TODO: Make a const pass on things that are read only
     std::vector<uint16_t> neighbors;
     /** @brief Holds a mapping of AS numbers and their connected interfaces & relations to this node. */
     std::unordered_map<uint16_t, std::vector<std::pair<uint16_t, neighbour_relation>>> interfaces_per_neighbor_as;

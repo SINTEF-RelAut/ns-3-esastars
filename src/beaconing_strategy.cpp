@@ -200,7 +200,7 @@ std::pair<uint16_t, ns3::Ptr<SCION_Node>> BeaconingStrategy::GetRemoteAsInfo(SCI
  *
  * @param old_beacon Either the beacon on which to base the new beacon on, or NULL if this node is initiating a beacon.
  * @param self_egress_if_no The interface number on which to send the beacon.
- * @param remote_as_no The remote AS number that will receive the beacon.
+ * @param remote_as_no The remote AS number that will receive the beacon. // TODO: we don't need this AND the node.
  * @param remote_ingress_if_no The remote ingress interface number of the receiving AS.
  * @param node The node which is sending the beacon.
  * @param remote_as The node which is receiving the beacon.

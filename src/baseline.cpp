@@ -10,6 +10,16 @@
 #include "ns3/point-to-point-net-device.h"
 #include "ns3/point-to-point-channel.h"
 
+/**
+ * Iterates over all the beacons for all the neighbours of the node. If the beacon is valid, its dissemination towards
+ * this neighbour does not create a loop in the path, the neighbour is not the same AS which originated the beacon
+ * it is sent over the interfaces towards this neighbour until the maximum number of beacons to send per neighbour has
+ * been reached.
+ *
+ * @see GenerateBeaconAndSend
+ * @param valid_interfaces The interfaces along which to disseminate beacons for this type of node.
+ * @param node The node which is disseminating beacons.
+ */
 void Baseline::DisseminateBeacons(const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, SCION_Node* node){
     #pragma omp parallel for
     for (uint32_t i = 0; i < node->neighbors.size(); ++i){
@@ -50,8 +60,6 @@ void Baseline::DisseminateBeacons(const std::unordered_map<uint16_t, std::vector
                                  ? (ld) node->inter_as_bwds.at(egress_interface_no)
                                  : the_beacon->bwd_stat;
 
-                        // TODO: Debugg
-                        //std::cerr << "Node: " << node->as_number << " sending on itf_no: " << egress_interface_no << std::endl;
                         GenerateBeaconAndSend(the_beacon, egress_interface_no, remote_as_no, remote_ingress_if_no, node,
                                               remote_as, latency, bwd, false, 0.0);
                         // remote_as_ptr goes out of scope.
@@ -63,12 +71,31 @@ void Baseline::DisseminateBeacons(const std::unordered_map<uint16_t, std::vector
     }
 }
 
+/**
+ * @param key Beacon key.
+ * @param src_as The source AS number of this node. // TODO: We probably don't need to pass this AND the node..
+ * @param old_beacon The previous beacon.
+ * @param self_egress_if_no The interface number on which to send the beacon.
+ * @param remote_as_no //TODO: Same here, not necessary
+ * @param remote_ingress_if_no The interface number where the beacon will be received on the remote_as.
+ * @param node The node sending the beacon.
+ * @param remote_as The node receiving the beacon.
+ * @param latency The new beacon latency.
+ * @param bwd The new beacon bandwidth stat.
+ */
 void Baseline::HandleFullBeaconStore(std::string key, uint16_t src_as, beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_as_no, uint16_t remote_ingress_if_no,
                                              SCION_Node* node, SCION_Node* remote_as, ld latency, ld bwd) {
     // In this case, we don't evict any beacons but simply ignore the new one
     return;
 }
 
+/**
+ * @param remote_as The remote AS which will receive the beacon.
+ * @param latency The new beacon latency stat.
+ * @param bwd The new beacon bandwidth stat.
+ * @param src_as_no The source AS number of the node sending the beacon.
+ * @param new_beacon The newly constructed beacon.
+ */
 void Baseline::UpdateSpecializedBeaconStore(SCION_Node* remote_as, ld latency, ld bwd, uint16_t src_as_no,
                                   beacon *new_beacon){
     // We do not use a specialized beacon store structure for this strategy
