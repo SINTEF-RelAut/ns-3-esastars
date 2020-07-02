@@ -8,34 +8,33 @@
 #include "../headers/criteria_matching.h"
 #include "ns3/point-to-point-channel.h"
 
+/**
+ * Iterates over all the beacons for all the neighbours of the node. If the beacon is valid, its dissemination towards
+ * this neighbour does not create a loop in the path, the neighbour is not the same AS which originated the beacon
+ * it is sent over and the beacon the interfaces towards this neighbour until the maximum number of beacons to send per neighbour has
+ * been reached.
+ *
+ * @see GenerateBeaconAndSend
+ * @param valid_interfaces The interfaces along which to disseminate beacons for this type of node.
+ * @param node The node which is disseminating beacons.
+ */
 void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, SCION_Node* node){
 #pragma omp parallel for
     for (uint32_t i = 0; i < node->neighbors.size(); ++i){
         uint16_t remote_as_no = node->neighbors.at(i);
         std::vector<uint16_t> interfaces = valid_interfaces.at(remote_as_no);
-        // TODO: Figure out why it is complaining about structured bindings and change back..
-        for (auto const it: node->beacon_store) { // Per source AS
-            auto src_as_no = it.first;
-            auto equal_src_as_beacons = it.second;
+        for (auto const [src_as_no, equal_src_as_beacons] : node->beacon_store) { // Per source AS
             if (remote_as_no == src_as_no) {
                 continue;
             }
             std::multimap<int64_t, std::tuple<beacon*, uint16_t, uint16_t, SCION_Node*, ld , ld> > beacons_ifaces_matchings_scores;
-            int16_t  sent_count = 0;
             for (auto const &len_beacons_pair : *equal_src_as_beacons) { // for each length
-                if (sent_count >= FIXED_BEACONS_NUMBER_TO_SEND) {
-                    break;
-                }
                 for (auto const &the_beacon : *len_beacons_pair.second) {
-                    if (sent_count >= FIXED_BEACONS_NUMBER_TO_SEND){
-                        break;
-                    }
                     if (!the_beacon->is_valid || generates_loop(the_beacon, remote_as_no)) {
                         continue;
                     }
-                    sent_count++;
 
-                    // Iterate over all the valid interfaces of this remote AS and send the beacons
+                    // Iterate over all the valid interfaces of this remote AS, aggregate the beacon stats and sort by score.
                     for (auto egress_interface_no: interfaces){
 
                         auto [remote_ingress_if_no, remote_as_ptr] = GetRemoteAsInfo(node, egress_interface_no);
@@ -81,7 +80,6 @@ void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std
                                       remote_as, latency, bwd, false, 0.0);
 
             }
-
         }
     }
 }
