@@ -4,15 +4,15 @@
  * @date 2020
  * @see criteria_matching.h
  */
-#include <omp.h>
+#include<omp.h>
+#include<assert.h>
 #include "../headers/criteria_matching.h"
 #include "ns3/point-to-point-channel.h"
 
 /**
- * Iterates over all the beacons for all the neighbours of the node. If the beacon is valid, its dissemination towards
- * this neighbour does not create a loop in the path, the neighbour is not the same AS which originated the beacon
- * it is sent over and the beacon the interfaces towards this neighbour until the maximum number of beacons to send per neighbour has
- * been reached.
+ * Iterates over all the beacons for all the neighbours of the node. Finds the beacons with the highest scores (as many as
+ * FIXED_BEACONS_NUMBER_TO_SEND, based on the latency and bandwidth stats) which do not generate loops and disseminates those
+ * along the appropriate interfaces.
  *
  * @see GenerateBeaconAndSend
  * @param valid_interfaces The interfaces along which to disseminate beacons for this type of node.
@@ -72,6 +72,7 @@ void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std
                 ld latency;
                 ld bwd;
 
+                // Simply unpacking the arguments
                 std::tie(the_beacon, egress_interface_no, remote_ingress_if_no, remote_as, latency, bwd) = the_tuple_pair.second;
 
                 GenerateBeaconAndSend(the_beacon, egress_interface_no, remote_as_no, remote_ingress_if_no, node,
@@ -82,15 +83,26 @@ void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std
     }
 }
 
-ld CriteriaMatching::CalculateBeaconScore(SCION_Node* remote_as, ld latency, ld bwd){
-    return ((1 - latency / 1000) * remote_as->latency_coef + (bwd / 400) * remote_as->bandwidth_coef)
-           / (remote_as->latency_coef + remote_as->bandwidth_coef);
-}
-
+/**
+ * Calculates the new beacon's score and and checks it against the specialized beacon store holding the beacons sorted by score.
+ * If the score is higher than the lowest score in this structure, the function generates the new beacon and replaces the lowest
+ * scoring beacon with the new one.
+ *
+ * @param key The beacon's path based key.
+ * @param src_as The source AS number at the origin of the beacon.
+ * @param old_beacon The old beacon, may not be NULL.
+ * @param self_egress_if_no The interface number on the node where this beacon will be sent on.
+ * @param remote_as_no // TODO: not necessary if we have remote_as
+ * @param remote_ingress_if_no The interface number on the remote AS from which this beacon will be received.
+ * @param node The node sending the beacon.
+ * @param remote_as The node receiving the beacon.
+ * @param latency The beacons latency stat.
+ * @param bwd The beacons bandwidth stat.
+ */
 void CriteriaMatching::HandleFullBeaconStore(std::string key, uint16_t src_as, beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_as_no, uint16_t remote_ingress_if_no,
                                              SCION_Node* node, SCION_Node* remote_as,
                                              ld latency, ld bwd){
-    // Returns true if the beacon store was full
+    assert(old_beacon != NULL); // This should hold if my reasoning is sound
     ld score = CalculateBeaconScore(remote_as, latency, bwd);
     // Check against the lowest score beacons if we need to replace one
     std::multimap <ld, beacon* >::iterator it = remote_as->beacons_sorted_by_score.at(src_as)->begin();
@@ -109,8 +121,9 @@ void CriteriaMatching::HandleFullBeaconStore(std::string key, uint16_t src_as, b
         }
 
         *lower_score_beacon->the_path = *old_beacon->the_path; // TODO: Need to add case where beacon is null
+        //TODO: No. If the beacon was null, the remote AS would never have seen it before and this method would not be called
 
-        uint16_t *link_info = new uint16_t[4]; // TODO: Use typedef
+        uint16_t *link_info = new uint16_t[4];
         link_info[0] = node->as_number;
         link_info[1] = self_egress_if_no;
         link_info[2] = remote_as_no;
@@ -140,6 +153,14 @@ void CriteriaMatching::HandleFullBeaconStore(std::string key, uint16_t src_as, b
     }
 }
 
+/** // TODO move the specialized beacon store into the strategy instance to avoid fragile baseclass problems on the SCION_Nodes.
+ *
+ * @param remote_as The as which will receive the beacon.
+ * @param latency The beacons latency stat.
+ * @param bwd The beacons bandwidth stat.
+ * @param src_as_no The AS number at the origin of the beacon.
+ * @param new_beacon The newly created beacon.
+ */
 void CriteriaMatching::UpdateSpecializedBeaconStore(SCION_Node* remote_as, ld latency, ld bwd, uint16_t src_as_no, beacon *new_beacon){
     ld score = CalculateBeaconScore(remote_as, latency, bwd);
     if (remote_as->beacons_sorted_by_score.find(src_as_no) != remote_as->beacons_sorted_by_score.end()) {
@@ -148,4 +169,15 @@ void CriteriaMatching::UpdateSpecializedBeaconStore(SCION_Node* remote_as, ld la
         remote_as->beacons_sorted_by_score.insert(std::make_pair(src_as_no, new std::multimap<ld, beacon*> ()));
         remote_as->beacons_sorted_by_score.at(src_as_no)->insert(std::make_pair(score, new_beacon));
     }
+}
+
+/**
+ * @param remote_as The remote AS whose latency and bandwidth preferences should be considered.
+ * @param latency The latency of the beacon.
+ * @param bwd The bandwidth of the beacon.
+ * @return The score of this beacon in the context of the remote_ases preferences.
+ */
+ld CriteriaMatching::CalculateBeaconScore(SCION_Node* remote_as, ld latency, ld bwd){
+    return ((1 - latency / 1000) * remote_as->latency_coef + (bwd / 400) * remote_as->bandwidth_coef)
+           / (remote_as->latency_coef + remote_as->bandwidth_coef);
 }

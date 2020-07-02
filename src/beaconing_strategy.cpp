@@ -184,15 +184,20 @@ std::pair<uint16_t, ns3::Ptr<SCION_Node>> BeaconingStrategy::GetRemoteAsInfo(SCI
 /**
  * - Determines if the beacon needs to be disseminated immediately by checking if the source AS number is already present in the
  * remote ASes counter structures.
- * - Updates the structures keeping track of how many bytes were sent over each interface during one period.
+ * - Updates the structures keeping track of how many bytes were sent over each interface during one period. => This is done every time
+ * no matter if the beacon will be discarded by the remote AS and therefore not written into its beacon store. The reason is that in the
+ * real deployment, the beacon must in any case reach the remote AS before it can decide to discard it or not.
+ *
  * - Checks if this exact beacon has already been sent in a previous beaconing period by searching for the beacon key in the remote
  * ASes path_map. If it is known, simply updates the initiation and expiration times and returns.
  * - Checks if the remote AS is already storing to many beacons from the source AS that originated the beacon. If this is the case
  * the full beacon store is handled and the function returns.
+ *
  * - Generates the new beacon by appending the nodes AS information and sets the initiation and expiration times.
- * The beacon gets "sent" by directly writing it into the remote ASes beacon store and the path_map. It also triggers
+ * The beacon gets written directly into the remote ASes beacon store and the path_map. It also triggers
  * the update of any additional beacon store structure a specialized strategy might need.
  * - Finally it schedules the processing of the received beacons in case they need to be disseminated immediately.
+ *
  *
  * @see HandleFullBeaconStore
  * @see UpdateSpecializedBeaconStore
@@ -206,7 +211,7 @@ std::pair<uint16_t, ns3::Ptr<SCION_Node>> BeaconingStrategy::GetRemoteAsInfo(SCI
  * @param remote_as The node which is receiving the beacon.
  * @param latency The beacon latency (expected to be the old beacon latency aggregated with the intra AS latency or zero)
  * @param bwd The beacon bandwidth (expected to be min{old_beacon_bwd, traversed_intra_as_bwd} or the inter AS bandwidth at the egress interface))
- * @param immediate TODO: seems superfluous to me..
+ * @param immediate TODO: seems superfluous to me.. Not if we want x beacons to propagate instead of one.
  * @param latency_for_immediate The intra AS latency the beacon traversed, used for the propper scheduling timing.
  */
 void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_as_no, uint16_t remote_ingress_if_no,
@@ -218,10 +223,12 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
     bool immediate_src = false;
     bool immediate_non_src = false;
 
+    // Even if the remote AS ends up ignoring the beacon later on, we update the interface values anyways since, in the real deployment,
+    // we need to send the beacon before the remote AS can decide if it will be ignored.
     if (old_beacon == NULL) {
         src_as_no = node->as_number;
         // TODO: Have some descriptive constants somewhere
-        int64_t t = node->now - node->now % 600000000000; // 600s? ~ 10h
+        int64_t t = node->now - node->now % 600000000000; // 600s? ~ 10min
         node->bytes_sent_per_interface_per_period.at(t).at(self_egress_if_no) += (70 + 330);
         // *** For immediately disseminating beacons received from neighbor source as // TODO: double check this. Was remote as modified before this check?
         if(remote_as->valid_beacons_count_per_src_as.find(src_as_no) == remote_as->valid_beacons_count_per_src_as.end()
@@ -265,7 +272,7 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
     }
 
     // Update statistics & check if you are sending too many beacons
-    if (remote_as->next_round_valid_beacons_count_per_src_as.find(src_as_no) !=
+    if (remote_as->next_round_valid_beacons_count_per_src_as.find(src_as_no) != // This check makes sure that the old beacon could not have been null. If this was the case the remote AS would not have already seen this as
         remote_as->next_round_valid_beacons_count_per_src_as.end()) {
         if (remote_as->next_round_valid_beacons_count_per_src_as.at(src_as_no) >= FIXED_BEACONS_NUMBER_TO_STORE) { // TODO: There seems to be a mismatch here? next round vs storing?
             HandleFullBeaconStore(key, src_as_no, old_beacon, self_egress_if_no, remote_as_no, remote_ingress_if_no, node, remote_as, latency, bwd);
@@ -324,7 +331,7 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
 
     if (immediate_src) {
         //  TODO: Make a constant somewhere for this 1ms
-        // This is the processinc delay of the receiving BR. Since this beacon can be generated at whichever border router (immediate_src)
+        // This is the processing delay of the receiving BR. Since this beacon can be generated at whichever border router (immediate_src)
         // We don't need to consider the intra_as_latencies
         ns3::Simulator::Schedule(ns3::MilliSeconds(1), &SCION_Node::ProcessReceivedBeacons, remote_as, src_as_no, remote_ingress_if_no, new_beacon);
     }

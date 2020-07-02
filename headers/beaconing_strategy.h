@@ -37,6 +37,9 @@ public:
     */
     static void UpdateBeaconStoreAndCountersBeforeBeaconing(SCION_Node* node);
 
+    // TODO: This still has lots of duplicate code between the strategies. Might benefit from a rewrite
+    //  (e.g. have the "decision" logic specialized that decides where the beacon needs to be sent)
+    // => Low priority
     /**
      * @brief Called to initiate the dissemination of beacons.
      *
@@ -73,8 +76,7 @@ protected:
 
     // TODO: Better name?
     /**
-     * @brief Defines the behaviour of the beaconing strategy when a new beacon is received but the storing limits for
-     * this AS is already reached in the beacon store.
+     * @brief Implements the decision logic of the remote AS in case a beacon arrives that does not fit into the beacon store anymore.
      *
      * Must be overwritten by descendants of BeaconingStrategy.
      */

@@ -13,7 +13,7 @@ class Baseline : public BeaconingStrategy{
 public:
     /**
      * @brief Disseminates the valid beacons towards multiple interfaces of the appropriate neighbours until the limit for
-     * sending the same beacon to one neighbour is reached.
+     * sending beacons with equal source ASes & hop count? to one neighbour is reached.
      */
     void DisseminateBeacons(const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, SCION_Node* node) override;
 protected:
