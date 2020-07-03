@@ -212,5 +212,16 @@ void print_beacon_store(SCION_Node* node){
             }
         }
     }
+}
 
+/**
+ * @param node The node who owns the counters.
+ * @param counter The counter structure you want to print.
+ */
+void print_valid_beacon_counter(SCION_Node* node, std::unordered_map<uint16_t, uint64_t> counter){
+    std::cerr << "On Node: " << node->as_number << std::endl;
+    std::cerr << "Src_AS:Count\n";
+    for (auto [src_as, count]:counter){
+        std::cerr << src_as << ":" << count << std::endl;
+    }
 }

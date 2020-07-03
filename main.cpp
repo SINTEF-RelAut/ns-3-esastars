@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
         beaconing_period_str = "30min";
         expiration_period_str = "2h";
         simulator_time_str = "5h";
-        topology_str = "5_geo_rel";
+        topology_str = "15_geo_rel";
     }
 
     // TODO: Why are they different types?
@@ -349,14 +349,14 @@ int main(int argc, char *argv[]) {
     }
 
     // TODO: Debugg
-    std::cout << "Beacon Stores\n" << std::endl;
+    //std::cout << "Beacon Stores\n" << std::endl;
 
-    for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-        auto node_ptr = ns3::DynamicCast<SCION_Node>(nodes.Get(i));
-        SCION_Node* node = ns3::GetPointer(node_ptr);
-        print_beacon_store(node);
-        node_ptr->Unref();
-    }
+    //    for (uint32_t i = 0; i < nodes.GetN(); ++i) {
+    //        auto node_ptr = ns3::DynamicCast<SCION_Node>(nodes.Get(i));
+    //        SCION_Node* node = ns3::GetPointer(node_ptr);
+    //        print_beacon_store(node);
+    //        node_ptr->Unref();
+    //    }
 
     ns3::Simulator::Destroy();
     return 0;

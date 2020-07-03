@@ -134,7 +134,7 @@ public:
     std::unordered_map<int64_t, std::vector<uint32_t> > bytes_sent_per_interface_per_period;
 
     SCION_Node(uint16_t as_number, uint32_t system_id, coefficients coefs, const simulator_params &periods, BeaconingStrategy* strategy) :
-    Node(   system_id), as_number(as_number), beaconing_period(periods.first), expiration_period(periods.second),
+    Node(system_id), as_number(as_number), beaconing_period(periods.first), expiration_period(periods.second),
     latency_coef(std::get<0>(coefs)), bandwidth_coef(std::get<1>(coefs)), AS_level_diversity_coef(std::get<2>(coefs)),
     link_level_diversity_coef(std::get<3>(coefs)), strategy(strategy){}
 

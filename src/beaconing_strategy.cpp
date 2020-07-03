@@ -90,10 +90,24 @@ void BeaconingStrategy::processImmediateReceive(uint16_t src_as_no, uint16_t ing
  */
 void BeaconingStrategy::UpdateBeaconStoreAndCountersBeforeBeaconing(SCION_Node* node){
 
+    // TODO: Debugg:
     for (auto const &the_beacon_pair:node->path_map_to_beacon) {
         beacon* the_beacon = the_beacon_pair.second;
         AdjustBeaconValidity(the_beacon, node);
+        /*try{
+            AdjustBeaconValidity(the_beacon, node);
+        } catch (std::out_of_range &e){
+            std::cerr << "Out of range Error caught on node: " << node->as_number << std::endl;
+            std::cerr << "We were looking at a beacon originating at: " << the_beacon->the_path->at(0)[0];
+            //print_beacon_store(node);
+            std::cerr << "\nvalid_beacons_count:" << std::endl;
+            print_valid_beacon_counter(node, node->valid_beacons_count_per_src_as);
+            std::cerr << "\nnext_valid_beacons_count:" << std::endl;
+            print_valid_beacon_counter(node, node->next_round_valid_beacons_count_per_src_as);
+            exit(1);
+        }*/
     }
+
 }
 
 /**
@@ -279,8 +293,9 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
             // Call via remote ASes node since this is the strategy that matters
             remote_as->strategy->HandleFullBeaconStore(key, src_as_no, old_beacon, self_egress_if_no, remote_as_no, remote_ingress_if_no, node, remote_as, latency, bwd);
             return; // If the beacon store was full, we are done after this call.
+            // TODO: HandleFullBEacon store sometimes decrements valid_beacons_count even tho it replaces it with another one?
         }
-        remote_as->next_round_valid_beacons_count_per_src_as.at(src_as_no)++;
+        remote_as->next_round_valid_beacons_count_per_src_as.at(src_as_no)++; // TODO: Is is correct that this thing can sometimes not be reached?
     } else {
         remote_as->next_round_valid_beacons_count_per_src_as.insert(std::make_pair(src_as_no, 1));
     }

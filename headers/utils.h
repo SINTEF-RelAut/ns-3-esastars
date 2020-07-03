@@ -80,4 +80,9 @@ void print_valid_intfs(SCION_Node* node, std::unordered_map<uint16_t, std::vecto
  */
 void print_beacon_store(SCION_Node* node);
 
+/**
+ * @brief Prettyprints a valid beacon counter structure. Currently works with std::cerr.
+ */
+void print_valid_beacon_counter(SCION_Node* node, std::unordered_map<uint16_t, uint64_t> counter);
+
 #endif //SCION_BEACONING_SIMMULATOR_UTILS_H
