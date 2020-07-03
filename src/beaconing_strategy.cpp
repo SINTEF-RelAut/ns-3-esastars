@@ -85,6 +85,12 @@ void BeaconingStrategy::processImmediateReceive(uint16_t src_as_no, uint16_t ing
 }
 
 /**
+ * For reasons of scalability, we do not use ns3s native scheduler functions (e.g. send). Instead the beacons that have
+ * been sent are directly written into the remote ASes beacon store with the 'new' bit set to true and the 'valid' bit set to false
+ * such that they will not be disseminated in the same period. Before the next period starts, this functions responsibility
+ * is to set the valid bit of the beacons received in the last period, such that they are disseminated in this period.
+ * It also invalidates beacons that are expired.
+ *
  * @see AdjustBeaconValidity
  * @param node The node on which to update the beacon store.
  */
