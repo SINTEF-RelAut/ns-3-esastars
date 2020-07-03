@@ -151,14 +151,6 @@ std::unordered_map<uint16_t, std::vector<uint16_t>> SCION_Node::GetValidInterfac
         }
         valid_interfaces_per_as.insert({neighbour_as_no, valid_interfaces});
     }
-    // TODO: Debugg
-    /*for(auto[as_no, intfs]:valid_interfaces_per_as){
-        std::cerr << as_no << ":";
-        for(auto intf:intfs){
-            std::cerr << intf << ",";
-        }
-        std::cerr << std::endl;
-    }*/
     return valid_interfaces_per_as;
 }
 

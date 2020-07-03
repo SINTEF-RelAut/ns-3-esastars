@@ -111,11 +111,6 @@ public:
     // beacon store structures ***************************************************************************************************
     /** @brief Pointers to all the beacons indexable by their source AS and their hop count.*/
     std::unordered_map<uint16_t, equal_as_beacons_sorted_by_length *> beacon_store;
-    /** @brief Pointers to all the beacons indexable by their source AS and score.
-     *
-     * The second level of this structure is iterable by the beacon score in ascending order.
-     * */
-    std::unordered_map<uint16_t, std::multimap <ld, beacon* >* > beacons_sorted_by_score;
     /** @brief Pointers to all the beacons indexable by their key.
      *
      * This is done for efficiency. @see key

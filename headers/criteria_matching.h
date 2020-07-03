@@ -37,6 +37,11 @@ protected:
                                       beacon *new_beacon) override;
 
 private:
+    /** @brief Pointers to all the beacons indexable by their source AS and score.
+     *
+     * The second level of this structure is iterable by the beacon score in ascending order.
+     * */
+    std::unordered_map<uint16_t, std::multimap <ld, beacon* >* > beacons_sorted_by_score;
     /**
      * @brief Calculates the beacon's score in the context of the remote AS' preferences.
      */

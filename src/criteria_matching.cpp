@@ -27,7 +27,7 @@ void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std
             if (remote_as_no == src_as_no) {
                 continue;
             }
-            std::multimap<int64_t, std::tuple<beacon*, uint16_t, uint16_t, SCION_Node*, ld , ld> > beacons_ifaces_matchings_scores;
+            std::multimap<int64_t, std::tuple<beacon*, uint16_t, uint16_t, SCION_Node*, ld , ld>> beacons_ifaces_matchings_scores;
             for (auto const &len_beacons_pair : *equal_src_as_beacons) { // for each length
                 for (auto const &the_beacon : *len_beacons_pair.second) {
                     if (!the_beacon->is_valid || generates_loop(the_beacon, remote_as_no)) {
@@ -95,7 +95,7 @@ void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std
  * @param remote_as_no // TODO: not necessary if we have remote_as
  * @param remote_ingress_if_no The interface number on the remote AS from which this beacon will be received.
  * @param node The node sending the beacon.
- * @param remote_as The node receiving the beacon.
+ * @param remote_as The node receiving the beacon, assumes that its strategy is also criteria matching.
  * @param latency The beacons latency stat.
  * @param bwd The beacons bandwidth stat.
  */
@@ -104,12 +104,13 @@ void CriteriaMatching::HandleFullBeaconStore(std::string key, uint16_t src_as, b
                                              ld latency, ld bwd){
     assert(old_beacon != NULL); // This should hold if my reasoning is sound
     ld score = CalculateBeaconScore(remote_as, latency, bwd);
+    CriteriaMatching* remote_as_strategy = dynamic_cast<CriteriaMatching*>(remote_as->strategy);
     // Check against the lowest score beacons if we need to replace one
-    std::multimap <ld, beacon* >::iterator it = remote_as->beacons_sorted_by_score.at(src_as)->begin();
+    std::multimap <ld, beacon* >::iterator it = remote_as_strategy->beacons_sorted_by_score.at(src_as)->begin();
     if (it->first < score) {
         beacon* lower_score_beacon = it->second;
         uint16_t path_len = lower_score_beacon->the_path->size();
-        remote_as->beacons_sorted_by_score.at(src_as)->erase(it);
+        remote_as_strategy->beacons_sorted_by_score.at(src_as)->erase(it);
         remote_as->path_map_to_beacon.erase(lower_score_beacon->key);
         remote_as->beacon_store.at(src_as)->at(path_len)->erase(lower_score_beacon);
         if (remote_as->beacon_store.at(src_as)->at(path_len)->empty()) {
@@ -141,7 +142,7 @@ void CriteriaMatching::HandleFullBeaconStore(std::string key, uint16_t src_as, b
         lower_score_beacon->latency_stat = latency;
         path_len = lower_score_beacon->the_path->size();
 
-        remote_as->beacons_sorted_by_score.at(src_as)->insert(std::make_pair(score, lower_score_beacon));
+        remote_as_strategy->beacons_sorted_by_score.at(src_as)->insert(std::make_pair(score, lower_score_beacon));
         remote_as->path_map_to_beacon.insert(std::make_pair(key, lower_score_beacon));
 
         if (remote_as->beacon_store.at(src_as)->find(path_len) != remote_as->beacon_store.at(src_as)->end()) {
@@ -153,9 +154,9 @@ void CriteriaMatching::HandleFullBeaconStore(std::string key, uint16_t src_as, b
     }
 }
 
-/** // TODO move the specialized beacon store into the strategy instance to avoid fragile baseclass problems on the SCION_Nodes.
+/**
  *
- * @param remote_as The as which will receive the beacon.
+ * @param remote_as The as which will receive the beacon,  assumes that its strategy is also criteria matching.
  * @param latency The beacons latency stat.
  * @param bwd The beacons bandwidth stat.
  * @param src_as_no The AS number at the origin of the beacon.
@@ -163,11 +164,12 @@ void CriteriaMatching::HandleFullBeaconStore(std::string key, uint16_t src_as, b
  */
 void CriteriaMatching::UpdateSpecializedBeaconStore(SCION_Node* remote_as, ld latency, ld bwd, uint16_t src_as_no, beacon *new_beacon){
     ld score = CalculateBeaconScore(remote_as, latency, bwd);
-    if (remote_as->beacons_sorted_by_score.find(src_as_no) != remote_as->beacons_sorted_by_score.end()) {
-        remote_as->beacons_sorted_by_score.at(src_as_no)->insert(std::make_pair(score, new_beacon));
+    CriteriaMatching* remote_as_strategy = dynamic_cast<CriteriaMatching*>(remote_as->strategy);
+    if (beacons_sorted_by_score.find(src_as_no) != remote_as_strategy->beacons_sorted_by_score.end()) {
+        remote_as_strategy->beacons_sorted_by_score.at(src_as_no)->insert(std::make_pair(score, new_beacon));
     } else {
-        remote_as->beacons_sorted_by_score.insert(std::make_pair(src_as_no, new std::multimap<ld, beacon*> ()));
-        remote_as->beacons_sorted_by_score.at(src_as_no)->insert(std::make_pair(score, new_beacon));
+        remote_as_strategy->beacons_sorted_by_score.insert(std::make_pair(src_as_no, new std::multimap<ld, beacon*> ()));
+        remote_as_strategy->beacons_sorted_by_score.at(src_as_no)->insert(std::make_pair(score, new_beacon));
     }
 }
 

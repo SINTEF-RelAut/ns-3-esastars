@@ -227,8 +227,8 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
     // we need to send the beacon before the remote AS can decide if it will be ignored.
     if (old_beacon == NULL) {
         src_as_no = node->as_number;
-        // TODO: Have some descriptive constants somewhere
-        int64_t t = node->now - node->now % 600000000000; // 600s? ~ 10min
+        // TODO: Have some descriptive constants (or defines) somewhere.
+        int64_t t = node->now - node->now % 600000000000; // 600s? ~ 10min, Equivalent to int(node->now / 600 000 000 000) but divisions are expensive.
         node->bytes_sent_per_interface_per_period.at(t).at(self_egress_if_no) += (70 + 330);
         // *** For immediately disseminating beacons received from neighbor source as // TODO: double check this. Was remote as modified before this check?
         if(remote_as->valid_beacons_count_per_src_as.find(src_as_no) == remote_as->valid_beacons_count_per_src_as.end()
@@ -239,12 +239,13 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
     } else {
         key = old_beacon->key;
         src_as_no = *old_beacon->the_path->at(0);
-        int64_t t = node->now - node->now % 600000000000;
+        int64_t t = node->now - node->now % 600000000000; // Equivalent to int(node->now / 600 000 000 000) but divisions are expensive.
         node->bytes_sent_per_interface_per_period.at(t).at(self_egress_if_no) += (70 + 330 + 330 * old_beacon->the_path->size());
     }
 
     //TODO: this immediate flag seems superfluous.
     //TODO: Does it make sense to choose how to disseminate based on the remote_ases beacon store? What does this model in the real deployment?
+    // => Yes, the beacon is always sent (bytes_sent update) this now models the decision process of the remote as weather to keep the beacon or not.
     if (immediate) { // Indicates that this is part of an immediate beacon dissemination (only set in processImmediateReceive)
         // src_AS_no not found in next_round beacon store. Or less than 5 beacons in next round store from this AS.
         // TODO: Why is this not dependent on the current beacon store like above?
@@ -275,7 +276,8 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
     if (remote_as->next_round_valid_beacons_count_per_src_as.find(src_as_no) != // This check makes sure that the old beacon could not have been null. If this was the case the remote AS would not have already seen this as
         remote_as->next_round_valid_beacons_count_per_src_as.end()) {
         if (remote_as->next_round_valid_beacons_count_per_src_as.at(src_as_no) >= FIXED_BEACONS_NUMBER_TO_STORE) { // TODO: There seems to be a mismatch here? next round vs storing?
-            HandleFullBeaconStore(key, src_as_no, old_beacon, self_egress_if_no, remote_as_no, remote_ingress_if_no, node, remote_as, latency, bwd);
+            // Call via remote ASes node since this is the strategy that matters
+            remote_as->strategy->HandleFullBeaconStore(key, src_as_no, old_beacon, self_egress_if_no, remote_as_no, remote_ingress_if_no, node, remote_as, latency, bwd);
             return; // If the beacon store was full, we are done after this call.
         }
         remote_as->next_round_valid_beacons_count_per_src_as.at(src_as_no)++;
@@ -327,7 +329,7 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
         remote_as->beacon_store.at(src_as_no)->insert(std::make_pair(path_len, new beacons_with_equal_length({new_beacon})));
     }
 
-    UpdateSpecializedBeaconStore(remote_as, latency, bwd, src_as_no, new_beacon);
+    remote_as->strategy->UpdateSpecializedBeaconStore(remote_as, latency, bwd, src_as_no, new_beacon);
 
     if (immediate_src) {
         //  TODO: Make a constant somewhere for this 1ms

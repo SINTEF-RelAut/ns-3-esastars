@@ -19,6 +19,7 @@
 #include <omp.h>
 
 // TODO: Should this be here? or in utils? Or a simulator file with the configs as well?
+// TODO: Document
 void ProcessReceivedPacketsParallel(ns3::NodeContainer nodes) {
     // Just do this once instead of checking for node_no == 0 every time one lvl down.
     std::cout << "################################## " << ns3::DynamicCast<SCION_Node>(nodes.Get(0))->now << " #########################################" << std::endl;
