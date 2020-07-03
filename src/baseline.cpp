@@ -73,7 +73,7 @@ void Baseline::DisseminateBeacons(const std::unordered_map<uint16_t, std::vector
 
 /**
  * @param key Beacon key.
- * @param src_as The source AS number of this node. // TODO: We probably don't need to pass this AND the node..
+ * @param src_as The AS number of the node which originated the beacon.
  * @param old_beacon The previous beacon.
  * @param self_egress_if_no The interface number on which to send the beacon.
  * @param remote_as_no //TODO: Same here, not necessary
@@ -83,7 +83,7 @@ void Baseline::DisseminateBeacons(const std::unordered_map<uint16_t, std::vector
  * @param latency The new beacon latency.
  * @param bwd The new beacon bandwidth stat.
  */
-void Baseline::HandleFullBeaconStore(std::string key, uint16_t src_as, beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_as_no, uint16_t remote_ingress_if_no,
+void Baseline::HandleFullBeaconStore(std::string key, uint16_t src_as, beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_ingress_if_no,
                                              SCION_Node* node, SCION_Node* remote_as, ld latency, ld bwd) {
     // In this case, we don't evict any beacons but simply ignore the new one
     return;
@@ -93,7 +93,7 @@ void Baseline::HandleFullBeaconStore(std::string key, uint16_t src_as, beacon *o
  * @param remote_as The remote AS which will receive the beacon.
  * @param latency The new beacon latency stat.
  * @param bwd The new beacon bandwidth stat.
- * @param src_as_no The source AS number of the node sending the beacon.
+ * @param src_as_no The AS number of the node which originated the beacon.
  * @param new_beacon The newly constructed beacon.
  */
 void Baseline::UpdateSpecializedBeaconStore(SCION_Node* remote_as, ld latency, ld bwd, uint16_t src_as_no,

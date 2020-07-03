@@ -7,7 +7,6 @@
  */
 
 // TODO: Should this really be here? Or is that something we wanna customize on the node?
-// TODO: Also why not use constants?
 /**
  * @brief Steers how many beacons are maximally disseminated to each neighbour per fixed source AS.
  */

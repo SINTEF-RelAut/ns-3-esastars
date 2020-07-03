@@ -20,7 +20,7 @@ protected:
     /**
      * @brief Does nothing. This strategy does not evict any beacons.
      */
-    void HandleFullBeaconStore(std::string key, uint16_t src_as, beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_as_no, uint16_t remote_ingress_if_no,
+    void HandleFullBeaconStore(std::string key, uint16_t src_as, beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_ingress_if_no,
                                SCION_Node* node, SCION_Node* remote_as,
                                ld latency, ld bwd) override;
     /**

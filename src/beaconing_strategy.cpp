@@ -297,7 +297,7 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
         remote_as->next_round_valid_beacons_count_per_src_as.end()) {
         if (remote_as->next_round_valid_beacons_count_per_src_as.at(src_as_no) >= FIXED_BEACONS_NUMBER_TO_STORE) { // TODO: There seems to be a mismatch here? next round vs storing?
             // Call via remote ASes node since this is the strategy that matters
-            remote_as->strategy->HandleFullBeaconStore(key, src_as_no, old_beacon, self_egress_if_no, remote_as_no, remote_ingress_if_no, node, remote_as, latency, bwd);
+            remote_as->strategy->HandleFullBeaconStore(key, src_as_no, old_beacon, self_egress_if_no, remote_ingress_if_no, node, remote_as, latency, bwd);
             return; // If the beacon store was full, we are done after this call.
             // TODO: HandleFullBEacon store sometimes decrements valid_beacons_count even tho it replaces it with another one?
         }

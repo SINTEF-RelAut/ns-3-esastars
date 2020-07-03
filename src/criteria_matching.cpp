@@ -99,10 +99,11 @@ void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std
  * @param latency The beacons latency stat.
  * @param bwd The beacons bandwidth stat.
  */
-void CriteriaMatching::HandleFullBeaconStore(std::string key, uint16_t src_as, beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_as_no, uint16_t remote_ingress_if_no,
+void CriteriaMatching::HandleFullBeaconStore(std::string key, uint16_t src_as, beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_ingress_if_no,
                                              SCION_Node* node, SCION_Node* remote_as,
                                              ld latency, ld bwd){
     assert(old_beacon != NULL); // This should hold if my reasoning is sound
+    auto remote_as_no = remote_as->as_number;
     ld score = CalculateBeaconScore(remote_as, latency, bwd);
     CriteriaMatching* remote_as_strategy = dynamic_cast<CriteriaMatching*>(remote_as->strategy);
     // Check against the lowest score beacons if we need to replace one
