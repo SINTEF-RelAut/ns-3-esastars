@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
         simulator_params periods = std::make_pair(beaconing_period, expiration_period);
         coefficients coefs = std::make_tuple(latency_coef, bandwidth_coef, AS_level_diversity_coef,
                                              link_level_diversity_coef);
-        nodes.Add(ns3::CreateObject<SCION_Core_As>(node_counter, 0, coefs, periods, new Baseline()));
+        nodes.Add(ns3::CreateObject<SCION_Core_As>(node_counter, 0, coefs, periods, new CriteriaMatching()));
         ASes.insert(std::make_pair(as_number, node_counter));
 
         node_counter++;

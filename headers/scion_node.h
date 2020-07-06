@@ -16,6 +16,11 @@
  */
 #define FIXED_BEACONS_NUMBER_TO_STORE 50
 
+/**
+ * @brief Time a router needs to process a beacon.
+ */
+#define PROCESSING_DELAY ns3::MilliSeconds(1)
+
 #ifndef SCION_BEACONING_SIMMULATOR_SCION_NODE_H
 #define SCION_BEACONING_SIMMULATOR_SCION_NODE_H
 #include "beacon.h"

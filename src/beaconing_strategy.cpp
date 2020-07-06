@@ -244,8 +244,6 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
 
     if (immediate) { // Indicates that this is part of an immediate beacon dissemination (only set in processImmediateReceive)
         // src_AS_no not found in next_round beacon store. Or less than 5 beacons in next round store from this AS.
-        // TODO: Why is this not dependent on the current beacon store like above? => because the next_round counter is more complete (all valid
-        //  beacons from this round + next round)
         if (remote_as->next_round_valid_beacons_count_per_src_as.find(src_as_no) == remote_as->next_round_valid_beacons_count_per_src_as.end() ||
             remote_as->next_round_valid_beacons_count_per_src_as.at(src_as_no) < MAX_IMMEDIATE_BEACONS) {
             immediate_non_src = true;
@@ -255,8 +253,7 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
 
     key = key + std::string((char *) &node->as_number, 2) + std::string((char *) &self_egress_if_no, 2);
 
-    // If the beacon is already in the remote_ases beacon store // TODO: Why is this check needed?
-    // TODO: Cause beacons are disseminated periodically, this could be a rerun? => yes
+    // If the beacon is already in the remote_ases beacon store
     if (remote_as->path_map_to_beacon.find(key) != remote_as->path_map_to_beacon.end()) {
         if (old_beacon == NULL) {
             remote_as->path_map_to_beacon.at(key)->next_initiation_time = node->now;
@@ -272,13 +269,12 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
     // Update statistics & check if you are sending too many beacons
     if (remote_as->next_round_valid_beacons_count_per_src_as.find(src_as_no) != // This check makes sure that the old beacon could not have been null. If this was the case the remote AS would not have already seen this as
         remote_as->next_round_valid_beacons_count_per_src_as.end()) {
-        if (remote_as->next_round_valid_beacons_count_per_src_as.at(src_as_no) >= FIXED_BEACONS_NUMBER_TO_STORE) { // TODO: There seems to be a mismatch here? next round vs storing?
+        if (remote_as->next_round_valid_beacons_count_per_src_as.at(src_as_no) >= FIXED_BEACONS_NUMBER_TO_STORE) {
             // Call via remote ASes node since this is the strategy that matters
             remote_as->strategy->HandleFullBeaconStore(key, src_as_no, old_beacon, self_egress_if_no, remote_ingress_if_no, node, remote_as, latency, bwd);
             return; // If the beacon store was full, we are done after this call.
-            // TODO: HandleFullBEacon store sometimes decrements valid_beacons_count even tho it replaces it with another one? (next round valid gets incremented instead)
         }
-        remote_as->next_round_valid_beacons_count_per_src_as.at(src_as_no)++; // TODO: Is is correct that this thing can sometimes not be reached?
+        remote_as->next_round_valid_beacons_count_per_src_as.at(src_as_no)++;
     } else {
         remote_as->next_round_valid_beacons_count_per_src_as.insert(std::make_pair(src_as_no, 1));
     }
@@ -289,7 +285,7 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
     new_beacon->bwd_stat = bwd;
     new_beacon->latency_stat = latency;
 
-    uint16_t *link_info = new uint16_t[4]; // TODO: Actually use the typedef you created for this.
+    uint16_t *link_info = new uint16_t[4];
     link_info[0] = node->as_number;
     link_info[1] = self_egress_if_no;
     link_info[2] = remote_as_no;
@@ -330,16 +326,13 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
     remote_as->strategy->UpdateSpecializedBeaconStore(remote_as, latency, bwd, src_as_no, new_beacon);
 
     if (immediate_src) {
-        //  TODO: Make a constant somewhere for this 1ms
         // This is the processing delay of the receiving BR. Since this beacon can be generated at whichever border router (immediate_src)
         // We don't need to consider the intra_as_latencies
-        ns3::Simulator::Schedule(ns3::MilliSeconds(1), &SCION_Node::ProcessReceivedBeacons, remote_as, src_as_no, remote_ingress_if_no, new_beacon);
+        ns3::Simulator::Schedule(PROCESSING_DELAY, &SCION_Node::ProcessReceivedBeacons, remote_as, src_as_no, remote_ingress_if_no, new_beacon);
     }
 
     if (immediate_non_src) {
-        // TODO: Why not just use MilliSeconds again??
-        // TODO: Where is the processing delay of the border router in this case?
         uint64_t delay = (uint64_t) (latency_for_immediate * 1000000);
-        ns3::Simulator::Schedule(ns3::NanoSeconds(delay), &SCION_Node::ProcessReceivedBeacons, remote_as, src_as_no, remote_ingress_if_no, new_beacon);
+        ns3::Simulator::Schedule(ns3::NanoSeconds(delay) + PROCESSING_DELAY, &SCION_Node::ProcessReceivedBeacons, remote_as, src_as_no, remote_ingress_if_no, new_beacon);
     }
 }
