@@ -116,7 +116,6 @@ int main(int argc, char *argv[]) {
 
         node_counter++;
 
-
         curNode = curNode->next_sibling("node");
     }
 
@@ -236,8 +235,6 @@ int main(int argc, char *argv[]) {
     }
 
     ns3::Simulator::Stop(ns3::Time(simulator_time_str));
-    // TODO: Debugg
-    print_as_mappings(ASes);
     ns3::Simulator::Run();
 
     //############################################################################################################################################################
@@ -248,17 +245,7 @@ int main(int argc, char *argv[]) {
 
         std::map<uint32_t, uint32_t> frequencies_of_consumed_bwd;
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-            // TODO: Debugg
-            /*if(t.ToInteger(ns3::Time::NS) == ns3::Seconds(0.0)){
-                std::cerr << "\n\nGathering bws: Loop nr: " << i << std::endl;
-            }*/
             ns3::Ptr<SCION_Node> the_node = ns3::DynamicCast<SCION_Node>(nodes.Get(i));
-            // DEBUGG: TODO take out when done
-            /*if(t.ToInteger(ns3::Time::NS) == ns3::Seconds(0.0)){
-                SCION_Node* n_ptr = ns3::GetPointer(the_node);
-                print_consumed_bw_structure(n_ptr);
-                n_ptr->Unref();
-            }*/
             for (uint32_t if_index = 0; if_index < the_node->GetNDevices(); ++if_index) {
                 uint32_t consumed_bwd = the_node->bytes_sent_per_interface_per_period.at(t.ToInteger(ns3::Time::NS)).at(if_index);
 
@@ -348,28 +335,6 @@ int main(int argc, char *argv[]) {
 
     for (auto const &diversity_pair : AS_level_diversity_stat) {
         std::cout << diversity_pair.first << "\t" << diversity_pair.second << std::endl;
-    }
-
-    // TODO: Debugg
-    //std::cout << "Beacon Stores\n" << std::endl;
-
-    //    for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-    //        auto node_ptr = ns3::DynamicCast<SCION_Node>(nodes.Get(i));
-    //        SCION_Node* node = ns3::GetPointer(node_ptr);
-    //        print_beacon_store(node);
-    //        node_ptr->Unref();
-    //    }
-    for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-        auto node_ptr = ns3::DynamicCast<SCION_Node>(nodes.Get(i));
-        SCION_Node* node = ns3::GetPointer(node_ptr);
-        for(auto [key, beacon]:node->path_map_to_beacon){
-            if(has_loop(beacon)){
-                std::cerr << "Loop detected in node: " << i << std::endl;
-                std::cerr << key << std::endl;
-                print_beacon_store(node);
-            }
-        }
-        node_ptr->Unref();
     }
 
     ns3::Simulator::Destroy();

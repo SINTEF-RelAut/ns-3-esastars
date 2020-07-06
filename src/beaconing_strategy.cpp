@@ -28,7 +28,6 @@ void BeaconingStrategy::InitiateBeacons(const std::unordered_map<uint16_t, std::
 
             GenerateBeaconAndSend(NULL, self_egress_if_no, remote_as_no, remote_if_no, node, remote_as,
                                   0.0, node->inter_as_bwds.at(self_egress_if_no), false, 0.0);
-
             // remote_as goes out of scope
             remote_as_ptr->Unref();
         }
@@ -43,7 +42,7 @@ void BeaconingStrategy::InitiateBeacons(const std::unordered_map<uint16_t, std::
  * @see AdjustBeaconValidity
  * @see GenerateBeaconAndSend
  *
- * @param src_as_no The AS number of the neighbour from which the beacon was received.
+ * @param src_as_no The AS number of the neighbour from which the beacon was received. TODO: what? this clashes with the upper explanation...
  * @param ingress_if The ingress interface over which the beacon was received.
  * @param the_beacon The received beacon.
  * @param valid_interfaces The valid interfaces over which the beacon can be disseminated.
@@ -100,40 +99,10 @@ void BeaconingStrategy::processImmediateReceive(uint16_t src_as_no, uint16_t ing
  * @param node The node on which to update the beacon store.
  */
 void BeaconingStrategy::UpdateBeaconStoreAndCountersBeforeBeaconing(SCION_Node* node){
-
-    //TODO: Debugg
-    bool debugg = false;
-    if(node->as_number == 7){
-        debugg = true;
-    }
-    if(debugg){
-        std::cerr << "Beginning of UpdateBeaconStoreAndCountersBeforeBeaconing\n";
-        print_number_of_valid_beacon_entries_in_beacon_store(node);
-    }
-    //print_number_of_beacon_entries_in_beacon_store(node);
     for (auto const &the_beacon_pair:node->path_map_to_beacon) {
         beacon* the_beacon = the_beacon_pair.second;
-        //AdjustBeaconValidity(the_beacon, node);
-        try{
-            AdjustBeaconValidity(the_beacon, node);
-        } catch (std::out_of_range &e){
-            std::cerr << "Out of range Error caught on node: " << node->as_number << std::endl;
-            std::cerr << "We were looking at a beacon originating at: " << the_beacon->the_path->at(0)[0];
-            //print_beacon_store(node);
-            std::cerr << "\nvalid_beacons_count:" << std::endl;
-            print_valid_beacon_counter(node, node->valid_beacons_count_per_src_as);
-            std::cerr << "\nnext_valid_beacons_count:" << std::endl;
-            print_valid_beacon_counter(node, node->next_round_valid_beacons_count_per_src_as);
-            exit(1);
-        }
+        AdjustBeaconValidity(the_beacon, node);
     }
-    //TODO: Debugg
-    if(debugg) {
-        std::cerr << "End of UpdateBeaconStoreAndCountersBeforeBeaconing\n";
-        print_number_of_valid_beacon_entries_in_beacon_store(node);
-        std::cerr << "Node->now " << node->now / (pow(10, 9)) << std::endl;
-    }
-
 }
 
 /**
@@ -149,13 +118,7 @@ void BeaconingStrategy::UpdateBeaconStoreAndCountersBeforeBeaconing(SCION_Node* 
  */
 void BeaconingStrategy::AdjustBeaconValidity(beacon* the_beacon, SCION_Node* node){
     node->now = ns3::Simulator::Now().ToInteger(ns3::Time::NS); // TODO: check when node->now gets altered, is this consistent with the logic?
-
     uint16_t src_as = the_beacon->the_path->at(0)[0];
-    // TODO: Debugg
-    bool debugg = false;
-    if(node->as_number == 7 && src_as == 3){
-        debugg = true;
-    }
     if (the_beacon->is_new) {
         the_beacon->is_new = false;
 
@@ -178,21 +141,10 @@ void BeaconingStrategy::AdjustBeaconValidity(beacon* the_beacon, SCION_Node* nod
         the_beacon->is_valid = false;
         node->valid_beacons_count_per_src_as.at(src_as)--;
         node->next_round_valid_beacons_count_per_src_as.at(src_as)--;
-        // TODO: Debugg
-        if(debugg){
-            //std::cerr << "Beacon from: " << src_as <<" expired, next--\n";
-            //std::cerr << "new count: " << node->next_round_valid_beacons_count_per_src_as.at(src_as) << std::endl;
-        }
-
         if (node->valid_beacons_count_per_src_as.at(src_as) == 0) {
             node->valid_beacons_count_per_src_as.erase(src_as);
         }
-
         if (node->next_round_valid_beacons_count_per_src_as.at(src_as) == 0) {
-            // TODO: Debugg
-            if(debugg){
-                //std::cerr << "Count dropped to zero, next.erase\n";
-            }
             node->next_round_valid_beacons_count_per_src_as.erase(src_as);
         }
     }
@@ -274,10 +226,6 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
                                              ld latency, ld bwd, bool immediate, ld latency_for_immediate) {
     uint16_t src_as_no;
     std::string key;
-
-    // TODO: Debugg
-    bool debugg = false;
-
     bool immediate_src = false;
     bool immediate_non_src = false;
 
@@ -299,11 +247,6 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
         src_as_no = *old_beacon->the_path->at(0);
         int64_t t = node->now - node->now % 600000000000; // Equivalent to int(node->now / 600 000 000 000) but divisions are expensive.
         node->bytes_sent_per_interface_per_period.at(t).at(self_egress_if_no) += (70 + 330 + 330 * old_beacon->the_path->size());
-    }
-
-    // TODO: Debugg
-    if(remote_as->as_number == 7 && src_as_no == 3){
-        debugg = true;
     }
 
     //TODO: this immediate flag seems superfluous.
@@ -346,16 +289,7 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
             // TODO: HandleFullBEacon store sometimes decrements valid_beacons_count even tho it replaces it with another one? (next round valid gets incremented instead)
         }
         remote_as->next_round_valid_beacons_count_per_src_as.at(src_as_no)++; // TODO: Is is correct that this thing can sometimes not be reached?
-        // TODO: Debugg
-        if(debugg){
-            //std::cerr << "next++\n";
-            //std::cerr << "new count: " << remote_as->next_round_valid_beacons_count_per_src_as.at(src_as_no) << std::endl;
-        }
     } else {
-        // TODO: Debugg
-        if(debugg){
-            //std::cerr << "next.insert\n";
-        }
         remote_as->next_round_valid_beacons_count_per_src_as.insert(std::make_pair(src_as_no, 1));
     }
 

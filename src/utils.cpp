@@ -166,7 +166,6 @@ PropertyContainer parseProperties(rapidxml::xml_node<> *node) {
 void print_consumed_bw_structure(SCION_Node* node){
     for(auto const&[time, vector]: node->bytes_sent_per_interface_per_period){
         if(time == 0){ // TODO: Maybe make more generic?
-
             std::cerr << "\nNode: " << node->as_number << " at time 0."<<std::endl;
             for(auto element: vector){
                 std::cerr << element << " ";
