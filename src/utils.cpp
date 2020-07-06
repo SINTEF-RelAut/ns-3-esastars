@@ -225,3 +225,48 @@ void print_valid_beacon_counter(SCION_Node* node, std::unordered_map<uint16_t, u
         std::cerr << src_as << ":" << count << std::endl;
     }
 }
+
+/**
+ * @param ASes The AS mapping to print
+ */
+void print_as_mappings(std::map<int32_t, uint16_t> ASes){
+    std::cerr << std::endl;
+    for(auto[AS_no, src_as]:ASes){
+        std::cerr << AS_no << ":" << src_as << std::endl;
+    }
+}
+/**
+ *
+ * @param beacon The beacon to be checked for loops
+ */
+bool has_loop(beacon* beacon){
+ std::vector<uint8_t> AS_nrs = std::vector<uint8_t>();
+ for (auto const &link_info : *beacon->the_path){
+     auto as_no = link_info[0];
+     for(auto as: AS_nrs){
+         if(as == as_no) return true;
+         else AS_nrs.push_back(as_no);
+     }
+ }
+ return false;
+}
+
+/**
+ * @param node The node whose beacon store you want to analyze.
+ */
+void print_number_of_valid_beacon_entries_in_beacon_store(SCION_Node* node){
+    std::cerr << "Beacon Store on Node: " << node->as_number << std::endl;
+    for(auto [src_as, beacons]:node->beacon_store){
+        int count = 0;
+        for(auto [length, b]:*beacons){
+            std::cout << length;
+            for(auto bb:*b){
+                if(bb->is_valid){
+                    count++;
+                }
+            }
+        }
+        std::cerr << "\t" << src_as << ":" << count << std::endl;
+    }
+    std::cerr << std::endl;
+}

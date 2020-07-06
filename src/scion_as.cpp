@@ -33,5 +33,6 @@ void SCION_As::IntraISDBeaconing() {
 void SCION_As::ProcessReceivedBeacons(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon){
     // TODO: Rethink with "Core" type
     std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces = this->GetValidInterfaces(neighbour_relation::CUSTOMER);
+    //processImmediateReceive(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon, const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, SCION_Node* node)
     this->strategy->processImmediateReceive(src_as_no, ingress_if, the_beacon, valid_interfaces, this);
 }

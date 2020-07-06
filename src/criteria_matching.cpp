@@ -7,6 +7,7 @@
 #include<omp.h>
 #include<assert.h>
 #include "../headers/criteria_matching.h"
+#include "../headers/utils.h"
 #include "ns3/point-to-point-channel.h"
 
 /**
@@ -19,21 +20,28 @@
  * @param node The node which is disseminating beacons.
  */
 void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, SCION_Node* node){
-#pragma omp parallel for
+    #pragma omp parallel for
     for (uint32_t i = 0; i < node->neighbors.size(); ++i){
         uint16_t remote_as_no = node->neighbors.at(i);
         std::vector<uint16_t> interfaces = valid_interfaces.at(remote_as_no);
         for (auto const [src_as_no, equal_src_as_beacons] : node->beacon_store) { // Per source AS
+            int16_t  sent_count = 0;
             if (remote_as_no == src_as_no) {
                 continue;
             }
             std::multimap<int64_t, std::tuple<beacon*, uint16_t, uint16_t, SCION_Node*, ld , ld>> beacons_ifaces_matchings_scores;
             for (auto const &len_beacons_pair : *equal_src_as_beacons) { // for each length
+                if (sent_count >= FIXED_BEACONS_NUMBER_TO_SEND) {
+                    break;
+                }
                 for (auto const &the_beacon : *len_beacons_pair.second) {
+                    if (sent_count >= FIXED_BEACONS_NUMBER_TO_SEND){
+                        break;
+                    }
                     if (!the_beacon->is_valid || generates_loop(the_beacon, remote_as_no)) {
                         continue;
                     }
-
+                    sent_count++;
                     // Iterate over all the valid interfaces of this remote AS, aggregate the beacon stats and sort by score.
                     for (auto egress_interface_no: interfaces){
 
@@ -74,7 +82,6 @@ void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std
 
                 // Simply unpacking the arguments
                 std::tie(the_beacon, egress_interface_no, remote_ingress_if_no, remote_as, latency, bwd) = the_tuple_pair.second;
-
                 GenerateBeaconAndSend(the_beacon, egress_interface_no, remote_as_no, remote_ingress_if_no, node,
                                       remote_as, latency, bwd, false, 0.0);
 
@@ -82,6 +89,7 @@ void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std
         }
     }
 }
+
 
 /**
  * Calculates the new beacon's score and and checks it against the specialized beacon store holding the beacons sorted by score.
@@ -120,7 +128,7 @@ void CriteriaMatching::HandleFullBeaconStore(std::string key, uint16_t src_as, b
 
         if (lower_score_beacon->is_valid) {
             remote_as->valid_beacons_count_per_src_as.at(src_as)--;
-        }
+        } // TODO: Shouldn't there also be a check for erasure?
 
         *lower_score_beacon->the_path = *old_beacon->the_path; // TODO: Need to add case where beacon is null
         //TODO: No. If the beacon was null, the remote AS would never have seen it before and this method would not be called

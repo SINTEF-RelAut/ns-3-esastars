@@ -116,7 +116,10 @@ public:
      * */
     std::unordered_map<std::string, beacon*> path_map_to_beacon;
     // helper structures ********************************************************************************************************
-    // TODO
+    /**
+     * @brief This structure counts how many valid beacons will be known per source AS after the current beaconing
+     * period is complete.
+     */
     std::unordered_map<uint16_t, uint64_t> next_round_valid_beacons_count_per_src_as;
 
     // Beaconing Algorithm ***************************************************************************************************************

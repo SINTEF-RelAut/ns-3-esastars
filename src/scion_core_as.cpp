@@ -39,10 +39,13 @@ void SCION_Core_As::IntraISDBeaconing() {
     // Core ASes never dissiminate intra_ISD beacons
 }
 
-// TODO
+/**
+ * Queries the valid interfaces for this kind of node and processes the received beacons through the beaconing strategy.
+ * @param src_as_no (src AS of the node originating beacon) TODO: Check if this is fine in processImmediate... Nope, process Immediate expects the neighbour as no
+ * @param ingress_if
+ * @param the_beacon
+ */
 void SCION_Core_As::ProcessReceivedBeacons(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon){
-    // TODO: Check; Is it possible for Core-ASes to still have providers? Then we need to rethink this.
-    // TODO: Rethink with "Core" type
     std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces = this->GetValidInterfaces(neighbour_relation::CORE);
     this->strategy->processImmediateReceive(src_as_no, ingress_if, the_beacon, valid_interfaces, this);
 }

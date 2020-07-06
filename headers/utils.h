@@ -85,4 +85,19 @@ void print_beacon_store(SCION_Node* node);
  */
 void print_valid_beacon_counter(SCION_Node* node, std::unordered_map<uint16_t, uint64_t> counter);
 
+/**
+ * @brief Prettyprints the AS mapping. Currently works with std::cerr.
+ */
+void print_as_mappings(std::map<int32_t, uint16_t> ASes);
+
+/**
+ * @brief Checks for loops in a beacon.
+ */
+bool has_loop(beacon* beacon);
+
+/**
+ * @brief Iterates over the nodes beacon store and prints how many valid entries for each AS are present. Currently works with std::cerr.
+ */
+void print_number_of_valid_beacon_entries_in_beacon_store(SCION_Node* node);
+
 #endif //SCION_BEACONING_SIMMULATOR_UTILS_H

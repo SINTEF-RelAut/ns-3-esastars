@@ -24,12 +24,11 @@ void ProcessReceivedPacketsParallel(ns3::NodeContainer nodes) {
     // Just do this once instead of checking for node_no == 0 every time one lvl down.
     std::cout << "################################## " << ns3::DynamicCast<SCION_Node>(nodes.Get(0))->now << " #########################################" << std::endl;
     uint32_t node_number = nodes.GetN();
-#pragma omp parallel for
+    #pragma omp parallel for
     for (uint32_t i = 0; i < node_number; ++i) {
         ns3::Ptr<SCION_Node> ns3_ptr_to_node = ns3::DynamicCast<SCION_Node>(nodes.Get(i));
         // Don't wanna pass around their smart pointer, seems to lead to race conditions regarding Uref.
         SCION_Node* node = ns3::GetPointer(ns3_ptr_to_node);
-        //ns3::DynamicCast<SCION_Node>(nodes.Get(i))->strategy->UpdateBeaconStoreAndCountersBeforeBeaconing(ns3::DynamicCast<SCION_Node>(nodes.Get(i)));
         node->strategy->UpdateBeaconStoreAndCountersBeforeBeaconing(node);
         ns3_ptr_to_node->Unref();
     }
@@ -120,7 +119,6 @@ int main(int argc, char *argv[]) {
 
         curNode = curNode->next_sibling("node");
     }
-
 
     curNode = rootNode->first_node("link");
     while (curNode) {
@@ -222,9 +220,11 @@ int main(int argc, char *argv[]) {
     }
 
     // TODO: beaconing period used for loop, that's why it's an int. How about only casting where it is needed and keeping it as ns::Time further up?
+    // TODO: Nope it's ns_time...
+    ns3::Time scheduling_delay = ns3::Time(beaconing_period.ns3::Time::GetSeconds() / 2);
     for (ns3::Time t = ns3::Seconds(0.0); t < ns3::Time(simulator_time_str); t += beaconing_period) {
         // TODO: Make the scheduling relative to the beaconing period? Or enforce a minimum beaconing period to be passed to avoid nasty errors
-        ns3::Simulator::Schedule(t + ns3::Seconds(30.0), &ProcessReceivedPacketsParallel, nodes);
+        ns3::Simulator::Schedule(t + ns3::Seconds(scheduling_delay), &ProcessReceivedPacketsParallel, nodes);
 
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             ns3::Ptr<SCION_Node> the_node = ns3::DynamicCast<SCION_Node>(nodes.Get(i));
@@ -236,6 +236,8 @@ int main(int argc, char *argv[]) {
     }
 
     ns3::Simulator::Stop(ns3::Time(simulator_time_str));
+    // TODO: Debugg
+    print_as_mappings(ASes);
     ns3::Simulator::Run();
 
     //############################################################################################################################################################
@@ -357,6 +359,18 @@ int main(int argc, char *argv[]) {
     //        print_beacon_store(node);
     //        node_ptr->Unref();
     //    }
+    for (uint32_t i = 0; i < nodes.GetN(); ++i) {
+        auto node_ptr = ns3::DynamicCast<SCION_Node>(nodes.Get(i));
+        SCION_Node* node = ns3::GetPointer(node_ptr);
+        for(auto [key, beacon]:node->path_map_to_beacon){
+            if(has_loop(beacon)){
+                std::cerr << "Loop detected in node: " << i << std::endl;
+                std::cerr << key << std::endl;
+                print_beacon_store(node);
+            }
+        }
+        node_ptr->Unref();
+    }
 
     ns3::Simulator::Destroy();
     return 0;
