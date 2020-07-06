@@ -57,7 +57,6 @@ int main(int argc, char *argv[]) {
 
     ns3::Time beaconing_period = ns3::Time(beaconing_period_str);
     int64_t  expiration_period = ns3::Time(expiration_period_str).ToInteger(ns3::Time::NS);
-    // TODO: Fix absolute path, "./topology/"
     std::string file = "./topology/" + std::string(topology_str) + ".xml";
 
     std::ifstream fin(file.c_str());
@@ -65,7 +64,6 @@ int main(int argc, char *argv[]) {
     sstr << fin.rdbuf();
 
     // TODO: Think about how to automatically set an appropriate name, maybe in conjunction with simulator configs?
-
     std::string out_path =
             "./results/main_crit" + std::string(topology_str) + "_" +
             std::string(beaconing_period_str) + "_" + std::string(expiration_period_str) + "_" + std::string(simulator_time_str) + ".txt";
@@ -104,12 +102,21 @@ int main(int argc, char *argv[]) {
         ld bandwidth_coef = std::stod(p.getProperty("bandwidth_coef"));
         ld AS_level_diversity_coef = std::stod(p.getProperty("AS_level_diversity_coef"));
         ld link_level_diversity_coef = std::stod(p.getProperty("link_level_diversity_coef"));
+        std::string type = p.getProperty("type");
 
-        // TODO: Need to instantiate differently if we want other types of nodes
         simulator_params periods = std::make_pair(beaconing_period, expiration_period);
         coefficients coefs = std::make_tuple(latency_coef, bandwidth_coef, AS_level_diversity_coef,
                                              link_level_diversity_coef);
-        nodes.Add(ns3::CreateObject<SCION_Core_As>(node_counter, 0, coefs, periods, new CriteriaMatching()));
+        // TODO: Better way to do this.
+        BeaconingStrategy* strat = new Baseline();
+        if(type == "core"){
+            nodes.Add(ns3::CreateObject<SCION_Core_As>(node_counter, 0, coefs, periods, strat));
+        } else if(type =="non-core"){
+            nodes.Add(ns3::CreateObject<SCION_As>(node_counter, 0, coefs, periods, strat));
+        } else{
+            std::cerr << "Incompatible node type!" << std::endl;
+            exit(1);
+        }
         ASes.insert(std::make_pair(as_number, node_counter));
 
         node_counter++;
@@ -131,11 +138,11 @@ int main(int argc, char *argv[]) {
         SCION_Node::neighbour_relation relation;
 
         // Check for the 3 possibilities in CAIDA topology
-        if(rel == "Peer"){
+        if(rel == "peer"){
             relation = SCION_Node::neighbour_relation::PEER;
-        } else if(rel == "Core"){
+        } else if(rel == "core"){
             relation = SCION_Node::neighbour_relation::CORE;
-        } else if(rel == "Customer"){
+        } else if(rel == "customer"){
             relation = SCION_Node::neighbour_relation::CUSTOMER;
         }
 
@@ -178,15 +185,21 @@ int main(int argc, char *argv[]) {
             case SCION_Node::neighbour_relation::PEER:
                 to_rel = SCION_Node::neighbour_relation::PEER;
                 from_rel = SCION_Node::neighbour_relation::PEER;
+                break;
             case SCION_Node::neighbour_relation::CORE:
                 to_rel = SCION_Node::neighbour_relation::CORE;
                 from_rel = SCION_Node::neighbour_relation::CORE;
+                break;
             case SCION_Node::neighbour_relation::CUSTOMER:
                 to_rel = SCION_Node::neighbour_relation::PROVIDER;
                 from_rel = SCION_Node::neighbour_relation::CUSTOMER;
-            case SCION_Node::neighbour_relation::PROVIDER: // Should never happen, there is no "Provider" type in xml files
+                break;
+            case SCION_Node::neighbour_relation::PROVIDER:
+                // Should never happen, there is no "Provider" type in xml files
                 to_rel = SCION_Node::neighbour_relation::CUSTOMER;
                 from_rel = SCION_Node::neighbour_relation::PROVIDER;
+                assert(false);
+                break;
         }
 
         if (to_my_node->interfaces_per_neighbor_as.find(from_my_node->as_number) !=
@@ -216,19 +229,14 @@ int main(int argc, char *argv[]) {
         ns3::DynamicCast<SCION_Node>(nodes.Get(i))->DoInitializations();
     }
 
-    // TODO: beaconing period used for loop, that's why it's an int. How about only casting where it is needed and keeping it as ns::Time further up?
-    // TODO: Nope it's ns_time...
     ns3::Time scheduling_delay = ns3::Time(beaconing_period.ns3::Time::GetSeconds() / 2);
     for (ns3::Time t = ns3::Seconds(0.0); t < ns3::Time(simulator_time_str); t += beaconing_period) {
-        // TODO: Make the scheduling relative to the beaconing period? Or enforce a minimum beaconing period to be passed to avoid nasty errors
         ns3::Simulator::Schedule(t + ns3::Seconds(scheduling_delay), &ProcessReceivedPacketsParallel, nodes);
 
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             ns3::Ptr<SCION_Node> the_node = ns3::DynamicCast<SCION_Node>(nodes.Get(i));
-            // TODO: Careful for testing only Core Beaconing
             ns3::Simulator::Schedule(t, &SCION_Node::CoreBeaconing, the_node);
-            // TODO: Change back after testing
-            //ns3::Simulator::Schedule(t, &SCION_Node::IntraISDBeaconing, the_node);
+            ns3::Simulator::Schedule(t, &SCION_Node::IntraISDBeaconing, the_node);
         }
     }
 
