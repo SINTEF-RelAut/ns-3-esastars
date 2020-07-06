@@ -9,6 +9,17 @@
 #define SCION_BEACONING_SIMMULATOR_BEACON_H
 #include <string>
 #include <vector>
+
+/**
+ * @brief in bytes
+ */
+#define BEACON_HEADER_SIZE 70
+
+/**
+ * @brief in bytes
+ */
+#define BEACON_HOP_SIZE 330
+
 /** Convenience */
 typedef long double ld;
 /**
@@ -44,7 +55,7 @@ struct beacon {
     /** @see path */
     path *the_path;
     /** For performant search in the beacon store of the nodes @see SCION_Node.path_map_to_beacon.*/
-    std::string key; // TODO: Maybe this should be a member function instead?
+    std::string key;
     /** Internal helper.*/
     bool is_new;
     /** Internal helper.*/

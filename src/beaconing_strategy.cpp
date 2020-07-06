@@ -58,7 +58,6 @@ void BeaconingStrategy::processImmediateReceive(uint16_t src_as_no, uint16_t ing
     AdjustBeaconValidity(the_beacon, node);
 
     for (auto const& [dst_as_no, interfaces]: valid_interfaces){
-        // TODO: This makes no sense.. Shouldn't we be checking for the absence of loops instead? We only do this in disseminate beacons otherwise which is not repeated.
         if (dst_as_no == src_as_no) {
             continue;
         }
@@ -230,8 +229,8 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
     if (old_beacon == NULL) {
         src_as_no = node->as_number;
         int64_t t = node->now - node->now % node->beaconing_period.GetInteger(); // 600s? ~ 10min, Equivalent to int(node->now / 600 000 000 000) but divisions are expensive.
-        node->bytes_sent_per_interface_per_period.at(t).at(self_egress_if_no) += (70 + 330);
-        // *** For immediately disseminating beacons received from neighbor source as // TODO: double check this. Was remote as modified before this check?
+        node->bytes_sent_per_interface_per_period.at(t).at(self_egress_if_no) += (BEACON_HEADER_SIZE + BEACON_HOP_SIZE);
+        // *** For immediately disseminating beacons received from neighbor source as
         if(remote_as->valid_beacons_count_per_src_as.find(src_as_no) == remote_as->valid_beacons_count_per_src_as.end() // TODO: if next, incompasses valid, why check for both?
            && remote_as->next_round_valid_beacons_count_per_src_as.find(src_as_no) == remote_as->next_round_valid_beacons_count_per_src_as.end()){
             // TODO: Should this really be dependent on the next_round store as well?
@@ -241,7 +240,7 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
         key = old_beacon->key;
         src_as_no = *old_beacon->the_path->at(0);
         int64_t t = node->now - node->now % node->beaconing_period.GetInteger(); // Equivalent to int(node->now / 600 000 000 000) but divisions are expensive.
-        node->bytes_sent_per_interface_per_period.at(t).at(self_egress_if_no) += (70 + 330 + 330 * old_beacon->the_path->size());
+        node->bytes_sent_per_interface_per_period.at(t).at(self_egress_if_no) += (BEACON_HEADER_SIZE + BEACON_HOP_SIZE + BEACON_HOP_SIZE * old_beacon->the_path->size());
     }
 
     //TODO: this immediate flag seems superfluous.
