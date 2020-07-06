@@ -209,13 +209,12 @@ std::pair<uint16_t, ns3::Ptr<SCION_Node>> BeaconingStrategy::GetRemoteAsInfo(SCI
  *
  * @param old_beacon Either the beacon on which to base the new beacon on, or NULL if this node is initiating a beacon.
  * @param self_egress_if_no The interface number on which to send the beacon.
- * @param remote_as_no The remote AS number that will receive the beacon. // TODO: we don't need this AND the node.
  * @param remote_ingress_if_no The remote ingress interface number of the receiving AS.
  * @param node The node which is sending the beacon.
  * @param remote_as The node which is receiving the beacon.
  * @param latency The beacon latency (expected to be the old beacon latency aggregated with the intra AS latency or zero)
  * @param bwd The beacon bandwidth (expected to be min{old_beacon_bwd, traversed_intra_as_bwd} or the inter AS bandwidth at the egress interface))
- * @param immediate TODO: seems superfluous to me.. Not if we want x beacons to propagate instead of one.
+ * @param immediate TODO: document
  * @param latency_for_immediate The intra AS latency the beacon traversed, used for the propper scheduling timing.
  */
 void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_ingress_if_no, SCION_Node* node,
@@ -230,8 +229,7 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
     // we need to send the beacon before the remote AS can decide if it will be ignored.
     if (old_beacon == NULL) {
         src_as_no = node->as_number;
-        // TODO: Have some descriptive constants (or defines) somewhere.
-        int64_t t = node->now - node->now % 600000000000; // 600s? ~ 10min, Equivalent to int(node->now / 600 000 000 000) but divisions are expensive.
+        int64_t t = node->now - node->now % node->beaconing_period.GetInteger(); // 600s? ~ 10min, Equivalent to int(node->now / 600 000 000 000) but divisions are expensive.
         node->bytes_sent_per_interface_per_period.at(t).at(self_egress_if_no) += (70 + 330);
         // *** For immediately disseminating beacons received from neighbor source as // TODO: double check this. Was remote as modified before this check?
         if(remote_as->valid_beacons_count_per_src_as.find(src_as_no) == remote_as->valid_beacons_count_per_src_as.end() // TODO: if next, incompasses valid, why check for both?
@@ -242,7 +240,7 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
     } else {
         key = old_beacon->key;
         src_as_no = *old_beacon->the_path->at(0);
-        int64_t t = node->now - node->now % 600000000000; // Equivalent to int(node->now / 600 000 000 000) but divisions are expensive.
+        int64_t t = node->now - node->now % node->beaconing_period.GetInteger(); // Equivalent to int(node->now / 600 000 000 000) but divisions are expensive.
         node->bytes_sent_per_interface_per_period.at(t).at(self_egress_if_no) += (70 + 330 + 330 * old_beacon->the_path->size());
     }
 
