@@ -62,7 +62,7 @@ typedef std::tuple<ld, ld, ld, ld> coefficients;
 /**
  * @brief This is the base definition of a SCION enabled Node. A SCION_Node models an Autonomous System.
  */
-class SCION_Node : public ns3::Node { // TODO: How about aggregating instead?
+class SCION_Node : public ns3::Node {
 
 public:
     //AS properties
@@ -82,8 +82,6 @@ public:
     int32_t AS_max_bwd;
 
     // Interfaces Properties *****************************************************************************************************
-    // TODO: Is this enum in the right place?
-
     /**
      * @brief Different types of links.
      *
@@ -119,6 +117,11 @@ public:
     /**
      * @brief This structure counts how many valid beacons will be known per source AS after the current beaconing
      * period is complete.
+     *
+     * It is the sum of the currently valid beacons and the beacons that will be valid in the next beaconing period. This structure
+     * is used to decide if an AS would discard the a newly sent beacon or not.
+     *
+     * @see GenerateBeaconAndSend
      */
     std::unordered_map<uint16_t, uint64_t> next_round_valid_beacons_count_per_src_as;
 
@@ -127,7 +130,7 @@ public:
     BeaconingStrategy* strategy;
 
     // statistics ***************************************************************************************************************
-    // TODO
+    /** @brief Holds the number of beacons that are valid for each source AS in the current beaconing period.*/
     std::unordered_map<uint16_t, uint64_t> valid_beacons_count_per_src_as;
     /** @brief Collects how many bytes would have been sent over which interface for every beacon sent in an epoch.
      *

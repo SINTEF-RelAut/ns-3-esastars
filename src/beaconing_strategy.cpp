@@ -231,9 +231,8 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
         int64_t t = node->now - node->now % node->beaconing_period.GetInteger(); // 600s? ~ 10min, Equivalent to int(node->now / 600 000 000 000) but divisions are expensive.
         node->bytes_sent_per_interface_per_period.at(t).at(self_egress_if_no) += (BEACON_HEADER_SIZE + BEACON_HOP_SIZE);
         // *** For immediately disseminating beacons received from neighbor source as
-        if(remote_as->valid_beacons_count_per_src_as.find(src_as_no) == remote_as->valid_beacons_count_per_src_as.end() // TODO: if next, incompasses valid, why check for both?
+        if(remote_as->valid_beacons_count_per_src_as.find(src_as_no) == remote_as->valid_beacons_count_per_src_as.end()
            && remote_as->next_round_valid_beacons_count_per_src_as.find(src_as_no) == remote_as->next_round_valid_beacons_count_per_src_as.end()){
-            // TODO: Should this really be dependent on the next_round store as well?
             immediate_src = true;
         }
     } else {
@@ -243,9 +242,6 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
         node->bytes_sent_per_interface_per_period.at(t).at(self_egress_if_no) += (BEACON_HEADER_SIZE + BEACON_HOP_SIZE + BEACON_HOP_SIZE * old_beacon->the_path->size());
     }
 
-    //TODO: this immediate flag seems superfluous.
-    //TODO: Does it make sense to choose how to disseminate based on the remote_ases beacon store? What does this model in the real deployment?
-    // => Yes, the beacon is always sent (bytes_sent update) this now models the decision process of the remote as weather to keep the beacon or not.
     if (immediate) { // Indicates that this is part of an immediate beacon dissemination (only set in processImmediateReceive)
         // src_AS_no not found in next_round beacon store. Or less than 5 beacons in next round store from this AS.
         // TODO: Why is this not dependent on the current beacon store like above? => because the next_round counter is more complete (all valid
