@@ -18,7 +18,6 @@
 #include <istream>
 #include <omp.h>
 
-// TODO: Should this be here? or in utils? Or a simulator file with the configs as well?
 // TODO: Document
 void ProcessReceivedPacketsParallel(ns3::NodeContainer nodes) {
     // Just do this once instead of checking for node_no == 0 every time one lvl down.
@@ -41,7 +40,7 @@ int main(int argc, char *argv[]) {
     std::string simulator_time_str;
     std::string topology_str;
 
-    // Debugg
+    // Debug
     // TODO: Remove after testing
     if (argc >=4) {
         beaconing_period_str = argv[1];
@@ -49,18 +48,17 @@ int main(int argc, char *argv[]) {
         simulator_time_str = argv[3];
         topology_str = argv[4];
     } else {
-        // Initialize with dummy values
+        // Initialize with dummy values in case you are invocing it with GDB
         beaconing_period_str = "30min";
         expiration_period_str = "2h";
         simulator_time_str = "5h";
         topology_str = "15_geo_rel";
     }
 
-    // TODO: Why are they different types?
     ns3::Time beaconing_period = ns3::Time(beaconing_period_str);
     int64_t  expiration_period = ns3::Time(expiration_period_str).ToInteger(ns3::Time::NS);
     // TODO: Fix absolute path, "./topology/"
-    std::string file = "/home/chrissy/Documents/Multipath-Paper/ns-3_beaconing_simulator/topology/" + std::string(topology_str) + ".xml";
+    std::string file = "./topology/" + std::string(topology_str) + ".xml";
 
     std::ifstream fin(file.c_str());
     std::ostringstream sstr;

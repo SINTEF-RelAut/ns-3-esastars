@@ -126,10 +126,9 @@ void CriteriaMatching::HandleFullBeaconStore(std::string key, uint16_t src_as, b
 
         if (lower_score_beacon->is_valid) {
             remote_as->valid_beacons_count_per_src_as.at(src_as)--;
-        } // TODO: Shouldn't there also be a check for erasure?
+        }
 
-        *lower_score_beacon->the_path = *old_beacon->the_path; // TODO: Need to add case where beacon is null
-        //TODO: No. If the beacon was null, the remote AS would never have seen it before and this method would not be called
+        *lower_score_beacon->the_path = *old_beacon->the_path;
 
         uint16_t *link_info = new uint16_t[4];
         link_info[0] = node->as_number;

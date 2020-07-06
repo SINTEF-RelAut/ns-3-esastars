@@ -159,17 +159,16 @@ PropertyContainer parseProperties(rapidxml::xml_node<> *node) {
 }
 
 
-// DEBUGG helpers
+// DEBUG helpers
 /**
  * @param node The node whose bandwith stats you want to print (at time==0).
  */
 void print_consumed_bw_structure(SCION_Node* node){
-    for(auto const&[time, vector]: node->bytes_sent_per_interface_per_period){
-        if(time == 0){ // TODO: Maybe make more generic?
-            std::cerr << "\nNode: " << node->as_number << " at time 0."<<std::endl;
-            for(auto element: vector){
-                std::cerr << element << " ";
-            }
+    for(auto const &el: node->bytes_sent_per_interface_per_period){
+        auto vector = el.second;
+        std::cerr << "\nNode: " << node->as_number << " at time 0."<<std::endl;
+        for(auto element: vector) {
+            std::cerr << element << " ";
         }
     }
 }
