@@ -60,7 +60,7 @@ void Baseline::DisseminateBeacons(const std::unordered_map<uint16_t, std::vector
                                  ? (ld) node->inter_as_bwds.at(egress_interface_no)
                                  : the_beacon->bwd_stat;
 
-                        GenerateBeaconAndSend(the_beacon, egress_interface_no, remote_as_no, remote_ingress_if_no, node,
+                        GenerateBeaconAndSend(the_beacon, egress_interface_no, remote_ingress_if_no, node,
                                               remote_as, latency, bwd, false, 0.0);
                         // remote_as_ptr goes out of scope.
                         remote_as_ptr->Unref();
@@ -76,7 +76,6 @@ void Baseline::DisseminateBeacons(const std::unordered_map<uint16_t, std::vector
  * @param src_as The AS number of the node which originated the beacon.
  * @param old_beacon The previous beacon.
  * @param self_egress_if_no The interface number on which to send the beacon.
- * @param remote_as_no //TODO: Same here, not necessary
  * @param remote_ingress_if_no The interface number where the beacon will be received on the remote_as.
  * @param node The node sending the beacon.
  * @param remote_as The node receiving the beacon.

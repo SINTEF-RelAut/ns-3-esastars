@@ -6,4 +6,4 @@
  */
 
 #include "../headers/beacon.h"
-// TODO: Implement key member function here if we decide to do this
+// TODO: Could implement key member function here to save some space if scalability necessitates it

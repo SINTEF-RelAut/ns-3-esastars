@@ -82,7 +82,7 @@ void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std
 
                 // Simply unpacking the arguments
                 std::tie(the_beacon, egress_interface_no, remote_ingress_if_no, remote_as, latency, bwd) = the_tuple_pair.second;
-                GenerateBeaconAndSend(the_beacon, egress_interface_no, remote_as_no, remote_ingress_if_no, node,
+                GenerateBeaconAndSend(the_beacon, egress_interface_no, remote_ingress_if_no, node,
                                       remote_as, latency, bwd, false, 0.0);
 
             }
@@ -100,7 +100,6 @@ void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std
  * @param src_as The source AS number at the origin of the beacon.
  * @param old_beacon The old beacon, may not be NULL.
  * @param self_egress_if_no The interface number on the node where this beacon will be sent on.
- * @param remote_as_no // TODO: not necessary if we have remote_as
  * @param remote_ingress_if_no The interface number on the remote AS from which this beacon will be received.
  * @param node The node sending the beacon.
  * @param remote_as The node receiving the beacon, assumes that its strategy is also criteria matching.
@@ -108,9 +107,8 @@ void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std
  * @param bwd The beacons bandwidth stat.
  */
 void CriteriaMatching::HandleFullBeaconStore(std::string key, uint16_t src_as, beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_ingress_if_no,
-                                             SCION_Node* node, SCION_Node* remote_as,
-                                             ld latency, ld bwd){
-    assert(old_beacon != NULL); // This should hold if my reasoning is sound
+                                             SCION_Node* node, SCION_Node* remote_as, ld latency, ld bwd){
+    assert(old_beacon != NULL);
     auto remote_as_no = remote_as->as_number;
     ld score = CalculateBeaconScore(remote_as, latency, bwd);
     CriteriaMatching* remote_as_strategy = dynamic_cast<CriteriaMatching*>(remote_as->strategy);

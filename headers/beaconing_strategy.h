@@ -69,9 +69,8 @@ protected:
      * writes the new beacon into the remote ASes beacon store structures and schedules a processing event if the beacon needs
      * to continue being disseminated right away.
      */
-    void GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_as_no, uint16_t remote_ingress_if_no,
-                               SCION_Node* node, SCION_Node* remote_as,
-                                       ld latency, ld bwd, bool immediate, ld latency_for_immediate);
+    void GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_ingress_if_no, SCION_Node* node,
+                                SCION_Node* remote_as, ld latency, ld bwd, bool immediate, ld latency_for_immediate);
 
 
     // TODO: Better name?
@@ -82,9 +81,8 @@ protected:
      *
      * Must be overwritten by descendants of BeaconingStrategy.
      */
-    virtual void HandleFullBeaconStore(std::string key, uint16_t src_as, beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_ingress_if_no,
-                                       SCION_Node* node, SCION_Node* remote_as,
-                                       ld latency, ld bwd) = 0;
+    virtual void HandleFullBeaconStore(std::string key, uint16_t src_as, beacon *old_beacon, uint16_t self_egress_if_no,
+                                        uint16_t remote_ingress_if_no, SCION_Node* node, SCION_Node* remote_as, ld latency, ld bwd) = 0;
     /**
      * @brief Handles updating of any additional beacon_store structures needed for this beaconing strategy.
      *

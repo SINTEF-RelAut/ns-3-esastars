@@ -26,7 +26,7 @@ void BeaconingStrategy::InitiateBeacons(const std::unordered_map<uint16_t, std::
 
             SCION_Node *remote_as = ns3::GetPointer(remote_as_ptr);
 
-            GenerateBeaconAndSend(NULL, self_egress_if_no, remote_as_no, remote_if_no, node, remote_as,
+            GenerateBeaconAndSend(NULL, self_egress_if_no, remote_if_no, node, remote_as,
                                   0.0, node->inter_as_bwds.at(self_egress_if_no), false, 0.0);
             // remote_as goes out of scope
             remote_as_ptr->Unref();
@@ -81,7 +81,7 @@ void BeaconingStrategy::processImmediateReceive(uint16_t src_as_no, uint16_t ing
                  ? (ld) node->inter_as_bwds.at(min_egress_if)
                  : the_beacon->bwd_stat;
 
-        GenerateBeaconAndSend(the_beacon, min_egress_if, dst_as_no, remote_ingress_if_no, node,
+        GenerateBeaconAndSend(the_beacon, min_egress_if, remote_ingress_if_no, node,
                               remote_as, latency, bwd, true, min_latency);
         // remote_as goes out of scope
         remote_as_ptr->Unref();
@@ -117,7 +117,7 @@ void BeaconingStrategy::UpdateBeaconStoreAndCountersBeforeBeaconing(SCION_Node* 
  * @param node The node holding the beacon.
  */
 void BeaconingStrategy::AdjustBeaconValidity(beacon* the_beacon, SCION_Node* node){
-    node->now = ns3::Simulator::Now().ToInteger(ns3::Time::NS); // TODO: check when node->now gets altered, is this consistent with the logic?
+    node->now = ns3::Simulator::Now().ToInteger(ns3::Time::NS);
     uint16_t src_as = the_beacon->the_path->at(0)[0];
     if (the_beacon->is_new) {
         the_beacon->is_new = false;
@@ -184,9 +184,6 @@ std::pair<uint16_t, ns3::Ptr<SCION_Node>> BeaconingStrategy::GetRemoteAsInfo(SCI
     return std::make_pair(remote_ingress_if_no, remote_as);
 }
 
-// TODO: GB&S is a massive function that does a million things with three exit points. This makes it hard to read and bloats the documentation.
-// Maybe a rewrite would be in order. => Low priority
-
 /**
  *  * - Updates the structures keeping track of how many bytes were sent over each interface during one period. => This is done every time
  * no matter if the beacon will be discarded by the remote AS and therefore not written into its beacon store. The reason is that in the
@@ -221,11 +218,11 @@ std::pair<uint16_t, ns3::Ptr<SCION_Node>> BeaconingStrategy::GetRemoteAsInfo(SCI
  * @param immediate TODO: seems superfluous to me.. Not if we want x beacons to propagate instead of one.
  * @param latency_for_immediate The intra AS latency the beacon traversed, used for the propper scheduling timing.
  */
-void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_as_no, uint16_t remote_ingress_if_no,
-                                             SCION_Node* node, SCION_Node* remote_as,
-                                             ld latency, ld bwd, bool immediate, ld latency_for_immediate) {
+void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_ingress_if_no, SCION_Node* node,
+                                                SCION_Node* remote_as, ld latency, ld bwd, bool immediate, ld latency_for_immediate) {
     uint16_t src_as_no;
     std::string key;
+    uint16_t remote_as_no = remote_as->as_number;
     bool immediate_src = false;
     bool immediate_non_src = false;
 
