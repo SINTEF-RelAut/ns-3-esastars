@@ -1,6 +1,15 @@
-//
-// Created by chrissy on 23.06.20.
-//
+/**
+ * @file baseline_sim.cpp
+ * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
+ * @date 2020
+ *
+ * This script takes the beaconing_period, expiration_period, simulator_time and the topology
+ * to use as command line arguments. It will automatically instantiate nodes as Core or Leaf ASes
+ * depending on the "type" property given in the xml file. This, together with the "rel" property on the links,
+ * is used to infer over which interfaces the node needs to propagate beacons. All the nodes will instantiate
+ * the baseline beaconing strategy when using this script. For criteria matching use the other script.
+ * @see criteria_matching_sim
+ */
 
 #include "headers/utils.h"
 #include "headers/beaconing_strategy.h"
@@ -19,13 +28,12 @@
 
 // TODO: Document
 void ProcessReceivedPacketsParallel(ns3::NodeContainer nodes) {
-    // Just do this once instead of checking for node_no == 0 every time one lvl down.
     std::cout << "################################## " << ns3::DynamicCast<SCION_Node>(nodes.Get(0))->now << " #########################################" << std::endl;
     uint32_t node_number = nodes.GetN();
     #pragma omp parallel for
     for (uint32_t i = 0; i < node_number; ++i) {
         ns3::Ptr<SCION_Node> ns3_ptr_to_node = ns3::DynamicCast<SCION_Node>(nodes.Get(i));
-        // Don't wanna pass around their smart pointer, seems to lead to race conditions regarding Uref.
+        // Don't wanna pass around their smart pointer, => leads to race conditions regarding Unref.
         SCION_Node* node = ns3::GetPointer(ns3_ptr_to_node);
         node->strategy->UpdateBeaconStoreAndCountersBeforeBeaconing(node);
         ns3_ptr_to_node->Unref();

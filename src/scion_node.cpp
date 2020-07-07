@@ -153,6 +153,5 @@ std::pair<ld, ld> SCION_Node::calculate_final_diversity_scores(beacon *the_beaco
             }
         }
     }
-
     return (std::make_pair(AS_level_diversity_score / counter, link_level_diversity_score / counter));
 }

@@ -1,6 +1,15 @@
-//
-// Created by chrissy on 23.06.20.
-//
+/**
+ * @file criteria_matching_sim.cpp
+ * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
+ * @date 2020
+ *
+ * This script takes the beaconing_period, expiration_period, simulator_time and the topology
+ * to use as command line arguments. It will automatically instantiate nodes as Core or Leaf ASes
+ * depending on the "type" property given in the xml file. This, together with the "rel" property on the links,
+ * is used to infer over which interfaces the node needs to propagate beacons. All the nodes will instantiate
+ * the criteria_matching beaconing strategy when using this script. For the baseline strategy, use the other script.
+ * @see baseline_sim
+ */
 
 #include "headers/utils.h"
 #include "headers/beaconing_strategy.h"
