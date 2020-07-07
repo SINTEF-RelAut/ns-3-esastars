@@ -19,7 +19,7 @@
 /**
  * @brief Maximum number of beacons to immediately disseminate per neighbour and beacon source AS.
  */
-#define MAX_IMMEDIATE_BEACONS 5;
+#define MAX_IMMEDIATE_BEACONS 5
 
 class BeaconingStrategy{
 public:

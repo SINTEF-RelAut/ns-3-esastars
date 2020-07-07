@@ -56,7 +56,9 @@ void BeaconingStrategy::processImmediateReceive(uint16_t beacon_origin_as_no, ui
     AdjustBeaconValidity(the_beacon, node);
 
     for (auto const& [dst_as_no, interfaces]: valid_interfaces){
-        if (GeneratesLoop(the_beacon, dst_as_no)){ // TODO: Changed this from dst_as_no == beacon_origin_as_no to the more general case
+        // Since the immediately disseminated beacons only propagate if the node does not yet have an entry
+        // for AS at the beacon origin, loops are already prevented. Therefore this check is sufficient.
+        if (dst_as_no == beacon_origin_as_no) {
             continue;
         }
 
