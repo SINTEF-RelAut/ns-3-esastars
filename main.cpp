@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
         simulator_time_str = argv[3];
         topology_str = argv[4];
     } else {
-        // Initialize with dummy values in case you are invocing it with GDB
+        // Initialize automatically case you are invoking it with GDB
         beaconing_period_str = "30min";
         expiration_period_str = "2h";
         simulator_time_str = "5h";
@@ -95,8 +95,6 @@ int main(int argc, char *argv[]) {
     while (curNode) {
         int32_t as_number = std::stoi(getAttribute(curNode, "id"));
         PropertyContainer p = parseProperties(curNode);
-
-        // TODO: Add the node type once you have an example from Seyedali
 
         ld latency_coef = std::stod(p.getProperty("latency_coef"));
         ld bandwidth_coef = std::stod(p.getProperty("bandwidth_coef"));
@@ -169,7 +167,7 @@ int main(int argc, char *argv[]) {
         ns3::Ptr<SCION_Node> to_my_node = (ns3::DynamicCast<SCION_Node>(toNode));
         ns3::Ptr<SCION_Node> from_my_node = (ns3::DynamicCast<SCION_Node>(fromNode));
 
-        // TODO: Guess we could save some space by computing the intra AS latencies now and only storing one value
+        // TODO: Some space could be saved by directly calculating the latency and not storing the latitude and longitude pairs.
         // Check if we need the lat & long for anything else?
         to_my_node->interfaces_coordinates.push_back(std::pair<ld, ld>(latitude, longitude));
         from_my_node->interfaces_coordinates.push_back(std::pair<ld, ld>(latitude, longitude));
@@ -180,7 +178,6 @@ int main(int argc, char *argv[]) {
         SCION_Node::neighbour_relation to_rel;
         SCION_Node::neighbour_relation from_rel;
 
-        // TODO: Also think about how you will test against indiscriminate original Code that does not care about neighbour relations
         switch(relation){
             case SCION_Node::neighbour_relation::PEER:
                 to_rel = SCION_Node::neighbour_relation::PEER;
@@ -271,10 +268,9 @@ int main(int argc, char *argv[]) {
 
     //############################################################################################################################################################
     for (uint32_t path_length = 1; path_length <= 4; ++path_length) {
-        // TODO: Correct this? Not sure anymore how it should be..
         std::cout
-                << "######################################### frequencies of path counts per source AS with length "
-                << path_length - 1
+                << "######################################### frequencies of path counts per source AS with hop count: "
+                << path_length
                 << "#########################################"
                 << std::endl;
         std::map<uint64_t, uint64_t> frequencies_of_path_counts_per_src_as_with_certain_length;
