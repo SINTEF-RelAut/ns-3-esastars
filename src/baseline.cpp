@@ -3,6 +3,8 @@
  * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
  * @date 2020
  * @see baseline.h
+ *
+ * @brief Implements the member functions of the baseline strategy.
  */
 #include <omp.h>
 #include "../headers/utils.h"
@@ -12,7 +14,7 @@
 
 /**
  * Iterates over all the beacons for all the neighbours of the node. If the beacon is valid, its dissemination towards
- * this neighbour does not create a loop in the path, the neighbour is not the same AS which originated the beacon
+ * this neighbour does not create a loop in the path and the neighbour is not the same AS which originated the beacon
  * it is sent over the interfaces towards this neighbour until the maximum number of beacons to send per neighbour has
  * been reached.
  *
@@ -25,10 +27,10 @@ void Baseline::DisseminateBeacons(const std::unordered_map<uint16_t, std::vector
     for (uint32_t i = 0; i < node->neighbors.size(); ++i){
         uint16_t &remote_as_no = node->neighbors.at(i);
         const std::vector<uint16_t> &interfaces = valid_interfaces.at(remote_as_no);
-        for (auto const &[src_as_no, equal_src_as_beacons]: node->beacon_store){
+        for (auto const &[beacon_origin_as_no, equal_src_as_beacons]: node->beacon_store){
             int16_t  sent_count = 0;
 
-            if (remote_as_no == src_as_no) {
+            if (remote_as_no == beacon_origin_as_no) {
                 continue;
             }
 
@@ -84,7 +86,7 @@ void Baseline::DisseminateBeacons(const std::unordered_map<uint16_t, std::vector
  */
 void Baseline::HandleFullBeaconStore(std::string key, uint16_t src_as, beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_ingress_if_no,
                                              SCION_Node* node, SCION_Node* remote_as, ld latency, ld bwd) {
-    // In this case, we don't evict any beacons but simply ignore the new one
+    // In the Baseline strategy, we don't evict any beacons but simply ignore the new one
     return;
 }
 
@@ -97,6 +99,6 @@ void Baseline::HandleFullBeaconStore(std::string key, uint16_t src_as, beacon *o
  */
 void Baseline::UpdateSpecializedBeaconStore(SCION_Node* remote_as, ld latency, ld bwd, uint16_t src_as_no,
                                   beacon *new_beacon){
-    // We do not use a specialized beacon store structure for this strategy
+    // We do not use a specialized beacon store structure for the Baseline strategy
     return;
 }

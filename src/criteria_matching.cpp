@@ -3,6 +3,7 @@
  * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
  * @date 2020
  * @see criteria_matching.h
+ * @brief Implements the specialized functions for the criteria matching strategy.
  */
 #include<omp.h>
 #include<assert.h>
@@ -102,7 +103,7 @@ void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std
  * @param self_egress_if_no The interface number on the node where this beacon will be sent on.
  * @param remote_ingress_if_no The interface number on the remote AS from which this beacon will be received.
  * @param node The node sending the beacon.
- * @param remote_as The node receiving the beacon, assumes that its strategy is also criteria matching.
+ * @param remote_as The node receiving the beacon, for now assumes that its strategy is also criteria matching. TODO: Need to rethink this if we want to allow mixed strategy deployments
  * @param latency The beacons latency stat.
  * @param bwd The beacons bandwidth stat.
  */
@@ -161,8 +162,7 @@ void CriteriaMatching::HandleFullBeaconStore(std::string key, uint16_t src_as, b
 }
 
 /**
- *
- * @param remote_as The as which will receive the beacon,  assumes that its strategy is also criteria matching.
+ * @param remote_as The AS which will receive the beacon, assumes that its strategy is also criteria matching. TODO: Need to rethink this if we want to allow mixed strategy deployments
  * @param latency The beacons latency stat.
  * @param bwd The beacons bandwidth stat.
  * @param src_as_no The AS number at the origin of the beacon.
@@ -183,7 +183,7 @@ void CriteriaMatching::UpdateSpecializedBeaconStore(SCION_Node* remote_as, ld la
  * @param remote_as The remote AS whose latency and bandwidth preferences should be considered.
  * @param latency The latency of the beacon.
  * @param bwd The bandwidth of the beacon.
- * @return The score of this beacon in the context of the remote_ases preferences.
+ * @return The score of this beacon in the context of the remote_ASes preferences.
  */
 ld CriteriaMatching::CalculateBeaconScore(SCION_Node* remote_as, ld latency, ld bwd){
     return ((1 - latency / 1000) * remote_as->latency_coef + (bwd / 400) * remote_as->bandwidth_coef)

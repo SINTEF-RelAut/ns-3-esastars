@@ -92,7 +92,7 @@ void BeaconingStrategy::processImmediateReceive(uint16_t beacon_origin_as_no, ui
  * been sent are directly written into the remote ASes beacon store with the 'new' bit set to true and the 'valid' bit set to false
  * such that they will not be disseminated in the same period. Before the next period starts, this functions responsibility
  * is to set the valid bit of the beacons received in the last period, such that they are disseminated in this period.
- * It also invalidates beacons that are expired.
+ * It also invalidates beacons that have expired.
  *
  * @see AdjustBeaconValidity
  * @param node The node on which to update the beacon store.
@@ -105,7 +105,7 @@ void BeaconingStrategy::UpdateBeaconStoreAndCountersBeforeBeaconing(SCION_Node* 
 }
 
 /**
- * Updates the nodes time with the current simulator times.
+ * Updates the node time with the current simulator times.
  * - If the beacon is new: Sets the new property to false, increments the nodes valid beacon count for
  * the beacons source AS, sets the validity bit of the beacon to true and updates the beacons initiation
  * and expiration time.
@@ -184,10 +184,9 @@ std::pair<uint16_t, ns3::Ptr<SCION_Node>> BeaconingStrategy::GetRemoteAsInfo(SCI
 }
 
 /**
- *  * - Updates the structures keeping track of how many bytes were sent over each interface during one period. => This is done every time
+ * - Updates the structures keeping track of how many bytes were sent over each interface during one period. => This is done every time
  * no matter if the beacon will be discarded by the remote AS and therefore not written into its beacon store. The reason is that in the
- * real deployment, the beacon must in any case reach the remote AS before it can decide to discard it or not.
- *
+ * real deployment, the beacon must in any case reach the remote AS before it can run its import policy to decide to discard it or not.
  * - Determines if the beacon needs to be disseminated immediately by checking if the source AS number is already present in the
  * remote ASes counter structures.
  * - Checks if this exact beacon has already been sent in a previous beaconing period by searching for the beacon key in the remote
@@ -195,12 +194,12 @@ std::pair<uint16_t, ns3::Ptr<SCION_Node>> BeaconingStrategy::GetRemoteAsInfo(SCI
  * - Checks if the remote AS is already storing to many beacons from the source AS that originated the beacon. If this is the case
  * the full beacon store is handled and the function returns.
  *
- * Note that if the remote_as would discard this beacon, it is not created to save simulator memory.
+ * Note that if the remote_as would discard this beacon after running its import policy, it is not created to save simulator memory.
  *
  * - Generates the new beacon by appending the nodes AS information and sets the initiation and expiration times.
  * The beacon gets written directly into the remote ASes beacon store and the path_map. It also triggers
  * the update of any additional beacon store structure a specialized strategy might need.
- * - Finally it schedules the processing of the received beacons in case they need to be disseminated immediately.
+ * - Finally, it schedules the processing of the received beacons in case they need to be disseminated immediately.
  *
  * @see HandleFullBeaconStore
  * @see UpdateSpecializedBeaconStore
@@ -213,8 +212,9 @@ std::pair<uint16_t, ns3::Ptr<SCION_Node>> BeaconingStrategy::GetRemoteAsInfo(SCI
  * @param remote_as The node which is receiving the beacon.
  * @param latency The beacon latency (expected to be the old beacon latency aggregated with the intra AS latency or zero)
  * @param bwd The beacon bandwidth (expected to be min{old_beacon_bwd, traversed_intra_as_bwd} or the inter AS bandwidth at the egress interface))
- * @param immediate TODO: document
- * @param latency_for_immediate The intra AS latency the beacon traversed, used for the propper scheduling timing.
+ * @param immediate Flag which indicates if the beacon was marked to be disseminated immediately. In the real deployment this flag would be on the
+ * beacon. This extra bit is currently _not_ included in the beacon header size.
+ * @param latency_for_immediate The intra AS latency the beacon traversed, used for the proper scheduling timing.
  */
 void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_ingress_if_no, SCION_Node* node,
                                                 SCION_Node* remote_as, ld latency, ld bwd, bool immediate, ld latency_for_immediate) {
@@ -333,6 +333,7 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
 
     if (immediate_non_src) {
         uint64_t delay = (uint64_t) (latency_for_immediate * 1000000);
+        // Here the intra_as_latency is relevant and added to the processing delay.
         ns3::Simulator::Schedule(ns3::NanoSeconds(delay) + PROCESSING_DELAY, &SCION_Node::ProcessReceivedBeacons, remote_as, beacon_origin_as_no, remote_ingress_if_no, new_beacon);
     }
 }

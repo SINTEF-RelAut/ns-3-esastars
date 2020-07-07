@@ -12,11 +12,8 @@
 
 /**
  * @brief in bytes
- *
- * This includes the standard header size (70 bytes) + the immediate bit used to indicate that a beacon
- * should be sent on in the same beaconing period instead of the next.
  */
-#define BEACON_HEADER_SIZE 70 + 1
+#define BEACON_HEADER_SIZE 70
 
 /**
  * @brief in bytes

@@ -18,10 +18,12 @@ public:
      * @brief Does nothing. Leaf ASes do not participate in core-beaconing.
      */
     void CoreBeaconing() override;
+
     /**
     * @brief Starts the intra ISD beaconing process at the beginning of the beaconing period.
     */
     void IntraISDBeaconing() override;
+
     /**
      * @brief Starts the processing of beacons for source ASes that had previously not been seen. Gets
      * scheduled right after receiving such a beacon.

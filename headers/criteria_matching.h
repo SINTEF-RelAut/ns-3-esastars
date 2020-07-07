@@ -3,8 +3,8 @@
  * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
  * @date 2020
  * @see beaconing_strategy.h
- * @brief Defines a specialized beaconing strategy and its associated constants which
- * uses criteria matching (related to bandwidth/latency/disjointness of paths) to choose which
+ * @brief Defines a specialized beaconing strategy that uses criteria matching
+ * (related to bandwidth/latency/disjointness of paths) to choose which
  * beacons to disseminate.
  */
 
@@ -15,7 +15,7 @@ class CriteriaMatching : public BeaconingStrategy {
 public:
     /**
      * @brief Disseminates highest scoring beacons towards multiple interfaces of the appropriate neighbours until the limit for
-     * sending the same beacon to one neighbour is reached.
+     * sending beacons with the same originating source AS to one neighbour is reached.
      */
     void DisseminateBeacons(const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces,
                             SCION_Node* node) override;
@@ -40,8 +40,9 @@ private:
      * The second level of this structure is iterable by the beacon score in ascending order.
      * */
     std::unordered_map<uint16_t, std::multimap <ld, beacon* >* > beacons_sorted_by_score;
+
     /**
-     * @brief Calculates the beacon's score in the context of the remote AS' preferences.
+     * @brief Calculates the beacons score in the context of the remote AS' preferences.
      */
     static ld CalculateBeaconScore(SCION_Node* remote_as, ld latency, ld bwd);
 };

@@ -4,6 +4,7 @@
  * @date 2020
  * @see scion_core_as.h
  *
+ * Implements the specialized functions on the scion core ASes.
  */
 
 #include "../headers/utils.h"
@@ -41,12 +42,12 @@ void SCION_Core_As::IntraISDBeaconing() {
 }
 
 /**
- * Queries the valid interfaces for this kind of node and processes the received beacons through the beaconing strategy.
- * @param src_as_no (src AS of the node originating beacon) TODO: Check if this is fine in processImmediate... Nope, process Immediate expects the neighbour as no
- * @param ingress_if
- * @param the_beacon
+ * Fetches the valid interfaces for this kind of node (only core links) and processes the received beacons through the beaconing strategy.
+ * @param beacon_origin_as_no The AS number of the AS which originated the beacon.
+ * @param ingress_if The ingress interface over which the beacon was received.
+ * @param the_beacon The immediate beacon
  */
-void SCION_Core_As::ProcessReceivedBeacons(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon){
+void SCION_Core_As::ProcessReceivedBeacons(uint16_t beacon_origin_as_no, uint16_t ingress_if, beacon* the_beacon){
     std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces = this->GetValidInterfaces(neighbour_relation::CORE);
-    this->strategy->processImmediateReceive(src_as_no, ingress_if, the_beacon, valid_interfaces, this);
+    this->strategy->processImmediateReceive(beacon_origin_as_no, ingress_if, the_beacon, valid_interfaces, this);
 }
