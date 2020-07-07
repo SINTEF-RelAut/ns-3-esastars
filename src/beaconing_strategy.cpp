@@ -3,7 +3,7 @@
  * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
  * @date 2020
  * @see beaconing_strategy.h
- * Implements the member functions of the BeaconingStrategy.
+ * @brief Implements the member functions of the BeaconingStrategy.
  */
 
 #include "ns3/point-to-point-net-device.h"

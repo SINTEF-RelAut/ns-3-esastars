@@ -3,7 +3,7 @@
  * @see utils.h
  * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
  * @date 2020
- * Implements the functions related to path quality, delay estimation, parsing xml topologies,
+ * @brief Implements the functions related to path quality, delay estimation, parsing xml topologies,
  * and helpers for iterating and printing various structures on the nodes.
  */
 

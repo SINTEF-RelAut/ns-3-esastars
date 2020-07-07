@@ -4,7 +4,7 @@
  * @date 2020
  * @see scion_as.h
  *
- * Implements the specialized functions on the scion leaf ASes.
+ * @brief Implements the specialized functions on the scion leaf ASes.
  */
 
 #include "../headers/scion_as.h"

@@ -4,7 +4,7 @@
  * @date 2020
  * @see scion_core_as.h
  *
- * Implements the specialized functions on the scion core ASes.
+ * @brief Implements the specialized functions on the scion core ASes.
  */
 
 #include "../headers/utils.h"
