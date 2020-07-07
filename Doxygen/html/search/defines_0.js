@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['fixed_5fbeacons_5fnumber_5fto_5fsend_164',['FIXED_BEACONS_NUMBER_TO_SEND',['../scion__node_8h.html#a5989b0ef7f31671c9e8ea29def404ff6',1,'scion_node.h']]],
-  ['fixed_5fbeacons_5fnumber_5fto_5fstore_165',['FIXED_BEACONS_NUMBER_TO_STORE',['../scion__node_8h.html#a55df0145a6ea9052960904c0baa24916',1,'scion_node.h']]]
+  ['beacon_5fheader_5fsize_192',['BEACON_HEADER_SIZE',['../beacon_8h.html#a75f395d7dff9da36e48a2d48173425ee',1,'beacon.h']]],
+  ['beacon_5fhop_5fsize_193',['BEACON_HOP_SIZE',['../beacon_8h.html#a4336b4150d8d3340dab398e4bd27d171',1,'beacon.h']]]
 ];

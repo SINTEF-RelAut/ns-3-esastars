@@ -86,28 +86,28 @@ Collaboration diagram for CriteriaMatching:</div>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a7bfff1de05fa1a2b7680ec4d92efe5a8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCriteriaMatching.html#a7bfff1de05fa1a2b7680ec4d92efe5a8">DisseminateBeacons</a> (const std::unordered_map&lt; uint16_t, std::vector&lt; uint16_t &gt;&gt; &amp;valid_interfaces, <a class="el" href="classSCION__Node.html">SCION_Node</a> *node) override</td></tr>
-<tr class="memdesc:a7bfff1de05fa1a2b7680ec4d92efe5a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Disseminates highest scoring beacons towards multiple interfaces of the appropriate neighbours until the limit for sending the same beacon to one neighbour is reached.  <a href="classCriteriaMatching.html#a7bfff1de05fa1a2b7680ec4d92efe5a8">More...</a><br /></td></tr>
+<tr class="memdesc:a7bfff1de05fa1a2b7680ec4d92efe5a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Disseminates highest scoring beacons towards multiple interfaces of the appropriate neighbours until the limit for sending beacons with the same originating source AS to one neighbour is reached.  <a href="classCriteriaMatching.html#a7bfff1de05fa1a2b7680ec4d92efe5a8">More...</a><br /></td></tr>
 <tr class="separator:a7bfff1de05fa1a2b7680ec4d92efe5a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classBeaconingStrategy"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classBeaconingStrategy')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classBeaconingStrategy.html">BeaconingStrategy</a></td></tr>
 <tr class="memitem:a0f345a29b7b5d0192409dfecc7e3bd28 inherit pub_methods_classBeaconingStrategy"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBeaconingStrategy.html#a0f345a29b7b5d0192409dfecc7e3bd28">InitiateBeacons</a> (const std::unordered_map&lt; uint16_t, std::vector&lt; uint16_t &gt;&gt; &amp;valid_interfaces, <a class="el" href="classSCION__Node.html">SCION_Node</a> *node)</td></tr>
 <tr class="memdesc:a0f345a29b7b5d0192409dfecc7e3bd28 inherit pub_methods_classBeaconingStrategy"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterates over all the valid interfaces of the nodes neighbours and generates and sends a new beacon on each.  <a href="classBeaconingStrategy.html#a0f345a29b7b5d0192409dfecc7e3bd28">More...</a><br /></td></tr>
 <tr class="separator:a0f345a29b7b5d0192409dfecc7e3bd28 inherit pub_methods_classBeaconingStrategy"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af5b263d4937bd6e5f735776126017009 inherit pub_methods_classBeaconingStrategy"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBeaconingStrategy.html#af5b263d4937bd6e5f735776126017009">processImmediateReceive</a> (uint16_t src_as_no, uint16_t ingress_if, <a class="el" href="structbeacon.html">beacon</a> *the_beacon, const std::unordered_map&lt; uint16_t, std::vector&lt; uint16_t &gt;&gt; &amp;valid_interfaces, <a class="el" href="classSCION__Node.html">SCION_Node</a> *node)</td></tr>
-<tr class="memdesc:af5b263d4937bd6e5f735776126017009 inherit pub_methods_classBeaconingStrategy"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sends the beacon to each neighbour over the lowest latency interface if the beacon originated at an AS towards which the node has not yet discovered any paths.  <a href="classBeaconingStrategy.html#af5b263d4937bd6e5f735776126017009">More...</a><br /></td></tr>
-<tr class="separator:af5b263d4937bd6e5f735776126017009 inherit pub_methods_classBeaconingStrategy"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a28bd3dc806f2d68e1b61fc3e780ce34d inherit pub_methods_classBeaconingStrategy"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBeaconingStrategy.html#a28bd3dc806f2d68e1b61fc3e780ce34d">processImmediateReceive</a> (uint16_t beacon_origin_as_no, uint16_t ingress_if, <a class="el" href="structbeacon.html">beacon</a> *the_beacon, const std::unordered_map&lt; uint16_t, std::vector&lt; uint16_t &gt;&gt; &amp;valid_interfaces, <a class="el" href="classSCION__Node.html">SCION_Node</a> *node)</td></tr>
+<tr class="memdesc:a28bd3dc806f2d68e1b61fc3e780ce34d inherit pub_methods_classBeaconingStrategy"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sends the beacon to each neighbour over the lowest latency valid interface if the beacon originated at an AS towards which the node has not yet discovered any paths.  <a href="classBeaconingStrategy.html#a28bd3dc806f2d68e1b61fc3e780ce34d">More...</a><br /></td></tr>
+<tr class="separator:a28bd3dc806f2d68e1b61fc3e780ce34d inherit pub_methods_classBeaconingStrategy"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
-<tr class="memitem:a0ded83f0c5df64925402aa1829e08f99"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCriteriaMatching.html#a0ded83f0c5df64925402aa1829e08f99">HandleFullBeaconStore</a> (std::string key, uint16_t src_as, <a class="el" href="structbeacon.html">beacon</a> *old_beacon, uint16_t self_egress_if_no, uint16_t remote_as_no, uint16_t remote_ingress_if_no, <a class="el" href="classSCION__Node.html">SCION_Node</a> *node, <a class="el" href="classSCION__Node.html">SCION_Node</a> *remote_as, <a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a> latency, <a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a> bwd) override</td></tr>
-<tr class="memdesc:a0ded83f0c5df64925402aa1829e08f99"><td class="mdescLeft">&#160;</td><td class="mdescRight">Evicts the lowest scored beacon for the beacons originating AS if the score of the new beacon is larger than the lowest scored matching beacon found in the remote ASes beacon store.  <a href="classCriteriaMatching.html#a0ded83f0c5df64925402aa1829e08f99">More...</a><br /></td></tr>
-<tr class="separator:a0ded83f0c5df64925402aa1829e08f99"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a707f14ea59f9f526fccc59cf96526080"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCriteriaMatching.html#a707f14ea59f9f526fccc59cf96526080">UpdateSpecializedBeaconStore</a> (<a class="el" href="classSCION__Node.html">SCION_Node</a> *remote_as, <a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a> latency, <a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a> bwd, uint16_t src_as_no, <a class="el" href="structbeacon.html">beacon</a> *new_beacon) override</td></tr>
+<tr class="memitem:a70c444db7055d4de339cb7f5eeccb952"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCriteriaMatching.html#a70c444db7055d4de339cb7f5eeccb952">HandleFullBeaconStore</a> (std::string key, uint16_t src_as, <a class="el" href="structbeacon.html">beacon</a> *old_beacon, uint16_t self_egress_if_no, uint16_t remote_ingress_if_no, <a class="el" href="classSCION__Node.html">SCION_Node</a> *node, <a class="el" href="classSCION__Node.html">SCION_Node</a> *remote_as, ld latency, ld bwd) override</td></tr>
+<tr class="memdesc:a70c444db7055d4de339cb7f5eeccb952"><td class="mdescLeft">&#160;</td><td class="mdescRight">Evicts the lowest scored beacon for the beacons originating AS if the score of the new beacon is larger than the lowest scored matching beacon found in the remote ASes beacon store.  <a href="classCriteriaMatching.html#a70c444db7055d4de339cb7f5eeccb952">More...</a><br /></td></tr>
+<tr class="separator:a70c444db7055d4de339cb7f5eeccb952"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a707f14ea59f9f526fccc59cf96526080"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCriteriaMatching.html#a707f14ea59f9f526fccc59cf96526080">UpdateSpecializedBeaconStore</a> (<a class="el" href="classSCION__Node.html">SCION_Node</a> *remote_as, ld latency, ld bwd, uint16_t src_as_no, <a class="el" href="structbeacon.html">beacon</a> *new_beacon) override</td></tr>
 <tr class="memdesc:a707f14ea59f9f526fccc59cf96526080"><td class="mdescLeft">&#160;</td><td class="mdescRight">Updates the structure holding all the beacons sorted by score.  <a href="classCriteriaMatching.html#a707f14ea59f9f526fccc59cf96526080">More...</a><br /></td></tr>
 <tr class="separator:a707f14ea59f9f526fccc59cf96526080"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_methods_classBeaconingStrategy"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classBeaconingStrategy')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classBeaconingStrategy.html">BeaconingStrategy</a></td></tr>
-<tr class="memitem:a97dca0d40862e69c58d46e95ff25b097 inherit pro_methods_classBeaconingStrategy"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBeaconingStrategy.html#a97dca0d40862e69c58d46e95ff25b097">GenerateBeaconAndSend</a> (<a class="el" href="structbeacon.html">beacon</a> *old_beacon, uint16_t self_egress_if_no, uint16_t remote_as_no, uint16_t remote_ingress_if_no, <a class="el" href="classSCION__Node.html">SCION_Node</a> *node, <a class="el" href="classSCION__Node.html">SCION_Node</a> *remote_as, <a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a> latency, <a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a> bwd, bool immediate, <a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a> latency_for_immediate)</td></tr>
-<tr class="memdesc:a97dca0d40862e69c58d46e95ff25b097 inherit pro_methods_classBeaconingStrategy"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates the new beacon if necessary, updates the structures recording how many bytes were sent per interface, writes the new beacon into the remote ASes beacon store structures and schedules a processing event if the beacon needs to continue being disseminated right away.  <a href="classBeaconingStrategy.html#a97dca0d40862e69c58d46e95ff25b097">More...</a><br /></td></tr>
-<tr class="separator:a97dca0d40862e69c58d46e95ff25b097 inherit pro_methods_classBeaconingStrategy"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afdf5073ab6d6ce38aeda993a49b4fdbc inherit pro_methods_classBeaconingStrategy"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBeaconingStrategy.html#afdf5073ab6d6ce38aeda993a49b4fdbc">GenerateBeaconAndSend</a> (<a class="el" href="structbeacon.html">beacon</a> *old_beacon, uint16_t self_egress_if_no, uint16_t remote_ingress_if_no, <a class="el" href="classSCION__Node.html">SCION_Node</a> *node, <a class="el" href="classSCION__Node.html">SCION_Node</a> *remote_as, ld latency, ld bwd, bool immediate, ld latency_for_immediate)</td></tr>
+<tr class="memdesc:afdf5073ab6d6ce38aeda993a49b4fdbc inherit pro_methods_classBeaconingStrategy"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates the new beacon if necessary, updates the structures recording how many bytes were sent per interface, writes the new beacon into the remote ASes beacon store structures if the remote ASes import policy does not discard it, and schedules a processing event on the simulator if the beacon needs to continue being disseminated right away.  <a href="classBeaconingStrategy.html#afdf5073ab6d6ce38aeda993a49b4fdbc">More...</a><br /></td></tr>
+<tr class="separator:afdf5073ab6d6ce38aeda993a49b4fdbc inherit pro_methods_classBeaconingStrategy"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
@@ -117,11 +117,11 @@ Additional Inherited Members</h2></td></tr>
 <tr class="separator:a71a40f746ad826e2c2db92b2ea3a5a6e inherit pub_static_methods_classBeaconingStrategy"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_static_methods_classBeaconingStrategy"><td colspan="2" onclick="javascript:toggleInherit('pro_static_methods_classBeaconingStrategy')"><img src="closed.png" alt="-"/>&#160;Static Protected Member Functions inherited from <a class="el" href="classBeaconingStrategy.html">BeaconingStrategy</a></td></tr>
 <tr class="memitem:af2e830a4493852c6fc14d5d9390dd7d9 inherit pro_static_methods_classBeaconingStrategy"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBeaconingStrategy.html#af2e830a4493852c6fc14d5d9390dd7d9">AdjustBeaconValidity</a> (<a class="el" href="structbeacon.html">beacon</a> *the_beacon, <a class="el" href="classSCION__Node.html">SCION_Node</a> *node)</td></tr>
-<tr class="memdesc:af2e830a4493852c6fc14d5d9390dd7d9 inherit pro_static_methods_classBeaconingStrategy"><td class="mdescLeft">&#160;</td><td class="mdescRight">Updates the nodes time with the current simulator time, updates beacon attributes and the nodes valid beacon counters depending on the beacon state.  <a href="classBeaconingStrategy.html#af2e830a4493852c6fc14d5d9390dd7d9">More...</a><br /></td></tr>
+<tr class="memdesc:af2e830a4493852c6fc14d5d9390dd7d9 inherit pro_static_methods_classBeaconingStrategy"><td class="mdescLeft">&#160;</td><td class="mdescRight">Updates the node time with the current simulator time, updates beacon attributes and the nodes valid beacon counters depending on the beacon state.  <a href="classBeaconingStrategy.html#af2e830a4493852c6fc14d5d9390dd7d9">More...</a><br /></td></tr>
 <tr class="separator:af2e830a4493852c6fc14d5d9390dd7d9 inherit pro_static_methods_classBeaconingStrategy"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0a0f99186653ec505cc39bf5f28a79ed inherit pro_static_methods_classBeaconingStrategy"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBeaconingStrategy.html#a0a0f99186653ec505cc39bf5f28a79ed">generates_loop</a> (<a class="el" href="structbeacon.html">beacon</a> const *the_beacon, uint16_t remote_as_no)</td></tr>
-<tr class="memdesc:a0a0f99186653ec505cc39bf5f28a79ed inherit pro_static_methods_classBeaconingStrategy"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks if the addition of the remote AS to the beacon would generate a loop in the AS-level path.  <a href="classBeaconingStrategy.html#a0a0f99186653ec505cc39bf5f28a79ed">More...</a><br /></td></tr>
-<tr class="separator:a0a0f99186653ec505cc39bf5f28a79ed inherit pro_static_methods_classBeaconingStrategy"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a486610168979980838f4ac8da52a3438 inherit pro_static_methods_classBeaconingStrategy"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBeaconingStrategy.html#a486610168979980838f4ac8da52a3438">GeneratesLoop</a> (<a class="el" href="structbeacon.html">beacon</a> const *the_beacon, uint16_t remote_as_no)</td></tr>
+<tr class="memdesc:a486610168979980838f4ac8da52a3438 inherit pro_static_methods_classBeaconingStrategy"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks if the addition of the remote AS to the beacon would generate a loop in the AS-level path.  <a href="classBeaconingStrategy.html#a486610168979980838f4ac8da52a3438">More...</a><br /></td></tr>
+<tr class="separator:a486610168979980838f4ac8da52a3438 inherit pro_static_methods_classBeaconingStrategy"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acb3390fd13d3b6bf2c6fd573c4ab8323 inherit pro_static_methods_classBeaconingStrategy"><td class="memItemLeft" align="right" valign="top">static std::pair&lt; uint16_t, ns3::Ptr&lt; <a class="el" href="classSCION__Node.html">SCION_Node</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBeaconingStrategy.html#acb3390fd13d3b6bf2c6fd573c4ab8323">GetRemoteAsInfo</a> (<a class="el" href="classSCION__Node.html">SCION_Node</a> *node, uint16_t egress_interface_no)</td></tr>
 <tr class="memdesc:acb3390fd13d3b6bf2c6fd573c4ab8323 inherit pro_static_methods_classBeaconingStrategy"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fetches the remote interface number and a handle to the remote AS given an egress interface on the node.  <a href="classBeaconingStrategy.html#acb3390fd13d3b6bf2c6fd573c4ab8323">More...</a><br /></td></tr>
 <tr class="separator:acb3390fd13d3b6bf2c6fd573c4ab8323 inherit pro_static_methods_classBeaconingStrategy"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -161,9 +161,9 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Disseminates highest scoring beacons towards multiple interfaces of the appropriate neighbours until the limit for sending the same beacon to one neighbour is reached. </p>
+<p>Disseminates highest scoring beacons towards multiple interfaces of the appropriate neighbours until the limit for sending beacons with the same originating source AS to one neighbour is reached. </p>
 <p>Iterates over all the beacons for all the neighbours of the node. Finds the beacons with the highest scores (as many as FIXED_BEACONS_NUMBER_TO_SEND, based on the latency and bandwidth stats) which do not generate loops and disseminates those along the appropriate interfaces.</p>
-<dl class="section see"><dt>See also</dt><dd><a class="el" href="classBeaconingStrategy.html#a97dca0d40862e69c58d46e95ff25b097" title="Creates the new beacon if necessary, updates the structures recording how many bytes were sent per in...">GenerateBeaconAndSend</a> </dd></dl>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="classBeaconingStrategy.html#afdf5073ab6d6ce38aeda993a49b4fdbc" title="Creates the new beacon if necessary, updates the structures recording how many bytes were sent per in...">GenerateBeaconAndSend</a> </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">valid_interfaces</td><td>The interfaces along which to disseminate beacons for this type of node. </td></tr>
@@ -176,8 +176,8 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
-<a id="a0ded83f0c5df64925402aa1829e08f99"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0ded83f0c5df64925402aa1829e08f99">&#9670;&nbsp;</a></span>HandleFullBeaconStore()</h2>
+<a id="a70c444db7055d4de339cb7f5eeccb952"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a70c444db7055d4de339cb7f5eeccb952">&#9670;&nbsp;</a></span>HandleFullBeaconStore()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -213,12 +213,6 @@ Additional Inherited Members</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">uint16_t&#160;</td>
-          <td class="paramname"><em>remote_as_no</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">uint16_t&#160;</td>
           <td class="paramname"><em>remote_ingress_if_no</em>, </td>
         </tr>
         <tr>
@@ -236,13 +230,13 @@ Additional Inherited Members</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a>&#160;</td>
+          <td class="paramtype">ld&#160;</td>
           <td class="paramname"><em>latency</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a>&#160;</td>
+          <td class="paramtype">ld&#160;</td>
           <td class="paramname"><em>bwd</em>&#160;</td>
         </tr>
         <tr>
@@ -266,17 +260,16 @@ Additional Inherited Members</h2></td></tr>
     <tr><td class="paramname">src_as</td><td>The source AS number at the origin of the beacon. </td></tr>
     <tr><td class="paramname">old_beacon</td><td>The old beacon, may not be NULL. </td></tr>
     <tr><td class="paramname">self_egress_if_no</td><td>The interface number on the node where this beacon will be sent on. </td></tr>
-    <tr><td class="paramname">remote_as_no</td><td>// TODO: not necessary if we have remote_as </td></tr>
     <tr><td class="paramname">remote_ingress_if_no</td><td>The interface number on the remote AS from which this beacon will be received. </td></tr>
     <tr><td class="paramname">node</td><td>The node sending the beacon. </td></tr>
-    <tr><td class="paramname">remote_as</td><td>The node receiving the beacon. </td></tr>
+    <tr><td class="paramname">remote_as</td><td>The node receiving the beacon, for now assumes that its strategy is also criteria matching. TODO: Need to rethink this if we want to allow mixed strategy deployments </td></tr>
     <tr><td class="paramname">latency</td><td>The beacons latency stat. </td></tr>
     <tr><td class="paramname">bwd</td><td>The beacons bandwidth stat. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p>Implements <a class="el" href="classBeaconingStrategy.html#ad1f74d9cf83f776b7789fcc318543573">BeaconingStrategy</a>.</p>
+<p>Implements <a class="el" href="classBeaconingStrategy.html#a5d9d42fd9d1c3eab54206bbc0eda9e3c">BeaconingStrategy</a>.</p>
 
 </div>
 </div>
@@ -298,13 +291,13 @@ Additional Inherited Members</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a>&#160;</td>
+          <td class="paramtype">ld&#160;</td>
           <td class="paramname"><em>latency</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a>&#160;</td>
+          <td class="paramtype">ld&#160;</td>
           <td class="paramname"><em>bwd</em>, </td>
         </tr>
         <tr>
@@ -333,10 +326,9 @@ Additional Inherited Members</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Updates the structure holding all the beacons sorted by score. </p>
-<p>// TODO move the specialized beacon store into the strategy instance to avoid fragile baseclass problems on the SCION_Nodes.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">remote_as</td><td>The as which will receive the beacon. </td></tr>
+    <tr><td class="paramname">remote_as</td><td>The AS which will receive the beacon, assumes that its strategy is also criteria matching. TODO: Need to rethink this if we want to allow mixed strategy deployments </td></tr>
     <tr><td class="paramname">latency</td><td>The beacons latency stat. </td></tr>
     <tr><td class="paramname">bwd</td><td>The beacons bandwidth stat. </td></tr>
     <tr><td class="paramname">src_as_no</td><td>The AS number at the origin of the beacon. </td></tr>

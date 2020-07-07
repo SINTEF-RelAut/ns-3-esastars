@@ -68,6 +68,9 @@ $(function() {
 <li>AdjustBeaconValidity()
 : <a class="el" href="classBeaconingStrategy.html#af2e830a4493852c6fc14d5d9390dd7d9">BeaconingStrategy</a>
 </li>
+<li>AS_level_diversity_coef
+: <a class="el" href="classSCION__Node.html#a712a3d44236b4577123af09bffa12fae">SCION_Node</a>
+</li>
 <li>AS_max_bwd
 : <a class="el" href="classSCION__Node.html#af6a2c38ac2e1c0cd462586fe16386f75">SCION_Node</a>
 </li>
@@ -78,14 +81,17 @@ $(function() {
 
 
 <h3><a id="index_b"></a>- b -</h3><ul>
+<li>bandwidth_coef
+: <a class="el" href="classSCION__Node.html#a9f8ba2c1656e16bc464a34bb9b9a9157">SCION_Node</a>
+</li>
 <li>beacon_store
 : <a class="el" href="classSCION__Node.html#a52aa1a7d2496654f372fe55fff9a1eb9">SCION_Node</a>
 </li>
 <li>beaconing_period
 : <a class="el" href="classSCION__Node.html#a838e6a4498a5deb49c8c61836ede068d">SCION_Node</a>
 </li>
-<li>beacons_sorted_by_score
-: <a class="el" href="classSCION__Node.html#a00c1cbd9dab3a5f00d5b0fb26d67ee3d">SCION_Node</a>
+<li>bwd_stat
+: <a class="el" href="structbeacon.html#a872c662125b935965d67dc2314e8a29a">beacon</a>
 </li>
 <li>bytes_sent_per_interface_per_period
 : <a class="el" href="classSCION__Node.html#a4c18c0dd87a311a8395bf5c143aacfca">SCION_Node</a>
@@ -118,6 +124,9 @@ $(function() {
 <li>expiration_period
 : <a class="el" href="classSCION__Node.html#a2c833fe019bd1f8227f9bc3756847ede">SCION_Node</a>
 </li>
+<li>expiration_time
+: <a class="el" href="structbeacon.html#aac9b73a768fd69a5fc64fc7d0d3057c8">beacon</a>
+</li>
 </ul>
 
 
@@ -130,10 +139,10 @@ $(function() {
 
 <h3><a id="index_g"></a>- g -</h3><ul>
 <li>GenerateBeaconAndSend()
-: <a class="el" href="classBeaconingStrategy.html#a97dca0d40862e69c58d46e95ff25b097">BeaconingStrategy</a>
+: <a class="el" href="classBeaconingStrategy.html#afdf5073ab6d6ce38aeda993a49b4fdbc">BeaconingStrategy</a>
 </li>
-<li>generates_loop()
-: <a class="el" href="classBeaconingStrategy.html#a0a0f99186653ec505cc39bf5f28a79ed">BeaconingStrategy</a>
+<li>GeneratesLoop()
+: <a class="el" href="classBeaconingStrategy.html#a486610168979980838f4ac8da52a3438">BeaconingStrategy</a>
 </li>
 <li>getProperty()
 : <a class="el" href="classPropertyContainer.html#a0784bd0ad3124d30868a4b30b66a6f99">PropertyContainer</a>
@@ -149,9 +158,9 @@ $(function() {
 
 <h3><a id="index_h"></a>- h -</h3><ul>
 <li>HandleFullBeaconStore()
-: <a class="el" href="classBaseline.html#a794e31ab14d039cf63dfe948c0ce286f">Baseline</a>
-, <a class="el" href="classBeaconingStrategy.html#ad1f74d9cf83f776b7789fcc318543573">BeaconingStrategy</a>
-, <a class="el" href="classCriteriaMatching.html#a0ded83f0c5df64925402aa1829e08f99">CriteriaMatching</a>
+: <a class="el" href="classBaseline.html#ab92a86fc0f72d00c26194012bfc41d43">Baseline</a>
+, <a class="el" href="classBeaconingStrategy.html#a5d9d42fd9d1c3eab54206bbc0eda9e3c">BeaconingStrategy</a>
+, <a class="el" href="classCriteriaMatching.html#a70c444db7055d4de339cb7f5eeccb952">CriteriaMatching</a>
 </li>
 <li>hasProperty()
 : <a class="el" href="classPropertyContainer.html#a638481c5682d2f0bb9a784dd0748e241">PropertyContainer</a>
@@ -162,6 +171,9 @@ $(function() {
 <h3><a id="index_i"></a>- i -</h3><ul>
 <li>InitiateBeacons()
 : <a class="el" href="classBeaconingStrategy.html#a0f345a29b7b5d0192409dfecc7e3bd28">BeaconingStrategy</a>
+</li>
+<li>initiation_time
+: <a class="el" href="structbeacon.html#af79630ee4cddb966e091c7cccda1aa89">beacon</a>
 </li>
 <li>inter_as_bwds
 : <a class="el" href="classSCION__Node.html#a6ad0a50bcbeb50b5118bcda85d3d9b22">SCION_Node</a>
@@ -203,6 +215,9 @@ $(function() {
 <li>latency_stat
 : <a class="el" href="structbeacon.html#adf1c8149a04d0cc446b5cbbf0ff590dd">beacon</a>
 </li>
+<li>link_level_diversity_coef
+: <a class="el" href="classSCION__Node.html#aa29c02480d4589bf2f9dec576a41f198">SCION_Node</a>
+</li>
 </ul>
 
 
@@ -213,8 +228,14 @@ $(function() {
 <li>neighbour_relation
 : <a class="el" href="classSCION__Node.html#adb5540d7dcadd20cea4b5e26009c48c1">SCION_Node</a>
 </li>
+<li>next_expiration_time
+: <a class="el" href="structbeacon.html#a40523e766fdc6d77b6d09c174c95cf12">beacon</a>
+</li>
 <li>next_initiation_time
 : <a class="el" href="structbeacon.html#a3aaa3f7318f7985015868ffba0009f37">beacon</a>
+</li>
+<li>next_round_valid_beacons_count_per_src_as
+: <a class="el" href="classSCION__Node.html#a4cc91c9f8b409ab216fabfd1b174e1e2">SCION_Node</a>
 </li>
 <li>now
 : <a class="el" href="classSCION__Node.html#a5b304488b3652342477190278590729d">SCION_Node</a>
@@ -227,17 +248,20 @@ $(function() {
 : <a class="el" href="classSCION__Node.html#af3ad87f0db7bc86dd8077aafe9b95b50">SCION_Node</a>
 </li>
 <li>processImmediateReceive()
-: <a class="el" href="classBeaconingStrategy.html#af5b263d4937bd6e5f735776126017009">BeaconingStrategy</a>
+: <a class="el" href="classBeaconingStrategy.html#a28bd3dc806f2d68e1b61fc3e780ce34d">BeaconingStrategy</a>
 </li>
 <li>ProcessReceivedBeacons()
-: <a class="el" href="classSCION__As.html#a7fdebc77eb67afc62a34d6730128f6fb">SCION_As</a>
-, <a class="el" href="classSCION__Core__As.html#acfbf0c5a74353304bf0ddd7fea6707d5">SCION_Core_As</a>
+: <a class="el" href="classSCION__As.html#ac4e23f75a47e9f44e4d0e410c5295fdd">SCION_As</a>
+, <a class="el" href="classSCION__Core__As.html#aad475c34e19ad11d4c28f2afd3d5fcdf">SCION_Core_As</a>
 , <a class="el" href="classSCION__Node.html#a78796720f576b5eae47d1619f9adc7f4">SCION_Node</a>
 </li>
 </ul>
 
 
 <h3><a id="index_s"></a>- s -</h3><ul>
+<li>setProperty()
+: <a class="el" href="classPropertyContainer.html#a10881888c26d857febcb44ecbc094c03">PropertyContainer</a>
+</li>
 <li>strategy
 : <a class="el" href="classSCION__Node.html#aff86d68fe418111d16d6ba50593da733">SCION_Node</a>
 </li>
@@ -262,6 +286,13 @@ $(function() {
 </li>
 <li>UpdateTimeAndStats()
 : <a class="el" href="classSCION__Node.html#a5f5dd5890f1f98722d9d875cfa726c37">SCION_Node</a>
+</li>
+</ul>
+
+
+<h3><a id="index_v"></a>- v -</h3><ul>
+<li>valid_beacons_count_per_src_as
+: <a class="el" href="classSCION__Node.html#a859d93bd1eabe6c52e60998c2a8cab68">SCION_Node</a>
 </li>
 </ul>
 </div><!-- contents -->

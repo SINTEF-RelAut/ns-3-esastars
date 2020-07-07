@@ -74,7 +74,7 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 
-<p>Defines functions and classes related to path quality, delay estimation, parsing xml topologies, and helpers for iterating and printing node structures.  
+<p>Defines functions and classes related to path quality, delay estimation, parsing xml topologies, and helpers for iterating and printing various structures on the nodes.  
 <a href="#details">More...</a></p>
 <div class="textblock"><code>#include &quot;<a class="el" href="beacon_8h_source.html">beacon.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="scion__node_8h_source.html">scion_node.h</a>&quot;</code><br />
@@ -103,13 +103,13 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a7874f9df204e2b6f978f11b0dbf5890b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="utils_8h.html#a7874f9df204e2b6f978f11b0dbf5890b">link_level_jaccard_distance_between_two_paths</a> (<a class="el" href="structbeacon.html">beacon</a> *beacon1, <a class="el" href="structbeacon.html">beacon</a> *beacon2)</td></tr>
+<tr class="memitem:a7874f9df204e2b6f978f11b0dbf5890b"><td class="memItemLeft" align="right" valign="top">ld&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="utils_8h.html#a7874f9df204e2b6f978f11b0dbf5890b">link_level_jaccard_distance_between_two_paths</a> (<a class="el" href="structbeacon.html">beacon</a> *beacon1, <a class="el" href="structbeacon.html">beacon</a> *beacon2)</td></tr>
 <tr class="memdesc:a7874f9df204e2b6f978f11b0dbf5890b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Measures and returns the dissimilarity between the two paths in the passed beacons on the link-lvl.  <a href="utils_8h.html#a7874f9df204e2b6f978f11b0dbf5890b">More...</a><br /></td></tr>
 <tr class="separator:a7874f9df204e2b6f978f11b0dbf5890b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3ab80da2a1d71b6b82a11ff8b5ebb0eb"><td class="memItemLeft" align="right" valign="top"><a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="utils_8h.html#a3ab80da2a1d71b6b82a11ff8b5ebb0eb">AS_level_jaccard_distance_between_two_paths</a> (<a class="el" href="structbeacon.html">beacon</a> *beacon1, <a class="el" href="structbeacon.html">beacon</a> *beacon2)</td></tr>
+<tr class="memitem:a3ab80da2a1d71b6b82a11ff8b5ebb0eb"><td class="memItemLeft" align="right" valign="top">ld&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="utils_8h.html#a3ab80da2a1d71b6b82a11ff8b5ebb0eb">AS_level_jaccard_distance_between_two_paths</a> (<a class="el" href="structbeacon.html">beacon</a> *beacon1, <a class="el" href="structbeacon.html">beacon</a> *beacon2)</td></tr>
 <tr class="memdesc:a3ab80da2a1d71b6b82a11ff8b5ebb0eb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Measures and returns the dissimilarity between the two paths in the passed beacons on the AS-path-lvl.  <a href="utils_8h.html#a3ab80da2a1d71b6b82a11ff8b5ebb0eb">More...</a><br /></td></tr>
 <tr class="separator:a3ab80da2a1d71b6b82a11ff8b5ebb0eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a493f44880aa41ff5b881d58618f54d3e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="utils_8h.html#a493f44880aa41ff5b881d58618f54d3e">calculate_great_circle_latency</a> (<a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a> lat1_deg, <a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a> long1_deg, <a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a> lat2_deg, <a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a> long2_deg)</td></tr>
+<tr class="memitem:a493f44880aa41ff5b881d58618f54d3e"><td class="memItemLeft" align="right" valign="top">ld&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="utils_8h.html#a493f44880aa41ff5b881d58618f54d3e">calculate_great_circle_latency</a> (ld lat1_deg, ld long1_deg, ld lat2_deg, ld long2_deg)</td></tr>
 <tr class="memdesc:a493f44880aa41ff5b881d58618f54d3e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Estimates the latency [milliseconds] between two routers given their coordinates using the great circle distance.  <a href="utils_8h.html#a493f44880aa41ff5b881d58618f54d3e">More...</a><br /></td></tr>
 <tr class="separator:a493f44880aa41ff5b881d58618f54d3e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adcc977ae3f6431da6b7e5b285b424702"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="utils_8h.html#adcc977ae3f6431da6b7e5b285b424702">getAttribute</a> (rapidxml::xml_node&lt;&gt; *node, const std::string &amp;name)</td></tr>
@@ -127,9 +127,21 @@ Functions</h2></td></tr>
 <tr class="memitem:a47fcbf1cd4f1acd7f768ac5846a4511b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="utils_8h.html#a47fcbf1cd4f1acd7f768ac5846a4511b">print_beacon_store</a> (<a class="el" href="classSCION__Node.html">SCION_Node</a> *node)</td></tr>
 <tr class="memdesc:a47fcbf1cd4f1acd7f768ac5846a4511b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prettyprints the beacon store of the passed node. Currently works with std::cerr.  <a href="utils_8h.html#a47fcbf1cd4f1acd7f768ac5846a4511b">More...</a><br /></td></tr>
 <tr class="separator:a47fcbf1cd4f1acd7f768ac5846a4511b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3048657581fd41b13e9e018d2d4a3709"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="utils_8h.html#a3048657581fd41b13e9e018d2d4a3709">print_valid_beacon_counter</a> (<a class="el" href="classSCION__Node.html">SCION_Node</a> *node, std::unordered_map&lt; uint16_t, uint64_t &gt; counter)</td></tr>
+<tr class="memdesc:a3048657581fd41b13e9e018d2d4a3709"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prettyprints a valid beacon counter structure. Currently works with std::cerr.  <a href="utils_8h.html#a3048657581fd41b13e9e018d2d4a3709">More...</a><br /></td></tr>
+<tr class="separator:a3048657581fd41b13e9e018d2d4a3709"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a721ba422f68d1b31c7b2e856ba4b197f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="utils_8h.html#a721ba422f68d1b31c7b2e856ba4b197f">print_as_mappings</a> (std::map&lt; int32_t, uint16_t &gt; ASes)</td></tr>
+<tr class="memdesc:a721ba422f68d1b31c7b2e856ba4b197f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prettyprints the AS mapping. Currently works with std::cerr.  <a href="utils_8h.html#a721ba422f68d1b31c7b2e856ba4b197f">More...</a><br /></td></tr>
+<tr class="separator:a721ba422f68d1b31c7b2e856ba4b197f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2c633b4e0d4afb10ddeb434093298879"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="utils_8h.html#a2c633b4e0d4afb10ddeb434093298879">has_loop</a> (<a class="el" href="structbeacon.html">beacon</a> *<a class="el" href="structbeacon.html">beacon</a>)</td></tr>
+<tr class="memdesc:a2c633b4e0d4afb10ddeb434093298879"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks for loops in a beacon.  <a href="utils_8h.html#a2c633b4e0d4afb10ddeb434093298879">More...</a><br /></td></tr>
+<tr class="separator:a2c633b4e0d4afb10ddeb434093298879"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a767445a653664be8353cce6ebe8631fb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="utils_8h.html#a767445a653664be8353cce6ebe8631fb">print_number_of_valid_beacon_entries_in_beacon_store</a> (<a class="el" href="classSCION__Node.html">SCION_Node</a> *node)</td></tr>
+<tr class="memdesc:a767445a653664be8353cce6ebe8631fb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterates over the nodes beacon store and prints how many valid entries for each AS are present. Currently works with std::cerr.  <a href="utils_8h.html#a767445a653664be8353cce6ebe8631fb">More...</a><br /></td></tr>
+<tr class="separator:a767445a653664be8353cce6ebe8631fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Defines functions and classes related to path quality, delay estimation, parsing xml topologies, and helpers for iterating and printing node structures. </p>
+<div class="textblock"><p>Defines functions and classes related to path quality, delay estimation, parsing xml topologies, and helpers for iterating and printing various structures on the nodes. </p>
 <dl class="section author"><dt>Authors</dt><dd>Seyedali Tabaeiaghdaei, Christelle Gloor </dd></dl>
 <dl class="section date"><dt>Date</dt><dd>2020 </dd></dl>
 </div><h2 class="groupheader">Function Documentation</h2>
@@ -140,7 +152,7 @@ Functions</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a> AS_level_jaccard_distance_between_two_paths </td>
+          <td class="memname">ld AS_level_jaccard_distance_between_two_paths </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structbeacon.html">beacon</a> *&#160;</td>
           <td class="paramname"><em>beacon1</em>, </td>
@@ -161,20 +173,14 @@ Functions</h2></td></tr>
 
 <p>Measures and returns the dissimilarity between the two paths in the passed beacons on the AS-path-lvl. </p>
 <p>The jaccard distance measures the dissimilarity between two sets. This function considers only the AS number and therefore the coarse grained AS-level paths.</p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">beacon1</td><td>A beacon containing a path. </td></tr>
-  </table>
-  </dd>
-</dl>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="beacon_8h.html#a9c240ef1565f80c8d5b0721fe32c3355" title="A path is a sequence of links.">path</a> </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
+    <tr><td class="paramname">beacon1</td><td>A beacon containing a path. </td></tr>
     <tr><td class="paramname">beacon2</td><td>A beacon containing a path. </td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section see"><dt>See also</dt><dd><a class="el" href="beacon_8h.html#a9c240ef1565f80c8d5b0721fe32c3355" title="A path is a sequence of links.">path</a> </dd></dl>
 <dl class="section return"><dt>Returns</dt><dd>The AS-level jaccard distance between the two paths. </dd></dl>
 
 </div>
@@ -186,27 +192,27 @@ Functions</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a> calculate_great_circle_latency </td>
+          <td class="memname">ld calculate_great_circle_latency </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a>&#160;</td>
+          <td class="paramtype">ld&#160;</td>
           <td class="paramname"><em>lat1_deg</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a>&#160;</td>
+          <td class="paramtype">ld&#160;</td>
           <td class="paramname"><em>long1_deg</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a>&#160;</td>
+          <td class="paramtype">ld&#160;</td>
           <td class="paramname"><em>lat2_deg</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a>&#160;</td>
+          <td class="paramtype">ld&#160;</td>
           <td class="paramname"><em>long2_deg</em>&#160;</td>
         </tr>
         <tr>
@@ -269,6 +275,32 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a2c633b4e0d4afb10ddeb434093298879"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2c633b4e0d4afb10ddeb434093298879">&#9670;&nbsp;</a></span>has_loop()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool has_loop </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structbeacon.html">beacon</a> *&#160;</td>
+          <td class="paramname"><em>beacon</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Checks for loops in a beacon. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">beacon</td><td>The beacon to be checked for loops </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <a id="a7874f9df204e2b6f978f11b0dbf5890b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a7874f9df204e2b6f978f11b0dbf5890b">&#9670;&nbsp;</a></span>link_level_jaccard_distance_between_two_paths()</h2>
 
@@ -276,7 +308,7 @@ Functions</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a> link_level_jaccard_distance_between_two_paths </td>
+          <td class="memname">ld link_level_jaccard_distance_between_two_paths </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structbeacon.html">beacon</a> *&#160;</td>
           <td class="paramname"><em>beacon1</em>, </td>
@@ -297,20 +329,14 @@ Functions</h2></td></tr>
 
 <p>Measures and returns the dissimilarity between the two paths in the passed beacons on the link-lvl. </p>
 <p>The jaccard distance measures the dissimilarity between two sets. This function considers the AS number and the egress interface number of each link on the path, since this is enough to uniquely identify the link.</p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">beacon1</td><td>A beacon containing a path. </td></tr>
-  </table>
-  </dd>
-</dl>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="beacon_8h.html#a9c240ef1565f80c8d5b0721fe32c3355" title="A path is a sequence of links.">path</a> </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
+    <tr><td class="paramname">beacon1</td><td>A beacon containing a path. </td></tr>
     <tr><td class="paramname">beacon2</td><td>A beacon containing a path. </td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section see"><dt>See also</dt><dd><a class="el" href="beacon_8h.html#a9c240ef1565f80c8d5b0721fe32c3355" title="A path is a sequence of links.">path</a> </dd></dl>
 <dl class="section return"><dt>Returns</dt><dd>The link-level jaccard distance between the two paths. </dd></dl>
 
 </div>
@@ -339,6 +365,32 @@ Functions</h2></td></tr>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>A property container containing all the node attributes in the tree. </dd></dl>
+
+</div>
+</div>
+<a id="a721ba422f68d1b31c7b2e856ba4b197f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a721ba422f68d1b31c7b2e856ba4b197f">&#9670;&nbsp;</a></span>print_as_mappings()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void print_as_mappings </td>
+          <td>(</td>
+          <td class="paramtype">std::map&lt; int32_t, uint16_t &gt;&#160;</td>
+          <td class="paramname"><em>ASes</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Prettyprints the AS mapping. Currently works with std::cerr. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">ASes</td><td>The AS mapping to print </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
@@ -387,7 +439,70 @@ Functions</h2></td></tr>
 <p>Prettyprints bytes_sent_per_interface_per_period on the passed <a class="el" href="classSCION__Node.html" title="This is the base definition of a SCION enabled Node. A SCION_Node models an Autonomous System.">SCION_Node</a>. Currently works over std::cerr and prints only for time == 0. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">node</td><td>The node whose bandwith stats you want to print (at time==0). </td></tr>
+    <tr><td class="paramname">node</td><td>The node whose bandwidth stats you want to print. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a767445a653664be8353cce6ebe8631fb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a767445a653664be8353cce6ebe8631fb">&#9670;&nbsp;</a></span>print_number_of_valid_beacon_entries_in_beacon_store()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void print_number_of_valid_beacon_entries_in_beacon_store </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classSCION__Node.html">SCION_Node</a> *&#160;</td>
+          <td class="paramname"><em>node</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Iterates over the nodes beacon store and prints how many valid entries for each AS are present. Currently works with std::cerr. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">node</td><td>The node whose beacon store you want to analyze. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a3048657581fd41b13e9e018d2d4a3709"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3048657581fd41b13e9e018d2d4a3709">&#9670;&nbsp;</a></span>print_valid_beacon_counter()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void print_valid_beacon_counter </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classSCION__Node.html">SCION_Node</a> *&#160;</td>
+          <td class="paramname"><em>node</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::unordered_map&lt; uint16_t, uint64_t &gt;&#160;</td>
+          <td class="paramname"><em>counter</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Prettyprints a valid beacon counter structure. Currently works with std::cerr. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">node</td><td>The node who owns the counters. </td></tr>
+    <tr><td class="paramname">counter</td><td>The counter structure you want to print. </td></tr>
   </table>
   </dd>
 </dl>

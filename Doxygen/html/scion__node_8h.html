@@ -113,6 +113,9 @@ Macros</h2></td></tr>
 #define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="scion__node_8h.html#a55df0145a6ea9052960904c0baa24916">FIXED_BEACONS_NUMBER_TO_STORE</a>&#160;&#160;&#160;50</td></tr>
 <tr class="memdesc:a55df0145a6ea9052960904c0baa24916"><td class="mdescLeft">&#160;</td><td class="mdescRight">Steers how many beacons are maximally stored on each node per fixed source AS. <br /></td></tr>
 <tr class="separator:a55df0145a6ea9052960904c0baa24916"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa182e5f85c1232125c87807eda12d141"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="scion__node_8h.html#aa182e5f85c1232125c87807eda12d141">PROCESSING_DELAY</a>&#160;&#160;&#160;ns3::MilliSeconds(1)</td></tr>
+<tr class="memdesc:aa182e5f85c1232125c87807eda12d141"><td class="mdescLeft">&#160;</td><td class="mdescRight">Time a router needs to process a beacon.  <a href="scion__node_8h.html#aa182e5f85c1232125c87807eda12d141">More...</a><br /></td></tr>
+<tr class="separator:aa182e5f85c1232125c87807eda12d141"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
@@ -127,7 +130,7 @@ typedef std::map&lt; uint16_t, <a class="el" href="scion__node_8h.html#a39db0b91
 <tr class="memitem:a71ee331b047c80d210be2505943896e5"><td class="memItemLeft" align="right" valign="top">typedef std::pair&lt; ns3::Time, int64_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="scion__node_8h.html#a71ee331b047c80d210be2505943896e5">simulator_params</a></td></tr>
 <tr class="memdesc:a71ee331b047c80d210be2505943896e5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Holds 0:beaconing_period, 1:expiration_period.  <a href="scion__node_8h.html#a71ee331b047c80d210be2505943896e5">More...</a><br /></td></tr>
 <tr class="separator:a71ee331b047c80d210be2505943896e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abb2a32a4be747ed1f0e8ac5748c1ede0"><td class="memItemLeft" align="right" valign="top">typedef std::tuple&lt; <a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a>, <a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a>, <a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a>, <a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="scion__node_8h.html#abb2a32a4be747ed1f0e8ac5748c1ede0">coefficients</a></td></tr>
+<tr class="memitem:abb2a32a4be747ed1f0e8ac5748c1ede0"><td class="memItemLeft" align="right" valign="top">typedef std::tuple&lt; ld, ld, ld, ld &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="scion__node_8h.html#abb2a32a4be747ed1f0e8ac5748c1ede0">coefficients</a></td></tr>
 <tr class="memdesc:abb2a32a4be747ed1f0e8ac5748c1ede0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Holds 0:latency_coef, 1:bandwidth_coef, 2:AS_level_diversity_coef, 3:link_level_diversity_coef.  <a href="scion__node_8h.html#abb2a32a4be747ed1f0e8ac5748c1ede0">More...</a><br /></td></tr>
 <tr class="separator:abb2a32a4be747ed1f0e8ac5748c1ede0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
@@ -135,7 +138,25 @@ typedef std::map&lt; uint16_t, <a class="el" href="scion__node_8h.html#a39db0b91
 <div class="textblock"><p>Defines <a class="el" href="classSCION__Node.html" title="This is the base definition of a SCION enabled Node. A SCION_Node models an Autonomous System.">SCION_Node</a> and its associated constants and type-definitions. </p>
 <dl class="section author"><dt>Authors</dt><dd>Seyedali Tabaeiaghdaei, Christelle Gloor </dd></dl>
 <dl class="section date"><dt>Date</dt><dd>2020 </dd></dl>
-</div><h2 class="groupheader">Typedef Documentation</h2>
+</div><h2 class="groupheader">Macro Definition Documentation</h2>
+<a id="aa182e5f85c1232125c87807eda12d141"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa182e5f85c1232125c87807eda12d141">&#9670;&nbsp;</a></span>PROCESSING_DELAY</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define PROCESSING_DELAY&#160;&#160;&#160;ns3::MilliSeconds(1)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Time a router needs to process a beacon. </p>
+<p>This is only relevant for immediate beacons since the beaconing period for regular beacons will typically be much greater than a few milliseconds. </p>
+
+</div>
+</div>
+<h2 class="groupheader">Typedef Documentation</h2>
 <a id="abb2a32a4be747ed1f0e8ac5748c1ede0"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#abb2a32a4be747ed1f0e8ac5748c1ede0">&#9670;&nbsp;</a></span>coefficients</h2>
 
@@ -143,7 +164,7 @@ typedef std::map&lt; uint16_t, <a class="el" href="scion__node_8h.html#a39db0b91
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">typedef std::tuple&lt;<a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a>, <a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a>, <a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a>, <a class="el" href="beacon_8h.html#a09bfe86a130ac3370740e01ab26b8b48">ld</a>&gt; <a class="el" href="scion__node_8h.html#abb2a32a4be747ed1f0e8ac5748c1ede0">coefficients</a></td>
+          <td class="memname">typedef std::tuple&lt;ld, ld, ld, ld&gt; <a class="el" href="scion__node_8h.html#abb2a32a4be747ed1f0e8ac5748c1ede0">coefficients</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
