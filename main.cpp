@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
         beaconing_period_str = "30min";
         expiration_period_str = "2h";
         simulator_time_str = "5h";
-        topology_str = "15_geo_rel";
+        topology_str = "15_geo_rel_annotated";
     }
 
     ns3::Time beaconing_period = ns3::Time(beaconing_period_str);
@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
 
     // TODO: Think about how to automatically set an appropriate name, maybe in conjunction with simulator configs?
     std::string out_path =
-            "./results/main_crit" + std::string(topology_str) + "_" +
+            "./results/main_crit_" + std::string(topology_str) + "_" +
             std::string(beaconing_period_str) + "_" + std::string(expiration_period_str) + "_" + std::string(simulator_time_str) + ".txt";
     std::ofstream out(out_path);
     std::cout.rdbuf(out.rdbuf());
