@@ -11,8 +11,9 @@
 #include "../headers/beaconing_strategy.h"
 
 /**
- * Updates the simulator time & allocates memory for the statistics of this period, queries the interfaces traversed
- * for core beaconing and initiates beacon dissemination and initiation through the beaconing strategy.
+ * Updates the simulator time & allocates memory for the statistics of this beaconing period,
+ * queries which interfaces are valid for core beaconing (only core links) and initiates beacon dissemination
+ * and initiation through the beaconing strategy.
  *
  * @see UpdateTimeAndStats
  * @see DisseminateBeacons
@@ -27,7 +28,7 @@ void SCION_Core_As::CoreBeaconing(){
 
 /**
  * Updates the simulator time & allocates memory for the statistics of this period, queries the interfaces traversed for
- * intra ISD beaconing and initiates the beacons through the beaconing strategy.
+ * intra ISD beaconing (only customer links) and initiates the beacons through the beaconing strategy.
  *
  * @see UpdateTimeAndStats
  * @see InitiateBeacons

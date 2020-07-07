@@ -26,7 +26,16 @@
 #include <istream>
 #include <omp.h>
 
-// TODO: Document
+/**
+ * @brief Called to process the beacons received in this beaconing period.
+ *
+ * Finalizes the beaconing period by calling UpdateBeaconStoreAndCountersBeforeBeaconing on each node.
+ * Parallelized by distributing all the nodes on a few threads.
+ *
+ * @param nodes The ns3::NodeContainer holding all the nodes of this simulation.
+ *
+ * @see UpdateBeaconStoreAndCountersBeforeBeaconing
+ */
 void ProcessReceivedPacketsParallel(ns3::NodeContainer nodes) {
     std::cout << "################################## " << ns3::DynamicCast<SCION_Node>(nodes.Get(0))->now << " #########################################" << std::endl;
     uint32_t node_number = nodes.GetN();

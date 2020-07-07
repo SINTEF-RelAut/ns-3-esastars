@@ -3,7 +3,7 @@
  * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
  * @date 2020
  * @see scion_node.h
- *
+ * @brief Defines the member functions of the SCION_Node.
  */
 
 #include "../headers/scion_node.h"
@@ -13,7 +13,8 @@
 
 /**
  * The intra as latencies are estimated by calculating the great circle latencies
- * based on the interface coordinates.
+ * based on the interface coordinates. Also initializes AS_max_bwd with the highest
+ * bandwith found at any border router of this AS.
  *
  * @see calculate_great_circle_latency
  */
@@ -98,7 +99,7 @@ void SCION_Node::FinalPathEvaluation(std::map<ld, uint64_t> &satisfaction_stat,
 
 /**
  * Prints the number of ASes that are reachable until now, updates the now field of the node to current simulator time and initializes the structure
- * which will be filled with the number of bytes sent on each interface during the next period.
+ * which will be filled with the number of bytes sent on each interface during the next beaconing period.
  */
 void SCION_Node::UpdateTimeAndStats(){
     // Print statistics until now to see some sense of progress
@@ -134,7 +135,7 @@ std::unordered_map<uint16_t, std::vector<uint16_t>> SCION_Node::GetValidInterfac
  *  @see link_level_jaccard_distance_between_two_paths
  *
  * @param the_beacon The beacon holding the path for which you would like to get the diversity scores.
- * @return Pair(Average as-lvl diversity, Average link-lvl diversity) of the passed beacon.
+ * @return Pair(Average AS-lvl diversity, Average link-lvl diversity) of the passed beacon.
  */
 std::pair<ld, ld> SCION_Node::calculate_final_diversity_scores(beacon *the_beacon) {
     ld AS_level_diversity_score = 0;

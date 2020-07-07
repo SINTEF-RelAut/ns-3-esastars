@@ -3,7 +3,7 @@
  * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
  * @date 2020
  * @brief Defines functions and classes related to path quality, delay estimation,
- * parsing xml topologies, and helpers for iterating and printing node structures.
+ * parsing xml topologies, and helpers for iterating and printing various structures on the nodes.
  */
 
 #ifndef SCION_BEACONING_SIMMULATOR_UTILS_H
@@ -40,11 +40,15 @@ std::string getAttribute(rapidxml::xml_node<> *node, const std::string &name);
 class PropertyContainer {
     public:
         /**
-         * @brief Returns the value of the property defined by name. If not found, *aborts the program*! Use hasProperty to check for existence first if you are unsure.
+         * @brief Returns the value of the property defined by name. If not found, *aborts the program*!
+         * Use hasProperty to check for existence first if you are unsure.
          * @see hasProperty
          */
         std::string getProperty(const std::string &name) const;
 
+        /**
+         * @brief Sets the property defined by name to value.
+         */
         void setProperty(const std::string &name, const std::string &value);
 
         /**
@@ -56,7 +60,7 @@ class PropertyContainer {
         typedef std::map<std::string, std::string> propertiesType;
         propertiesType properties;
 };
-// TODO: Why not just make this the constructor?
+
  /**
    * @brief Iterates the xml-tree rooted at node and fills a propertyContainer with the node attributes.
   */
@@ -64,7 +68,7 @@ PropertyContainer parseProperties(rapidxml::xml_node<> *node);
 
 // Debugg Helpers
 
-// TODO: Let's change these things from std::cerr. Should probably Improve the output management a little anyways.
+// TODO: Change things from std::cerr to std::cout after main scripts were altered to not remap cout.
 /**
  * @brief Prettyprints bytes_sent_per_interface_per_period on the passed SCION_Node. Currently works over std::cerr and prints only for time == 0.
  */

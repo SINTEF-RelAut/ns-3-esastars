@@ -16,7 +16,6 @@ public:
 
     SCION_Core_As(uint16_t as_number, uint32_t system_id, coefficients coefs, const simulator_params &periods, BeaconingStrategy* strategy) :
     SCION_Node(as_number, system_id, coefs, periods, strategy) {}
-
     /**
      * @brief Starts the core beaconing process at the beginning of the beaconing period.
      */

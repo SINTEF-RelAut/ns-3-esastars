@@ -2,7 +2,7 @@
  * @file beacon.cpp
  * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
  * @date 2020
- * Defines the beacon structure and it's associated type-definitions.
+ * @brief Defines member functions on the beacon structure.
  */
 
 #include "../headers/beacon.h"

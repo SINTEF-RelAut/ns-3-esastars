@@ -3,7 +3,7 @@
  * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
  * @date 2020
  * @see beaconing_strategy.h
- *
+ * Implements the member functions of the BeaconingStrategy.
  */
 
 #include "ns3/point-to-point-net-device.h"
@@ -42,23 +42,21 @@ void BeaconingStrategy::InitiateBeacons(const std::unordered_map<uint16_t, std::
  * @see AdjustBeaconValidity
  * @see GenerateBeaconAndSend
  *
- * @param src_as_no The AS number of the neighbour from which the beacon was received. TODO: what? this clashes with the upper explanation...
+ * @param beacon_origin_as_no The AS number of the AS that originated the beacon.
  * @param ingress_if The ingress interface over which the beacon was received.
  * @param the_beacon The received beacon.
  * @param valid_interfaces The valid interfaces over which the beacon can be disseminated.
  * @param node The node processing the beacon.
  */
-void BeaconingStrategy::processImmediateReceive(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon, const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, SCION_Node* node){
-    // Here we look at the structure holding the count to the currently valid beacons (no next round beacons)
-    // Ergo only if we have already disseminated a beacon towards this AS can we ignore it.
-    if (node->valid_beacons_count_per_src_as.find(src_as_no) != node->valid_beacons_count_per_src_as.end()) {
+void BeaconingStrategy::processImmediateReceive(uint16_t beacon_origin_as_no, uint16_t ingress_if, beacon* the_beacon, const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, SCION_Node* node){
+    if (node->valid_beacons_count_per_src_as.find(beacon_origin_as_no) != node->valid_beacons_count_per_src_as.end()) {
         return; // only process unknown beacons immediately
     }
 
     AdjustBeaconValidity(the_beacon, node);
 
     for (auto const& [dst_as_no, interfaces]: valid_interfaces){
-        if (dst_as_no == src_as_no) {
+        if (GeneratesLoop(the_beacon, dst_as_no)){ // TODO: Changed this from dst_as_no == beacon_origin_as_no to the more general case
             continue;
         }
 
@@ -155,7 +153,7 @@ void BeaconingStrategy::AdjustBeaconValidity(beacon* the_beacon, SCION_Node* nod
  * @param remote_as_no The remote as number against which to check for loops.
  * @return True if a loop is detected, false otherwise.
  */
-bool BeaconingStrategy::generates_loop(beacon const* the_beacon, uint16_t remote_as_no){
+bool BeaconingStrategy::GeneratesLoop(beacon const* the_beacon, uint16_t remote_as_no){
     for (auto const &link_info : *the_beacon->the_path) { // remove loops
         if (link_info[0] == remote_as_no) {
             return true;
@@ -218,7 +216,7 @@ std::pair<uint16_t, ns3::Ptr<SCION_Node>> BeaconingStrategy::GetRemoteAsInfo(SCI
  */
 void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_ingress_if_no, SCION_Node* node,
                                                 SCION_Node* remote_as, ld latency, ld bwd, bool immediate, ld latency_for_immediate) {
-    uint16_t src_as_no;
+    uint16_t beacon_origin_as_no;
     std::string key;
     uint16_t remote_as_no = remote_as->as_number;
     bool immediate_src = false;
@@ -227,25 +225,25 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
     // Even if the remote AS ends up ignoring the beacon later on, we update the interface values anyways since, in the real deployment,
     // we need to send the beacon before the remote AS can decide if it will be ignored.
     if (old_beacon == NULL) {
-        src_as_no = node->as_number;
+        beacon_origin_as_no = node->as_number;
         int64_t t = node->now - node->now % node->beaconing_period.GetInteger(); // 600s? ~ 10min, Equivalent to int(node->now / 600 000 000 000) but divisions are expensive.
         node->bytes_sent_per_interface_per_period.at(t).at(self_egress_if_no) += (BEACON_HEADER_SIZE + BEACON_HOP_SIZE);
         // *** For immediately disseminating beacons received from neighbor source as
-        if(remote_as->valid_beacons_count_per_src_as.find(src_as_no) == remote_as->valid_beacons_count_per_src_as.end()
-           && remote_as->next_round_valid_beacons_count_per_src_as.find(src_as_no) == remote_as->next_round_valid_beacons_count_per_src_as.end()){
+        if(remote_as->valid_beacons_count_per_src_as.find(beacon_origin_as_no) == remote_as->valid_beacons_count_per_src_as.end()
+           && remote_as->next_round_valid_beacons_count_per_src_as.find(beacon_origin_as_no) == remote_as->next_round_valid_beacons_count_per_src_as.end()){
             immediate_src = true;
         }
     } else {
         key = old_beacon->key;
-        src_as_no = *old_beacon->the_path->at(0);
+        beacon_origin_as_no = *old_beacon->the_path->at(0);
         int64_t t = node->now - node->now % node->beaconing_period.GetInteger(); // Equivalent to int(node->now / 600 000 000 000) but divisions are expensive.
         node->bytes_sent_per_interface_per_period.at(t).at(self_egress_if_no) += (BEACON_HEADER_SIZE + BEACON_HOP_SIZE + BEACON_HOP_SIZE * old_beacon->the_path->size());
     }
 
     if (immediate) { // Indicates that this is part of an immediate beacon dissemination (only set in processImmediateReceive)
         // src_AS_no not found in next_round beacon store. Or less than 5 beacons in next round store from this AS.
-        if (remote_as->next_round_valid_beacons_count_per_src_as.find(src_as_no) == remote_as->next_round_valid_beacons_count_per_src_as.end() ||
-            remote_as->next_round_valid_beacons_count_per_src_as.at(src_as_no) < MAX_IMMEDIATE_BEACONS) {
+        if (remote_as->next_round_valid_beacons_count_per_src_as.find(beacon_origin_as_no) == remote_as->next_round_valid_beacons_count_per_src_as.end() ||
+            remote_as->next_round_valid_beacons_count_per_src_as.at(beacon_origin_as_no) < MAX_IMMEDIATE_BEACONS) {
             immediate_non_src = true;
         }
     }
@@ -267,16 +265,16 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
     }
 
     // Update statistics & check if you are sending too many beacons
-    if (remote_as->next_round_valid_beacons_count_per_src_as.find(src_as_no) != // This check makes sure that the old beacon could not have been null. If this was the case the remote AS would not have already seen this as
+    if (remote_as->next_round_valid_beacons_count_per_src_as.find(beacon_origin_as_no) != // This check makes sure that the old beacon could not have been null. If this was the case the remote AS would not have already seen this as
         remote_as->next_round_valid_beacons_count_per_src_as.end()) {
-        if (remote_as->next_round_valid_beacons_count_per_src_as.at(src_as_no) >= FIXED_BEACONS_NUMBER_TO_STORE) {
+        if (remote_as->next_round_valid_beacons_count_per_src_as.at(beacon_origin_as_no) >= FIXED_BEACONS_NUMBER_TO_STORE) {
             // Call via remote ASes node since this is the strategy that matters
-            remote_as->strategy->HandleFullBeaconStore(key, src_as_no, old_beacon, self_egress_if_no, remote_ingress_if_no, node, remote_as, latency, bwd);
+            remote_as->strategy->HandleFullBeaconStore(key, beacon_origin_as_no, old_beacon, self_egress_if_no, remote_ingress_if_no, node, remote_as, latency, bwd);
             return; // If the beacon store was full, we are done after this call.
         }
-        remote_as->next_round_valid_beacons_count_per_src_as.at(src_as_no)++;
+        remote_as->next_round_valid_beacons_count_per_src_as.at(beacon_origin_as_no)++;
     } else {
-        remote_as->next_round_valid_beacons_count_per_src_as.insert(std::make_pair(src_as_no, 1));
+        remote_as->next_round_valid_beacons_count_per_src_as.insert(std::make_pair(beacon_origin_as_no, 1));
     }
 
     beacon *new_beacon = new beacon;
@@ -312,27 +310,27 @@ void BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_
     // Here we can be sure, that the beacon is not in the path map yet (checked before).
     remote_as->path_map_to_beacon.insert(std::make_pair(key, new_beacon));
 
-    if (remote_as->beacon_store.find(src_as_no) != remote_as->beacon_store.end()){
-        if (remote_as->beacon_store.at(src_as_no)->find(path_len) != remote_as->beacon_store.at(src_as_no)->end()){
-            remote_as->beacon_store.at(src_as_no)->at(path_len)->insert(new_beacon);
+    if (remote_as->beacon_store.find(beacon_origin_as_no) != remote_as->beacon_store.end()){
+        if (remote_as->beacon_store.at(beacon_origin_as_no)->find(path_len) != remote_as->beacon_store.at(beacon_origin_as_no)->end()){
+            remote_as->beacon_store.at(beacon_origin_as_no)->at(path_len)->insert(new_beacon);
         } else{
-            remote_as->beacon_store.at(src_as_no)->insert(std::make_pair(path_len, new beacons_with_equal_length ({new_beacon})));
+            remote_as->beacon_store.at(beacon_origin_as_no)->insert(std::make_pair(path_len, new beacons_with_equal_length ({new_beacon})));
         }
     } else {
-        remote_as->beacon_store.insert(std::make_pair(src_as_no, new equal_as_beacons_sorted_by_length));
-        remote_as->beacon_store.at(src_as_no)->insert(std::make_pair(path_len, new beacons_with_equal_length({new_beacon})));
+        remote_as->beacon_store.insert(std::make_pair(beacon_origin_as_no, new equal_as_beacons_sorted_by_length));
+        remote_as->beacon_store.at(beacon_origin_as_no)->insert(std::make_pair(path_len, new beacons_with_equal_length({new_beacon})));
     }
 
-    remote_as->strategy->UpdateSpecializedBeaconStore(remote_as, latency, bwd, src_as_no, new_beacon);
+    remote_as->strategy->UpdateSpecializedBeaconStore(remote_as, latency, bwd, beacon_origin_as_no, new_beacon);
 
     if (immediate_src) {
         // This is the processing delay of the receiving BR. Since this beacon can be generated at whichever border router (immediate_src)
         // We don't need to consider the intra_as_latencies
-        ns3::Simulator::Schedule(PROCESSING_DELAY, &SCION_Node::ProcessReceivedBeacons, remote_as, src_as_no, remote_ingress_if_no, new_beacon);
+        ns3::Simulator::Schedule(PROCESSING_DELAY, &SCION_Node::ProcessReceivedBeacons, remote_as, beacon_origin_as_no, remote_ingress_if_no, new_beacon);
     }
 
     if (immediate_non_src) {
         uint64_t delay = (uint64_t) (latency_for_immediate * 1000000);
-        ns3::Simulator::Schedule(ns3::NanoSeconds(delay) + PROCESSING_DELAY, &SCION_Node::ProcessReceivedBeacons, remote_as, src_as_no, remote_ingress_if_no, new_beacon);
+        ns3::Simulator::Schedule(ns3::NanoSeconds(delay) + PROCESSING_DELAY, &SCION_Node::ProcessReceivedBeacons, remote_as, beacon_origin_as_no, remote_ingress_if_no, new_beacon);
     }
 }

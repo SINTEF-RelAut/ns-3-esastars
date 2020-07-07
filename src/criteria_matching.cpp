@@ -38,7 +38,7 @@ void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std
                     if (sent_count >= FIXED_BEACONS_NUMBER_TO_SEND){
                         break;
                     }
-                    if (!the_beacon->is_valid || generates_loop(the_beacon, remote_as_no)) {
+                    if (!the_beacon->is_valid || GeneratesLoop(the_beacon, remote_as_no)) {
                         continue;
                     }
                     sent_count++;

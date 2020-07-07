@@ -6,7 +6,6 @@
  *
  */
 
-// TODO: Should this really be here? Or is that something we wanna customize on the node?
 /**
  * @brief Steers how many beacons are maximally disseminated to each neighbour per fixed source AS.
  */
@@ -18,6 +17,9 @@
 
 /**
  * @brief Time a router needs to process a beacon.
+ *
+ * This is only relevant for immediate beacons since the beaconing period for regular beacons
+ * will typically be much greater than a few milliseconds.
  */
 #define PROCESSING_DELAY ns3::MilliSeconds(1)
 
@@ -28,8 +30,11 @@
 #include "ns3/node.h"
 #include <unordered_set>
 #include <unordered_map>
+
+//TODO: Might achieve optimized cache use by making a const pass on things that are read only
+//Also in beacon file
+
 // Forward declaration because of circular dependency
-// TODO: Could implement a Factory to get rid of this => low priority
 class BeaconingStrategy;
 
 /** @brief Holds a set of beacons with constant length.*/
@@ -71,8 +76,8 @@ class SCION_Node : public ns3::Node {
 
 public:
     //AS properties
-    // TODO: Possibility for some memory optimizations with respect to cache if we think about which values
-    // are used together most often -> reorder
+    // TODO: Some cache optimisation might be achieved by reordering the members and grouping
+    // the ones who are used together often (also in beacon.h file).
     /** @brief The autonomous system number of this node. */
     uint16_t as_number;
     /** @brief The current simulator time. */
@@ -81,8 +86,14 @@ public:
     ns3::Time beaconing_period;
     /** @brief Expiration time of beacon. */
     int64_t expiration_period;
-    /** @brief AS preferences. */
-    ld latency_coef, bandwidth_coef, AS_level_diversity_coef, link_level_diversity_coef;
+    /** @brief AS latency preference coefficient. */
+    ld latency_coef;
+    /** @brief AS bandwidth preference coefficient. */
+    ld bandwidth_coef;
+    /** @brief AS AS-level path-diversity preference coefficient. */
+    ld AS_level_diversity_coef;
+    /** @brief AS link-level path-diversity preference coefficient. */
+    ld link_level_diversity_coef;
     /** @brief Largest amount of bandwidth found on any border router link. */
     int32_t AS_max_bwd;
 
@@ -90,15 +101,16 @@ public:
     /**
      * @brief Different types of links.
      *
-     * In typical BGP-enabled internet topologies, there are Peer, and Customer links. The Provider type was introduced
-     * to model the reverse directionality of a customer link, the Core type is found between Core-ASes in SCION-topologies.
+     * In typical BGP-enabled internet topologies, there are peer, and customer links. The Provider type was introduced
+     * to model the reverse directionality of a customer link, the core type is found between core-ASes in SCION-topologies.
      */
     enum neighbour_relation {CORE = 0, PEER = 1, CUSTOMER = 2, PROVIDER = 3};
     /** @brief Holds the AS numbers of all the neighbours of the node*/
-    //TODO: Make a const pass on things that are read only
     std::vector<uint16_t> neighbors;
     /** @brief Holds a mapping of AS numbers and their connected interfaces & relations to this node. */
     std::unordered_map<uint16_t, std::vector<std::pair<uint16_t, neighbour_relation>>> interfaces_per_neighbor_as;
+    // TODO: Since interface_coordinates is only used for latency calculation, we could do this while initializing
+    // and could save some space by not storing the interface_coordinates.
     /** @brief Holds the coordinates of the border router locations between ASes.
      *
      * The pair of border routers are assumed to be in close proximity (same room) which is why we do not model
@@ -115,7 +127,8 @@ public:
     std::unordered_map<uint16_t, equal_as_beacons_sorted_by_length *> beacon_store;
     /** @brief Pointers to all the beacons indexable by their key.
      *
-     * This is done for efficiency. @see key
+     * This is done to allow efficient traversal & search of all the beacons.
+     * @see key
      * */
     std::unordered_map<std::string, beacon*> path_map_to_beacon;
     // helper structures ********************************************************************************************************
@@ -137,7 +150,7 @@ public:
     // statistics ***************************************************************************************************************
     /** @brief Holds the number of beacons that are valid for each source AS in the current beaconing period.*/
     std::unordered_map<uint16_t, uint64_t> valid_beacons_count_per_src_as;
-    /** @brief Collects how many bytes would have been sent over which interface for every beacon sent in an epoch.
+    /** @brief Collects how many bytes would have been sent over which interface for every beacon sent during one beaconing_period.
      *
      * The outer map structure is indexed by time. Then the vector index corresponds to the interface number.
      * */

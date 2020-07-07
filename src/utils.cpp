@@ -3,6 +3,8 @@
  * @see utils.h
  * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
  * @date 2020
+ * Implements the functions related to path quality, delay estimation, parsing xml topologies,
+ * and helpers for iterating and printing various structures on the nodes.
  */
 
 #include "../headers/utils.h"
@@ -14,8 +16,9 @@
  * The jaccard distance measures the dissimilarity between two sets. This function considers the AS number and the
  * egress interface number of each link on the path, since this is enough to uniquely identify the link.
  *
- * @param beacon1 A beacon containing a path. @see path
- * @param beacon2 A beacon containing a path. @see path
+ * @see path
+ * @param beacon1 A beacon containing a path.
+ * @param beacon2 A beacon containing a path.
  * @return The link-level jaccard distance between the two paths.
  */
 ld link_level_jaccard_distance_between_two_paths(beacon *beacon1, beacon *beacon2) {
@@ -42,8 +45,9 @@ ld link_level_jaccard_distance_between_two_paths(beacon *beacon1, beacon *beacon
  * The jaccard distance measures the dissimilarity between two sets. This function considers only the AS number and
  * therefore the coarse grained AS-level paths.
  *
- * @param beacon1 A beacon containing a path. @see path
- * @param beacon2 A beacon containing a path. @see path
+ * @see path
+ * @param beacon1 A beacon containing a path.
+ * @param beacon2 A beacon containing a path.
  * @return The AS-level jaccard distance between the two paths.
  */
 ld AS_level_jaccard_distance_between_two_paths(beacon *beacon1, beacon *beacon2) {
@@ -63,7 +67,6 @@ ld AS_level_jaccard_distance_between_two_paths(beacon *beacon1, beacon *beacon2)
     }
 
     return 1 - 1.0 * intersection / set_of_ASes_on_path1.size();
-
 }
 
 /**
@@ -122,6 +125,10 @@ std::string PropertyContainer::getProperty(const std::string &name) const {
 
 }
 
+/**
+ * @param name Defines the property.
+ * @param value The value to set this property to.
+ */
 void PropertyContainer::setProperty(const std::string &name, const std::string &value) {
     this->properties[name] = value;
 }
@@ -139,6 +146,7 @@ bool PropertyContainer::hasProperty(const std::string &name) const {
         return true;
     }
 }
+
 /**
  * @param node The root of the xml-tree you would like to traverse.
  * @return A property container containing all the node attributes in the tree.
@@ -158,10 +166,10 @@ PropertyContainer parseProperties(rapidxml::xml_node<> *node) {
     return p;
 }
 
-
 // DEBUG helpers
+
 /**
- * @param node The node whose bandwith stats you want to print (at time==0).
+ * @param node The node whose bandwidth stats you want to print.
  */
 void print_consumed_bw_structure(SCION_Node* node){
     for(auto const &el: node->bytes_sent_per_interface_per_period){
@@ -256,10 +264,10 @@ void print_number_of_valid_beacon_entries_in_beacon_store(SCION_Node* node){
     std::cerr << "Beacon Store on Node: " << node->as_number << std::endl;
     for(auto [src_as, beacons]:node->beacon_store){
         int count = 0;
-        for(auto [length, b]:*beacons){
+        for(auto [length, b_set]:*beacons){
             std::cout << length;
-            for(auto bb:*b){
-                if(bb->is_valid){
+            for(auto b:*b_set){
+                if(b->is_valid){
                     count++;
                 }
             }

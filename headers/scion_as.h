@@ -26,7 +26,7 @@ public:
      * @brief Starts the processing of beacons for source ASes that had previously not been seen. Gets
      * scheduled right after receiving such a beacon.
      */
-    void ProcessReceivedBeacons(uint16_t src_as_no, uint16_t ingress_if, beacon* the_beacon) override;
+    void ProcessReceivedBeacons(uint16_t beacon_origin_as_no, uint16_t ingress_if, beacon* the_beacon) override;
 
 };
 #endif //SCION_BEACONING_SIMMULATOR_SCION_AS_H
