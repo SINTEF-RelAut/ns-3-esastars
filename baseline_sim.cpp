@@ -4,7 +4,6 @@
 
 #include "headers/utils.h"
 #include "headers/beaconing_strategy.h"
-#include "headers/criteria_matching.h"
 #include "headers/baseline.h"
 #include "headers/scion_node.h"
 #include "headers/scion_core_as.h"
@@ -65,7 +64,7 @@ int main(int argc, char *argv[]) {
 
     // TODO: Think about how to automatically set an appropriate name, maybe in conjunction with simulator configs?
     std::string out_path =
-            "./results/main_crit_" + std::string(topology_str) + "_" +
+            "./results/baseline_" + std::string(topology_str) + "_" +
             std::string(beaconing_period_str) + "_" + std::string(expiration_period_str) + "_" + std::string(simulator_time_str) + ".txt";
     std::ofstream out(out_path);
     std::cout.rdbuf(out.rdbuf());

@@ -27,41 +27,14 @@ def build(bld):
                      'headers/scion_node.h',
                      'headers/utils.h']
 
-    obj = bld.create_ns3_program('scion-distributed',
-                                 ['point-to-point', 'mpi'])
-
-    obj.source = 'scion-distributed.cc'
-
-    obj = bld.create_ns3_program('scion-baseline',
-                                 ['point-to-point'])
-
-    obj.source = 'scion-baseline.cc'
-
-    obj = bld.create_ns3_program('scion-baseline-multiple-links',
-                                     ['point-to-point'])
-
-    obj.source = 'scion-baseline-multiple-links.cc'
-
-    obj = bld.create_ns3_program('scion-criteria-matching',
-                                 ['point-to-point'])
-
-    obj.source = 'scion-criteria-matching.cc'
-
-
-    obj = bld.create_ns3_program('BGPSec',
-                                 ['point-to-point'])
-
-    obj.source = 'BGPSec.cc'
-
-    obj = bld.create_ns3_program('scion-core-sending-immediate-new-as',
-                                 ['point-to-point'])
-
-    obj.source = 'scion-core-sending-immediate-new-as.cc'
-
-
-    obj = bld.create_ns3_program('main',
+    obj = bld.create_ns3_program('baseline_sim',
                                 ['SCION', 'point-to-point'])
 
-    obj.source = 'main.cpp'
+    obj.source = 'baseline_sim.cpp'
+
+    obj = bld.create_ns3_program('criteria_matching_sim',
+                                    ['SCION', 'point-to-point'])
+
+    obj.source = 'criteria_matching_sim.cpp'
 
 
