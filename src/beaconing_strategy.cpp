@@ -36,8 +36,9 @@ void BeaconingStrategy::InitiateBeacons(const std::unordered_map<uint16_t, std::
 
 /**
  * This function only executes if the source AS number at the origin of the beacon-path is unknown to the node.
- * Adjusts the beacon validity, updates the beacons latency and bandwidth stat, and sends the beacon to each neighbour
- * over the interface with the smallest latency, except the one it received the beacon from.
+ * Updates the nodes local time, adjusts the beacon validity, updates the beacons latency and bandwidth stat,
+ * and sends the beacon to each neighbour over the interface with the smallest latency,
+ * except the one it received the beacon from.
  *
  * @see AdjustBeaconValidity
  * @see GenerateBeaconAndSend
@@ -52,7 +53,8 @@ void BeaconingStrategy::processImmediateReceive(uint16_t beacon_origin_as_no, ui
     if (node->valid_beacons_count_per_src_as.find(beacon_origin_as_no) != node->valid_beacons_count_per_src_as.end()) {
         return; // only process unknown beacons immediately
     }
-
+    // Update node-> now for the immediate beaconing execution flow
+    node->now = ns3::Simulator::Now().ToInteger(ns3::Time::NS);
     AdjustBeaconValidity(the_beacon, node);
 
     for (auto const& [dst_as_no, interfaces]: valid_interfaces){
@@ -116,7 +118,6 @@ void BeaconingStrategy::UpdateBeaconStoreAndCountersBeforeBeaconing(SCION_Node* 
  * @param node The node holding the beacon.
  */
 void BeaconingStrategy::AdjustBeaconValidity(beacon* the_beacon, SCION_Node* node){
-    node->now = ns3::Simulator::Now().ToInteger(ns3::Time::NS);
     uint16_t src_as = the_beacon->the_path->at(0)[0];
     if (the_beacon->is_new) {
         the_beacon->is_new = false;

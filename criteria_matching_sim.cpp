@@ -29,7 +29,8 @@
 /**
  * @brief Called to process the beacons received in this beaconing period.
  *
- * Finalizes the beaconing period by calling UpdateBeaconStoreAndCountersBeforeBeaconing on each node.
+ * Updates each nodes local time to simulator time. Finalizes the beaconing period
+ * by calling UpdateBeaconStoreAndCountersBeforeBeaconing on each node.
  * Parallelized by distributing all the nodes on a few threads.
  *
  * @param nodes The ns3::NodeContainer holding all the nodes of this simulation.
@@ -37,9 +38,15 @@
  * @see UpdateBeaconStoreAndCountersBeforeBeaconing
  */
 void ProcessReceivedPacketsParallel(ns3::NodeContainer nodes) {
-    // Just do this once instead of checking for node_no == 0 every time one lvl down.
-    std::cout << "################################## " << ns3::DynamicCast<SCION_Node>(nodes.Get(0))->now << " #########################################" << std::endl;
     uint32_t node_number = nodes.GetN();
+    // Update node-> now for the beacon validity phase change
+    auto now = ns3::Simulator::Now().ToInteger(ns3::Time::NS);
+    for(uint32_t i = 0; i < node_number; i++){
+        ns3::DynamicCast<SCION_Node>(nodes.Get(i))->now = now;
+    }
+    // Just do this once here instead of checking for node_no == 0 every time one lvl down.
+    std::cout << "################################## " << now << " #########################################" << std::endl;
+
     #pragma omp parallel for
     for (uint32_t i = 0; i < node_number; ++i) {
         ns3::Ptr<SCION_Node> ns3_ptr_to_node = ns3::DynamicCast<SCION_Node>(nodes.Get(i));

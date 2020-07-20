@@ -581,7 +581,7 @@ ProcessReceivedBeacons</dd></dl>
 </div><div class="memdoc">
 
 <p>Sends the beacon to each neighbour over the lowest latency valid interface if the beacon originated at an AS towards which the node has not yet discovered any paths. </p>
-<p>This function only executes if the source AS number at the origin of the beacon-path is unknown to the node. Adjusts the beacon validity, updates the beacons latency and bandwidth stat, and sends the beacon to each neighbour over the interface with the smallest latency, except the one it received the beacon from.</p>
+<p>This function only executes if the source AS number at the origin of the beacon-path is unknown to the node. Updates the nodes local time, adjusts the beacon validity, updates the beacons latency and bandwidth stat, and sends the beacon to each neighbour over the interface with the smallest latency, except the one it received the beacon from.</p>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="classBeaconingStrategy.html#af2e830a4493852c6fc14d5d9390dd7d9" title="Updates the node time with the current simulator time, updates beacon attributes and the nodes valid ...">AdjustBeaconValidity</a> </dd>
 <dd>
 <a class="el" href="classBeaconingStrategy.html#afdf5073ab6d6ce38aeda993a49b4fdbc" title="Creates the new beacon if necessary, updates the structures recording how many bytes were sent per in...">GenerateBeaconAndSend</a></dd></dl>
