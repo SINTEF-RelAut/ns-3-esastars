@@ -99,7 +99,7 @@ void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std
  *
  * @param key The beacon's path based key.
  * @param src_as The source AS number at the origin of the beacon.
- * @param old_beacon The old beacon, may not be NULL.
+ * @param old_beacon The old beacon.
  * @param self_egress_if_no The interface number on the node where this beacon will be sent on.
  * @param remote_ingress_if_no The interface number on the remote AS from which this beacon will be received.
  * @param node The node sending the beacon.
@@ -109,7 +109,6 @@ void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std
  */
 void CriteriaMatching::HandleFullBeaconStore(std::string key, uint16_t src_as, beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_ingress_if_no,
                                              SCION_Node* node, SCION_Node* remote_as, ld latency, ld bwd){
-    assert(old_beacon != NULL);
     auto remote_as_no = remote_as->as_number;
     ld score = CalculateBeaconScore(remote_as, latency, bwd);
     CriteriaMatching* remote_as_strategy = dynamic_cast<CriteriaMatching*>(remote_as->strategy);
@@ -129,7 +128,21 @@ void CriteriaMatching::HandleFullBeaconStore(std::string key, uint16_t src_as, b
             remote_as->valid_beacons_count_per_src_as.at(src_as)--;
         }
 
-        *lower_score_beacon->the_path = *old_beacon->the_path;
+        // Old beacon may be null
+        std::vector<link_information>* the_path;
+        int64_t next_initiation_time;
+        int64_t next_expiration_time;
+        if(old_beacon == NULL){
+            the_path = new std::vector<link_information>();
+            next_initiation_time = node->now;
+            next_expiration_time = next_initiation_time + node->expiration_period;
+        } else {
+            the_path = old_beacon->the_path;
+            next_initiation_time = old_beacon->initiation_time;
+            next_expiration_time = old_beacon->expiration_time;
+        }
+
+        *lower_score_beacon->the_path = *the_path;
 
         uint16_t *link_info = new uint16_t[4];
         link_info[0] = node->as_number;
@@ -141,8 +154,8 @@ void CriteriaMatching::HandleFullBeaconStore(std::string key, uint16_t src_as, b
         lower_score_beacon->key = key;
         lower_score_beacon->initiation_time = -1;
         lower_score_beacon->expiration_time = -1;
-        lower_score_beacon->next_initiation_time = old_beacon->initiation_time;
-        lower_score_beacon->next_expiration_time = old_beacon->expiration_time;
+        lower_score_beacon->next_initiation_time = next_initiation_time;
+        lower_score_beacon->next_expiration_time = next_expiration_time;
         lower_score_beacon->is_new = true;
         lower_score_beacon->is_valid = false;
         lower_score_beacon->bwd_stat = bwd;
