@@ -17,7 +17,6 @@
  * @param node The node from where to initiate the beacons
  */
 void BeaconingStrategy::InitiateBeacons(const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, SCION_Node* node){
-
     for (uint32_t i = 0; i < node->neighbors.size(); ++i) {
         uint16_t remote_as_no = node->neighbors.at(i);
         auto interfaces = valid_interfaces.at(remote_as_no);
@@ -118,7 +117,7 @@ void BeaconingStrategy::UpdateBeaconStoreAndCountersBeforeBeaconing(SCION_Node* 
  * @param node The node holding the beacon.
  */
 void BeaconingStrategy::AdjustBeaconValidity(beacon* the_beacon, SCION_Node* node){
-    uint16_t src_as = the_beacon->the_path->at(0)[0];
+    uint16_t src_as = *the_beacon->the_path->at(0);
     if (the_beacon->is_new) {
         the_beacon->is_new = false;
 
@@ -139,6 +138,8 @@ void BeaconingStrategy::AdjustBeaconValidity(beacon* the_beacon, SCION_Node* nod
 
     if (the_beacon->expiration_time <= node->now && the_beacon->is_valid) {
         the_beacon->is_valid = false;
+        assert(node->valid_beacons_count_per_src_as.find(src_as) != node->valid_beacons_count_per_src_as.end());
+        assert(node->next_round_valid_beacons_count_per_src_as.find(src_as) != node->next_round_valid_beacons_count_per_src_as.end());
         node->valid_beacons_count_per_src_as.at(src_as)--;
         node->next_round_valid_beacons_count_per_src_as.at(src_as)--;
         if (node->valid_beacons_count_per_src_as.at(src_as) == 0) {

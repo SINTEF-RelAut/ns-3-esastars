@@ -73,9 +73,9 @@ int main(int argc, char *argv[]) {
         topology_str = argv[4];
     } else {
         // Initialize automatically case you are invoking it with GDB
-        beaconing_period_str = "30min";
-        expiration_period_str = "2h";
-        simulator_time_str = "5h";
+        beaconing_period_str = "10min";
+        expiration_period_str = "30min";
+        simulator_time_str = "120min";
         topology_str = "15_geo_rel_annotated";
     }
 

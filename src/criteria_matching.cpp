@@ -24,27 +24,19 @@ void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std
     #pragma omp parallel for
     for (uint32_t i = 0; i < node->neighbors.size(); ++i){
         uint16_t remote_as_no = node->neighbors.at(i);
-        std::vector<uint16_t> interfaces = valid_interfaces.at(remote_as_no);
-        for (auto const [src_as_no, equal_src_as_beacons] : node->beacon_store) { // Per source AS
-            int16_t  sent_count = 0;
-            if (remote_as_no == src_as_no) {
+        const std::vector<uint16_t> &interfaces = valid_interfaces.at(remote_as_no);
+        for (auto const &[beacon_origin_as_no, equal_src_as_beacons] : node->beacon_store) { // Per source AS
+            if (remote_as_no == beacon_origin_as_no) {
                 continue;
             }
             std::multimap<int64_t, std::tuple<beacon*, uint16_t, uint16_t, SCION_Node*, ld , ld>> beacons_ifaces_matchings_scores;
             for (auto const &len_beacons_pair : *equal_src_as_beacons) { // for each length
-                if (sent_count >= FIXED_BEACONS_NUMBER_TO_SEND) {
-                    break;
-                }
                 for (auto const &the_beacon : *len_beacons_pair.second) {
-                    if (sent_count >= FIXED_BEACONS_NUMBER_TO_SEND){
-                        break;
-                    }
                     if (!the_beacon->is_valid || GeneratesLoop(the_beacon, remote_as_no)) {
                         continue;
                     }
-                    sent_count++;
                     // Iterate over all the valid interfaces of this remote AS, aggregate the beacon stats and sort by score.
-                    for (auto egress_interface_no: interfaces){
+                    for (auto const &egress_interface_no: interfaces){
 
                         auto [remote_ingress_if_no, remote_as_ptr] = GetRemoteAsInfo(node, egress_interface_no);
 
@@ -54,10 +46,12 @@ void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std
                                  ? (ld) node->inter_as_bwds.at(egress_interface_no)
                                  : the_beacon->bwd_stat;
 
-                        ld score = CalculateBeaconScore(remote_as,latency , bwd);
+                        ld score = CalculateBeaconScore(remote_as, latency , bwd);
 
                         if (beacons_ifaces_matchings_scores.size() >= FIXED_BEACONS_NUMBER_TO_SEND
                             && score <= beacons_ifaces_matchings_scores.begin()->first) {
+                            // remote_as is out of scope
+                            remote_as_ptr->Unref();
                             continue;
                         }
 
@@ -72,7 +66,7 @@ void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std
                     }
                 }
             }
-
+            assert(beacons_ifaces_matchings_scores.size() <= FIXED_BEACONS_NUMBER_TO_SEND);
             for (auto const &the_tuple_pair : beacons_ifaces_matchings_scores) {
                 beacon *the_beacon;
                 uint16_t remote_ingress_if_no;
@@ -171,6 +165,7 @@ void CriteriaMatching::HandleFullBeaconStore(std::string key, uint16_t src_as, b
             remote_as->beacon_store.at(src_as)->insert(std::make_pair(path_len, new beacons_with_equal_length()));
             remote_as->beacon_store.at(src_as)->at(path_len)->insert(lower_score_beacon);
         }
+        return;
     }
 }
 
@@ -184,7 +179,7 @@ void CriteriaMatching::HandleFullBeaconStore(std::string key, uint16_t src_as, b
 void CriteriaMatching::UpdateSpecializedBeaconStore(SCION_Node* remote_as, ld latency, ld bwd, uint16_t src_as_no, beacon *new_beacon){
     ld score = CalculateBeaconScore(remote_as, latency, bwd);
     CriteriaMatching* remote_as_strategy = dynamic_cast<CriteriaMatching*>(remote_as->strategy);
-    if (beacons_sorted_by_score.find(src_as_no) != remote_as_strategy->beacons_sorted_by_score.end()) {
+    if (remote_as_strategy->beacons_sorted_by_score.find(src_as_no) != remote_as_strategy->beacons_sorted_by_score.end()) {
         remote_as_strategy->beacons_sorted_by_score.at(src_as_no)->insert(std::make_pair(score, new_beacon));
     } else {
         remote_as_strategy->beacons_sorted_by_score.insert(std::make_pair(src_as_no, new std::multimap<ld, beacon*> ()));

@@ -13,7 +13,7 @@
 /**
  * @brief Steers how many beacons are maximally stored on each node per fixed source AS.
  */
-#define FIXED_BEACONS_NUMBER_TO_STORE 50
+#define FIXED_BEACONS_NUMBER_TO_STORE 30
 
 /**
  * @brief Time a router needs to process a beacon.
