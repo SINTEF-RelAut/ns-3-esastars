@@ -199,26 +199,28 @@ void print_valid_intfs(SCION_Node* node, std::unordered_map<uint16_t, std::vecto
 
 /**
  * @param node The node holding the beacon_store to be printed.
+ * @param out Where to print the beacon store. 
  */
-void print_beacon_store(SCION_Node* node){
+void print_beacon_store(SCION_Node* node, std::ofstream& out){
     const std::string first_lvl_offset = "\t";
     const std::string second_lvl_offset = "\t\t";
     const std::string third_lvl_offset = "\t\t\t";
-    std::cerr << "From: " << node->as_number << std::endl;
+    out << "From: " << node->as_number << std::endl;
     for(auto const [dst_as_no, equal_as_beacons]:node->beacon_store){
-        std::cerr << first_lvl_offset << "To: " << dst_as_no << std::endl;
+        out << first_lvl_offset << "To: " << dst_as_no << std::endl;
         for(auto const [length, beacons]: *equal_as_beacons){
-            std::cerr << second_lvl_offset << length << ":" <<std::endl;
+            out << second_lvl_offset << length << ":" <<std::endl;
             for(auto const beacon: *beacons){
-                std::cerr << third_lvl_offset;
+                out << third_lvl_offset;
                 for(auto const path:*beacon->the_path){
-                    std::cerr  << "->" << path[0] << ":" << path[1] << "]->[" << path[2] << ":" << path[3];
+                    out  << "->" << path[0] << ":" << path[1] << "]->[" << path[2] << ":" << path[3];
                 }
-                std::cerr << std::endl;
+                out << std::endl;
             }
         }
     }
 }
+
 
 /**
  * @param node The node who owns the counters.

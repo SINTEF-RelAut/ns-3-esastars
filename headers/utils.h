@@ -80,9 +80,9 @@ void print_consumed_bw_structure(SCION_Node* node);
 void print_valid_intfs(SCION_Node* node, std::unordered_map<uint16_t, std::vector<uint16_t>> valid_intfs);
 
 /**
- * @brief Prettyprints the beacon store of the passed node. Currently works with std::cerr.
+ * @brief Prettyprints the beacon store of the passed node.
  */
-void print_beacon_store(SCION_Node* node);
+void print_beacon_store(SCION_Node* node, std::ofstream& out);
 
 /**
  * @brief Prettyprints a valid beacon counter structure. Currently works with std::cerr.
