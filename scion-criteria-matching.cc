@@ -214,7 +214,7 @@ namespace ns3 {
                         continue;
                     }
 
-                    std::multimap<int64_t, std::tuple<beacon*, uint16_t, uint16_t, Ptr<myNode>, ld , ld> > beacons_ifaces_matchings_scores;
+                    std::multimap<ld, std::tuple<beacon*, uint16_t, uint16_t, Ptr<myNode>, ld , ld> > beacons_ifaces_matchings_scores;
 
                     for (auto const &sender_as_beacons_pair : *equal_src_as_beacons) {
                         for (auto const &the_beacon : *sender_as_beacons_pair.second) {
