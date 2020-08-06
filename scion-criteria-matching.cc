@@ -372,8 +372,17 @@ namespace ns3 {
                             remote_as->valid_beacons_count_per_src_as.at(src_as)--;
                         }
 
-                        *lower_score_beacon->the_path = *old_beacon->the_path;
+                        if (old_beacon == NULL) {
+                            lower_score_beacon->the_path->clear();
+                            lower_score_beacon->next_initiation_time = now;
+                            lower_score_beacon->next_expiration_time = now + expiration_period;
+                        } else {
+                            *lower_score_beacon->the_path = *(old_beacon->the_path);
+                            lower_score_beacon->next_initiation_time = old_beacon->initiation_time;
+                            lower_score_beacon->next_expiration_time = old_beacon->expiration_time;
+                        }
 
+                        
                         uint16_t *link_info = new uint16_t[4];
                         link_info[0] = as_number;
                         link_info[1] = self_egress_if_no;
@@ -384,8 +393,7 @@ namespace ns3 {
                         lower_score_beacon->key = key;
                         lower_score_beacon->initiation_time = -1;
                         lower_score_beacon->expiration_time = -1;
-                        lower_score_beacon->next_initiation_time = old_beacon->initiation_time;
-                        lower_score_beacon->next_expiration_time = old_beacon->expiration_time;
+
                         lower_score_beacon->is_new = true;
                         lower_score_beacon->is_valid = false;
                         lower_score_beacon->bwd_stat = bwd;
