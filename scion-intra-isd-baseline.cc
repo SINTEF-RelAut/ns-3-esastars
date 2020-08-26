@@ -821,7 +821,9 @@ main(int argc, char *argv[]) {
 
         std::cout << "From: " << index_to_AS_no.at(the_node->as_number) << std::endl;
 
-        for (auto const & [src_as, same_src_as_beacons] : the_node->beacon_store) {
+        for (auto const & src_as_beacons_pair : the_node->beacon_store) {
+            uint16_t src_as = src_as_beacons_pair.first;
+            beacons_with_same_src_as* same_src_as_beacons = src_as_beacons_pair.second;
             std::cout << "\t" << "To: " << index_to_AS_no.at(src_as) << std::endl;
 
             for (auto const & same_len_beacons : *same_src_as_beacons) {

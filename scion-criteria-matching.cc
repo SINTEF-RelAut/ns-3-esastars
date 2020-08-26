@@ -209,7 +209,9 @@ namespace ns3 {
 #pragma omp parallel for
             for (uint32_t i = 0; i < neighbors.size(); ++i) { // Per destination AS
                 uint16_t remote_as_no = neighbors.at(i);
-                for (auto const &[src_as_no, equal_src_as_beacons] : beacon_store) { // Per source AS
+                for (auto const &src_as_beacons_pair : beacon_store) { // Per source AS
+                    uint16_t src_as_no = src_as_beacons_pair.first;
+                    beacons_with_same_src_as* equal_src_as_beacons = src_as_beacons_pair.second;
                     if (remote_as_no == src_as_no) {
                         continue;
                     }
