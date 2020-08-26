@@ -25,6 +25,9 @@
 using namespace ns3;
 using namespace std;
 
+std::list<int32_t> collectors({3303, 3130, 1239, 701, 5413, 34224, 7018, 53767, 3741, 31019, 22652, 2497, 57866, 37100,
+                                3130, 3257, 3549, 6939, 18106, 1299, 23673, 2914, 11537, 2152, 852, 8492, 34224, 11686});
+
 typedef long double ld;
 
 typedef uint16_t *link_information;
@@ -704,6 +707,22 @@ main(int argc, char *argv[]) {
 
     Simulator::Stop(Time(argv[3]));
     Simulator::Run();
+
+    std::cout << "####################################### Traffic sent at each collector #######################################" << std::endl;
+    for (int32_t collector : collectors) {
+        double_t consumed_bwd = 0.0;
+        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
+            Ptr<myNode> the_node = DynamicCast<myNode>(nodes.Get(i));
+            if (index_to_AS_no.at(the_node->as_number) == collector) {
+                Time t = Time(argv[3]) - beaconing_period;
+                for (uint32_t if_index = 0; if_index < the_node->GetNDevices(); ++if_index) {
+                    consumed_bwd += (double_t) the_node->bytes_sent_per_interface_per_period.at(t.ToInteger(Time::NS)).at(if_index);
+                }
+                consumed_bwd = (double_t) consumed_bwd / the_node->GetNDevices();
+            }
+        }
+        std::cout << collector << "\t" << consumed_bwd << std::endl;
+    }
 
     //############################################################################################################################################################
     for (Time t = Seconds(0.0); t < Time(argv[3]); t += beaconing_period) {
