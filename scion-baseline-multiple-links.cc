@@ -719,6 +719,7 @@ main(int argc, char *argv[]) {
                     consumed_bwd += (double_t) the_node->bytes_sent_per_interface_per_period.at(t.ToInteger(Time::NS)).at(if_index);
                 }
                 consumed_bwd = (double_t) consumed_bwd / the_node->GetNDevices();
+                break;
             }
         }
         std::cout << collector << "\t" << consumed_bwd << std::endl;
