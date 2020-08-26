@@ -28,12 +28,6 @@ def build(bld):
 
     obj.source = 'scion-criteria-matching.cc'
 
-
-    obj = bld.create_ns3_program('BGPSec',
-                                 ['point-to-point'])
-
-    obj.source = 'BGPSec.cc'
-
     obj = bld.create_ns3_program('scion-core-sending-immediate-new-as',
                                  ['point-to-point'])
 
