@@ -415,6 +415,10 @@ namespace ns3 {
                             /
                     (latency_coef + bandwidth_coef + link_level_diversity_coef);
 
+            if (the_beacon == NULL) {
+                return score;
+            }
+
             score = std::pow(score, 1.0 -
                                     (Time(the_beacon->expiration_time).ToDouble(Time::MIN) - Simulator::Now().ToDouble(Time::MIN))
                                     / Time(expiration_period).ToDouble(Time::MIN));
