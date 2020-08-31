@@ -960,7 +960,7 @@ PropertyContainer parseProperties(rapidxml::xml_node<> *node) {
 void ProcessReceivedPacketsParallel(NodeContainer nodes) {
     uint32_t node_number = nodes.GetN();
 
-#pragma omp parallel for
+//#pragma omp parallel for
     for (uint32_t i = 0; i < node_number; ++i) {
         DynamicCast<myNode>(nodes.Get(i))->UpdateNodeState();
     }
