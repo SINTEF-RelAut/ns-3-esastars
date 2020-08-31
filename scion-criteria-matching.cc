@@ -324,8 +324,16 @@ namespace ns3 {
         }
 
         void dec_links_jointnesses_on_received_paths(beacon* the_beacon, uint16_t dst_as) {
+            if (links_jointnesses_on_received_paths.find(dst_as) == links_jointnesses_on_received_paths.end()) {
+                return;
+            }
+
             for (auto const & seg : *the_beacon->the_path) {
                 uint32_t link = (((uint32_t) seg[0]) << 16) | ((uint32_t) seg[1]);
+                if (links_jointnesses_on_received_paths.at(dst_as).find(link) == links_jointnesses_on_received_paths.at(dst_as).end()) {
+                    continue;
+                }
+
                 links_jointnesses_on_received_paths.at(dst_as).at(link) = links_jointnesses_on_received_paths.at(dst_as).at(link) - 1;
                 if (links_jointnesses_on_received_paths.at(dst_as).at(link) == 0) {
                     links_jointnesses_on_received_paths.at(dst_as).erase(link);
