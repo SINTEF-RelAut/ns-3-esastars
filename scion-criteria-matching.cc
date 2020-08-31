@@ -186,8 +186,19 @@ namespace ns3 {
         }
 
         void dec_links_jointnesses_on_sent_paths(beacon* the_beacon, uint16_t dst_as, uint16_t remote_as_no, uint16_t self_egress_if) {
+            if (links_jointnesses_on_sent_paths.find(dst_as) == links_jointnesses_on_sent_paths.end()) {
+                return;
+            }
+
+            if (links_jointnesses_on_sent_paths.at(dst_as).find(remote_as_no) == links_jointnesses_on_sent_paths.at(dst_as).end()) {
+                return;
+            }
+
             for (auto const & seg : *the_beacon->the_path) {
                 uint32_t link = (((uint32_t) seg[0]) << 16) | ((uint32_t) seg[1]);
+                if (links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).find(link) == links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).end()) {
+                    continue;
+                }
                 links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).at(link) = links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).at(link) - 1;
                 if (links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).at(link) == 0) {
                     links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).erase(link);
