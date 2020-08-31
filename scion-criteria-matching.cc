@@ -292,6 +292,10 @@ namespace ns3 {
         }
 
         void remove_invalid_sent_beacons(beacon* the_beacon, uint16_t dst_as) {
+            if (sent_beacons.find(the_beacon) == sent_beacons.end()) {
+                return;
+            }
+
             for (auto const & iface_time_pair : sent_beacons.at(the_beacon)) {
                 uint16_t iface = iface_time_pair.first;
                 int64_t expiration_time = iface_time_pair.second;
