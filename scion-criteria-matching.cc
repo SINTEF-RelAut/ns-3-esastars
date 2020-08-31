@@ -958,14 +958,14 @@ main(int argc, char *argv[]) {
 
     beaconing_period = Time(argv[1]);
     expiration_period = Time(argv[2]).ToInteger(Time::NS);
-    std::string file = "./topology/" + std::string(argv[4]) + ".xml";
+    std::string file = "/home/tabaeias/topology/" + std::string(argv[4]) + ".xml";
 
     std::ifstream fin(file.c_str());
     std::ostringstream sstr;
     sstr << fin.rdbuf();
 
     std::string out_path =
-            "./results/criteria-matching_" + std::string(argv[4]) + "_" +
+            "/home/tabaeias/results/criteria-matching_" + std::string(argv[4]) + "_" +
             std::string(argv[1]) + "_" + std::string(argv[2]) + "_" + std::string(argv[3]) + ".txt";
     std::ofstream out(out_path);
     std::cout.rdbuf(out.rdbuf());
