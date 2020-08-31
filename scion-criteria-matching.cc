@@ -1129,11 +1129,15 @@ main(int argc, char *argv[]) {
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             Ptr<myNode> the_node = DynamicCast<myNode>(nodes.Get(i));
             if (index_to_AS_no.at(the_node->as_number) == collector) {
-                Time t = Time(argv[3]) - beaconing_period;
-                for (uint32_t if_index = 0; if_index < the_node->GetNDevices(); ++if_index) {
-                    consumed_bwd += (double_t) the_node->bytes_sent_per_interface_per_period.at(t.ToInteger(Time::NS)).at(if_index);
+                for (Time t = Seconds(0.0); t < Time(argv[3]); t += beaconing_period) {
+                    for (uint32_t if_index = 0; if_index < the_node->GetNDevices(); ++if_index) {
+                        consumed_bwd += (double_t) the_node->bytes_sent_per_interface_per_period.at(
+                                t.ToInteger(Time::NS)).at(if_index);
+                    }
                 }
-                consumed_bwd = (double_t) consumed_bwd / the_node->GetNDevices();
+                consumed_bwd = (double_t) consumed_bwd /
+                                the_node->GetNDevices() /
+                                (1.0 + Time(argv[3]).ToDouble(Time::MIN) / beaconing_period.ToDouble(Time::MIN));
                 break;
             }
         }
