@@ -245,7 +245,7 @@ namespace ns3 {
                 return 1.0;
             }
 
-            ld add_one = path_not_sent_before(dst_as, egress_if_no, the_beacon) ? 1.0 : 0.0;
+            ld add_one = path_not_sent_before(remote_as, egress_if_no, the_beacon) ? 1.0 : 0.0;
 
             ld  jointness = 1.0;
             for (auto const & seg : *the_beacon->the_path) {
@@ -299,7 +299,7 @@ namespace ns3 {
         }
 
         void remove_invalid_sent_beacons(beacon* the_beacon, uint16_t dst_as, bool force) {
-            for (int i = 0; i < neighbors.size(); ++i) {
+            for (uint32_t i = 0; i < neighbors.size(); ++i) {
                 uint16_t remote_as_no = neighbors.at(i);
                 if (sent_beacons.find(remote_as_no) == sent_beacons.end()) {
                     continue;
