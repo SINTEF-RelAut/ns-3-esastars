@@ -187,82 +187,67 @@ namespace ns3 {
             for (uint32_t i = 0; i < neighbors.size(); ++i) {
                 uint16_t remote_as = neighbors.at(i);
                 sent_beacons.insert(std::make_pair(remote_as, std::unordered_map<beacon*, std::unordered_map<uint16_t, int64_t> > ()));
-
+                links_jointnesses_on_sent_paths.insert(std::make_pair(remote_as, std::unordered_map<uint16_t, std::unordered_map<uint32_t, uint32_t> > ()));
             }
+
+
         }
 
         void dec_links_jointnesses_on_sent_paths(beacon* the_beacon, uint16_t dst_as, uint16_t remote_as_no, uint16_t self_egress_if) {
-            if (links_jointnesses_on_sent_paths.find(dst_as) == links_jointnesses_on_sent_paths.end()) {
-                return;
-            }
-
-            if (links_jointnesses_on_sent_paths.at(dst_as).find(remote_as_no) == links_jointnesses_on_sent_paths.at(dst_as).end()) {
+            if (links_jointnesses_on_sent_paths.at(remote_as_no).find(dst_as) == links_jointnesses_on_sent_paths.at(remote_as_no).end()) {
                 return;
             }
 
             for (auto const & seg : *the_beacon->the_path) {
                 uint32_t link = (((uint32_t) seg[0]) << 16) | ((uint32_t) seg[1]);
-                if (links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).find(link) == links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).end()) {
+                if (links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as).find(link) == links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as).end()) {
                     continue;
                 }
-                links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).at(link) = links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).at(link) - 1;
-                if (links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).at(link) == 0) {
-                    links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).erase(link);
+                links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as).at(link) = links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as).at(link) - 1;
+                if (links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as).at(link) == 0) {
+                    links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as).erase(link);
                 }
             }
 
             uint32_t link = (((uint32_t) this->as_number) << 16) | ((uint32_t) self_egress_if);
-            if (links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).find(link) != links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).end()) {
-                links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).at(link) = links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).at(link) - 1;
-                if (links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).at(link) == 0) {
-                    links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).erase(link);
+            if (links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as).find(link) != links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as).end()) {
+                links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as).at(link) = links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as).at(link) - 1;
+                if (links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as).at(link) == 0) {
+                    links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as).erase(link);
                 }
             }
 
 
-            if (links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).size() == 0) {
-                links_jointnesses_on_sent_paths.at(dst_as).erase(remote_as_no);
+            if (links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as).size() == 0) {
+                links_jointnesses_on_sent_paths.at(remote_as_no).erase(dst_as);
             }
-
-            if (links_jointnesses_on_sent_paths.at(dst_as).size() == 0) {
-                links_jointnesses_on_sent_paths.erase(dst_as);
-            }
-
         }
 
         void inc_links_jointness_on_sent_paths(uint16_t dst_as_no, uint16_t remote_as_no, uint16_t self_egress_if_no, beacon* the_beacon) {
-            if (links_jointnesses_on_sent_paths.find(dst_as_no) == links_jointnesses_on_sent_paths.end()) {
-                links_jointnesses_on_sent_paths.insert(std::make_pair(dst_as_no, std::unordered_map<uint16_t, std::unordered_map<uint32_t, uint32_t> > ()));
-            }
-
-            if (links_jointnesses_on_sent_paths.at(dst_as_no).find(remote_as_no) == links_jointnesses_on_sent_paths.at(dst_as_no).end()) {
-                links_jointnesses_on_sent_paths.at(dst_as_no).insert(std::make_pair(remote_as_no, std::unordered_map<uint32_t, uint32_t>()));
+            if (links_jointnesses_on_sent_paths.at(remote_as_no).find(dst_as_no) == links_jointnesses_on_sent_paths.at(remote_as_no).end()) {
+                links_jointnesses_on_sent_paths.at(remote_as_no).insert(std::make_pair(dst_as_no, std::unordered_map<uint32_t, uint32_t> ()));
             }
 
             if (the_beacon != NULL) {
                 for (auto const & seg : *the_beacon->the_path) {
                     uint32_t link = (((uint32_t) seg[0]) << 16) | ((uint32_t) seg[1]);
-                    if (links_jointnesses_on_sent_paths.at(dst_as_no).at(remote_as_no).find(link) == links_jointnesses_on_sent_paths.at(dst_as_no).at(remote_as_no).end()) {
-                        links_jointnesses_on_sent_paths.at(dst_as_no).at(remote_as_no).insert(std::make_pair(link, 0));
+                    if (links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as_no).find(link) == links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as_no).end()) {
+                        links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as_no).insert(std::make_pair(link, 0));
                     }
-                    links_jointnesses_on_sent_paths.at(dst_as_no).at(remote_as_no).at(link) = links_jointnesses_on_sent_paths.at(dst_as_no).at(remote_as_no).at(link) + 1;
+                    links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as_no).at(link) = links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as_no).at(link) + 1;
                 }
             }
 
             uint32_t link = (((uint32_t) this->as_number) << 16) | ((uint32_t) self_egress_if_no);
-            if (links_jointnesses_on_sent_paths.at(dst_as_no).at(remote_as_no).find(link) == links_jointnesses_on_sent_paths.at(dst_as_no).at(remote_as_no).end()) {
-                links_jointnesses_on_sent_paths.at(dst_as_no).at(remote_as_no).insert(std::make_pair(link, 0));
+            if (links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as_no).find(link) == links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as_no).end()) {
+                links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as_no).insert(std::make_pair(link, 0));
             }
-            links_jointnesses_on_sent_paths.at(dst_as_no).at(remote_as_no).at(link) = links_jointnesses_on_sent_paths.at(dst_as_no).at(remote_as_no).at(link) + 1;
+            links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as_no).at(link) = links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as_no).at(link) + 1;
 
         }
 
         ld calculate_link_diversity_score_for_dissemination(uint16_t remote_as, uint16_t dst_as, uint16_t egress_if_no, beacon* the_beacon) {
-            if (links_jointnesses_on_sent_paths.find(dst_as) == links_jointnesses_on_sent_paths.end()) {
-                return 1.0;
-            }
-
-            if (links_jointnesses_on_sent_paths.at(dst_as).find(remote_as) == links_jointnesses_on_sent_paths.at(dst_as).end()) {
+            if (links_jointnesses_on_sent_paths.at(remote_as).find(dst_as) == links_jointnesses_on_sent_paths.at(remote_as).end()) {
                 return 1.0;
             }
 
@@ -271,14 +256,14 @@ namespace ns3 {
             ld  jointness = 1.0;
             for (auto const & seg : *the_beacon->the_path) {
                 uint32_t link = (((uint32_t) seg[0]) << 16) | ((uint32_t) seg[1]);
-                if (links_jointnesses_on_sent_paths.at(dst_as).at(remote_as).find(link) != links_jointnesses_on_sent_paths.at(dst_as).at(remote_as).end()) {
-                    jointness *= (add_one + 1.0 * links_jointnesses_on_sent_paths.at(dst_as).at(remote_as).at(link));
+                if (links_jointnesses_on_sent_paths.at(remote_as).at(dst_as).find(link) != links_jointnesses_on_sent_paths.at(remote_as).at(dst_as).end()) {
+                    jointness *= (add_one + 1.0 * links_jointnesses_on_sent_paths.at(remote_as).at(dst_as).at(link));
                 }
             }
 
             uint32_t link = (((uint32_t) this->as_number) << 16) | ((uint32_t) egress_if_no);
-            if (links_jointnesses_on_sent_paths.at(dst_as).at(remote_as).find(link) != links_jointnesses_on_sent_paths.at(dst_as).at(remote_as).end()) {
-                jointness *= (add_one + 1.0 * links_jointnesses_on_sent_paths.at(dst_as).at(remote_as).at(link));
+            if (links_jointnesses_on_sent_paths.at(remote_as).at(dst_as).find(link) != links_jointnesses_on_sent_paths.at(remote_as).at(dst_as).end()) {
+                jointness *= (add_one + 1.0 * links_jointnesses_on_sent_paths.at(remote_as).at(dst_as).at(link));
             }
 
             jointness = std::pow(jointness, 1.0/(the_beacon->the_path->size() + 1.0));
