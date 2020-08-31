@@ -314,6 +314,7 @@ namespace ns3 {
         }
 
         void remove_invalid_sent_beacons(beacon* the_beacon, uint16_t dst_as, bool force) {
+
             for (uint32_t i = 0; i < neighbors.size(); ++i) {
                 uint16_t remote_as_no = neighbors.at(i);
                 if (sent_beacons.find(remote_as_no) == sent_beacons.end()) {
@@ -324,14 +325,20 @@ namespace ns3 {
                     continue;
                 }
 
+                std::set<uint16_t> removed_ifaces;
+
                 for (auto const & iface_time_pair : sent_beacons.at(remote_as_no).at(the_beacon)) {
                     uint16_t iface = iface_time_pair.first;
                     int64_t expiration_time = iface_time_pair.second;
                     if (force || expiration_time <= now) {
-                        sent_beacons.at(remote_as_no).at(the_beacon).erase(iface);
+                        removed_ifaces.insert(iface);
                         //uint16_t  remote_as_no = interface_to_neighbor_map.at(iface);
                         this->dec_links_jointnesses_on_sent_paths(the_beacon, dst_as, remote_as_no, iface);
                     }
+                }
+
+                for (uint16_t iface : removed_ifaces) {
+                    sent_beacons.at(remote_as_no).at(the_beacon).erase(iface);
                 }
 
                 if (sent_beacons.at(remote_as_no).at(the_beacon).empty()) {
