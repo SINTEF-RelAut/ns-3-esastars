@@ -543,7 +543,7 @@ namespace ns3 {
                 this->update_beacons_scores(dst_as, true);
             }
 
-            std::cout << as_number << "\t" <<valid_beacons_count_per_dst_as.size() << std::endl; // Print number of source ASes
+            //std::cout << as_number << "\t" <<valid_beacons_count_per_dst_as.size() << std::endl; // Print number of source ASes
 
         }
 
