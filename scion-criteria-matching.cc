@@ -312,7 +312,7 @@ namespace ns3 {
                     int64_t expiration_time = iface_time_pair.second;
                     if (force || expiration_time <= now) {
                         removed_ifaces.insert(iface);
-                        //uint16_t  remote_as_no = interface_to_neighbor_map.at(iface);
+
                         this->dec_links_jointnesses_on_sent_paths(the_beacon, dst_as, remote_as_no, iface);
                     }
                 }
@@ -414,7 +414,7 @@ namespace ns3 {
             return score;
         }
 
-        ld  calculate_link_diversity_score_of_new_beacon_among_received_paths (beacon* the_beacon, uint16_t dst_as, uint16_t sender_as, uint16_t remote_egress_if) {
+        ld  calculate_link_diversity_score_of_not_yet_added_beacon (beacon* the_beacon, uint16_t dst_as, uint16_t sender_as, uint16_t remote_egress_if) {
             if (links_jointnesses_on_received_paths.find(dst_as) == links_jointnesses_on_received_paths.end()) {
                 return 1.0;
             }
@@ -449,8 +449,8 @@ namespace ns3 {
             return (MAX_ACCEPTABLE_JOINTNESS - jointness) / (MAX_ACCEPTABLE_JOINTNESS - 1.0);
         }
 
-        ld  calculate_score_of_new_received_beacon (beacon* the_beacon, uint16_t dst_as, uint16_t sender_as, uint16_t remote_egress_if, ld latency, ld bwd) {
-            ld  link_diversity_score = calculate_link_diversity_score_of_new_beacon_among_received_paths(the_beacon, dst_as, sender_as, remote_egress_if);
+        ld  calculate_score_of_not_yet_added_beacon (beacon* the_beacon, uint16_t dst_as, uint16_t sender_as, uint16_t remote_egress_if, ld latency, ld bwd) {
+            ld  link_diversity_score = calculate_link_diversity_score_of_not_yet_added_beacon(the_beacon, dst_as, sender_as, remote_egress_if);
             ld score = (
                     (1 - latency / MAX_LAT) * latency_coef
                     + bwd / MAX_BWD * bandwidth_coef
@@ -481,7 +481,7 @@ namespace ns3 {
             beacons_with_same_dst_as* beacons_to_the_dst = beacon_store.at(dst_as);
             for (auto const & sender_to_beacons_pair: *beacons_to_the_dst) {
                 for (auto const & beacon : *sender_to_beacons_pair.second) {
-                    if (beacon->is_valid || beacon->is_new) {
+                    if (beacon->is_valid || (beacon->is_new && beacon->next_expiration_time > now)) {
                         ld score = calculate_score_of_previously_received_beacon (beacon, dst_as, periodic);
                         beacons_per_dst_sorted_by_score.at(dst_as).insert(std::make_pair(score, beacon));
                     }
@@ -661,7 +661,7 @@ namespace ns3 {
         }
 
         void InitiateBeacons() {
-//#pragma omp parallel for
+#pragma omp parallel for
             for (uint32_t i = 0; i < neighbors.size(); ++i) {
                 uint16_t remote_as_no = neighbors.at(i);
                 for (auto const & self_egress_if_no : interfaces_per_neighbor_as.at(remote_as_no)) {
@@ -723,36 +723,35 @@ namespace ns3 {
 
             if (remote_as->next_round_valid_beacons_count_per_dst_as.find(dst_as) != remote_as->next_round_valid_beacons_count_per_dst_as.end()) {
                 if (remote_as->next_round_valid_beacons_count_per_dst_as.at(dst_as) >= FIXED_BEACONS_NUMBER_TO_STORE) {
-                    ld score = remote_as->calculate_score_of_new_received_beacon(old_beacon, dst_as, this->as_number, self_egress_if_no, latency, bwd);
+                    ld score = remote_as->calculate_score_of_not_yet_added_beacon(old_beacon, dst_as, this->as_number, self_egress_if_no, latency, bwd);
                     std::multimap <ld, beacon* >::iterator it = remote_as->beacons_per_dst_sorted_by_score.at(dst_as).begin();
 
                     if (it->first >= score) {
                         return;
                     }
 
-
-                    beacon* lower_score_beacon = it->second;
-                    remote_as->remove_invalid_sent_beacons(lower_score_beacon, dst_as, true);
-                    remote_as->dec_links_jointnesses_on_received_paths(lower_score_beacon, dst_as);
+                    beacon* lowest_score_beacon = it->second;
+                    remote_as->remove_invalid_sent_beacons(lowest_score_beacon, dst_as, true);
+                    remote_as->dec_links_jointnesses_on_received_paths(lowest_score_beacon, dst_as);
                     remote_as->beacons_per_dst_sorted_by_score.at(dst_as).erase(it);
-                    remote_as->path_map_to_beacon.erase(lower_score_beacon->key);
-                    remote_as->beacon_store.at(dst_as)->at(lower_score_beacon->the_path->back()[0])->erase(lower_score_beacon);
-                    if (remote_as->beacon_store.at(dst_as)->at(lower_score_beacon->the_path->back()[0])->empty()) {
-                        remote_as->beacon_store.at(dst_as)->erase(lower_score_beacon->the_path->back()[0]);
+                    remote_as->path_map_to_beacon.erase(lowest_score_beacon->key);
+                    remote_as->beacon_store.at(dst_as)->at(lowest_score_beacon->the_path->back()[0])->erase(lowest_score_beacon);
+                    if (remote_as->beacon_store.at(dst_as)->at(lowest_score_beacon->the_path->back()[0])->empty()) {
+                        remote_as->beacon_store.at(dst_as)->erase(lowest_score_beacon->the_path->back()[0]);
                     }
 
-                    if (lower_score_beacon->is_valid) {
+                    if (lowest_score_beacon->is_valid) {
                         remote_as->valid_beacons_count_per_dst_as.at(dst_as)--;
                     }
 
                     if (old_beacon == NULL) {
-                        lower_score_beacon->the_path->clear();
-                        lower_score_beacon->next_initiation_time = now;
-                        lower_score_beacon->next_expiration_time = now + expiration_period;
+                        lowest_score_beacon->the_path->clear();
+                        lowest_score_beacon->next_initiation_time = now;
+                        lowest_score_beacon->next_expiration_time = now + expiration_period;
                     } else {
-                        *lower_score_beacon->the_path = *(old_beacon->the_path);
-                        lower_score_beacon->next_initiation_time = old_beacon->initiation_time;
-                        lower_score_beacon->next_expiration_time = old_beacon->expiration_time;
+                        *lowest_score_beacon->the_path = *(old_beacon->the_path);
+                        lowest_score_beacon->next_initiation_time = old_beacon->initiation_time;
+                        lowest_score_beacon->next_expiration_time = old_beacon->expiration_time;
                     }
 
                         
@@ -762,27 +761,27 @@ namespace ns3 {
                     link_info[2] = remote_as_no;
                     link_info[3] = remote_ingress_if_no;
 
-                    lower_score_beacon->the_path->push_back(link_info);
-                    lower_score_beacon->key = key;
-                    lower_score_beacon->initiation_time = -1;
-                    lower_score_beacon->expiration_time = -1;
+                    lowest_score_beacon->the_path->push_back(link_info);
+                    lowest_score_beacon->key = key;
+                    lowest_score_beacon->initiation_time = -1;
+                    lowest_score_beacon->expiration_time = -1;
 
-                    lower_score_beacon->is_new = true;
-                    lower_score_beacon->is_valid = false;
-                    lower_score_beacon->bwd_stat = bwd;
-                    lower_score_beacon->latency_stat = latency;
+                    lowest_score_beacon->is_new = true;
+                    lowest_score_beacon->is_valid = false;
+                    lowest_score_beacon->bwd_stat = bwd;
+                    lowest_score_beacon->latency_stat = latency;
 
 
-                    remote_as->path_map_to_beacon.insert(std::make_pair(key, lower_score_beacon));
+                    remote_as->path_map_to_beacon.insert(std::make_pair(key, lowest_score_beacon));
 
                     if (remote_as->beacon_store.at(dst_as)->find(as_number) != remote_as->beacon_store.at(dst_as)->end()) {
-                        remote_as->beacon_store.at(dst_as)->at(as_number)->insert(lower_score_beacon);
+                        remote_as->beacon_store.at(dst_as)->at(as_number)->insert(lowest_score_beacon);
                     } else {
                         remote_as->beacon_store.at(dst_as)->insert(std::make_pair(as_number, new beacons_received_from_same_as()));
-                        remote_as->beacon_store.at(dst_as)->at(as_number)->insert(lower_score_beacon);
+                        remote_as->beacon_store.at(dst_as)->at(as_number)->insert(lowest_score_beacon);
                     }
 
-                    remote_as->inc_links_jointnesses_on_received_paths(lower_score_beacon, dst_as);
+                    remote_as->inc_links_jointnesses_on_received_paths(lowest_score_beacon, dst_as);
                     remote_as->update_beacons_scores(dst_as, false);
                     return;
                 }
@@ -1023,10 +1022,10 @@ main(int argc, char *argv[]) {
         int32_t as_number = std::stoi(getAttribute(curNode, "id"));
         PropertyContainer p = parseProperties(curNode);
 
-        ld latency_coef = std::stod(p.getProperty("latency_coef"));
-        ld bandwidth_coef = std::stod(p.getProperty("bandwidth_coef"));
-        ld AS_level_diversity_coef = std::stod(p.getProperty("AS_level_diversity_coef"));
-        ld link_level_diversity_coef = std::stod(p.getProperty("link_level_diversity_coef"));
+        ld latency_coef = 0.0;//std::stod(p.getProperty("latency_coef"));
+        ld bandwidth_coef = 0.0;//std::stod(p.getProperty("bandwidth_coef"));
+        ld AS_level_diversity_coef = 0.0;//std::stod(p.getProperty("AS_level_diversity_coef"));
+        ld link_level_diversity_coef = 1.0;//std::stod(p.getProperty("link_level_diversity_coef"));
 
         nodes.Add(CreateObject<myNode>(node_counter, 0, latency_coef, bandwidth_coef, AS_level_diversity_coef,
                                        link_level_diversity_coef));
