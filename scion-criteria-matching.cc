@@ -609,7 +609,7 @@ namespace ns3 {
         }
 
         void DisseminateBeacons() {
-#pragma omp parallel for
+//#pragma omp parallel for
             for (uint32_t i = 0; i < neighbors.size(); ++i) { // Per destination AS
                 uint16_t remote_as_no = neighbors.at(i);
                 for (auto const &dst_as_beacons_pair : beacon_store) { // Per source AS
