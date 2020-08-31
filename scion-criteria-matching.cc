@@ -351,7 +351,7 @@ namespace ns3 {
                 return;
             }
 
-            for (auto const & seg : *the_beacon->the_path) {
+            for (auto const & seg : *(the_beacon->the_path)) {
                 uint32_t link = (((uint32_t) seg[0]) << 16) | ((uint32_t) seg[1]);
                 if (links_jointnesses_on_received_paths.at(dst_as).find(link) == links_jointnesses_on_received_paths.at(dst_as).end()) {
                     continue;
@@ -483,7 +483,7 @@ namespace ns3 {
             beacons_with_same_dst_as* beacons_to_the_dst = beacon_store.at(dst_as);
             for (auto const & sender_to_beacons_pair: *beacons_to_the_dst) {
                 for (auto const & beacon : *sender_to_beacons_pair.second) {
-                    if (beacon->is_valid) {
+                    if (beacon->is_valid || beacon->is_new) {
                         ld score = calculate_score_of_previously_received_beacon (beacon, dst_as, periodic);
                         beacons_per_dst_sorted_by_score.at(dst_as).insert(std::make_pair(score, beacon));
                     }
@@ -663,7 +663,7 @@ namespace ns3 {
         }
 
         void InitiateBeacons() {
-#pragma omp parallel for
+//#pragma omp parallel for
             for (uint32_t i = 0; i < neighbors.size(); ++i) {
                 uint16_t remote_as_no = neighbors.at(i);
                 for (auto const & self_egress_if_no : interfaces_per_neighbor_as.at(remote_as_no)) {
