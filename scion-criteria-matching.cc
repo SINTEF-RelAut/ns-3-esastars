@@ -183,6 +183,12 @@ namespace ns3 {
                     AS_max_bwd = curr_bwd;
                 }
             }
+
+            for (uint32_t i = 0; i < neighbors.size(); ++i) {
+                uint16_t remote_as = neighbors.at(i);
+                sent_beacons.insert(std::make_pair(remote_as, std::unordered_map<beacon*, std::unordered_map<uint16_t, int64_t> > ()));
+
+            }
         }
 
         void dec_links_jointnesses_on_sent_paths(beacon* the_beacon, uint16_t dst_as, uint16_t remote_as_no, uint16_t self_egress_if) {
@@ -286,9 +292,6 @@ namespace ns3 {
         }
 
         bool path_not_sent_before(uint16_t remote_as, uint16_t self_egress_if_no, beacon* the_beacon) {
-            if (sent_beacons.find(remote_as) == sent_beacons.end()) {
-                return true;
-            }
             if (sent_beacons.at(remote_as).find(the_beacon) == sent_beacons.at(remote_as).end()) {
                 return true;
             }
@@ -300,10 +303,6 @@ namespace ns3 {
         }
 
         void add_to_sent_beacons (uint16_t  remote_as, uint16_t self_egress_if_no, beacon* the_beacon) {
-            if (sent_beacons.find(remote_as) == sent_beacons.end()) {
-                sent_beacons.insert(std::make_pair(remote_as,  std::unordered_map<beacon*, std::unordered_map<uint16_t, int64_t> >()));
-            }
-
             if (sent_beacons.at(remote_as).find(the_beacon) == sent_beacons.at(remote_as).end()) {
                 sent_beacons.at(remote_as).insert(std::make_pair(the_beacon, std::unordered_map<uint16_t, int64_t>()));
             }
@@ -314,12 +313,8 @@ namespace ns3 {
         }
 
         void remove_invalid_sent_beacons(beacon* the_beacon, uint16_t dst_as, bool force) {
-
             for (uint32_t i = 0; i < neighbors.size(); ++i) {
                 uint16_t remote_as_no = neighbors.at(i);
-                if (sent_beacons.find(remote_as_no) == sent_beacons.end()) {
-                    continue;
-                }
 
                 if (sent_beacons.at(remote_as_no).find(the_beacon) == sent_beacons.at(remote_as_no).end()) {
                     continue;
@@ -343,10 +338,6 @@ namespace ns3 {
 
                 if (sent_beacons.at(remote_as_no).at(the_beacon).empty()) {
                     sent_beacons.at(remote_as_no).erase(the_beacon);
-                }
-
-                if (sent_beacons.at(remote_as_no).empty()) {
-                    sent_beacons.erase(remote_as_no);
                 }
             }
 
