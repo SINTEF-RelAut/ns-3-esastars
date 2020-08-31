@@ -508,8 +508,13 @@ namespace ns3 {
                     updated_dst_ases.insert(dst_as);
                     this->dec_links_jointnesses_on_received_paths(the_beacon, dst_as);
 
-                    valid_beacons_count_per_dst_as.at(dst_as)--;
-                    next_round_valid_beacons_count_per_dst_as.at(dst_as)--;
+                    if (valid_beacons_count_per_dst_as.find(dst_as) != valid_beacons_count_per_dst_as.end()) {
+                        valid_beacons_count_per_dst_as.at(dst_as)--;
+                    }
+                    if (next_round_valid_beacons_count_per_dst_as.find(dst_as) != next_round_valid_beacons_count_per_dst_as.end()) {
+                        next_round_valid_beacons_count_per_dst_as.at(dst_as)--;
+                    }
+
                 }
             }
 
