@@ -204,11 +204,15 @@ namespace ns3 {
                     links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).erase(link);
                 }
             }
+
             uint32_t link = (((uint32_t) this->as_number) << 16) | ((uint32_t) self_egress_if);
-            links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).at(link) = links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).at(link) - 1;
-            if (links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).at(link) == 0) {
-                links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).erase(link);
+            if (links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).find(link) != links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).end()) {
+                links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).at(link) = links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).at(link) - 1;
+                if (links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).at(link) == 0) {
+                    links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).erase(link);
+                }
             }
+
 
             if (links_jointnesses_on_sent_paths.at(dst_as).at(remote_as_no).size() == 0) {
                 links_jointnesses_on_sent_paths.at(dst_as).erase(remote_as_no);
