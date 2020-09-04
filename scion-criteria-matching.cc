@@ -784,6 +784,7 @@ namespace ns3 {
                 }
                 remote_as->next_round_valid_beacons_count_per_dst_as.at(dst_as)++;
             } else {
+
                 remote_as->next_round_valid_beacons_count_per_dst_as.insert(std::make_pair(dst_as, 1));
             }
 
