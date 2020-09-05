@@ -347,15 +347,15 @@ namespace ns3 {
         }
 
         void dec_links_jointnesses_on_received_paths(beacon* the_beacon, uint16_t dst_as) {
-            if (links_jointnesses_on_received_paths.find(dst_as) == links_jointnesses_on_received_paths.end()) {
-                return;
-            }
+//            if (links_jointnesses_on_received_paths.find(dst_as) == links_jointnesses_on_received_paths.end()) {
+//                return;
+//            }
 
             for (auto const & seg : *(the_beacon->the_path)) {
                 uint32_t link = (((uint32_t) seg[0]) << 16) | ((uint32_t) seg[1]);
-                if (links_jointnesses_on_received_paths.at(dst_as).find(link) == links_jointnesses_on_received_paths.at(dst_as).end()) {
-                    continue;
-                }
+//                if (links_jointnesses_on_received_paths.at(dst_as).find(link) == links_jointnesses_on_received_paths.at(dst_as).end()) {
+//                    continue;
+//                }
 
                 links_jointnesses_on_received_paths.at(dst_as).at(link) = links_jointnesses_on_received_paths.at(dst_as).at(link) - 1;
                 if (links_jointnesses_on_received_paths.at(dst_as).at(link) == 0) {
@@ -380,9 +380,7 @@ namespace ns3 {
             if (jointness >= MAX_ACCEPTABLE_JOINTNESS) {
                 return 0.0;
             }
-
             return (MAX_ACCEPTABLE_JOINTNESS - jointness) / (MAX_ACCEPTABLE_JOINTNESS - 1.0);
-
         }
 
         ld calculate_score_of_previously_received_beacon (beacon* the_beacon, uint16_t dst_as) {
@@ -467,13 +465,14 @@ namespace ns3 {
         }
 
         void calculate_score_of_beacons_in_beacon_store(uint16_t dst_as, std::multimap <ld, beacon* >& beacons_sorted_by_score) {
-
             beacons_with_same_dst_as* beacons_to_the_dst = beacon_store.at(dst_as);
             for (auto const & sender_to_beacons_pair: *beacons_to_the_dst) {
                 for (auto const & beacon : *sender_to_beacons_pair.second) {
                     if (beacon->is_valid || (beacon->is_new && beacon->next_expiration_time > now)) {
                         ld score = calculate_score_of_previously_received_beacon (beacon, dst_as);
-                      beacons_sorted_by_score.insert(std::make_pair(score, beacon));
+                        beacons_sorted_by_score.insert(std::make_pair(score, beacon));
+                    } else {
+                        beacons_sorted_by_score.insert(std::make_pair(0.0, beacon));
                     }
                 }
             }
@@ -525,9 +524,10 @@ namespace ns3 {
 
         }
 
-        std::multimap<ld, std::tuple<beacon*, uint16_t, uint16_t, Ptr<myNode>, ld , ld> >
-        select_beacons_to_disseminate_per_dst_per_nbr (uint16_t remote_as_no, uint16_t dst_as_no, beacons_with_same_dst_as* beacons_to_the_dst_as) {
-            std::multimap<ld, std::tuple<beacon*, uint16_t, uint16_t, Ptr<myNode>, ld , ld> > score_map_to_beacon_and_metadata;
+
+        void select_beacons_to_disseminate_per_dst_per_nbr
+        (std::multimap<ld, std::tuple<beacon*, uint16_t, uint16_t, Ptr<myNode>, ld , ld> >& score_map_to_beacon_and_metadata,
+                uint16_t remote_as_no, uint16_t dst_as_no, beacons_with_same_dst_as* beacons_to_the_dst_as) {
 
             for (auto const &sender_as_beacons_pair : *beacons_to_the_dst_as) {
                 for (auto const &the_beacon : *sender_as_beacons_pair.second) {
@@ -605,7 +605,6 @@ namespace ns3 {
                     }
                 }
             }
-            return score_map_to_beacon_and_metadata;
         }
 
         void DisseminateBeacons() {
@@ -619,7 +618,8 @@ namespace ns3 {
                         continue;
                     }
 
-                    auto const & selected_beacons = this->select_beacons_to_disseminate_per_dst_per_nbr(remote_as_no, dst_as_no, beacons_to_the_dst_as);
+                    std::multimap<ld, std::tuple<beacon*, uint16_t, uint16_t, Ptr<myNode>, ld , ld> > selected_beacons;
+                    this->select_beacons_to_disseminate_per_dst_per_nbr(selected_beacons, remote_as_no, dst_as_no, beacons_to_the_dst_as);
 
                     for (auto const &the_tuple_pair : selected_beacons) {
                         beacon *the_beacon;
@@ -705,7 +705,8 @@ namespace ns3 {
                 }
                 remote_as->path_map_to_beacon.at(key)->is_new = true;
                 if (!remote_as->path_map_to_beacon.at(key)->is_valid) {
-                  remote_as->inc_links_jointnesses_on_received_paths(remote_as->path_map_to_beacon.at(key), dst_as);
+                    remote_as->inc_links_jointnesses_on_received_paths(remote_as->path_map_to_beacon.at(key), dst_as);
+                    remote_as->next_round_valid_beacons_count_per_dst_as.at(dst_as)++;
                 }
                 return;
             }
@@ -723,7 +724,6 @@ namespace ns3 {
                     }
 
                     beacon* lowest_score_beacon = it->second;
-                    remote_as->dec_links_jointnesses_on_received_paths(lowest_score_beacon, dst_as);
 
                     remote_as->path_map_to_beacon.erase(lowest_score_beacon->key);
                     remote_as->beacon_store.at(dst_as)->at(lowest_score_beacon->the_path->back()[0])->erase(lowest_score_beacon);
@@ -735,7 +735,10 @@ namespace ns3 {
                         remote_as->valid_beacons_count_per_dst_as.at(dst_as)--;
                     }
 
-
+                    if (lowest_score_beacon->is_valid || (lowest_score_beacon->is_new && lowest_score_beacon->next_expiration_time > now)) {
+                        remote_as->dec_links_jointnesses_on_received_paths(lowest_score_beacon, dst_as);
+                        remote_as->next_round_valid_beacons_count_per_dst_as.at(dst_as)--;
+                    }
 
                     if (old_beacon == NULL) {
                         lowest_score_beacon->the_path->clear();
@@ -747,7 +750,6 @@ namespace ns3 {
                         lowest_score_beacon->next_expiration_time = old_beacon->expiration_time;
                     }
 
-                        
                     uint16_t *link_info = new uint16_t[4];
                     link_info[0] = as_number;
                     link_info[1] = self_egress_if_no;
@@ -764,7 +766,6 @@ namespace ns3 {
                     lowest_score_beacon->bwd_stat = bwd;
                     lowest_score_beacon->latency_stat = latency;
 
-
                     remote_as->path_map_to_beacon.insert(std::make_pair(key, lowest_score_beacon));
 
                     if (remote_as->beacon_store.at(dst_as)->find(as_number) != remote_as->beacon_store.at(dst_as)->end()) {
@@ -775,12 +776,10 @@ namespace ns3 {
                     }
 
                     remote_as->inc_links_jointnesses_on_received_paths(lowest_score_beacon, dst_as);
-
+                    remote_as->next_round_valid_beacons_count_per_dst_as.at(dst_as)--;
                     return;
                 }
-                remote_as->next_round_valid_beacons_count_per_dst_as.at(dst_as)++;
             } else {
-
                 remote_as->next_round_valid_beacons_count_per_dst_as.insert(std::make_pair(dst_as, 1));
             }
 
@@ -827,8 +826,9 @@ namespace ns3 {
                 remote_as->beacon_store.at(dst_as)->insert(std::make_pair(as_number, new beacons_received_from_same_as()));
                 remote_as->beacon_store.at(dst_as)->at(as_number)->insert(new_beacon);
             }
-            remote_as->inc_links_jointnesses_on_received_paths(new_beacon, dst_as);
 
+            remote_as->inc_links_jointnesses_on_received_paths(new_beacon, dst_as);
+            remote_as->next_round_valid_beacons_count_per_dst_as.at(dst_as)++;
 
         }
 
@@ -1123,7 +1123,9 @@ main(int argc, char *argv[]) {
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             Ptr<myNode> the_node = DynamicCast<myNode>(nodes.Get(i));
             if (index_to_AS_no.at(the_node->as_number) == collector) {
-                for (Time t = Seconds(0.0); t < Time(argv[3]); t += beaconing_period) {
+                double_t periods = 0.0;
+                for (Time t = 4 * beaconing_period; t < Time(argv[3]); t += beaconing_period) {
+                    periods += 1.0;
                     for (uint32_t if_index = 0; if_index < the_node->GetNDevices(); ++if_index) {
                         consumed_bwd += (double_t) the_node->bytes_sent_per_interface_per_period.at(
                                 t.ToInteger(Time::NS)).at(if_index);
@@ -1131,114 +1133,154 @@ main(int argc, char *argv[]) {
                 }
                 consumed_bwd = (double_t) consumed_bwd /
                                 the_node->GetNDevices() /
-                                (1.0 + Time(argv[3]).ToDouble(Time::MIN) / beaconing_period.ToDouble(Time::MIN));
+                                periods;
                 break;
             }
         }
         std::cout << collector << "\t" << consumed_bwd << std::endl;
     }
 
-    //############################################################################################################################################################
-    for (Time t = Seconds(0.0); t < Time(argv[3]); t += beaconing_period) {
-        std::cout << "####################################### frequencies of consumed bandwidth at Time "
-                  << t
-                  << "#######################################" << std::endl;
-
-        std::map<uint32_t, uint32_t> frequencies_of_consumed_bwd;
-        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-            Ptr<myNode> the_node = DynamicCast<myNode>(nodes.Get(i));
-            for (uint32_t if_index = 0; if_index < the_node->GetNDevices(); ++if_index) {
-                uint32_t consumed_bwd = the_node->bytes_sent_per_interface_per_period.at(t.ToInteger(Time::NS)).at(if_index);
-
-                if (frequencies_of_consumed_bwd.find(consumed_bwd) != frequencies_of_consumed_bwd.end()) {
-                    frequencies_of_consumed_bwd.at(consumed_bwd)++;
-                } else {
-                    frequencies_of_consumed_bwd.insert(std::make_pair(consumed_bwd, 1));
-                }
-            }
-        }
-
-        std::cout << "consumed bandwidth on a link" << "\t" << "frequency" << std::endl;
-        for (auto const & bwd_freq_pair : frequencies_of_consumed_bwd) {
-            std::cout << bwd_freq_pair.first << "\t" << bwd_freq_pair.second << std::endl;
-        }
-    }
-
-    //############################################################################################################################################################
-    for (uint32_t path_length = 1; path_length <= 4; ++path_length) {
-        std::cout
-                << "######################################### frequencies of path counts per source AS with length "
-                << path_length - 1
-                << "#########################################"
-                << std::endl;
-        std::map<uint64_t, uint64_t> frequencies_of_path_counts_per_dst_as_with_certain_length;
-        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-            for (auto const &dst_as_beacons_pair : DynamicCast<myNode>(nodes.Get(i))->beacon_store) {
-                uint64_t number_of_paths_with_certain_length = 0;
-
-                for (auto const &ingress_if_beacons_pair : *dst_as_beacons_pair.second) {
-                    for (auto const &the_beacon : *ingress_if_beacons_pair.second) {
-                        if (the_beacon->the_path->size() == path_length) {
-                            number_of_paths_with_certain_length++;
-                        }
-                    }
-                }
-
-                if (frequencies_of_path_counts_per_dst_as_with_certain_length.find(
-                        number_of_paths_with_certain_length) != frequencies_of_path_counts_per_dst_as_with_certain_length.end()) {
-                    frequencies_of_path_counts_per_dst_as_with_certain_length.at(number_of_paths_with_certain_length)++;
-                } else {
-                    frequencies_of_path_counts_per_dst_as_with_certain_length.insert(
-                            std::make_pair(number_of_paths_with_certain_length, 1));
-                }
-            }
-        }
-
-        std::cout << "path count per source AS" << "\t" << "frequency" << std::endl;
-        for (auto const &count_freq_pair : frequencies_of_path_counts_per_dst_as_with_certain_length) {
-            std::cout << count_freq_pair.first << "\t" << count_freq_pair.second << std::endl;
-        }
-    }
-
-    std::cout << "###################################################### PATH QUALITY #############################################################"
-              << std::endl;
-    std::cout << "##                                                                                                                             ##"
-              << std::endl;
-
-    std::map <ld, uint64_t> satisfaction_stat;
-    std::map <ld, uint64_t> AS_level_diversity_stat;
-    std::map <ld, uint64_t> link_level_diversity_stat;
+    std::cout << "################################################ Paths Information ##############################################################" << std::endl;
 
     for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-        DynamicCast<myNode>(nodes.Get(i))->FinalPathEvaluation(satisfaction_stat,
-                                                               AS_level_diversity_stat,
-                                                               link_level_diversity_stat);
+        Ptr<myNode> the_node = DynamicCast<myNode>(nodes.Get(i));
+
+        std::cout << "From: " << index_to_AS_no.at(the_node->as_number) << std::endl;
+
+        for (auto const & dst_as_beacons_pair : the_node->beacon_store) {
+            uint16_t dst_as = dst_as_beacons_pair.first;
+            beacons_with_same_dst_as* same_dst_as_beacons = dst_as_beacons_pair.second;
+
+            std::cout << "\t" << "To: " << index_to_AS_no.at(dst_as) << std::endl;
+
+            for (auto const & beacons_from_same_nbr : *same_dst_as_beacons) {
+                for (auto const & the_beacon : *beacons_from_same_nbr.second) {
+                    if (!the_beacon->is_valid) {
+                        continue;
+                    }
+                    std::cout << "\t" << "\t";
+                    int hop_cnt = 0;
+                    std::vector<link_information>::reverse_iterator hop = the_beacon->the_path->rbegin();
+                    for (; hop!= the_beacon->the_path->rend(); ++hop) {
+                        if (hop_cnt != 0) {
+                            std::cout << ", ";
+                        }
+                        std::cout << index_to_AS_no.at((*hop)[2]) << ":" << (*hop)[3] << ", " << index_to_AS_no.at((*hop)[0]) << ":" << (*hop)[1];
+                        hop_cnt++;
+                    }
+                    std::cout << "; ";
+                    std::cout << "latency = " << the_beacon->latency_stat;
+                    std::cout << "; ";
+                    std::cout << "BWD = " << the_beacon->bwd_stat;
+                    std::cout << std::endl;
+                }
+
+            }
+        }
+
     }
 
-
-    std::cout << "###################################################### SATISFACTION #############################################################"
-              << std::endl;
-    std::cout << "satisfaction score" << "\t" << "frequency" << std::endl;
-
-    for (auto const &satisfaction_pair : satisfaction_stat) {
-        std::cout << satisfaction_pair.first << "\t" << satisfaction_pair.second << std::endl;
-    }
-
-    std::cout << "###################################################### LINK DIVERSITY ###########################################################"
-              << std::endl;
-    std::cout << "link diversity score" << "\t" << "frequency" << std::endl;
-
-    for (auto const &diversity_pair : link_level_diversity_stat) {
-        std::cout << diversity_pair.first << "\t" << diversity_pair.second << std::endl;
-    }
-
-    std::cout << "###################################################### AS DIVERSITY #############################################################"
-              << std::endl;
-    std::cout << "AS diversity score" << "\t" << "frequency" << std::endl;
-
-    for (auto const &diversity_pair : AS_level_diversity_stat) {
-        std::cout << diversity_pair.first << "\t" << diversity_pair.second << std::endl;
-    }
+    //############################################################################################################################################################
+//    for (Time t = Seconds(0.0); t < Time(argv[3]); t += beaconing_period) {
+//        std::cout << "####################################### frequencies of consumed bandwidth at Time "
+//                  << t
+//                  << "#######################################" << std::endl;
+//
+//        std::map<uint32_t, uint32_t> frequencies_of_consumed_bwd;
+//        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
+//            Ptr<myNode> the_node = DynamicCast<myNode>(nodes.Get(i));
+//            for (uint32_t if_index = 0; if_index < the_node->GetNDevices(); ++if_index) {
+//                uint32_t consumed_bwd = the_node->bytes_sent_per_interface_per_period.at(t.ToInteger(Time::NS)).at(if_index);
+//
+//                if (frequencies_of_consumed_bwd.find(consumed_bwd) != frequencies_of_consumed_bwd.end()) {
+//                    frequencies_of_consumed_bwd.at(consumed_bwd)++;
+//                } else {
+//                    frequencies_of_consumed_bwd.insert(std::make_pair(consumed_bwd, 1));
+//                }
+//            }
+//        }
+//
+//        std::cout << "consumed bandwidth on a link" << "\t" << "frequency" << std::endl;
+//        for (auto const & bwd_freq_pair : frequencies_of_consumed_bwd) {
+//            std::cout << bwd_freq_pair.first << "\t" << bwd_freq_pair.second << std::endl;
+//        }
+//    }
+//
+//    //############################################################################################################################################################
+//    for (uint32_t path_length = 1; path_length <= 4; ++path_length) {
+//        std::cout
+//                << "######################################### frequencies of path counts per source AS with length "
+//                << path_length - 1
+//                << "#########################################"
+//                << std::endl;
+//        std::map<uint64_t, uint64_t> frequencies_of_path_counts_per_dst_as_with_certain_length;
+//        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
+//            for (auto const &dst_as_beacons_pair : DynamicCast<myNode>(nodes.Get(i))->beacon_store) {
+//                uint64_t number_of_paths_with_certain_length = 0;
+//
+//                for (auto const &ingress_if_beacons_pair : *dst_as_beacons_pair.second) {
+//                    for (auto const &the_beacon : *ingress_if_beacons_pair.second) {
+//                        if (the_beacon->the_path->size() == path_length) {
+//                            number_of_paths_with_certain_length++;
+//                        }
+//                    }
+//                }
+//
+//                if (frequencies_of_path_counts_per_dst_as_with_certain_length.find(
+//                        number_of_paths_with_certain_length) != frequencies_of_path_counts_per_dst_as_with_certain_length.end()) {
+//                    frequencies_of_path_counts_per_dst_as_with_certain_length.at(number_of_paths_with_certain_length)++;
+//                } else {
+//                    frequencies_of_path_counts_per_dst_as_with_certain_length.insert(
+//                            std::make_pair(number_of_paths_with_certain_length, 1));
+//                }
+//            }
+//        }
+//
+//        std::cout << "path count per source AS" << "\t" << "frequency" << std::endl;
+//        for (auto const &count_freq_pair : frequencies_of_path_counts_per_dst_as_with_certain_length) {
+//            std::cout << count_freq_pair.first << "\t" << count_freq_pair.second << std::endl;
+//        }
+//    }
+//
+//    std::cout << "###################################################### PATH QUALITY #############################################################"
+//              << std::endl;
+//    std::cout << "##                                                                                                                             ##"
+//              << std::endl;
+//
+//    std::map <ld, uint64_t> satisfaction_stat;
+//    std::map <ld, uint64_t> AS_level_diversity_stat;
+//    std::map <ld, uint64_t> link_level_diversity_stat;
+//
+//    for (uint32_t i = 0; i < nodes.GetN(); ++i) {
+//        DynamicCast<myNode>(nodes.Get(i))->FinalPathEvaluation(satisfaction_stat,
+//                                                               AS_level_diversity_stat,
+//                                                               link_level_diversity_stat);
+//    }
+//
+//
+//    std::cout << "###################################################### SATISFACTION #############################################################"
+//              << std::endl;
+//    std::cout << "satisfaction score" << "\t" << "frequency" << std::endl;
+//
+//    for (auto const &satisfaction_pair : satisfaction_stat) {
+//        std::cout << satisfaction_pair.first << "\t" << satisfaction_pair.second << std::endl;
+//    }
+//
+//    std::cout << "###################################################### LINK DIVERSITY ###########################################################"
+//              << std::endl;
+//    std::cout << "link diversity score" << "\t" << "frequency" << std::endl;
+//
+//    for (auto const &diversity_pair : link_level_diversity_stat) {
+//        std::cout << diversity_pair.first << "\t" << diversity_pair.second << std::endl;
+//    }
+//
+//    std::cout << "###################################################### AS DIVERSITY #############################################################"
+//              << std::endl;
+//    std::cout << "AS diversity score" << "\t" << "frequency" << std::endl;
+//
+//    for (auto const &diversity_pair : AS_level_diversity_stat) {
+//        std::cout << diversity_pair.first << "\t" << diversity_pair.second << std::endl;
+//    }
 
     Simulator::Destroy();
     return 0;
