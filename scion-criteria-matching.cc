@@ -608,8 +608,9 @@ namespace ns3 {
         }
 
         void DisseminateBeacons() {
+            uint32_t neighbors_cnt = neighbors.size();
 #pragma omp parallel for
-            for (uint32_t i = 0; i < neighbors.size(); ++i) { // Per destination AS
+            for (uint32_t i = 0; i < neighbors_cnt; ++i) { // Per destination AS
                 uint16_t remote_as_no = neighbors.at(i);
                 for (auto const &dst_as_beacons_pair : beacon_store) { // Per source AS
                     uint16_t dst_as_no = dst_as_beacons_pair.first;
@@ -646,8 +647,9 @@ namespace ns3 {
         }
 
         void InitiateBeacons() {
+            uint32_t neighbors_cnt = neighbors.size();
 #pragma omp parallel for
-            for (uint32_t i = 0; i < neighbors.size(); ++i) {
+            for (uint32_t i = 0; i < neighbors_cnt; ++i) {
                 uint16_t remote_as_no = neighbors.at(i);
                 for (auto const & self_egress_if_no : interfaces_per_neighbor_as.at(remote_as_no)) {
                     Ptr<PointToPointNetDevice> self_egress_device = DynamicCast<PointToPointNetDevice>(
@@ -977,14 +979,14 @@ main(int argc, char *argv[]) {
 
     beaconing_period = Time(argv[1]);
     expiration_period = Time(argv[2]).ToInteger(Time::NS);
-    std::string file = "/home/tabaeias/ns-3_beaconing_simulator/topology/" + std::string(argv[4]) + ".xml";
+    std::string file = "./topology/" + std::string(argv[4]) + ".xml";
 
     std::ifstream fin(file.c_str());
     std::ostringstream sstr;
     sstr << fin.rdbuf();
 
     std::string out_path =
-            "/home/tabaeias/ns-3_beaconing_simulator/results/criteria-matching_" + std::string(argv[4]) + "_" +
+            "./results/criteria-matching_" + std::string(argv[4]) + "_" +
             std::string(argv[1]) + "_" + std::string(argv[2]) + "_" + std::string(argv[3]) + ".txt";
     std::ofstream out(out_path);
     std::cout.rdbuf(out.rdbuf());
