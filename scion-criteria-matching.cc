@@ -142,7 +142,7 @@ namespace ns3 {
 
         std::unordered_map<uint16_t, std::unordered_map<uint32_t, uint32_t> > links_jointnesses_on_received_paths;
 
-        std::unordered_map<uint16_t, std::unordered_map<std::string*, std::unordered_map<uint16_t, int64_t> > > sent_beacons;
+        std::unordered_map<uint16_t, std::unordered_map<std::string, std::unordered_map<uint16_t, int64_t> > > sent_beacons;
         std::unordered_map<uint16_t, std::unordered_map<uint16_t, std::unordered_map<uint32_t, uint32_t> > > links_jointnesses_on_sent_paths;
 
 
@@ -185,23 +185,23 @@ namespace ns3 {
 
             for (uint32_t i = 0; i < neighbors.size(); ++i) {
                 uint16_t remote_as = neighbors.at(i);
-                sent_beacons.insert(std::make_pair(remote_as, std::unordered_map<std::string*, std::unordered_map<uint16_t, int64_t> > ()));
+                sent_beacons.insert(std::make_pair(remote_as, std::unordered_map<std::string, std::unordered_map<uint16_t, int64_t> > ()));
                 links_jointnesses_on_sent_paths.insert(std::make_pair(remote_as, std::unordered_map<uint16_t, std::unordered_map<uint32_t, uint32_t> > ()));
             }
 
 
         }
 
-        void dec_links_jointnesses_on_sent_paths(std::string* the_key, uint16_t remote_as_no, uint16_t self_egress_if) {
-            uint16_t dst_as = (((uint16_t) (*the_key)[1]) << 8) | ((uint16_t) (*the_key)[0]);
+        void dec_links_jointnesses_on_sent_paths(std::string the_key, uint16_t remote_as_no, uint16_t self_egress_if) {
+            uint16_t dst_as = (((uint16_t) the_key[1]) << 8) | ((uint16_t) the_key[0]);
 
 //            if (links_jointnesses_on_sent_paths.at(remote_as_no).find(dst_as) == links_jointnesses_on_sent_paths.at(remote_as_no).end()) {
 //                return;
 //            }
 
-            for (uint32_t i = 0; i < the_key->size(); i+=4) {
-                uint16_t as_no = (((uint16_t) (*the_key)[i + 1]) << 8) | ((uint16_t) (*the_key)[i]);
-                uint16_t egg_if = (((uint16_t) (*the_key)[i + 3]) << 8) | ((uint16_t) (*the_key)[i + 2]);
+            for (uint32_t i = 0; i < the_key.size(); i+=4) {
+                uint16_t as_no = (((uint16_t) the_key[i + 1]) << 8) | ((uint16_t) the_key[i]);
+                uint16_t egg_if = (((uint16_t) the_key[i + 3]) << 8) | ((uint16_t) the_key[i + 2]);
 
                 uint32_t link = (((uint32_t) as_no) << 16) | ((uint32_t) egg_if);
 //                if (links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as).find(link) == links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as).end()) {
@@ -281,36 +281,36 @@ namespace ns3 {
         }
 
         bool path_not_sent_before(uint16_t remote_as, uint16_t self_egress_if_no, beacon* the_beacon) {
-            if (sent_beacons.at(remote_as).find(the_beacon->key) == sent_beacons.at(remote_as).end()) {
+            if (sent_beacons.at(remote_as).find(*the_beacon->key) == sent_beacons.at(remote_as).end()) {
                 return true;
             }
 
-            if (sent_beacons.at(remote_as).at(the_beacon->key).find(self_egress_if_no) == sent_beacons.at(remote_as).at(the_beacon->key).end()) {
+            if (sent_beacons.at(remote_as).at(*the_beacon->key).find(self_egress_if_no) == sent_beacons.at(remote_as).at(*the_beacon->key).end()) {
                 return true;
             }
             return false;
         }
 
         void add_to_sent_beacons (uint16_t  remote_as, uint16_t self_egress_if_no, beacon* the_beacon) {
-            if (sent_beacons.at(remote_as).find(the_beacon->key) == sent_beacons.at(remote_as).end()) {
-                sent_beacons.at(remote_as).insert(std::make_pair(the_beacon->key, std::unordered_map<uint16_t, int64_t>()));
+            if (sent_beacons.at(remote_as).find(*the_beacon->key) == sent_beacons.at(remote_as).end()) {
+                sent_beacons.at(remote_as).insert(std::make_pair(*the_beacon->key, std::unordered_map<uint16_t, int64_t>()));
             }
 
-            if (sent_beacons.at(remote_as).at(the_beacon->key).find(self_egress_if_no) == sent_beacons.at(remote_as).at(the_beacon->key).end()) {
-                sent_beacons.at(remote_as).at(the_beacon->key).insert(std::make_pair(self_egress_if_no, the_beacon->expiration_time));
+            if (sent_beacons.at(remote_as).at(*the_beacon->key).find(self_egress_if_no) == sent_beacons.at(remote_as).at(*the_beacon->key).end()) {
+                sent_beacons.at(remote_as).at(*the_beacon->key).insert(std::make_pair(self_egress_if_no, the_beacon->expiration_time));
             }
         }
 
         void update_sent_beacon_timer (uint16_t  remote_as, uint16_t self_egress_if_no, beacon* the_beacon) {
-            sent_beacons.at(remote_as).at(the_beacon->key).at(self_egress_if_no) = the_beacon->expiration_time;
+            sent_beacons.at(remote_as).at(*the_beacon->key).at(self_egress_if_no) = the_beacon->expiration_time;
         }
 
         void remove_invalid_sent_beacons() {
             for (uint32_t i = 0; i < neighbors.size(); ++i) {
                 uint16_t remote_as_no = neighbors.at(i);
-                std::multimap<std::string*, uint16_t> removed_keys_ifaces;
+                std::multimap<std::string, uint16_t> removed_keys_ifaces;
                 for (auto const & key_map_pair: sent_beacons.at(remote_as_no)) {
-                    std::string* the_key = key_map_pair.first;
+                    std::string the_key = key_map_pair.first;
                     for (auto const &iface_time_pair : key_map_pair.second) {
                         uint16_t iface = iface_time_pair.first;
                         int64_t expiration_time = iface_time_pair.second;
@@ -580,7 +580,7 @@ namespace ns3 {
                             ld beacon_exp_period = Time(the_beacon->expiration_time).ToDouble(Time::MIN) - Time(the_beacon->initiation_time).ToDouble(Time::MIN);
                             score = std::pow(score, ALPHA * (1.0 - ( time_to_expiration / beacon_exp_period )) );
                         } else {
-                            ld sent_beacon_time_to_expiration = Time(sent_beacons.at(remote_as_no).at(the_beacon->key).at(self_egress_if_no)).ToDouble(Time::MIN)
+                            ld sent_beacon_time_to_expiration = Time(sent_beacons.at(remote_as_no).at(*the_beacon->key).at(self_egress_if_no)).ToDouble(Time::MIN)
                                                                 - Simulator::Now().ToDouble(Time::MIN);
                             ld current_beacon_time_to_expiration = Time(the_beacon->expiration_time).ToDouble(Time::MIN) - Simulator::Now().ToDouble(Time::MIN);
 
@@ -609,6 +609,8 @@ namespace ns3 {
 
         void DisseminateBeacons() {
             uint32_t neighbors_cnt = neighbors.size();
+            omp_set_num_threads(neighbors_cnt);
+            omp_set_dynamic(1);
 #pragma omp parallel for
             for (uint32_t i = 0; i < neighbors_cnt; ++i) { // Per destination AS
                 uint16_t remote_as_no = neighbors.at(i);
@@ -648,6 +650,8 @@ namespace ns3 {
 
         void InitiateBeacons() {
             uint32_t neighbors_cnt = neighbors.size();
+            omp_set_num_threads(neighbors_cnt);
+            omp_set_dynamic(1);
 #pragma omp parallel for
             for (uint32_t i = 0; i < neighbors_cnt; ++i) {
                 uint16_t remote_as_no = neighbors.at(i);
@@ -759,7 +763,7 @@ namespace ns3 {
                     link_info[3] = remote_ingress_if_no;
 
                     lowest_score_beacon->the_path->push_back(link_info);
-                    lowest_score_beacon->key = new std::string(key);
+                    *lowest_score_beacon->key = key;
                     lowest_score_beacon->initiation_time = -1;
                     lowest_score_beacon->expiration_time = -1;
 
@@ -967,7 +971,8 @@ PropertyContainer parseProperties(rapidxml::xml_node<> *node) {
 
 void ProcessReceivedPacketsParallel(NodeContainer nodes) {
     uint32_t node_number = nodes.GetN();
-
+    omp_set_num_threads(node_number);
+    omp_set_dynamic(1);
 #pragma omp parallel for
     for (uint32_t i = 0; i < node_number; ++i) {
         DynamicCast<myNode>(nodes.Get(i))->UpdateNodeState();
