@@ -24,11 +24,11 @@
 
 #define FIXED_BEACONS_NUMBER_TO_SEND 5
 #define FIXED_BEACONS_NUMBER_TO_STORE 30
-#define MAX_ACCEPTABLE_JOINTNESS 3.0
+#define MAX_ACCEPTABLE_JOINTNESS 1.99
 #define MAX_LAT 1000.0
 #define MAX_BWD 400.0
 #define ALPHA 6.0
-#define SCORE_THRESHOLD 0.9
+#define SCORE_THRESHOLD 0.95
 
 
 using namespace ns3;
@@ -528,10 +528,9 @@ namespace ns3 {
         }
 
 
-        void select_beacons_to_disseminate_per_dst_per_nbr
-        (std::multimap<ld, std::tuple<beacon*, uint16_t, uint16_t, Ptr<myNode>, ld , ld> >& score_map_to_beacon_and_metadata,
-                uint16_t remote_as_no, uint16_t dst_as_no, beacons_with_same_dst_as* beacons_to_the_dst_as) {
-
+        std::multimap<ld, std::tuple<beacon*, uint16_t, uint16_t, Ptr<myNode>, ld , ld> >
+        select_beacons_to_disseminate_per_dst_per_nbr(uint16_t remote_as_no, uint16_t dst_as_no, beacons_with_same_dst_as* beacons_to_the_dst_as) {
+            std::multimap<ld, std::tuple<beacon*, uint16_t, uint16_t, Ptr<myNode>, ld , ld> > score_map_to_beacon_and_metadata;
             for (auto const &sender_as_beacons_pair : *beacons_to_the_dst_as) {
                 for (auto const &the_beacon : *sender_as_beacons_pair.second) {
                     if (!the_beacon->is_valid ) {
@@ -624,8 +623,8 @@ namespace ns3 {
                         continue;
                     }
 
-                    std::multimap<ld, std::tuple<beacon*, uint16_t, uint16_t, Ptr<myNode>, ld , ld> > selected_beacons;
-                    this->select_beacons_to_disseminate_per_dst_per_nbr(selected_beacons, remote_as_no, dst_as_no, beacons_to_the_dst_as);
+                    std::multimap<ld, std::tuple<beacon*, uint16_t, uint16_t, Ptr<myNode>, ld , ld> > selected_beacons =
+                    this->select_beacons_to_disseminate_per_dst_per_nbr(remote_as_no, dst_as_no, beacons_to_the_dst_as);
 
                     for (auto const &the_tuple_pair : selected_beacons) {
                         beacon *the_beacon;
