@@ -28,6 +28,7 @@
 #define MAX_LAT 1000.0
 #define MAX_BWD 400.0
 #define ALPHA 6.0
+#define BETA 0.98
 #define SCORE_THRESHOLD 0.95
 
 
@@ -577,6 +578,8 @@ namespace ns3 {
                                    /
                                    (remote_as->latency_coef + remote_as->bandwidth_coef + remote_as->link_level_diversity_coef);
 
+                        score = BETA * score;
+
                         if (this->path_not_sent_before(remote_as_no, self_egress_if_no, the_beacon)) {
                             ld time_to_expiration = Time(the_beacon->expiration_time).ToDouble(Time::MIN) - Simulator::Now().ToDouble(Time::MIN);
                             ld beacon_exp_period = Time(the_beacon->expiration_time).ToDouble(Time::MIN) - Time(the_beacon->initiation_time).ToDouble(Time::MIN);
@@ -585,10 +588,6 @@ namespace ns3 {
                             ld sent_beacon_time_to_expiration = Time(sent_beacons.at(remote_as_no).at(the_beacon).at(self_egress_if_no)).ToDouble(Time::MIN)
                                                                 - Simulator::Now().ToDouble(Time::MIN);
                             ld current_beacon_time_to_expiration = Time(the_beacon->expiration_time).ToDouble(Time::MIN) - Simulator::Now().ToDouble(Time::MIN);
-
-                            if (score >= 1.0) {
-                                score = (1.0 + SCORE_THRESHOLD) / 2;
-                            }
 
                             score = std::pow(score, ALPHA * (sent_beacon_time_to_expiration / current_beacon_time_to_expiration));
                         }
