@@ -26,18 +26,22 @@ void CriteriaMatching::DisseminateBeacons(const std::unordered_map<uint16_t, std
         uint16_t remote_as_no = node->neighbors.at(i);
         const std::vector<uint16_t> &interfaces = valid_interfaces.at(remote_as_no);
         for (auto const &[beacon_origin_as_no, equal_src_as_beacons] : node->beacon_store) { // Per source AS
+            int16_t  sent_count = 0;
             if (remote_as_no == beacon_origin_as_no) {
                 continue;
             }
             std::multimap<int64_t, std::tuple<beacon*, uint16_t, uint16_t, SCION_Node*, ld , ld>> beacons_ifaces_matchings_scores;
             for (auto const &len_beacons_pair : *equal_src_as_beacons) { // for each length
+                if (sent_count >= FIXED_BEACONS_NUMBER_TO_SEND) {
+                    break;
+                }
                 for (auto const &the_beacon : *len_beacons_pair.second) {
                     if (!the_beacon->is_valid || GeneratesLoop(the_beacon, remote_as_no)) {
                         continue;
                     }
+                    sent_count++;
                     // Iterate over all the valid interfaces of this remote AS, aggregate the beacon stats and sort by score.
                     for (auto const &egress_interface_no: interfaces){
-
                         auto [remote_ingress_if_no, remote_as_ptr] = GetRemoteAsInfo(node, egress_interface_no);
 
                         SCION_Node* remote_as = ns3::GetPointer(remote_as_ptr);
