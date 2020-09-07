@@ -607,6 +607,8 @@ namespace ns3 {
                     }
                 }
             }
+
+            return score_map_to_beacon_and_metadata;
         }
 
         void DisseminateBeacons() {
