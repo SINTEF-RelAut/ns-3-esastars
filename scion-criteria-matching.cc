@@ -586,6 +586,10 @@ namespace ns3 {
                                                                 - Simulator::Now().ToDouble(Time::MIN);
                             ld current_beacon_time_to_expiration = Time(the_beacon->expiration_time).ToDouble(Time::MIN) - Simulator::Now().ToDouble(Time::MIN);
 
+                            if (score >= 1.0) {
+                                score = (1.0 + SCORE_THRESHOLD) / 2;
+                            }
+
                             score = std::pow(score, ALPHA * (sent_beacon_time_to_expiration / current_beacon_time_to_expiration));
                         }
 
