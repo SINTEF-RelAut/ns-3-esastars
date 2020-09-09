@@ -484,7 +484,7 @@ namespace ns3 {
 
         void UpdateNodeState() {
             if (as_number == 0) {
-                std::cout << "################################## " << now << " #########################################" << std::endl;
+                std::cout << "################################## " << Time(now).ToInteger(Time::MIN) << " #########################################" << std::endl;
             }
 
             for (auto const &the_beacon_pair:path_map_to_beacon) {
@@ -532,83 +532,131 @@ namespace ns3 {
         std::multimap<ld, std::tuple<beacon*, uint16_t, uint16_t, Ptr<myNode>, ld , ld> >
         select_beacons_to_disseminate_per_dst_per_nbr(uint16_t remote_as_no, uint16_t dst_as_no, beacons_with_same_dst_as* beacons_to_the_dst_as) {
             std::multimap<ld, std::tuple<beacon*, uint16_t, uint16_t, Ptr<myNode>, ld , ld> > score_map_to_beacon_and_metadata;
-            for (auto const &sender_as_beacons_pair : *beacons_to_the_dst_as) {
-                for (auto const &the_beacon : *sender_as_beacons_pair.second) {
-                    if (!the_beacon->is_valid ) {
-                        continue;
-                    }
+            std::set<std::pair<beacon*, uint16_t> > sent_paths_in_this_period;
+            for (int i = 0; i < FIXED_BEACONS_NUMBER_TO_SEND; ++i) {
+                ld  max_score = 0.0;
+                beacon* max_score_beacon = NULL;
+                uint16_t max_score_iface = 0;
 
-                    bool generates_loop = false;
-                    for (auto const &link_info : *the_beacon->the_path) { // remove loops
-                        if (link_info[0] == remote_as_no) {
-                            generates_loop = true;
-                            break;
-                        }
-                    }
-
-                    if (generates_loop) {
-                        continue;
-                    }
-
-                    for (auto const &self_egress_if_no : interfaces_per_neighbor_as.at(remote_as_no)) {
-                        Ptr<PointToPointNetDevice> self_egress_device = DynamicCast<PointToPointNetDevice>(
-                            GetDevice(self_egress_if_no));
-
-                        Ptr<PointToPointChannel> channel = DynamicCast<PointToPointChannel>(
-                            self_egress_device->GetChannel());
-                        uint32_t wire = self_egress_device == channel->GetSource(0) ? 0 : 1;
-                        Ptr<PointToPointNetDevice> remote_device = channel->GetDestination(wire);
-
-                        uint16_t remote_ingress_if_no = (uint16_t) remote_device->GetIfIndex();
-
-                        Ptr<myNode> remote_as = (DynamicCast<myNode>(remote_device->GetNode()));
-
-                        ld latency = the_beacon->latency_stat + intra_as_latencies.at(the_beacon->the_path->back()[3]).at(self_egress_if_no);
-                        ld bwd  = the_beacon->bwd_stat > (ld) inter_as_bwds.at(self_egress_if_no)
-                                  ? (ld) inter_as_bwds.at(self_egress_if_no)
-                                  : the_beacon->bwd_stat;
-
-                        ld  link_diversity_score = this->calculate_link_diversity_score_for_dissemination(remote_as_no, dst_as_no, self_egress_if_no, the_beacon);
-
-                        ld score = (
-                                       (1 - latency / MAX_LAT) * remote_as->latency_coef +
-                                       (bwd / MAX_BWD) * remote_as->bandwidth_coef +
-                                       link_diversity_score * remote_as->link_level_diversity_coef
-                                   )
-                                   /
-                                   (remote_as->latency_coef + remote_as->bandwidth_coef + remote_as->link_level_diversity_coef);
-
-                        score = BETA * score;
-
-                        if (this->path_not_sent_before(remote_as_no, self_egress_if_no, the_beacon)) {
-                            ld time_to_expiration = Time(the_beacon->expiration_time).ToDouble(Time::MIN) - Simulator::Now().ToDouble(Time::MIN);
-                            ld beacon_exp_period = Time(the_beacon->expiration_time).ToDouble(Time::MIN) - Time(the_beacon->initiation_time).ToDouble(Time::MIN);
-                            score = std::pow(score, ALPHA * (1.0 - ( time_to_expiration / beacon_exp_period )) );
-                        } else {
-                            ld sent_beacon_time_to_expiration = Time(sent_beacons.at(remote_as_no).at(the_beacon).at(self_egress_if_no)).ToDouble(Time::MIN)
-                                                                - Simulator::Now().ToDouble(Time::MIN);
-                            ld current_beacon_time_to_expiration = Time(the_beacon->expiration_time).ToDouble(Time::MIN) - Simulator::Now().ToDouble(Time::MIN);
-
-                            score = std::pow(score, ALPHA * (sent_beacon_time_to_expiration / current_beacon_time_to_expiration));
-                        }
-
-                        if (score < SCORE_THRESHOLD) {
+                for (auto const &sender_as_beacons_pair : *beacons_to_the_dst_as) {
+                    for (auto const &the_beacon : *sender_as_beacons_pair.second) {
+                        if (!the_beacon->is_valid) {
                             continue;
                         }
 
-                        if (score_map_to_beacon_and_metadata.size() >= FIXED_BEACONS_NUMBER_TO_SEND
-                            && score <= score_map_to_beacon_and_metadata.begin()->first) {
+                        bool generates_loop = false;
+                        for (auto const &link_info : *the_beacon->the_path) { // remove loops
+                            if (link_info[0] == remote_as_no) {
+                                generates_loop = true;
+                                break;
+                            }
+                        }
+
+                        if (generates_loop) {
                             continue;
                         }
 
-                        score_map_to_beacon_and_metadata.insert(std::make_pair(score, std::tuple<beacon *, uint16_t, uint16_t, Ptr<myNode>, ld,
-                            ld>(the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as, latency, bwd)));
+                        for (auto const &self_egress_if_no : interfaces_per_neighbor_as.at(remote_as_no)) {
+                            if (sent_paths_in_this_period.find(std::make_pair(the_beacon, self_egress_if_no)) != sent_paths_in_this_period.end()) {
+                                continue;
+                            }
 
-                        if (score_map_to_beacon_and_metadata.size() > FIXED_BEACONS_NUMBER_TO_SEND) {
-                            score_map_to_beacon_and_metadata.erase(score_map_to_beacon_and_metadata.begin());
+                            Ptr<PointToPointNetDevice> self_egress_device = DynamicCast<PointToPointNetDevice>(
+                                    GetDevice(self_egress_if_no));
+
+                            Ptr<PointToPointChannel> channel = DynamicCast<PointToPointChannel>(
+                                    self_egress_device->GetChannel());
+                            uint32_t wire = self_egress_device == channel->GetSource(0) ? 0 : 1;
+                            Ptr<PointToPointNetDevice> remote_device = channel->GetDestination(wire);
+
+                            uint16_t remote_ingress_if_no = (uint16_t) remote_device->GetIfIndex();
+
+                            Ptr<myNode> remote_as = (DynamicCast<myNode>(remote_device->GetNode()));
+
+                            ld latency = the_beacon->latency_stat +
+                                         intra_as_latencies.at(the_beacon->the_path->back()[3]).at(self_egress_if_no);
+                            ld bwd = the_beacon->bwd_stat > (ld) inter_as_bwds.at(self_egress_if_no)
+                                     ? (ld) inter_as_bwds.at(self_egress_if_no)
+                                     : the_beacon->bwd_stat;
+
+                            ld link_diversity_score = this->calculate_link_diversity_score_for_dissemination(
+                                    remote_as_no, dst_as_no, self_egress_if_no, the_beacon);
+
+                            ld score = (
+                                               (1 - latency / MAX_LAT) * remote_as->latency_coef +
+                                               (bwd / MAX_BWD) * remote_as->bandwidth_coef +
+                                               link_diversity_score * remote_as->link_level_diversity_coef
+                                       )
+                                       /
+                                       (remote_as->latency_coef + remote_as->bandwidth_coef +
+                                        remote_as->link_level_diversity_coef);
+
+                            score = BETA * score;
+
+                            if (this->path_not_sent_before(remote_as_no, self_egress_if_no, the_beacon)) {
+                                ld beacon_age = Simulator::Now().ToDouble(Time::MIN) -
+                                                          Time(the_beacon->initiation_time).ToDouble(Time::MIN);
+                                ld beacon_exp_period = Time(the_beacon->expiration_time).ToDouble(Time::MIN) -
+                                                       Time(the_beacon->initiation_time).ToDouble(Time::MIN);
+                                score = std::pow(score, ALPHA * (beacon_age / beacon_exp_period) );
+                            } else {
+                                ld sent_beacon_time_to_expiration =
+                                        Time(sent_beacons.at(remote_as_no).at(the_beacon).at(
+                                                self_egress_if_no)).ToDouble(Time::MIN)
+                                        - Simulator::Now().ToDouble(Time::MIN);
+                                ld current_beacon_time_to_expiration =
+                                        Time(the_beacon->expiration_time).ToDouble(Time::MIN) -
+                                        Simulator::Now().ToDouble(Time::MIN);
+
+                                score = std::pow(score, ALPHA * (sent_beacon_time_to_expiration / current_beacon_time_to_expiration));
+                            }
+
+                            if (score < SCORE_THRESHOLD) {
+                                continue;
+                            }
+
+                            if (score > max_score) {
+                                max_score_beacon = the_beacon;
+                                max_score_iface = self_egress_if_no;
+                            }
                         }
                     }
                 }
+
+                if (max_score_beacon != NULL) {
+                    sent_paths_in_this_period.insert(std::make_pair(max_score_beacon, max_score_iface));
+
+                    Ptr<PointToPointNetDevice> self_egress_device = DynamicCast<PointToPointNetDevice>(
+                            GetDevice(max_score_iface));
+
+                    Ptr<PointToPointChannel> channel = DynamicCast<PointToPointChannel>(
+                            self_egress_device->GetChannel());
+                    uint32_t wire = self_egress_device == channel->GetSource(0) ? 0 : 1;
+                    Ptr<PointToPointNetDevice> remote_device = channel->GetDestination(wire);
+
+                    uint16_t remote_ingress_if_no = (uint16_t) remote_device->GetIfIndex();
+
+                    Ptr<myNode> remote_as = (DynamicCast<myNode>(remote_device->GetNode()));
+
+                    ld latency = max_score_beacon->latency_stat +
+                                 intra_as_latencies.at(max_score_beacon->the_path->back()[3]).at(max_score_iface);
+                    ld bwd = max_score_beacon->bwd_stat > (ld) inter_as_bwds.at(max_score_iface)
+                             ? (ld) inter_as_bwds.at(max_score_iface)
+                             : max_score_beacon->bwd_stat;
+
+                    score_map_to_beacon_and_metadata.insert(
+                            std::make_pair(max_score,
+                                           std::tuple<beacon *, uint16_t,uint16_t, Ptr<myNode>, ld, ld>
+                                                   (max_score_beacon, max_score_iface, remote_ingress_if_no, remote_as, latency,bwd)));
+
+                    if (this->path_not_sent_before(remote_as_no, max_score_iface, max_score_beacon)) {
+                        this->add_to_sent_beacons(remote_as_no, max_score_iface, max_score_beacon);
+                        this->inc_links_jointness_on_sent_paths(dst_as_no, remote_as_no, max_score_iface, max_score_beacon);
+                    } else {
+                        this->update_sent_beacon_timer(remote_as_no, max_score_iface, max_score_beacon);
+                    }
+                }
+
             }
 
             return score_map_to_beacon_and_metadata;
@@ -644,12 +692,7 @@ namespace ns3 {
                         this->GenerateBeaconAndSend(the_beacon, self_egress_if_no, remote_as_no, remote_ingress_if_no, remote_as,
                                                     latency, bwd);
 
-                        if (this->path_not_sent_before(remote_as_no, self_egress_if_no, the_beacon)) {
-                            this->add_to_sent_beacons(remote_as_no, self_egress_if_no, the_beacon);
-                            this->inc_links_jointness_on_sent_paths(dst_as_no, remote_as_no, self_egress_if_no, the_beacon);
-                        } else {
-                            this->update_sent_beacon_timer(remote_as_no, self_egress_if_no, the_beacon);
-                        }
+
                     }
                 }
             }
@@ -1139,7 +1182,7 @@ main(int argc, char *argv[]) {
             Ptr<myNode> the_node = DynamicCast<myNode>(nodes.Get(i));
             if (index_to_AS_no.at(the_node->as_number) == collector) {
                 double_t periods = 0.0;
-                for (Time t = 4 * beaconing_period; t < Time(argv[3]); t += beaconing_period) {
+                for (Time t = Time(0); t < Time(argv[3]); t += beaconing_period) {
                     periods += 1.0;
                     for (uint32_t if_index = 0; if_index < the_node->GetNDevices(); ++if_index) {
                         consumed_bwd += (double_t) the_node->bytes_sent_per_interface_per_period.at(
