@@ -24,12 +24,12 @@
 
 #define FIXED_BEACONS_NUMBER_TO_SEND 5
 #define FIXED_BEACONS_NUMBER_TO_STORE 30
-#define MAX_ACCEPTABLE_JOINTNESS 1.99
+#define MAX_ACCEPTABLE_JOINTNESS 3.0
 #define MAX_LAT 1000.0
 #define MAX_BWD 400.0
 #define ALPHA 6.0
 #define BETA 0.98
-#define SCORE_THRESHOLD 0.95
+#define SCORE_THRESHOLD 0.9
 
 
 using namespace ns3;
@@ -568,8 +568,6 @@ namespace ns3 {
                                     self_egress_device->GetChannel());
                             uint32_t wire = self_egress_device == channel->GetSource(0) ? 0 : 1;
                             Ptr<PointToPointNetDevice> remote_device = channel->GetDestination(wire);
-
-                            uint16_t remote_ingress_if_no = (uint16_t) remote_device->GetIfIndex();
 
                             Ptr<myNode> remote_as = (DynamicCast<myNode>(remote_device->GetNode()));
 
