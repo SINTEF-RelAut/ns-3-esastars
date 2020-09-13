@@ -193,7 +193,7 @@ namespace ns3 {
             links_jointnesses_on_sent_paths.resize(neighbors.size());
             for (uint32_t i = 0; i < neighbors.size(); ++i) {
                 links_jointnesses_on_sent_paths.at(i).resize(all_nodes);
-                for (int j = 0; j < all_nodes; ++j) {
+                for (uint32_t j = 0; j < all_nodes; ++j) {
                     links_jointnesses_on_sent_paths.at(i).at(j) = new std::unordered_map<uint32_t, uint32_t>();
                 }
             }
