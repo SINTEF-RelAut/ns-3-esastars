@@ -40,15 +40,17 @@ std::list<int32_t> collectors({3303, 3130, 1239, 701, 5413, 34224, 7018, 53767, 
 
 typedef long double ld;
 
+
 typedef uint16_t *link_information;
 typedef std::vector<link_information> path;
 
 struct beacon {
-    int64_t initiation_time, expiration_time, next_initiation_time, next_expiration_time;
-    ld latency_stat, bwd_stat;
+    float latency_stat, bwd_stat;
+    uint16_t initiation_time, expiration_time, next_initiation_time, next_expiration_time;
+    bool is_new, is_valid;
     path *the_path;
     std::string key;
-    bool is_new, is_valid;
+
 };
 
 ld link_level_jaccard_distance_between_two_paths(beacon *beacon1, beacon *beacon2) {
@@ -96,7 +98,7 @@ typedef std::unordered_map<uint16_t, beacons_received_from_same_as *> beacons_wi
 
 
 Time beaconing_period;
-int64_t expiration_period;
+uint16_t expiration_period;
 
 ld calculate_great_circle_latency(ld lat1_deg, ld long1_deg, ld lat2_deg, ld long2_deg) {
     ld lat1 = lat1_deg * (M_PI) / 180;
@@ -124,7 +126,7 @@ namespace ns3 {
 
         //AS properties
         uint16_t as_number;
-        int64_t now, next_period;
+        uint16_t now, next_period;
         ld latency_coef, bandwidth_coef, AS_level_diversity_coef, link_level_diversity_coef;
         int32_t AS_max_bwd;
 
@@ -151,7 +153,7 @@ namespace ns3 {
         std::unordered_map<uint16_t, uint64_t> next_round_valid_beacons_count_per_dst_as;
         // statistics ***************************************************************************************************************
         std::unordered_map<uint16_t, uint64_t> valid_beacons_count_per_dst_as;
-        std::unordered_map<int64_t, std::vector<uint32_t> > bytes_sent_per_interface_per_period;
+        std::unordered_map<uint16_t, std::vector<uint32_t> > bytes_sent_per_interface_per_period;
 
 
 
@@ -280,14 +282,13 @@ namespace ns3 {
 
         void add_to_sent_beacons (uint16_t  remote_as, uint16_t self_egress_if_no, beacon* the_beacon) {
 
-            sent_beacons.at(self_egress_if_no).insert(std::make_pair(the_beacon,
-                                                                         (uint16_t) Time(the_beacon->expiration_time).ToInteger(Time::MIN)));
+            sent_beacons.at(self_egress_if_no).insert(std::make_pair(the_beacon, the_beacon->expiration_time));
 
 
         }
 
         void update_sent_beacon_timer (uint16_t  remote_as, uint16_t self_egress_if_no, beacon* the_beacon) {
-            sent_beacons.at(self_egress_if_no).at(the_beacon) = (uint16_t) Time(the_beacon->expiration_time).ToInteger(Time::MIN);
+            sent_beacons.at(self_egress_if_no).at(the_beacon) = the_beacon->expiration_time;
         }
 
         void remove_invalid_sent_beacons(beacon* the_beacon, uint16_t dst_as) {
@@ -370,14 +371,14 @@ namespace ns3 {
 
             if (the_beacon->is_new) {
                 score = std::pow(score, 1.0 -
-                                        (Time(the_beacon->next_expiration_time).ToDouble(Time::MIN) - Simulator::Now().ToDouble(Time::MIN))
-                                        / Time(expiration_period).ToDouble(Time::MIN));
+                                        ((ld) the_beacon->next_expiration_time - (ld) now)
+                                        / (ld) expiration_period);
                 return score;
             }
 
             score = std::pow(score, 1.0 -
-                                    (Time(the_beacon->expiration_time).ToDouble(Time::MIN) - Simulator::Now().ToDouble(Time::MIN))
-                                    / Time(expiration_period).ToDouble(Time::MIN));
+                                    ((ld)the_beacon->expiration_time - (ld) now)
+                                    / (ld) expiration_period);
 
             return score;
         }
@@ -433,7 +434,7 @@ namespace ns3 {
 
             score = std::pow(score, 1.0 -
                                     (Time(the_beacon->expiration_time).ToDouble(Time::MIN) - Simulator::Now().ToDouble(Time::MIN))
-                                    / Time(expiration_period).ToDouble(Time::MIN));
+                                    / (ld)expiration_period);
 
             return score;
 
@@ -455,7 +456,7 @@ namespace ns3 {
 
         void UpdateNodeState() {
             if (as_number == 0) {
-                std::cout << "################################## " << Time(now).ToInteger(Time::MIN) << " #########################################" << std::endl;
+                std::cout << "################################## " << now << " #########################################" << std::endl;
             }
 
             for (auto const &the_beacon_pair:path_map_to_beacon) {
@@ -561,19 +562,12 @@ namespace ns3 {
                         score = BETA * score;
 
                         if (this->path_not_sent_before(remote_as_no, self_egress_if_no, the_beacon)) {
-                            ld beacon_age = Simulator::Now().ToDouble(Time::MIN) -
-                                            Time(the_beacon->initiation_time).ToDouble(Time::MIN);
-                            ld beacon_exp_period = Time(the_beacon->expiration_time).ToDouble(Time::MIN) -
-                                                   Time(the_beacon->initiation_time).ToDouble(Time::MIN);
+                            ld beacon_age = (ld) (now - the_beacon->initiation_time);
+                            ld beacon_exp_period = (ld) (the_beacon->expiration_time - the_beacon->initiation_time);
                             score = std::pow(score, ALPHA * (beacon_age / beacon_exp_period));
                         } else {
-                            ld sent_beacon_time_to_expiration =
-                            (ld) sent_beacons.at(self_egress_if_no).at(the_beacon)
-                                    - Simulator::Now().ToDouble(Time::MIN);
-                            ld current_beacon_time_to_expiration =
-                                    Time(the_beacon->expiration_time).ToDouble(Time::MIN) -
-                                    Simulator::Now().ToDouble(Time::MIN);
-
+                            ld sent_beacon_time_to_expiration = (ld) (sent_beacons.at(self_egress_if_no).at(the_beacon) - now);
+                            ld current_beacon_time_to_expiration = (ld) (the_beacon->expiration_time - now);
                             score = std::pow(score,
                                              ALPHA * (sent_beacon_time_to_expiration / current_beacon_time_to_expiration));
                         }
@@ -656,18 +650,12 @@ namespace ns3 {
                         score = BETA * score;
 
                         if (this->path_not_sent_before(remote_as_no, self_egress_if_no, the_beacon)) {
-                            ld beacon_age = Simulator::Now().ToDouble(Time::MIN) -
-                                            Time(the_beacon->initiation_time).ToDouble(Time::MIN);
-                            ld beacon_exp_period = Time(the_beacon->expiration_time).ToDouble(Time::MIN) -
-                                                   Time(the_beacon->initiation_time).ToDouble(Time::MIN);
+                            ld beacon_age = (ld) (now - the_beacon->initiation_time);
+                            ld beacon_exp_period = (ld) (the_beacon->expiration_time - the_beacon->initiation_time);
                             score = std::pow(score, ALPHA * (beacon_age / beacon_exp_period));
                         } else {
-                            ld sent_beacon_time_to_expiration =
-                                (ld)sent_beacons.at(self_egress_if_no).at(the_beacon)
-                                    - Simulator::Now().ToDouble(Time::MIN);
-                            ld current_beacon_time_to_expiration =
-                                    Time(the_beacon->expiration_time).ToDouble(Time::MIN) -
-                                    Simulator::Now().ToDouble(Time::MIN);
+                            ld sent_beacon_time_to_expiration = (ld) (sent_beacons.at(self_egress_if_no).at(the_beacon) - now);
+                            ld current_beacon_time_to_expiration = (ld) (the_beacon->expiration_time - now);
 
                             score = std::pow(score,
                                              ALPHA *
@@ -754,8 +742,8 @@ namespace ns3 {
         }
 
         void DoBeaconing() {
-            now = Simulator::Now().ToInteger(Time::NS);
-            next_period = now + beaconing_period.ToInteger(Time::NS);
+            now = (uint16_t) Simulator::Now().ToInteger(Time::MIN);
+            next_period = now + (uint16_t) beaconing_period.ToInteger(Time::MIN);
 
             bytes_sent_per_interface_per_period.insert(std::make_pair(now, std::vector<uint32_t > (GetNDevices(), 0)));
 
@@ -872,8 +860,8 @@ namespace ns3 {
             beacon *new_beacon = new beacon;
             path *new_path = new path;
             new_beacon->the_path = new_path;
-            new_beacon->bwd_stat = bwd;
-            new_beacon->latency_stat = latency;
+            new_beacon->bwd_stat = (float) bwd;
+            new_beacon->latency_stat = (float) latency;
 
             uint16_t *link_info = new uint16_t[4];
             link_info[0] = as_number;
@@ -881,8 +869,8 @@ namespace ns3 {
             link_info[2] = remote_as_no;
             link_info[3] = remote_ingress_if_no;
 
-            new_beacon->initiation_time = -1;
-            new_beacon->expiration_time = -1;
+            new_beacon->initiation_time = 0;
+            new_beacon->expiration_time = 0;
             new_beacon->key = key;
             new_beacon->is_new = true;
             new_beacon->is_valid = false;
@@ -1063,7 +1051,7 @@ int
 main(int argc, char *argv[]) {
 
     beaconing_period = Time(argv[1]);
-    expiration_period = Time(argv[2]).ToInteger(Time::NS);
+    expiration_period = (uint16_t) Time(argv[2]).ToInteger(Time::MIN);
     std::string file = "./topology/" + std::string(argv[4]) + ".xml";
 
     std::ifstream fin(file.c_str());
@@ -1216,7 +1204,7 @@ main(int argc, char *argv[]) {
                     periods += 1.0;
                     for (uint32_t if_index = 0; if_index < the_node->GetNDevices(); ++if_index) {
                         consumed_bwd += (double_t) the_node->bytes_sent_per_interface_per_period.at(
-                                t.ToInteger(Time::NS)).at(if_index);
+                                (uint16_t) t.ToInteger(Time::MIN)).at(if_index);
                     }
                 }
                 consumed_bwd = (double_t) consumed_bwd /
