@@ -28,7 +28,8 @@
 #define MAX_LAT 1000.0
 #define MAX_BWD 400.0
 #define ALPHA 6.0
-#define BETA 0.98
+#define BETA 3.0
+#define GAMMA 0.98
 #define SCORE_THRESHOLD 0.9
 
 uint16_t inline UPPER_16_BITS (uint64_t input) {
@@ -584,7 +585,7 @@ namespace ns3 {
                                    (non_diversity_coefficient +
                                     remote_as->link_level_diversity_coef);
 
-                        score = BETA * score;
+                        score = GAMMA * score;
 
                         if (this->path_not_sent_before(remote_as_no, self_egress_if_no, the_beacon)) {
                             ld beacon_age = (ld) (now - the_beacon->initiation_time);
@@ -594,7 +595,7 @@ namespace ns3 {
                             ld sent_beacon_time_to_expiration = (ld) (sent_beacons.at(self_egress_if_no)->at(the_beacon) - now);
                             ld current_beacon_time_to_expiration = (ld) (the_beacon->expiration_time - now);
                             score = std::pow(score,
-                                             ALPHA * (sent_beacon_time_to_expiration / current_beacon_time_to_expiration));
+                                             BETA * (sent_beacon_time_to_expiration / current_beacon_time_to_expiration));
                         }
 
                         if (score < SCORE_THRESHOLD) {
@@ -672,7 +673,7 @@ namespace ns3 {
                                    (non_diversity_coefficient +
                                     remote_as->link_level_diversity_coef);
 
-                        score = BETA * score;
+                        score = GAMMA * score;
 
                         if (this->path_not_sent_before(remote_as_no, self_egress_if_no, the_beacon)) {
                             ld beacon_age = (ld) (now - the_beacon->initiation_time);
@@ -683,7 +684,7 @@ namespace ns3 {
                             ld current_beacon_time_to_expiration = (ld) (the_beacon->expiration_time - now);
 
                             score = std::pow(score,
-                                             ALPHA *
+                                             BETA *
                                              (sent_beacon_time_to_expiration / current_beacon_time_to_expiration));
                         }
 
