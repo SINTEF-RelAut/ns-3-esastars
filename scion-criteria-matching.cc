@@ -21,6 +21,7 @@
 #include <iostream>
 #include <unordered_set>
 
+#define NUM_CORE 128
 
 #define FIXED_BEACONS_NUMBER_TO_SEND 5
 #define FIXED_BEACONS_NUMBER_TO_STORE 30
@@ -707,8 +708,8 @@ namespace ns3 {
 
         void DisseminateBeacons() {
             uint32_t neighbors_cnt = neighbors.size();
-            omp_set_num_threads(neighbors_cnt);
-            omp_set_dynamic(1);
+            omp_set_num_threads(NUM_CORE);
+            //omp_set_dynamic(1);
 #pragma omp parallel for
             for (uint32_t i = 0; i < neighbors_cnt; ++i) { // Per destination AS
                 uint16_t remote_as_no = neighbors.at(i);
@@ -743,8 +744,8 @@ namespace ns3 {
 
         void InitiateBeacons() {
             uint32_t neighbors_cnt = neighbors.size();
-            omp_set_num_threads(neighbors_cnt);
-            omp_set_dynamic(1);
+            omp_set_num_threads(NUM_CORE);
+            //omp_set_dynamic(1);
 #pragma omp parallel for
             for (uint32_t i = 0; i < neighbors_cnt; ++i) {
                 uint16_t remote_as_no = neighbors.at(i);
@@ -1058,8 +1059,8 @@ PropertyContainer parseProperties(rapidxml::xml_node<> *node) {
 
 void ProcessReceivedPacketsParallel(NodeContainer nodes) {
     uint32_t node_number = nodes.GetN();
-    omp_set_num_threads(node_number);
-    omp_set_dynamic(1);
+    omp_set_num_threads(NUM_CORE);
+    //omp_set_dynamic(1);
 #pragma omp parallel for
     for (uint32_t i = 0; i < node_number; ++i) {
         DynamicCast<myNode>(nodes.Get(i))->UpdateNodeState();
