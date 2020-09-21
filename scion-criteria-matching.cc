@@ -173,7 +173,7 @@ namespace ns3 {
 
         std::unordered_map<uint16_t, std::unordered_map<uint32_t, uint32_t> > links_jointnesses_on_received_paths;
 
-        std::vector<std::unordered_map<beacon*, uint16_t>* > sent_beacons;
+        std::vector<std::unordered_map<beacon*, std::pair<float, uint16_t> >* > sent_beacons;
         std::unordered_map<uint16_t , std::vector<std::unordered_map<uint32_t, uint32_t>* > > links_jointnesses_on_sent_paths;
 
         // helper structures ********************************************************************************************************
@@ -216,7 +216,7 @@ namespace ns3 {
             sent_beacons.resize(this->GetNDevices());
 
             for (uint32_t i = 0; i < this->GetNDevices(); ++i) {
-                sent_beacons.at(i) = new std::unordered_map<beacon*, uint16_t>();
+                sent_beacons.at(i) = new std::unordered_map<beacon*, std::pair<float, uint16_t> >();
             }
 
 
@@ -306,15 +306,17 @@ namespace ns3 {
             return false;
         }
 
-        void add_to_sent_beacons (uint16_t  remote_as, uint16_t self_egress_if_no, beacon* the_beacon) {
+        void add_to_sent_beacons (uint16_t  remote_as, uint16_t self_egress_if_no, beacon* the_beacon, float raw_score) {
 
-            sent_beacons.at(self_egress_if_no)->insert(std::make_pair(the_beacon, the_beacon->expiration_time));
+            sent_beacons.at(self_egress_if_no)->insert(std::make_pair(the_beacon, std::make_pair(raw_score, the_beacon->expiration_time)));
 
 
         }
 
         void update_sent_beacon_timer (uint16_t  remote_as, uint16_t self_egress_if_no, beacon* the_beacon) {
-            sent_beacons.at(self_egress_if_no)->at(the_beacon) = the_beacon->expiration_time;
+            uint16_t new_exp_time = the_beacon->expiration_time;
+            float diversity_score = sent_beacons.at(self_egress_if_no)->at(the_beacon).first;
+            sent_beacons.at(self_egress_if_no)->at(the_beacon) = std::make_pair(diversity_score, new_exp_time);
         }
 
         void remove_invalid_sent_beacons(beacon* the_beacon, uint16_t dst_as) {
@@ -324,7 +326,7 @@ namespace ns3 {
                     continue;
                 }
 
-                if (sent_beacons.at(i)->at(the_beacon) <=  next_period + 120) {
+                if (sent_beacons.at(i)->at(the_beacon).second <=  next_period) {
                     sent_beacons.at(i)->erase(the_beacon);
                     this->dec_links_jointnesses_on_sent_paths(the_beacon, dst_as, remote_as_no, i);
                 }
@@ -534,7 +536,9 @@ namespace ns3 {
         select_beacons_to_disseminate_per_dst_per_nbr(uint16_t remote_as_no, uint16_t dst_as_no, const beacons_with_same_dst_as& beacons_to_the_dst_as) {
             std::multimap<ld, std::tuple<beacon*, uint16_t, uint16_t, Ptr<myNode>, ld , ld> > score_map_to_beacon_and_metadata;
             std::map<std::pair<beacon*, uint16_t>, std::pair<ld, ld> > valid_candidates;
+
             ld  max_score = 0.0;
+            ld  max_score_raw_score = 0.0;
             beacon* max_score_beacon = NULL;
             uint16_t max_score_iface = 0;
 
@@ -546,15 +550,9 @@ namespace ns3 {
             Ptr<PointToPointNetDevice> remote_device = channel->GetDestination(wire);
             Ptr<myNode> remote_as = (DynamicCast<myNode>(remote_device->GetNode()));
 
-            ld non_diversity_coefficient = remote_as->latency_coef + remote_as->bandwidth_coef;
-
             for (auto const &sender_as_beacons_pair : beacons_to_the_dst_as) {
                 for (auto const &the_beacon : sender_as_beacons_pair.second) {
                     if (!the_beacon->is_valid) {
-                        continue;
-                    }
-
-                    if (the_beacon->expiration_time <= now + 120) {
                         continue;
                     }
 
@@ -571,37 +569,39 @@ namespace ns3 {
                     }
 
                     for (auto const &self_egress_if_no : interfaces_per_neighbor_as.at(remote_as_no)) {
-                        ld latency = the_beacon->latency_stat +
-                                     intra_as_latencies.at(LOWER_16_BITS(the_beacon->the_path.back())).at(self_egress_if_no);
-                        ld bwd = the_beacon->bwd_stat > (ld) inter_as_bwds.at(self_egress_if_no)
-                                 ? (ld) inter_as_bwds.at(self_egress_if_no)
-                                 : the_beacon->bwd_stat;
-                        ld non_diversity_raw_score = (1 - latency / MAX_LAT) * remote_as->latency_coef +
-                                                     (bwd / MAX_BWD) * remote_as->bandwidth_coef;
-
-
-                        ld link_diversity_score = this->calculate_link_diversity_score_for_dissemination(
-                                remote_as_no, dst_as_no, self_egress_if_no, the_beacon);
-
-                        ld score = (
-                                           non_diversity_raw_score
-                                           +
-                                           link_diversity_score * remote_as->link_level_diversity_coef
-                                   )
-                                   /
-                                   (non_diversity_coefficient +
-                                    remote_as->link_level_diversity_coef);
-
-                        score = GAMMA * score;
+                        ld raw_score = 0.0;
+                        ld score = 0.0;
 
                         if (this->path_not_sent_before(remote_as_no, self_egress_if_no, the_beacon)) {
+                            ld latency = the_beacon->latency_stat +
+                                         intra_as_latencies.at(LOWER_16_BITS(the_beacon->the_path.back())).at(self_egress_if_no);
+                            ld bwd = the_beacon->bwd_stat > (ld) inter_as_bwds.at(self_egress_if_no)
+                                     ? (ld) inter_as_bwds.at(self_egress_if_no)
+                                     : the_beacon->bwd_stat;
+
+
+                            ld link_diversity_score = this->calculate_link_diversity_score_for_dissemination(
+                                    remote_as_no, dst_as_no, self_egress_if_no, the_beacon);
+
+                            raw_score = (
+                                        (1 - latency / MAX_LAT) * remote_as->latency_coef +
+                                        (bwd / MAX_BWD) * remote_as->bandwidth_coef +
+                                        link_diversity_score * remote_as->link_level_diversity_coef
+                                       )
+                                       /
+                                       (remote_as->latency_coef + remote_as->bandwidth_coef +
+                                        remote_as->link_level_diversity_coef);
+
+                            raw_score = GAMMA * raw_score;
+
                             ld beacon_age = (ld) (now - the_beacon->initiation_time);
                             ld beacon_exp_period = (ld) (the_beacon->expiration_time - the_beacon->initiation_time);
-                            score = std::pow(score, ALPHA * (beacon_age / beacon_exp_period));
+                            score = std::pow(raw_score, ALPHA * (beacon_age / beacon_exp_period));
                         } else {
-                            ld sent_beacon_time_to_expiration = (ld) (sent_beacons.at(self_egress_if_no)->at(the_beacon) - now);
+                            raw_score = sent_beacons.at(self_egress_if_no)->at(the_beacon).first;
+                            ld sent_beacon_time_to_expiration = (ld) (sent_beacons.at(self_egress_if_no)->at(the_beacon).second - now);
                             ld current_beacon_time_to_expiration = (ld) (the_beacon->expiration_time - now);
-                            score = std::pow(score,
+                            score = std::pow(raw_score,
                                              BETA * (sent_beacon_time_to_expiration / current_beacon_time_to_expiration));
                         }
 
@@ -610,12 +610,14 @@ namespace ns3 {
                         }
 
                         if (score > max_score) {
+                            max_score = score;
+                            max_score_raw_score = raw_score;
                             max_score_beacon = the_beacon;
                             max_score_iface = self_egress_if_no;
                         }
 
                         valid_candidates.insert(std::make_pair(std::make_pair(the_beacon, self_egress_if_no),
-                                                               std::make_pair(non_diversity_raw_score, score)));
+                                                               std::make_pair(raw_score, score)));
                     }
                 }
             }
@@ -647,7 +649,7 @@ namespace ns3 {
 
                     if (this->path_not_sent_before(remote_as_no, max_score_iface, max_score_beacon)) {
                         counters_changed = true;
-                        this->add_to_sent_beacons(remote_as_no, max_score_iface, max_score_beacon);
+                        this->add_to_sent_beacons(remote_as_no, max_score_iface, max_score_beacon, (float) max_score_raw_score);
                         this->inc_links_jointness_on_sent_paths(dst_as_no, remote_as_no, max_score_iface, max_score_beacon);
                     } else {
                         counters_changed = false;
@@ -656,46 +658,48 @@ namespace ns3 {
                 }
 
                 max_score = 0.0;
+                max_score_raw_score = 0.0;
                 max_score_beacon = NULL;
                 max_score_iface = 0;
 
                 for (auto const &candidate : valid_candidates) {
                     beacon *the_beacon = candidate.first.first;
                     uint16_t self_egress_if_no = candidate.first.second;
-                    ld non_diversity_raw_score = candidate.second.first;
                     ld score = 0.0;
+                    ld raw_score = 0.0;
 
-                    if (!counters_changed) {
+                    if (!counters_changed || !this->path_not_sent_before(remote_as_no, self_egress_if_no, the_beacon)) {
+                        raw_score = candidate.second.first;
                         score = candidate.second.second;
                     } else {
+                        ld latency = the_beacon->latency_stat +
+                                     intra_as_latencies.at(LOWER_16_BITS(the_beacon->the_path.back())).at(
+                                             self_egress_if_no);
+                        ld bwd = the_beacon->bwd_stat > (ld) inter_as_bwds.at(self_egress_if_no)
+                                 ? (ld) inter_as_bwds.at(self_egress_if_no)
+                                 : the_beacon->bwd_stat;
+
                         ld link_diversity_score = this->calculate_link_diversity_score_for_dissemination(
                                 remote_as_no, dst_as_no, self_egress_if_no, the_beacon);
 
-                        score = (
-                                           non_diversity_raw_score
-                                           +
-                                           link_diversity_score * remote_as->link_level_diversity_coef
-                                   )
-                                   /
-                                   (non_diversity_coefficient +
-                                    remote_as->link_level_diversity_coef);
+                        raw_score = (
+                                            (1 - latency / MAX_LAT) * remote_as->latency_coef +
+                                            (bwd / MAX_BWD) * remote_as->bandwidth_coef +
+                                            link_diversity_score * remote_as->link_level_diversity_coef
+                                    )
+                                    /
+                                    (remote_as->latency_coef + remote_as->bandwidth_coef +
+                                     remote_as->link_level_diversity_coef);
 
-                        score = GAMMA * score;
+                        raw_score = GAMMA * raw_score;
 
-                        if (this->path_not_sent_before(remote_as_no, self_egress_if_no, the_beacon)) {
-                            ld beacon_age = (ld) (now - the_beacon->initiation_time);
-                            ld beacon_exp_period = (ld) (the_beacon->expiration_time - the_beacon->initiation_time);
-                            score = std::pow(score, ALPHA * (beacon_age / beacon_exp_period));
-                        } else {
-                            ld sent_beacon_time_to_expiration = (ld) (sent_beacons.at(self_egress_if_no)->at(the_beacon) - now);
-                            ld current_beacon_time_to_expiration = (ld) (the_beacon->expiration_time - now);
+                        ld beacon_age = (ld) (now - the_beacon->initiation_time);
+                        ld beacon_exp_period = (ld) (the_beacon->expiration_time - the_beacon->initiation_time);
+                        score = std::pow(raw_score, ALPHA * (beacon_age / beacon_exp_period));
 
-                            score = std::pow(score,
-                                             BETA *
-                                             (sent_beacon_time_to_expiration / current_beacon_time_to_expiration));
-                        }
 
-                        valid_candidates.at(std::make_pair(the_beacon, self_egress_if_no)) = std::make_pair(non_diversity_raw_score, score);
+                        valid_candidates.at(std::make_pair(the_beacon, self_egress_if_no)) = std::make_pair(raw_score,
+                                                                                                            score);
                     }
 
                     if (score < SCORE_THRESHOLD) {
@@ -703,6 +707,8 @@ namespace ns3 {
                     }
 
                     if (score > max_score) {
+                        max_score = score;
+                        max_score_raw_score = raw_score;
                         max_score_beacon = the_beacon;
                         max_score_iface = self_egress_if_no;
                     }
@@ -794,12 +800,12 @@ namespace ns3 {
                 bytes_sent_per_interface_per_period.at(now).at(self_egress_if_no) += (70 + 330);
                 dst_as = as_number;
             } else {
-                if (old_beacon->expiration_time <= now + 120) {
-                    return;
-                }
                 bytes_sent_per_interface_per_period.at(now).at(self_egress_if_no) += (70 + 330 + 330 * old_beacon->the_path.size());
                 dst_as = UPPER_16_BITS(old_beacon->the_path.at(0));
                 key = old_beacon->key;
+                if (old_beacon->expiration_time <= now + 120) {
+                    return;
+                }
             }
 
             key = key + std::string((char *) &as_number, 2) + std::string((char *) &self_egress_if_no, 2);
