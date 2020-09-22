@@ -24,7 +24,7 @@
 #define NUM_CORE 128
 
 #define FIXED_BEACONS_NUMBER_TO_SEND 5
-#define FIXED_BEACONS_NUMBER_TO_STORE 50
+#define FIXED_BEACONS_NUMBER_TO_STORE 60
 #define MAX_ACCEPTABLE_JOINTNESS 2.0
 #define MAX_LAT 1000.0
 #define MAX_BWD 400.0
@@ -1080,6 +1080,13 @@ void ProcessReceivedPacketsParallel(NodeContainer nodes) {
     for (uint32_t i = 0; i < node_number; ++i) {
         DynamicCast<myNode>(nodes.Get(i))->UpdateNodeState();
     }
+
+    uint32_t all_connected_pairs = 0;
+    for (uint32_t i = 0; i < node_number; ++i) {
+        all_connected_pairs += DynamicCast<myNode>(nodes.Get(i))->valid_beacons_count_per_dst_as.size();
+    }
+    std::cout << all_connected_pairs << std::endl;
+
 }
 
 int
