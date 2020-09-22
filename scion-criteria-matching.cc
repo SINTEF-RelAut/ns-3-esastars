@@ -24,13 +24,13 @@
 #define NUM_CORE 128
 
 #define FIXED_BEACONS_NUMBER_TO_SEND 5
-#define FIXED_BEACONS_NUMBER_TO_STORE 30
-#define MAX_ACCEPTABLE_JOINTNESS 3.0
+#define FIXED_BEACONS_NUMBER_TO_STORE 50
+#define MAX_ACCEPTABLE_JOINTNESS 2.0
 #define MAX_LAT 1000.0
 #define MAX_BWD 400.0
 #define ALPHA 6.0
-#define BETA 3.0
-#define GAMMA 0.98
+#define BETA 5.0
+#define GAMMA 0.95
 #define SCORE_THRESHOLD 0.9
 
 uint16_t inline UPPER_16_BITS (uint64_t input) {
@@ -520,11 +520,11 @@ namespace ns3 {
                         next_round_valid_beacons_count_per_dst_as.at(dst_as)--;
                     }
 
-                } else if (the_beacon->expiration_time > now + 120 && the_beacon->expiration_time <= next_period + 120 && the_beacon->is_valid) {
-                    if (next_round_valid_beacons_count_per_dst_as.find(dst_as) != next_round_valid_beacons_count_per_dst_as.end()) {
-                        next_round_valid_beacons_count_per_dst_as.at(dst_as)--;
-                    }
-                }
+                }// else if (the_beacon->expiration_time > now + 120 && the_beacon->expiration_time <= next_period + 120 && the_beacon->is_valid) {
+                   // if (next_round_valid_beacons_count_per_dst_as.find(dst_as) != next_round_valid_beacons_count_per_dst_as.end()) {
+                     //   next_round_valid_beacons_count_per_dst_as.at(dst_as)--;
+                    //}
+                //}
             }
 
             //std::cout << as_number << "\t" <<valid_beacons_count_per_dst_as.size() << std::endl; // Print number of source ASes
@@ -803,9 +803,9 @@ namespace ns3 {
                 bytes_sent_per_interface_per_period.at(now).at(self_egress_if_no) += (70 + 330 + 330 * old_beacon->the_path.size());
                 dst_as = UPPER_16_BITS(old_beacon->the_path.at(0));
                 key = old_beacon->key;
-                if (old_beacon->expiration_time <= now + 120) {
-                    return;
-                }
+                //if (old_beacon->expiration_time <= now + 120) {
+                //    return;
+                //}
             }
 
             key = key + std::string((char *) &as_number, 2) + std::string((char *) &self_egress_if_no, 2);
@@ -819,7 +819,7 @@ namespace ns3 {
                     remote_as->path_map_to_beacon.at(key)->next_expiration_time = old_beacon->expiration_time;
                 }
                 remote_as->path_map_to_beacon.at(key)->is_new = true;
-                if (!remote_as->path_map_to_beacon.at(key)->is_valid || remote_as->path_map_to_beacon.at(key)->expiration_time <= now + 120) {
+                if (!remote_as->path_map_to_beacon.at(key)->is_valid /*|| remote_as->path_map_to_beacon.at(key)->expiration_time <= now + 120*/) {
 //                    remote_as->inc_links_jointnesses_on_received_paths(remote_as->path_map_to_beacon.at(key), dst_as);
                     remote_as->next_round_valid_beacons_count_per_dst_as.at(dst_as)++;
                 }
@@ -1094,7 +1094,7 @@ main(int argc, char *argv[]) {
     sstr << fin.rdbuf();
 
     std::string out_path =
-            "./results/criteria-matching_" + std::string(argv[4]) + "_" +
+            "/cluster/scratch/tabaeias/criteria-matching_" + std::string(argv[4]) + "_" +
             std::string(argv[1]) + "_" + std::string(argv[2]) + "_" + std::string(argv[3]) + ".txt";
     std::ofstream out(out_path);
     std::cout.rdbuf(out.rdbuf());
