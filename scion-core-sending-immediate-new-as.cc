@@ -834,7 +834,7 @@ main(int argc, char *argv[]) {
                 uint64_t number_of_paths_with_certain_length;
                 try {
                     number_of_paths_with_certain_length = src_as_beacons_pair.second->at(path_length)->size();
-                } catch (std::out_of_range) {
+                } catch (const std::out_of_range &) {
                     continue;
                 }
 

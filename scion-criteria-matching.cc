@@ -344,7 +344,7 @@ namespace ns3 {
                             the_beacon->is_valid = true;
                             try {
                                 valid_beacons_count_per_dst_as.at(dst_as)++;
-                            } catch (std::out_of_range) {
+                            } catch (const std::out_of_range &) {
                                 valid_beacons_count_per_dst_as.insert(std::make_pair(dst_as, 1));
                             }
                         }
