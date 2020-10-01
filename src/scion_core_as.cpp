@@ -11,6 +11,8 @@
 #include "../headers/scion_core_as.h"
 #include "../headers/beaconing_strategy.h"
 
+namespace ns3 {
+
 /**
  * Updates the simulator time & allocates memory for the statistics of this beaconing period,
  * queries which interfaces are valid for core beaconing (only core links) and initiates beacon dissemination
@@ -20,11 +22,12 @@
  * @see DisseminateBeacons
  * @see InitiateBeacons
  */
-void SCION_Core_As::CoreBeaconing(){
-    UpdateTimeAndStats();
-    std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces_per_as = GetValidInterfaces(neighbour_relation::CORE);
-    this->strategy->DisseminateBeacons(valid_interfaces_per_as, this);
-    this->strategy->InitiateBeacons(valid_interfaces_per_as, this);
+void
+SCION_Core_As::CoreBeaconing ()
+{
+    UpdateTimeAndStats ();
+    this->strategy->DisseminateBeacons (neighbour_relation::CORE, this);
+    this->strategy->InitiateBeacons (neighbour_relation::CORE, this);
 }
 
 /**
@@ -34,10 +37,11 @@ void SCION_Core_As::CoreBeaconing(){
  * @see UpdateTimeAndStats
  * @see InitiateBeacons
  */
-void SCION_Core_As::IntraISDBeaconing() {
-    UpdateTimeAndStats();
-    std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces_per_as = GetValidInterfaces(neighbour_relation::CUSTOMER);
-    this->strategy->InitiateBeacons(valid_interfaces_per_as, this);
+void
+SCION_Core_As::IntraISDBeaconing ()
+{
+    UpdateTimeAndStats ();
+    this->strategy->InitiateBeacons (neighbour_relation::CUSTOMER, this);
     // Core ASes never dissiminate intra_ISD beacons
 }
 
@@ -47,7 +51,11 @@ void SCION_Core_As::IntraISDBeaconing() {
  * @param ingress_if The ingress interface over which the beacon was received.
  * @param the_beacon The immediate beacon
  */
-void SCION_Core_As::ProcessReceivedBeacons(uint16_t beacon_origin_as_no, uint16_t ingress_if, beacon* the_beacon){
-    std::unordered_map<uint16_t, std::vector<uint16_t>> valid_interfaces = this->GetValidInterfaces(neighbour_relation::CORE);
-    this->strategy->processImmediateReceive(beacon_origin_as_no, ingress_if, the_beacon, valid_interfaces, this);
+void
+SCION_Core_As::ProcessReceivedBeacons (uint16_t beacon_origin_as_no, uint16_t ingress_if,
+                                       beacon *the_beacon)
+{
+    this->strategy->processImmediateReceive (beacon_origin_as_no, ingress_if, the_beacon,
+                                             neighbour_relation::CORE, this);
+}
 }

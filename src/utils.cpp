@@ -21,24 +21,35 @@
  * @param beacon2 A beacon containing a path.
  * @return The link-level jaccard distance between the two paths.
  */
-ld link_level_jaccard_distance_between_two_paths(beacon *beacon1, beacon *beacon2) {
+ namespace ns3 {
+ld
+link_level_jaccard_distance_between_two_paths (beacon *beacon1, beacon *beacon2)
+{
     std::set<uint32_t> set_of_links_on_path1;
     int32_t intersection = 0;
 
-    for (auto const &link_info : *beacon1->the_path) {
-        set_of_links_on_path1.insert(((uint32_t) link_info[0]) << 16 | (uint32_t) link_info[1]);
-    }
-
-    for (auto const &link_info : *beacon2->the_path) {
-        if (set_of_links_on_path1.find(((uint32_t) link_info[0]) << 16 | (uint32_t) link_info[1]) !=
-            set_of_links_on_path1.end()) {
-            intersection++;
-        } else {
-            set_of_links_on_path1.insert(((uint32_t) link_info[0]) << 16 | (uint32_t) link_info[1]);
+    for (auto const &link_info : *beacon1->the_path)
+        {
+            set_of_links_on_path1.insert (((uint32_t) link_info[0]) << 16 |
+                                          (uint32_t) link_info[1]);
         }
-    }
 
-    return 1 - 1.0 * intersection / set_of_links_on_path1.size();
+    for (auto const &link_info : *beacon2->the_path)
+        {
+            if (set_of_links_on_path1.find (((uint32_t) link_info[0]) << 16 |
+                                            (uint32_t) link_info[1]) !=
+                set_of_links_on_path1.end ())
+                {
+                    intersection++;
+                }
+            else
+                {
+                    set_of_links_on_path1.insert (((uint32_t) link_info[0]) << 16 |
+                                                  (uint32_t) link_info[1]);
+                }
+        }
+
+    return 1 - 1.0 * intersection / set_of_links_on_path1.size ();
 }
 
 /**
@@ -50,23 +61,30 @@ ld link_level_jaccard_distance_between_two_paths(beacon *beacon1, beacon *beacon
  * @param beacon2 A beacon containing a path.
  * @return The AS-level jaccard distance between the two paths.
  */
-ld AS_level_jaccard_distance_between_two_paths(beacon *beacon1, beacon *beacon2) {
+ld
+AS_level_jaccard_distance_between_two_paths (beacon *beacon1, beacon *beacon2)
+{
     std::set<uint16_t> set_of_ASes_on_path1;
     int32_t intersection = 0;
 
-    for (auto const &link_info : *beacon1->the_path) {
-        set_of_ASes_on_path1.insert(link_info[0]);
-    }
-
-    for (auto const &link_info : *beacon2->the_path) {
-        if (set_of_ASes_on_path1.find(link_info[0]) != set_of_ASes_on_path1.end()) {
-            intersection++;
-        } else {
-            set_of_ASes_on_path1.insert(link_info[0]);
+    for (auto const &link_info : *beacon1->the_path)
+        {
+            set_of_ASes_on_path1.insert (link_info[0]);
         }
-    }
 
-    return 1 - 1.0 * intersection / set_of_ASes_on_path1.size();
+    for (auto const &link_info : *beacon2->the_path)
+        {
+            if (set_of_ASes_on_path1.find (link_info[0]) != set_of_ASes_on_path1.end ())
+                {
+                    intersection++;
+                }
+            else
+                {
+                    set_of_ASes_on_path1.insert (link_info[0]);
+                }
+        }
+
+    return 1 - 1.0 * intersection / set_of_ASes_on_path1.size ();
 }
 
 /**
@@ -78,7 +96,9 @@ ld AS_level_jaccard_distance_between_two_paths(beacon *beacon1, beacon *beacon2)
  * @param long2_deg Longitude of second router.
  * @return An estimated latency between the two routers.
  */
-ld calculate_great_circle_latency(ld lat1_deg, ld long1_deg, ld lat2_deg, ld long2_deg) {
+ld
+calculate_great_circle_latency (ld lat1_deg, ld long1_deg, ld lat2_deg, ld long2_deg)
+{
     ld lat1 = lat1_deg * (M_PI) / 180;
     ld long1 = long1_deg * (M_PI) / 180;
     ld lat2 = lat2_deg * (M_PI) / 180;
@@ -88,7 +108,9 @@ ld calculate_great_circle_latency(ld lat1_deg, ld long1_deg, ld lat2_deg, ld lon
     ld dlong = long2 - long1;
     ld dlat = lat2 - lat1;
 
-    ld distance = 6371 * 2 * asin(sqrt(pow(sin(dlat / 2), 2) + cos(lat1) * cos(lat2) * pow(sin(dlong / 2), 2)));
+    ld distance =
+        6371 * 2 *
+        asin (sqrt (pow (sin (dlat / 2), 2) + cos (lat1) * cos (lat2) * pow (sin (dlong / 2), 2)));
 
     // 0.005 millisecods of latency per kilometer
     ld latency = distance * 0.005;
@@ -101,35 +123,43 @@ ld calculate_great_circle_latency(ld lat1_deg, ld long1_deg, ld lat2_deg, ld lon
  * @param name The attribute name.
  * @return The associated value or an empty string if not found.
  */
-std::string getAttribute(rapidxml::xml_node<> *node, const std::string &name) {
-    rapidxml::xml_attribute<> *attr = node->first_attribute(name.c_str());
-    if (attr) {
-        return attr->value();
-    } else {
-        return std::string();
-    }
+std::string
+getAttribute (rapidxml::xml_node<> *node, const std::string &name)
+{
+    rapidxml::xml_attribute<> *attr = node->first_attribute (name.c_str ());
+    if (attr)
+        {
+            return attr->value ();
+        }
+    else
+        {
+            return std::string ();
+        }
 }
 
 /**
  * @param name Defines the property we want to get.
  * @return The associated value to name. Aborts the Program if not found.
  */
-std::string PropertyContainer::getProperty(const std::string &name) const {
+std::string
+PropertyContainer::getProperty (const std::string &name) const
+{
     propertiesType::const_iterator it;
-    it = this->properties.find(name);
+    it = this->properties.find (name);
 
-    if (it != this->properties.end())
+    if (it != this->properties.end ())
         return it->second;
     else
-        exit(1);
-
+        exit (1);
 }
 
 /**
  * @param name Defines the property.
  * @param value The value to set this property to.
  */
-void PropertyContainer::setProperty(const std::string &name, const std::string &value) {
+void
+PropertyContainer::setProperty (const std::string &name, const std::string &value)
+{
     this->properties[name] = value;
 }
 
@@ -137,31 +167,40 @@ void PropertyContainer::setProperty(const std::string &name, const std::string &
  * @param name Defines the property.
  * @return True if the property exists, false otherwise.
  */
-bool PropertyContainer::hasProperty(const std::string &name) const {
-    propertiesType::const_iterator it = this->properties.find(name);
+bool
+PropertyContainer::hasProperty (const std::string &name) const
+{
+    propertiesType::const_iterator it = this->properties.find (name);
 
-    if (it == this->properties.end()) {
-        return false;
-    } else {
-        return true;
-    }
+    if (it == this->properties.end ())
+        {
+            return false;
+        }
+    else
+        {
+            return true;
+        }
 }
 
 /**
  * @param node The root of the xml-tree you would like to traverse.
  * @return A property container containing all the node attributes in the tree.
  */
-PropertyContainer parseProperties(rapidxml::xml_node<> *node) {
+PropertyContainer
+parseProperties (rapidxml::xml_node<> *node)
+{
     PropertyContainer p;
-    rapidxml::xml_node<> *curNode = node->first_node("property");
+    rapidxml::xml_node<> *curNode = node->first_node ("property");
 
-    while (curNode) {
-        std::string name = getAttribute(curNode, "name");
-        if (name != "") {
-            p.setProperty(name, curNode->value());
+    while (curNode)
+        {
+            std::string name = getAttribute (curNode, "name");
+            if (name != "")
+                {
+                    p.setProperty (name, curNode->value ());
+                }
+            curNode = curNode->next_sibling ("property");
         }
-        curNode = curNode->next_sibling("property");
-    }
 
     return p;
 }
@@ -171,14 +210,18 @@ PropertyContainer parseProperties(rapidxml::xml_node<> *node) {
 /**
  * @param node The node whose bandwidth stats you want to print.
  */
-void print_consumed_bw_structure(SCION_Node* node){
-    for(auto const &el: node->bytes_sent_per_interface_per_period){
-        auto vector = el.second;
-        std::cerr << "\nNode: " << node->as_number << " at time 0."<<std::endl;
-        for(auto element: vector) {
-            std::cerr << element << " ";
+void
+print_consumed_bw_structure (SCION_Node *node)
+{
+    for (auto const &el : node->bytes_sent_per_interface_per_period)
+        {
+            auto vector = el.second;
+            std::cerr << "\nNode: " << node->as_number << " at time 0." << std::endl;
+            for (auto element : vector)
+                {
+                    std::cerr << element << " ";
+                }
         }
-    }
 }
 
 /**
@@ -186,14 +229,19 @@ void print_consumed_bw_structure(SCION_Node* node){
  * @param valid_intfs The valid interfaces returned by calling SCION_Node.GetValidInterfaces.
  * @see SCION_Node.GetValidInterfaces
  */
-void print_valid_intfs(SCION_Node* node, std::unordered_map<uint16_t, std::vector<uint16_t>> valid_intfs){
+void
+print_valid_intfs (SCION_Node *node,
+                   std::unordered_map<uint16_t, std::vector<uint16_t>> valid_intfs)
+{
     std::cerr << "\n\nNode: " << node->as_number << " Works on the interfaces: " << std::endl;
-    for(auto &[as_no, interface_rel_pairs]:valid_intfs){
-        std::cerr << as_no << ": ";
-        for(auto &intf_no: interface_rel_pairs){
-            std::cerr << "[" << intf_no << "], ";
+    for (auto &[as_no, interface_rel_pairs] : valid_intfs)
+        {
+            std::cerr << as_no << ": ";
+            for (auto &intf_no : interface_rel_pairs)
+                {
+                    std::cerr << "[" << intf_no << "], ";
+                }
         }
-    }
     std::cerr << std::endl;
 }
 
@@ -201,80 +249,106 @@ void print_valid_intfs(SCION_Node* node, std::unordered_map<uint16_t, std::vecto
  * @param node The node holding the beacon_store to be printed.
  * @param out Where to print the beacon store. 
  */
-void print_beacon_store(SCION_Node* node, std::ofstream& out){
+void
+print_beacon_store (SCION_Node *node, std::ofstream &out)
+{
     const std::string first_lvl_offset = "\t";
     const std::string second_lvl_offset = "\t\t";
     const std::string third_lvl_offset = "\t\t\t";
     out << "From: " << node->as_number << std::endl;
-    for(auto const [dst_as_no, equal_as_beacons]:node->beacon_store){
-        out << first_lvl_offset << "To: " << dst_as_no << std::endl;
-        for(auto const [length, beacons]: *equal_as_beacons){
-            out << second_lvl_offset << length << ":" <<std::endl;
-            for(auto const beacon: *beacons){
-                out << third_lvl_offset;
-                for(auto const path:*beacon->the_path){
-                    out  << "->" << path[0] << ":" << path[1] << "]->[" << path[2] << ":" << path[3];
+    for (auto const [dst_as_no, equal_as_beacons] : node->beacon_store)
+        {
+            out << first_lvl_offset << "To: " << dst_as_no << std::endl;
+            for (auto const [length, beacons] : *equal_as_beacons)
+                {
+                    out << second_lvl_offset << length << ":" << std::endl;
+                    for (auto const beacon : *beacons)
+                        {
+                            out << third_lvl_offset;
+                            for (auto const path : *beacon->the_path)
+                                {
+                                    out << "->" << path[0] << ":" << path[1] << "]->[" << path[2]
+                                        << ":" << path[3];
+                                }
+                            out << std::endl;
+                        }
                 }
-                out << std::endl;
-            }
         }
-    }
 }
-
 
 /**
  * @param node The node who owns the counters.
  * @param counter The counter structure you want to print.
  */
-void print_valid_beacon_counter(SCION_Node* node, std::unordered_map<uint16_t, uint64_t> counter){
+void
+print_valid_beacon_counter (SCION_Node *node, std::unordered_map<uint16_t, uint64_t> counter)
+{
     std::cerr << "On Node: " << node->as_number << std::endl;
     std::cerr << "Src_AS:Count\n";
-    for (auto [src_as, count]:counter){
-        std::cerr << src_as << ":" << count << std::endl;
-    }
+    for (auto [src_as, count] : counter)
+        {
+            std::cerr << src_as << ":" << count << std::endl;
+        }
 }
 
 /**
  * @param ASes The AS mapping to print
  */
-void print_as_mappings(std::map<int32_t, uint16_t> ASes){
+void
+print_as_mappings (std::map<int32_t, uint16_t> ASes)
+{
     std::cerr << std::endl;
-    for(auto[AS_no, src_as]:ASes){
-        std::cerr << AS_no << ":" << src_as << std::endl;
-    }
+    for (auto [AS_no, src_as] : ASes)
+        {
+            std::cerr << AS_no << ":" << src_as << std::endl;
+        }
 }
 /**
  *
  * @param beacon The beacon to be checked for loops
  */
-bool has_loop(beacon* beacon){
- std::vector<uint8_t> AS_nrs = std::vector<uint8_t>();
- for (auto const &link_info : *beacon->the_path){
-     auto as_no = link_info[0];
-     for(auto as: AS_nrs){
-         if(as == as_no) return true;
-         else AS_nrs.push_back(as_no);
-     }
- }
- return false;
+bool
+has_loop (beacon *beacon)
+{
+    std::vector<uint8_t> AS_nrs = std::vector<uint8_t> ();
+    for (auto const &link_info : *beacon->the_path)
+        {
+            auto as_no = link_info[0];
+            for (auto as : AS_nrs)
+                {
+                    if (as == as_no)
+                        return true;
+                    else
+                        AS_nrs.push_back (as_no);
+                }
+        }
+    return false;
 }
 
 /**
  * @param node The node whose beacon store you want to analyze.
  */
-void print_number_of_valid_beacon_entries_in_beacon_store(SCION_Node* node){
+void
+print_number_of_valid_beacon_entries_in_beacon_store (SCION_Node *node)
+{
     std::cerr << "Beacon Store on Node: " << node->as_number << std::endl;
-    for(auto [src_as, beacons]:node->beacon_store){
-        int count = 0;
-        for(auto [length, b_set]:*beacons){
-            std::cout << length;
-            for(auto b:*b_set){
-                if(b->is_valid){
-                    count++;
+    for (auto [src_as, beacons] : node->beacon_store)
+        {
+            int count = 0;
+            for (auto [length, b_set] : *beacons)
+                {
+                    std::cout << length;
+                    for (auto b : *b_set)
+                        {
+                            if (b->is_valid)
+                                {
+                                    count++;
+                                }
+                        }
                 }
-            }
+            std::cerr << "\t" << src_as << ":" << count << std::endl;
         }
-        std::cerr << "\t" << src_as << ":" << count << std::endl;
-    }
     std::cerr << std::endl;
+}
+
 }

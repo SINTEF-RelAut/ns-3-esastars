@@ -12,6 +12,8 @@
 #include "ns3/point-to-point-net-device.h"
 #include "ns3/point-to-point-channel.h"
 
+namespace ns3 {
+
 /**
  * Iterates over all the beacons for all the neighbours of the node. If the beacon is valid, its dissemination towards
  * this neighbour does not create a loop in the path and the neighbour is not the same AS which originated the beacon
@@ -22,50 +24,89 @@
  * @param valid_interfaces The interfaces along which to disseminate beacons for this type of node.
  * @param node The node which is disseminating beacons.
  */
-void Baseline::DisseminateBeacons(const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, SCION_Node* node){
-    #pragma omp parallel for
-    for (uint32_t i = 0; i < node->neighbors.size(); ++i){
-        uint16_t &remote_as_no = node->neighbors.at(i);
-        const std::vector<uint16_t> &interfaces = valid_interfaces.at(remote_as_no);
-        for (auto const &[beacon_origin_as_no, equal_src_as_beacons]: node->beacon_store){
-            int16_t  sent_count = 0;
+void
+Baseline::DisseminateBeacons (SCION_Node::neighbour_relation relation,
+                              Ptr<SCION_Node> node)
+{
+#pragma omp parallel for
+    for (uint32_t i = 0; i < node->neighbors.size (); ++i)
+    {
+        if (node->neighbors.at(i).second != relation) {
+            continue;
+        }
+        uint16_t &remote_as_no = node->neighbors.at(i).first;
+        const std::vector<uint16_t> &interfaces = node->interfaces_per_neighbor_as.at(remote_as_no);
+        for (auto const &[dst_as_no, equal_dst_as_beacons] : node->beacon_store)
+        {
+            int16_t sent_count = 0;
 
-            if (remote_as_no == beacon_origin_as_no) {
+            if (remote_as_no == dst_as_no)
+            {
                 continue;
             }
 
-            for (auto const &len_beacons_pair : *equal_src_as_beacons) { // for each length
-                if (sent_count >= FIXED_BEACONS_NUMBER_TO_SEND) {
+            for (auto const &len_beacons_pair : equal_dst_as_beacons)
+            { // for each length
+                if (sent_count >= FIXED_BEACONS_NUMBER_TO_SEND)
+                {
                     break;
                 }
 
-                for (auto const &the_beacon : *len_beacons_pair.second) {
-                    if (sent_count >= FIXED_BEACONS_NUMBER_TO_SEND){
+                for (auto const &the_beacon : len_beacons_pair.second)
+                {
+                    if (sent_count >= FIXED_BEACONS_NUMBER_TO_SEND)
+                    {
                         break;
                     }
 
-                    if (!the_beacon->is_valid || GeneratesLoop(the_beacon, remote_as_no)) {
+                    if (!the_beacon->is_valid) {
                         continue;
                     }
 
+                    bool generates_loop = false;
+                    for (auto const &link_info : the_beacon->the_path) { // remove loops
+                        if (UPPER_16_BITS(link_info) == remote_as_no) {
+                            generates_loop = true;
+                            break;
+                        }
+                    }
+
+                    if (generates_loop) {
+                        continue;
+                    }
+
+
                     sent_count++;
-                    
+
                     // Iterate over all the valid interfaces of this remote AS and send the beacons
-                    for (auto const &egress_interface_no: interfaces){
-                        ns3::Ptr<ns3::PointToPointNetDevice> self_egress_device = ns3::DynamicCast<ns3::PointToPointNetDevice>(node->GetDevice(egress_interface_no));
+                    for (auto const &egress_interface_no : interfaces)
+                    {
+                        ns3::Ptr<ns3::PointToPointNetDevice>
+                            self_egress_device =
+                            ns3::DynamicCast<ns3::PointToPointNetDevice> (
+                                node->GetDevice (egress_interface_no));
 
-                        auto [remote_ingress_if_no, remote_as_ptr] = GetRemoteAsInfo(node, egress_interface_no);
+                        auto [remote_ingress_if_no, remote_as_ptr] =
+                        GetRemoteAsInfo (node, egress_interface_no);
 
-                        SCION_Node* remote_as = ns3::GetPointer(remote_as_ptr);
-                        ld latency = the_beacon->latency_stat + node->intra_as_latencies.at(the_beacon->the_path->back()[3]).at(egress_interface_no);
-                        ld bwd = the_beacon->bwd_stat > (ld) node->inter_as_bwds.at(egress_interface_no)
-                                 ? (ld) node->inter_as_bwds.at(egress_interface_no)
-                                 : the_beacon->bwd_stat;
+                        Ptr<SCION_Node>remote_as = ns3::GetPointer (remote_as_ptr);
+                        ld latency = the_beacon->latency_stat +
+                                     node->intra_as_latencies
+                                         .at (LOWER_16_BITS( the_beacon->the_path.back()))
+                                         .at (egress_interface_no);
+                        ld bwd =
+                            the_beacon->bwd_stat > (ld) node->inter_as_bwds.at (
+                                egress_interface_no)
+                            ? (ld) node->inter_as_bwds.at (
+                                egress_interface_no)
+                            : the_beacon->bwd_stat;
 
-                        GenerateBeaconAndSend(the_beacon, egress_interface_no, remote_ingress_if_no, node,
-                                              remote_as, latency, bwd, false, 0.0);
+                        GenerateBeaconAndSend (the_beacon, egress_interface_no,
+                                               remote_ingress_if_no, node,
+                                               remote_as, latency, bwd, false,
+                                               0.0);
                         // remote_as_ptr goes out of scope.
-                        remote_as_ptr->Unref();
+                        remote_as_ptr->Unref ();
                     }
                 }
             }
@@ -75,7 +116,7 @@ void Baseline::DisseminateBeacons(const std::unordered_map<uint16_t, std::vector
 
 /**
  * @param key Beacon key.
- * @param src_as The AS number of the node which originated the beacon.
+ * @param dst_as The AS number of the node which originated the beacon.
  * @param old_beacon The previous beacon.
  * @param self_egress_if_no The interface number on which to send the beacon.
  * @param remote_ingress_if_no The interface number where the beacon will be received on the remote_as.
@@ -84,21 +125,27 @@ void Baseline::DisseminateBeacons(const std::unordered_map<uint16_t, std::vector
  * @param latency The new beacon latency.
  * @param bwd The new beacon bandwidth stat.
  */
-void Baseline::HandleFullBeaconStore(std::string key, uint16_t src_as, beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_ingress_if_no,
-                                             SCION_Node* node, SCION_Node* remote_as, ld latency, ld bwd) {
+void
+Baseline::ReplacementPolicy (std::string key, uint16_t src_as, beacon *old_beacon,
+                             uint16_t self_egress_if_no, uint16_t remote_ingress_if_no,
+                             Ptr<SCION_Node> node, Ptr<SCION_Node> remote_as, ld latency,
+                             ld bwd)
+{
     // In the Baseline strategy, we don't evict any beacons but simply ignore the new one
     return;
 }
 
-/**
- * @param remote_as The remote AS which will receive the beacon.
- * @param latency The new beacon latency stat.
- * @param bwd The new beacon bandwidth stat.
- * @param src_as_no The AS number of the node which originated the beacon.
- * @param new_beacon The newly constructed beacon.
- */
-void Baseline::UpdateSpecializedBeaconStore(SCION_Node* remote_as, ld latency, ld bwd, uint16_t src_as_no,
-                                  beacon *new_beacon){
-    // We do not use a specialized beacon store structure for the Baseline strategy
+
+void
+Baseline::MetaDataUpdateAfterSend (beacon *the_beacon, uint16_t local_iface, Ptr<SCION_Node> remote_as,
+                              uint16_t dst_as_no)
+{
     return;
 }
+void
+Baseline::MetaDataUpdatePeriodic (beacon* the_beacon)
+{
+    return;
+}
+
+} // namespace ns3

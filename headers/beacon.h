@@ -9,7 +9,7 @@
 #define SCION_BEACONING_SIMMULATOR_BEACON_H
 #include <string>
 #include <vector>
-
+namespace ns3 {
 /**
  * @brief in bytes
  */
@@ -23,17 +23,14 @@
 typedef long double ld;
 
 /**
- * @brief Holds 0:as_no, 1:egress_intf_no, 2:remote_as_no and 3:remote_ingress_intf_no.
- *
- * We use a small int to store some identifying information on the links used in the beacons.
- * Expected order of information:
- *
- *  - link_info[0] = AS_number
- *  - link_info[1] = egress_interface_number;
- *  - link_info[2] = remote_as_number;
- *  - link_info[3] = remote_ingress_interface_number;
+ * @brief a 64-bit integer to store information of a path segment
+ * The most significant 16 bits represent sender AS
+ * The next 16 bits represent egress interface
+ * The next 16 bits represent receiver AS
+ * The least significant 16 bits represent receiver ingress interface
+
 */
-typedef uint16_t *link_information;
+typedef uint64_t link_information;
 
 /**
  * @brief A path is a sequence of links.
@@ -47,25 +44,20 @@ typedef std::vector<link_information> path;
  *
  * Beacons are propagated periodically and do expire.
  */
-struct beacon {
-    /** @brief The initiation time of the beacon */
-    int64_t initiation_time;
-    /** @brief The expiration time of the beacon */
-    int64_t expiration_time;
-    /** @brief Internal helper.*/
-    int64_t next_initiation_time;
-    /** @brief Internal helper.*/
-    int64_t next_expiration_time;
+struct beacon
+{
     /** @brief Aggregator holding information about the path latency. */
-    ld latency_stat;
+    float latency_stat;
     /** @brief Aggregator holding information about the path bandwidth. */
-    ld bwd_stat;
-    /** @see path */
-    path *the_path;
-    /** @brief For performant search and traversal in the beacon store of the nodes
-     *
-     * @see SCION_Node.path_map_to_beacon.*/
-    std::string key;
+    float bwd_stat;
+    /** @brief The initiation time of the beacon */
+    uint16_t initiation_time;
+    /** @brief The expiration time of the beacon */
+    uint16_t expiration_time;
+    /** @brief Internal helper.*/
+    uint16_t next_initiation_time;
+    /** @brief Internal helper.*/
+    uint16_t next_expiration_time;
     /** @brief Internal helper.*/
     bool is_new;
     /** @brief Internal helper.
@@ -78,5 +70,27 @@ struct beacon {
      * @see GenerateBeaconAndSend
      * */
     bool is_valid;
+    /** @see path */
+    path the_path;
+    /** @brief For performant search and traversal in the beacon store of the nodes
+     *
+     * @see SCION_Node.path_map_to_beacon.*/
+    std::string key;
+
+    beacon (float l, float b, uint16_t i, uint16_t e, uint16_t nxt_i, uint16_t nxt_e, bool n,
+            bool v, path p, std::string k)
+        : latency_stat (l),
+          bwd_stat (b),
+          initiation_time (i),
+          expiration_time (e),
+          next_initiation_time (nxt_i),
+          next_expiration_time (nxt_e),
+          is_new (n),
+          is_valid (v),
+          the_path (p),
+          key (k)
+    {
+    }
 };
+}
 #endif //SCION_BEACONING_SIMMULATOR_BEACON_H

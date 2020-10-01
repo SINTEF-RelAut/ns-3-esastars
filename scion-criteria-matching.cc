@@ -291,6 +291,7 @@ namespace ns3 {
                     }
                 }
             }
+            
         }
 
         void InitiateBeacons() {

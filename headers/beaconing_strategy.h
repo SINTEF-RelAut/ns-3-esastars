@@ -11,33 +11,41 @@
 
 #include <unordered_map>
 #include "beacon.h"
-#include "scion_node.h"
 #include "ns3/point-to-point-helper.h"
 #include "ns3/point-to-point-net-device.h"
 #include "ns3/point-to-point-channel.h"
+#include "scion_node.h"
+
+namespace ns3 {
 
 /**
  * @brief Maximum number of beacons to immediately disseminate per neighbour and beacon source AS.
  */
 #define MAX_IMMEDIATE_BEACONS 5
-
-class BeaconingStrategy{
-public:
+#define NUM_CORE 128
+class BeaconingStrategy
+{
+  public:
     /**
      * @brief Iterates over all the valid interfaces of the nodes neighbours and generates and sends a new beacon on each.
      */
-    void InitiateBeacons(const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, SCION_Node* node);
+    void
+    InitiateBeacons (SCION_Node::neighbour_relation relation,
+                     Ptr<SCION_Node> node);
 
     /**
      * @brief Sends the beacon to each neighbour over the lowest latency valid interface if the beacon originated at an AS
      * towards which the node has not yet discovered any paths.
      */
-    void processImmediateReceive(uint16_t beacon_origin_as_no, uint16_t ingress_if, beacon* the_beacon, const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, SCION_Node* node);
+    void processImmediateReceive (
+        uint16_t beacon_origin_as_no, uint16_t ingress_if, beacon *the_beacon,
+        SCION_Node::neighbour_relation relation,
+        Ptr<SCION_Node> node);
 
     /**
     * @brief Iterates over all the beacons in the beacon store and adjusts their validity.
     */
-    static void UpdateBeaconStoreAndCountersBeforeBeaconing(SCION_Node* node);
+    static void UpdateBeaconStoreAndCountersBeforeBeaconing (Ptr<SCION_Node> node);
 
     // TODO: This could be unified further. Still some duplicate code.
     /**
@@ -45,32 +53,37 @@ public:
      *
      * Must be overwritten by descendants of BeaconingStrategy.
      */
-    virtual void DisseminateBeacons(const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces, SCION_Node* node) = 0;
+    virtual void
+    DisseminateBeacons (SCION_Node::neighbour_relation relation,
+                        Ptr<SCION_Node> node) = 0;
 
-protected:
+  protected:
     /**
      * @brief Updates the node time with the current simulator time, updates beacon attributes and
      * the nodes valid beacon counters depending on the beacon state.
      */
-    static void AdjustBeaconValidity(beacon* the_beacon, SCION_Node* node);
+    static void AdjustBeaconValidity (beacon *the_beacon, Ptr<SCION_Node> node);
 
     /**
      * @brief Checks if the addition of the remote AS to the beacon would generate a loop in the AS-level path.
      */
-    static bool GeneratesLoop(beacon const* the_beacon, uint16_t remote_as_no);
+    static bool GeneratesLoop (beacon const *the_beacon, uint16_t remote_as_no);
 
     /**
      * @brief Fetches the remote interface number and a handle to the remote AS given an egress interface on the node.
      */
-    static std::pair<uint16_t, ns3::Ptr<SCION_Node>> GetRemoteAsInfo(SCION_Node* node, uint16_t egress_interface_no);
+    static std::pair<uint16_t, ns3::Ptr<SCION_Node>> GetRemoteAsInfo (Ptr<SCION_Node> node,
+                                                                      uint16_t egress_interface_no);
 
     /**
      * @brief Creates the new beacon if necessary, updates the structures recording how many bytes were sent per interface,
      * writes the new beacon into the remote ASes beacon store structures if the remote ASes import policy does not discard it,
      * and schedules a processing event on the simulator if the beacon needs to continue being disseminated right away.
      */
-    void GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_ingress_if_no, SCION_Node* node,
-                                SCION_Node* remote_as, ld latency, ld bwd, bool immediate, ld latency_for_immediate);
+    void GenerateBeaconAndSend (beacon *old_beacon, uint16_t self_egress_if_no,
+                                uint16_t remote_ingress_if_no, Ptr<SCION_Node> node,
+                                Ptr<SCION_Node> remote_as, ld latency, ld bwd, bool immediate,
+                                ld latency_for_immediate);
 
     /**
      * @brief Implements the decision logic of the remote AS in case a beacon arrives that does not fit into the beacon store anymore.
@@ -79,16 +92,16 @@ protected:
      *
      * Must be overwritten by descendants of BeaconingStrategy.
      */
-    virtual void HandleFullBeaconStore(std::string key, uint16_t src_as, beacon *old_beacon, uint16_t self_egress_if_no,
-                                        uint16_t remote_ingress_if_no, SCION_Node* node, SCION_Node* remote_as, ld latency, ld bwd) = 0;
+    virtual void ReplacementPolicy (std::string key, uint16_t dst_as, beacon *old_beacon,
+                                        uint16_t self_egress_if_no, uint16_t remote_ingress_if_no,
+                                        Ptr<SCION_Node> node, Ptr<SCION_Node> remote_as, ld latency,
+                                        ld bwd) = 0;
 
-    /**
-     * @brief Handles updating of any additional beacon_store structures needed for this beaconing strategy.
-     *
-     * Must be called via the remote_ases strategy handler.
-     *
-     * Must be overwritten by descendants of BeaconingStrategy.
-     */
-    virtual void UpdateSpecializedBeaconStore(SCION_Node* remote_as, ld latency, ld bwd, uint16_t src_as_no, beacon *new_beacon) = 0;
+
+    virtual void MetaDataUpdateAfterSend (beacon *the_beacon, uint16_t local_iface, Ptr<SCION_Node> remote_as,
+                                               uint16_t dst_as_no) = 0;
+
+    virtual void MetaDataUpdatePeriodic (beacon* the_beacon) = 0;
 };
+}
 #endif //SCION_BEACONING_SIMMULATOR_BEACONING_STRATEGY_H

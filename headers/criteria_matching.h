@@ -11,39 +11,40 @@
 #ifndef SCION_BEACONING_SIMMULATOR_CRITERIA_MATCHING_H
 #define SCION_BEACONING_SIMMULATOR_CRITERIA_MATCHING_H
 #include "beaconing_strategy.h"
-class CriteriaMatching : public BeaconingStrategy {
-public:
+
+namespace ns3 {
+class CriteriaMatching : public BeaconingStrategy
+{
+  public:
     /**
      * @brief Disseminates highest scoring beacons towards multiple interfaces of the appropriate neighbours until the limit for
      * sending beacons with the same originating source AS to one neighbour is reached.
      */
-    void DisseminateBeacons(const std::unordered_map<uint16_t, std::vector<uint16_t>> &valid_interfaces,
-                            SCION_Node* node) override;
+    void
+    DisseminateBeacons (SCION_Node::neighbour_relation relation,
+                        Ptr<SCION_Node> node) override;
 
-protected:
+  protected:
     /**
      * @brief Evicts the lowest scored beacon for the beacons originating AS if the score of the new beacon is larger
      * than the lowest scored matching beacon found in the remote ASes beacon store.
      */
-    void HandleFullBeaconStore(std::string key, uint16_t src_as, beacon *old_beacon, uint16_t self_egress_if_no, uint16_t remote_ingress_if_no,
-                               SCION_Node* node, SCION_Node* remote_as, ld latency, ld bwd) override;
 
-    /**
-     * @brief Updates the structure holding all the beacons sorted by score.
-     */
-    void UpdateSpecializedBeaconStore(SCION_Node* remote_as, ld latency, ld bwd, uint16_t src_as_no,
-                                      beacon *new_beacon) override;
+    void
+    ReplacementPolicy (std::string key, uint16_t src_as, beacon *old_beacon,
+                                 uint16_t self_egress_if_no, uint16_t remote_ingress_if_no,
+                                 Ptr<SCION_Node> node, Ptr<SCION_Node> remote_as, ld latency,
+                                 ld bwd) override;
 
-private:
-    /** @brief Pointers to all the beacons indexable by their source AS and score.
-     *
-     * The second level of this structure is iterable by the beacon score in ascending order.
-     * */
-    std::unordered_map<uint16_t, std::multimap <ld, beacon* >* > beacons_sorted_by_score;
+    void
+    MetaDataUpdateAfterSend (beacon *the_beacon, uint16_t local_iface, Ptr<SCION_Node> remote_as,
+                                       uint16_t dst_as_no) override;
+    void
+    MetaDataUpdatePeriodic (beacon* the_beacon) override;
 
-    /**
-     * @brief Calculates the beacons score in the context of the remote AS' preferences.
-     */
-    static ld CalculateBeaconScore(SCION_Node* remote_as, ld latency, ld bwd);
+  private:
+
+
 };
+}
 #endif //SCION_BEACONING_SIMMULATOR_CRITERIA_MATCHING_H
