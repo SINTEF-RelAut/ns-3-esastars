@@ -32,20 +32,17 @@
  * Finalizes the beaconing period by calling UpdateBeaconStoreAndCountersBeforeBeaconing on each node.
  * Parallelized by distributing all the nodes on a few threads.
  *
- * @param nodes The ns3::NodeContainer holding all the nodes of this simulation.
+ * @param nodes The ns3::NodeContainer hons3::lding all the nodes of this simulation.
  *
  * @see UpdateBeaconStoreAndCountersBeforeBeaconing
  */
 void ProcessReceivedPacketsParallel(ns3::NodeContainer nodes) {
-    std::cout << "################################## " << ns3::DynamicCast<SCION_Node>(nodes.Get(0))->now << " #########################################" << std::endl;
+    std::cout << "################################## " << ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(0))->now << " #########################################" << std::endl;
     uint32_t node_number = nodes.GetN();
     #pragma omp parallel for
     for (uint32_t i = 0; i < node_number; ++i) {
-        ns3::Ptr<SCION_Node> ns3_ptr_to_node = ns3::DynamicCast<SCION_Node>(nodes.Get(i));
-        // Don't wanna pass around their smart pointer, => leads to race conditions regarding Unref.
-        SCION_Node* node = ns3::GetPointer(ns3_ptr_to_node);
-        node->strategy->UpdateBeaconStoreAndCountersBeforeBeaconing(node);
-        ns3_ptr_to_node->Unref();
+        ns3::Ptr<ns3::SCION_Node> node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(i));
+        node->strategy->UpdateStatePeriodic();
     }
 }
 
@@ -53,7 +50,7 @@ int main(int argc, char *argv[]) {
 
     std::string beaconing_period_str;
     std::string expiration_period_str;
-    std::string simulator_time_str;
+    std::string simulation_duration_str;
     std::string topology_str;
 
     // Debug
@@ -61,13 +58,13 @@ int main(int argc, char *argv[]) {
     if (argc >=4) {
         beaconing_period_str = argv[1];
         expiration_period_str = argv[2];
-        simulator_time_str = argv[3];
+        simulation_duration_str = argv[3];
         topology_str = argv[4];
     } else {
         // Initialize automatically case you are invoking it with GDB
         beaconing_period_str = "30min";
         expiration_period_str = "2h";
-        simulator_time_str = "5h";
+        simulation_duration_str = "5h";
         topology_str = "15_geo_rel_annotated";
     }
 
@@ -82,7 +79,7 @@ int main(int argc, char *argv[]) {
     // TODO: Think about how to automatically set an appropriate name, maybe in conjunction with simulator configs?
     std::string out_path =
             "./results/baseline_" + std::string(topology_str) + "_" +
-            std::string(beaconing_period_str) + "_" + std::string(expiration_period_str) + "_" + std::string(simulator_time_str) + ".txt";
+            std::string(beaconing_period_str) + "_" + std::string(expiration_period_str) + "_" + std::string(simulation_duration_str) + ".txt";
     std::ofstream out(out_path);
     std::cout.rdbuf(out.rdbuf());
 
@@ -109,28 +106,31 @@ int main(int argc, char *argv[]) {
 
     curNode = rootNode->first_node("node");
     while (curNode) {
-        int32_t as_number = std::stoi(getAttribute(curNode, "id"));
-        PropertyContainer p = parseProperties(curNode);
+        int32_t as_number = std::stoi(ns3::getAttribute(curNode, "id"));
+        ns3::PropertyContainer p = ns3::parseProperties(curNode);
 
-        ld latency_coef = std::stod(p.getProperty("latency_coef"));
-        ld bandwidth_coef = std::stod(p.getProperty("bandwidth_coef"));
-        ld AS_level_diversity_coef = std::stod(p.getProperty("AS_level_diversity_coef"));
-        ld link_level_diversity_coef = std::stod(p.getProperty("link_level_diversity_coef"));
+        ns3::ld latency_coef = std::stod(p.getProperty("latency_coef"));
+        ns3::ld bandwidth_coef = std::stod(p.getProperty("bandwidth_coef"));
+        ns3::ld AS_level_diversity_coef = std::stod(p.getProperty("AS_level_diversity_coef"));
+        ns3::ld link_level_diversity_coef = std::stod(p.getProperty("link_level_diversity_coef"));
         std::string type = p.getProperty("type");
 
-        simulator_params periods = std::make_pair(beaconing_period, expiration_period);
-        coefficients coefs = std::make_tuple(latency_coef, bandwidth_coef, AS_level_diversity_coef,
+        ns3::simulator_params periods = std::make_pair(beaconing_period, expiration_period);
+        ns3::coefficients coefs = std::make_tuple(latency_coef, bandwidth_coef, AS_level_diversity_coef,
                                              link_level_diversity_coef);
         // TODO: Better way to do this.
-        BeaconingStrategy* strat = new Baseline();
+        ns3::BeaconingStrategy* strat = new ns3::Baseline();
+        ns3::Ptr<ns3::SCION_Node> node;
         if(type == "core"){
-            nodes.Add(ns3::CreateObject<SCION_Core_As>(node_counter, 0, coefs, periods, strat));
+            node = ns3::CreateObject<ns3::SCION_Core_As>(node_counter, 0, coefs, periods, strat);
         } else if(type =="non-core"){
-            nodes.Add(ns3::CreateObject<SCION_As>(node_counter, 0, coefs, periods, strat));
+            node = ns3::CreateObject<ns3::SCION_As>(node_counter, 0, coefs, periods, strat);
         } else{
             std::cerr << "Incompatible node type!" << std::endl;
             exit(1);
         }
+        nodes.Add(node);
+        strat->SetNode(node);
         ASes.insert(std::make_pair(as_number, node_counter));
 
         node_counter++;
@@ -143,36 +143,36 @@ int main(int argc, char *argv[]) {
         int32_t to = std::stoi(curNode->first_node("to")->value());
         int32_t from = std::stoi(curNode->first_node("from")->value());
 
-        PropertyContainer p = parseProperties(curNode);
+        ns3::PropertyContainer p = ns3::parseProperties(curNode);
 
-        ld latitude = std::stod(p.getProperty("latitude"));
-        ld longitude = std::stod(p.getProperty("longitude"));
+        ns3::ld latitude = std::stod(p.getProperty("latitude"));
+        ns3::ld longitude = std::stod(p.getProperty("longitude"));
         int32_t bwd = std::stoi(p.getProperty("capacity"));
         std::string rel = p.getProperty("rel");
-        SCION_Node::neighbour_relation relation;
+        ns3::SCION_Node::neighbour_relation relation;
 
         // Check for the 3 possibilities in CAIDA topology
         if(rel == "peer"){
-            relation = SCION_Node::neighbour_relation::PEER;
+            relation = ns3::SCION_Node::neighbour_relation::PEER;
         } else if(rel == "core"){
-            relation = SCION_Node::neighbour_relation::CORE;
+            relation = ns3::SCION_Node::neighbour_relation::CORE;
         } else if(rel == "customer"){
-            relation = SCION_Node::neighbour_relation::CUSTOMER;
+            relation = ns3::SCION_Node::neighbour_relation::CUSTOMER;
         }
 
-        ns3::Ptr<SCION_Node> fromNode;
-        ns3::Ptr<SCION_Node> toNode;
+        ns3::Ptr<ns3::SCION_Node> fromNode;
+        ns3::Ptr<ns3::SCION_Node> toNode;
 
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-            if ((ns3::DynamicCast<SCION_Node>(nodes.Get(i)))->as_number == ASes.at(to)) {
-                toNode = ns3::DynamicCast<SCION_Node>(nodes.Get(i));
+            if ((ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(i)))->as_number == ASes.at(to)) {
+                toNode = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(i));
                 break;
             }
         }
 
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-            if ((ns3::DynamicCast<SCION_Node>(nodes.Get(i)))->as_number == ASes.at(from)) {
-                fromNode = ns3::DynamicCast<SCION_Node>(nodes.Get(i));
+            if ((ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(i)))->as_number == ASes.at(from)) {
+                fromNode = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(i));
                 break;
             }
         }
@@ -180,91 +180,91 @@ int main(int argc, char *argv[]) {
         ns3::PointToPointHelper helper;
         helper.Install(fromNode, toNode);
 
-        ns3::Ptr<SCION_Node> to_my_node = (ns3::DynamicCast<SCION_Node>(toNode));
-        ns3::Ptr<SCION_Node> from_my_node = (ns3::DynamicCast<SCION_Node>(fromNode));
+        ns3::Ptr<ns3::SCION_Node> to_my_node = (ns3::DynamicCast<ns3::SCION_Node>(toNode));
+        ns3::Ptr<ns3::SCION_Node> from_my_node = (ns3::DynamicCast<ns3::SCION_Node>(fromNode));
 
-        // TODO: Some space could be saved by directly calculating the latency and not storing the latitude and longitude pairs.
+        // TODO: Some space couns3::ld be saved by directly calculating the latency and not storing the latitude and longitude pairs.
         // Check if we need the lat & long for anything else?
-        to_my_node->interfaces_coordinates.push_back(std::pair<ld, ld>(latitude, longitude));
-        from_my_node->interfaces_coordinates.push_back(std::pair<ld, ld>(latitude, longitude));
+        to_my_node->interfaces_coordinates.push_back(std::pair<ns3::ld, ns3::ld>(latitude, longitude));
+        from_my_node->interfaces_coordinates.push_back(std::pair<ns3::ld, ns3::ld>(latitude, longitude));
 
         to_my_node->inter_as_bwds.push_back(bwd);
         from_my_node->inter_as_bwds.push_back(bwd);
 
-        SCION_Node::neighbour_relation to_rel;
-        SCION_Node::neighbour_relation from_rel;
+        ns3::SCION_Node::neighbour_relation to_rel;
+        ns3::SCION_Node::neighbour_relation from_rel;
 
         switch(relation){
-            case SCION_Node::neighbour_relation::PEER:
-                to_rel = SCION_Node::neighbour_relation::PEER;
-                from_rel = SCION_Node::neighbour_relation::PEER;
+            case ns3::SCION_Node::neighbour_relation::PEER:
+                to_rel = ns3::SCION_Node::neighbour_relation::PEER;
+                from_rel = ns3::SCION_Node::neighbour_relation::PEER;
                 break;
-            case SCION_Node::neighbour_relation::CORE:
-                to_rel = SCION_Node::neighbour_relation::CORE;
-                from_rel = SCION_Node::neighbour_relation::CORE;
+            case ns3::SCION_Node::neighbour_relation::CORE:
+                to_rel = ns3::SCION_Node::neighbour_relation::CORE;
+                from_rel = ns3::SCION_Node::neighbour_relation::CORE;
                 break;
-            case SCION_Node::neighbour_relation::CUSTOMER:
-                to_rel = SCION_Node::neighbour_relation::PROVIDER;
-                from_rel = SCION_Node::neighbour_relation::CUSTOMER;
+            case ns3::SCION_Node::neighbour_relation::CUSTOMER:
+                to_rel = ns3::SCION_Node::neighbour_relation::PROVIDER;
+                from_rel = ns3::SCION_Node::neighbour_relation::CUSTOMER;
                 break;
-            case SCION_Node::neighbour_relation::PROVIDER:
-                // Should never happen, there is no "Provider" type in xml files
-                to_rel = SCION_Node::neighbour_relation::CUSTOMER;
-                from_rel = SCION_Node::neighbour_relation::PROVIDER;
+            case ns3::SCION_Node::neighbour_relation::PROVIDER:
+                // Shouns3::ld never happen, there is no "Provider" type in xml files
+                to_rel = ns3::SCION_Node::neighbour_relation::CUSTOMER;
+                from_rel = ns3::SCION_Node::neighbour_relation::PROVIDER;
                 assert(false);
                 break;
         }
 
         if (to_my_node->interfaces_per_neighbor_as.find(from_my_node->as_number) !=
             to_my_node->interfaces_per_neighbor_as.end()) {
-            to_my_node->interfaces_per_neighbor_as.at(from_my_node->as_number).push_back(std::make_pair((uint16_t) to_my_node->GetNDevices() - 1, to_rel));
+            to_my_node->interfaces_per_neighbor_as.at(from_my_node->as_number).push_back((uint16_t) to_my_node->GetNDevices() - 1);
         } else {
-            std::vector<std::pair<uint16_t, SCION_Node::neighbour_relation>> tmp;
-            tmp.push_back(std::make_pair((uint16_t) to_my_node->GetNDevices() - 1, to_rel));
+            std::vector<uint16_t> tmp;
+            tmp.push_back((uint16_t) to_my_node->GetNDevices() - 1);
             to_my_node->interfaces_per_neighbor_as.insert(std::make_pair(from_my_node->as_number, tmp));
-            to_my_node->neighbors.push_back(from_my_node->as_number);
+            to_my_node->neighbors.push_back(std::make_pair(from_my_node->as_number, to_rel));
         }
 
         if (from_my_node->interfaces_per_neighbor_as.find(to_my_node->as_number) !=
             from_my_node->interfaces_per_neighbor_as.end()) {
-            from_my_node->interfaces_per_neighbor_as.at(to_my_node->as_number).push_back(std::make_pair(from_my_node->GetNDevices() - 1, from_rel));
+            from_my_node->interfaces_per_neighbor_as.at(to_my_node->as_number).push_back(from_my_node->GetNDevices() - 1);
         } else {
-            std::vector<std::pair<uint16_t, SCION_Node::neighbour_relation>> tmp;
-            tmp.push_back(std::make_pair((uint16_t) from_my_node->GetNDevices() - 1, from_rel));
+            std::vector<uint16_t> tmp;
+            tmp.push_back((uint16_t) from_my_node->GetNDevices() - 1);
             from_my_node->interfaces_per_neighbor_as.insert(std::make_pair(to_my_node->as_number, tmp));
-            from_my_node->neighbors.push_back(to_my_node->as_number);
+            from_my_node->neighbors.push_back(std::make_pair(to_my_node->as_number, from_rel));
         }
 
         curNode = curNode->next_sibling("link");
     }
 
     for (uint64_t i = 0; i < nodes.GetN(); ++i) {
-        ns3::DynamicCast<SCION_Node>(nodes.Get(i))->DoInitializations();
+        ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(i))->DoInitializations(nodes.GetN());
     }
 
-    ns3::Time scheduling_delay = ns3::Time(beaconing_period.ns3::Time::GetSeconds() / 2);
-    for (ns3::Time t = ns3::Seconds(0.0); t < ns3::Time(simulator_time_str); t += beaconing_period) {
-        ns3::Simulator::Schedule(t + ns3::Seconds(scheduling_delay), &ProcessReceivedPacketsParallel, nodes);
+    ns3::Time update_time_offset = ns3::Time("1 s");
+    for (ns3::Time t = ns3::Seconds(0.0); t < ns3::Time(simulation_duration_str); t += beaconing_period) {
+        ns3::Simulator::Schedule(t + ns3::Seconds(update_time_offset), &ProcessReceivedPacketsParallel, nodes);
 
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-            ns3::Ptr<SCION_Node> the_node = ns3::DynamicCast<SCION_Node>(nodes.Get(i));
-            ns3::Simulator::Schedule(t, &SCION_Node::CoreBeaconing, the_node);
-            ns3::Simulator::Schedule(t, &SCION_Node::IntraISDBeaconing, the_node);
+            ns3::Ptr<ns3::SCION_Node> the_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(i));
+            ns3::Simulator::Schedule(t, &ns3::SCION_Node::CoreBeaconing, the_node);
+            //ns3::Simulator::Schedule(t, &ns3::SCION_Node::IntraISDBeaconing, the_node);
         }
     }
 
-    ns3::Simulator::Stop(ns3::Time(simulator_time_str));
+    ns3::Simulator::Stop(ns3::Time(simulation_duration_str));
     ns3::Simulator::Run();
 
     //############################################################################################################################################################
-    for (ns3::Time t = ns3::Seconds(0.0); t < ns3::Time(simulator_time_str); t += beaconing_period) {
+    for (ns3::Time t = ns3::Seconds(0.0); t < ns3::Time(simulation_duration_str); t += beaconing_period) {
         std::cout << "####################################### frequencies of consumed bandwidth at Time "
                   << t
                   << " #######################################" << std::endl;
 
         std::map<uint32_t, uint32_t> frequencies_of_consumed_bwd;
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-            ns3::Ptr<SCION_Node> the_node = ns3::DynamicCast<SCION_Node>(nodes.Get(i));
+            ns3::Ptr<ns3::SCION_Node> the_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(i));
             for (uint32_t if_index = 0; if_index < the_node->GetNDevices(); ++if_index) {
                 uint32_t consumed_bwd = the_node->bytes_sent_per_interface_per_period.at(t.ToInteger(ns3::Time::NS)).at(if_index);
 
@@ -291,12 +291,12 @@ int main(int argc, char *argv[]) {
                 << std::endl;
         std::map<uint64_t, uint64_t> frequencies_of_path_counts_per_src_as_with_certain_length;
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-            for (auto const &src_as_beacons_pair : ns3::DynamicCast<SCION_Node>(nodes.Get(i))->beacon_store) {
+            for (auto const &src_as_beacons_pair : ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(i))->beacon_store) {
                 uint64_t number_of_paths_with_certain_length = 0;
-                if(src_as_beacons_pair.second->find(path_length) == src_as_beacons_pair.second->end()){
+                if(src_as_beacons_pair.second.find(path_length) == src_as_beacons_pair.second.end()){
                     continue;
                 } else {
-                    number_of_paths_with_certain_length = src_as_beacons_pair.second->at(path_length)->size();
+                    number_of_paths_with_certain_length = src_as_beacons_pair.second.at(path_length).size();
                 }
 
                 if (frequencies_of_path_counts_per_src_as_with_certain_length.find(
@@ -320,12 +320,12 @@ int main(int argc, char *argv[]) {
     std::cout << "##                                                                                                                             ##"
               << std::endl;
 
-    std::map <ld, uint64_t> satisfaction_stat;
-    std::map <ld, uint64_t> AS_level_diversity_stat;
-    std::map <ld, uint64_t> link_level_diversity_stat;
+    std::map <ns3::ld, uint64_t> satisfaction_stat;
+    std::map <ns3::ld, uint64_t> AS_level_diversity_stat;
+    std::map <ns3::ld, uint64_t> link_level_diversity_stat;
 
     for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-        ns3::DynamicCast<SCION_Node>(nodes.Get(i))->FinalPathEvaluation(satisfaction_stat,
+        ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(i))->FinalPathEvaluation(satisfaction_stat,
                                                                AS_level_diversity_stat,
                                                                link_level_diversity_stat);
     }

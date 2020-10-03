@@ -26,8 +26,8 @@ void
 SCION_Core_As::CoreBeaconing ()
 {
     UpdateTimeAndStats ();
-    this->strategy->DisseminateBeacons (neighbour_relation::CORE, this);
-    this->strategy->InitiateBeacons (neighbour_relation::CORE, this);
+    this->strategy->DisseminateBeacons (neighbour_relation::CORE);
+    this->strategy->InitiateBeacons (neighbour_relation::CORE);
 }
 
 /**
@@ -41,7 +41,7 @@ void
 SCION_Core_As::IntraISDBeaconing ()
 {
     UpdateTimeAndStats ();
-    this->strategy->InitiateBeacons (neighbour_relation::CUSTOMER, this);
+    this->strategy->InitiateBeacons (neighbour_relation::CUSTOMER);
     // Core ASes never dissiminate intra_ISD beacons
 }
 
@@ -56,6 +56,6 @@ SCION_Core_As::ProcessReceivedBeacons (uint16_t beacon_origin_as_no, uint16_t in
                                        beacon *the_beacon)
 {
     this->strategy->processImmediateReceive (beacon_origin_as_no, ingress_if, the_beacon,
-                                             neighbour_relation::CORE, this);
+                                             neighbour_relation::CORE);
 }
 }

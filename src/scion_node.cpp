@@ -6,7 +6,7 @@
  * @brief Defines the member functions of the SCION_Node.
  */
 
-#include "../headers/scion_node.h"
+#include "src/SCION/headers/scion_node.h"
 #include "../headers/utils.h"
 #include "ns3/core-module.h"
 
@@ -66,6 +66,25 @@ SCION_Node::DoInitializations (uint32_t all_nodes)
                 new std::unordered_map<uint32_t, uint32_t> ();
         }
     }
+}
+
+/**
+ * Prints the number of ASes that are reachable until now, updates the now field of the node to current simulator time and initializes the structure
+ * which will be filled with the number of bytes sent on each interface during the next beaconing period.
+ */
+void
+SCION_Node::UpdateTimeAndStats ()
+{
+    // Print statistics until now to see some sense of progress
+    //    std::cout << as_number << "\t" << valid_beacons_count_per_dst_as.size ()
+    //              << std::endl; // Print number of source ASes
+    // Update node-> now for the regular beaconing execution flow
+    now = (uint16_t) Simulator::Now ().ToInteger (Time::MIN);
+    next_period = now + (uint16_t) beaconing_period.ToInteger (Time::MIN);
+
+    // TODO: Since the # of neighbours is fixed, we could use an Array here instead of a vector for a bit less overhead & for cache optimisation (?).
+    bytes_sent_per_interface_per_period.insert (
+        std::make_pair (now, std::vector<uint32_t> (GetNDevices (), 0)));
 }
 
 /**
@@ -140,24 +159,7 @@ SCION_Node::FinalPathEvaluation (std::map<ld, uint64_t> &satisfaction_stat,
     }
 }
 
-/**
- * Prints the number of ASes that are reachable until now, updates the now field of the node to current simulator time and initializes the structure
- * which will be filled with the number of bytes sent on each interface during the next beaconing period.
- */
-void
-SCION_Node::UpdateTimeAndStats ()
-{
-    // Print statistics until now to see some sense of progress
-    //    std::cout << as_number << "\t" << valid_beacons_count_per_dst_as.size ()
-    //              << std::endl; // Print number of source ASes
-    // Update node-> now for the regular beaconing execution flow
-    now = (uint16_t) Simulator::Now ().ToInteger (Time::MIN);
-    next_period = now + (uint16_t) beaconing_period.ToInteger (Time::MIN);
 
-    // TODO: Since the # of neighbours is fixed, we could use an Array here instead of a vector for a bit less overhead & for cache optimisation (?).
-    bytes_sent_per_interface_per_period.insert (
-        std::make_pair (now, std::vector<uint32_t> (GetNDevices (), 0)));
-}
 
 /**
  *  Iterates over all the beacons which originated at the same source AS then the passed beacon and computes

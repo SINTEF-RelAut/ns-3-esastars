@@ -13,7 +13,6 @@
 #include "ns3/node.h"
 #include <unordered_set>
 #include <unordered_map>
-#include "beaconing_strategy.h"
 
 namespace ns3 {
 
@@ -32,7 +31,7 @@ namespace ns3 {
  * This is only relevant for immediate beacons since the beaconing period for regular beacons
  * will typically be much greater than a few milliseconds.
  */
-#define PROCESSING_DELAY ns3::MilliSeconds (1)
+#define PROCESSING_DELAY MilliSeconds (1)
 
 //TODO: Might achieve optimized cache use by making a const pass on things that are read only
 //Also in beacon file
@@ -50,18 +49,18 @@ typedef std::map<uint16_t, beacons_with_equal_length> beacons_with_same_dst_as;
 /**
  * @brief Holds 0:beaconing_period, 1:expiration_period.
  *
- * Used to reduce the number of parameters we need to pass into the ns3::CreateObject constructor wrapper.
+ * Used to reduce the number of parameters we need to pass into the CreateObject constructor wrapper.
  *
  * Expected order:
  * - beaconing_period
  * - expiration_period
  */
-typedef std::pair<ns3::Time, int64_t> simulator_params;
+typedef std::pair<Time, int64_t> simulator_params;
 
 /**
  * @brief Holds 0:latency_coef, 1:bandwidth_coef, 2:AS_level_diversity_coef, 3:link_level_diversity_coef
  *
- * Used to reduce the number of parameters we need to pass into the ns3::CreateObject constructor wrapper.
+ * Used to reduce the number of parameters we need to pass into the CreateObject constructor wrapper.
  *
  * Expected order:
  * - latency_coef
@@ -71,11 +70,14 @@ typedef std::pair<ns3::Time, int64_t> simulator_params;
  */
 typedef std::tuple<ld, ld, ld, ld> coefficients;
 
+class BeaconingStrategy;
+
 /**
  * @brief This is the base definition of a SCION enabled Node. A SCION_Node models an Autonomous System.
  */
 class SCION_Node : public Node
 {
+
 
   public:
     //AS properties
@@ -88,7 +90,7 @@ class SCION_Node : public Node
     /** @brief The next beaconing interval in minutes. */
     uint16_t next_period;
     /** @brief Periodicity of beaconing. */
-    ns3::Time beaconing_period;
+    Time beaconing_period;
     /** @brief Expiration time of beacon. */
     uint16_t expiration_period;
     /** @brief AS latency preference coefficient. */

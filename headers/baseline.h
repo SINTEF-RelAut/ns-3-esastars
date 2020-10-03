@@ -19,8 +19,7 @@ class Baseline : public BeaconingStrategy
      * sending beacons with equal source ASes to one neighbour is reached.
      */
     void
-    DisseminateBeacons (SCION_Node::neighbour_relation relation,
-                        Ptr<SCION_Node> node) override;
+    DisseminateBeacons (SCION_Node::neighbour_relation relation) override;
 
   protected:
     /**
@@ -28,13 +27,8 @@ class Baseline : public BeaconingStrategy
      */
     void ReplacementPolicy (std::string key, uint16_t src_as, beacon *old_beacon,
                             uint16_t self_egress_if_no, uint16_t remote_ingress_if_no,
-                            Ptr<SCION_Node> node, Ptr<SCION_Node> remote_as, ld latency,
+                            Ptr<SCION_Node> remote_as, ld latency,
                             ld bwd) override;
-    /**
-     * @brief Does nothing. This strategy does not use a specialized beacon store.
-     */
-    void UpdateSpecializedBeaconStore (Ptr<SCION_Node> remote_as, ld latency, ld bwd,
-                                       uint16_t src_as_no, beacon *new_beacon) override;
 
     void MetaDataUpdateAfterSend (beacon *the_beacon, uint16_t local_iface, Ptr<SCION_Node> remote_as,
                                   uint16_t dst_as_no) override;

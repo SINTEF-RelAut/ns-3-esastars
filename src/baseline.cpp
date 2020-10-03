@@ -25,11 +25,12 @@ namespace ns3 {
  * @param node The node which is disseminating beacons.
  */
 void
-Baseline::DisseminateBeacons (SCION_Node::neighbour_relation relation,
-                              Ptr<SCION_Node> node)
+Baseline::DisseminateBeacons (SCION_Node::neighbour_relation relation)
 {
+    uint32_t neighbors_cnt = node->neighbors.size ();
+    omp_set_num_threads (NUM_CORE);
 #pragma omp parallel for
-    for (uint32_t i = 0; i < node->neighbors.size (); ++i)
+    for (uint32_t i = 0; i < neighbors_cnt; ++i)
     {
         if (node->neighbors.at(i).second != relation) {
             continue;
@@ -81,15 +82,12 @@ Baseline::DisseminateBeacons (SCION_Node::neighbour_relation relation,
                     // Iterate over all the valid interfaces of this remote AS and send the beacons
                     for (auto const &egress_interface_no : interfaces)
                     {
-                        ns3::Ptr<ns3::PointToPointNetDevice>
-                            self_egress_device =
-                            ns3::DynamicCast<ns3::PointToPointNetDevice> (
-                                node->GetDevice (egress_interface_no));
+                        std::pair<uint16_t, Ptr<SCION_Node>>
+                            remote_as_if_pair = GetRemoteAsInfo (egress_interface_no);
 
-                        auto [remote_ingress_if_no, remote_as_ptr] =
-                        GetRemoteAsInfo (node, egress_interface_no);
+                        uint16_t remote_ingress_if_no = remote_as_if_pair.first;
+                        Ptr<SCION_Node> remote_as = remote_as_if_pair.second;
 
-                        Ptr<SCION_Node>remote_as = ns3::GetPointer (remote_as_ptr);
                         ld latency = the_beacon->latency_stat +
                                      node->intra_as_latencies
                                          .at (LOWER_16_BITS( the_beacon->the_path.back()))
@@ -102,11 +100,9 @@ Baseline::DisseminateBeacons (SCION_Node::neighbour_relation relation,
                             : the_beacon->bwd_stat;
 
                         GenerateBeaconAndSend (the_beacon, egress_interface_no,
-                                               remote_ingress_if_no, node,
+                                               remote_ingress_if_no,
                                                remote_as, latency, bwd, false,
                                                0.0);
-                        // remote_as_ptr goes out of scope.
-                        remote_as_ptr->Unref ();
                     }
                 }
             }
@@ -128,7 +124,7 @@ Baseline::DisseminateBeacons (SCION_Node::neighbour_relation relation,
 void
 Baseline::ReplacementPolicy (std::string key, uint16_t src_as, beacon *old_beacon,
                              uint16_t self_egress_if_no, uint16_t remote_ingress_if_no,
-                             Ptr<SCION_Node> node, Ptr<SCION_Node> remote_as, ld latency,
+                             Ptr<SCION_Node> remote_as, ld latency,
                              ld bwd)
 {
     // In the Baseline strategy, we don't evict any beacons but simply ignore the new one
