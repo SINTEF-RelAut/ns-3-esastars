@@ -23,15 +23,17 @@
  namespace ns3 {
 void
 CriteriaMatching::DisseminateBeacons (
-    SCION_Node::neighbour_relation relation, SCION_Node *node)
+    SCION_Node::neighbour_relation relation)
 {
+
+
 }
 
 
 void
 CriteriaMatching::ReplacementPolicy (std::string key, uint16_t src_as, beacon *old_beacon,
                                      uint16_t self_egress_if_no, uint16_t remote_ingress_if_no,
-                                     Ptr<SCION_Node> node, Ptr<SCION_Node> remote_as, ld latency,
+                                     Ptr<SCION_Node> remote_as, ld latency,
                                      ld bwd)
 {
     return;

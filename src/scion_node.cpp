@@ -179,9 +179,10 @@ SCION_Node::calculate_final_diversity_scores (beacon *the_beacon)
 
     uint16_t dst_as = UPPER_16_BITS (the_beacon->the_path.at (0));
     const beacons_with_same_dst_as &equal_dst_as_beacons = beacon_store.at (dst_as);
-    for (auto const &len_if_beacon_vector_pair : equal_dst_as_beacons)
+    for (auto const &len_beacons_pair : equal_dst_as_beacons)
     {
-        for (auto const &curr_beacon : len_if_beacon_vector_pair.second)
+        auto const & beacons = len_beacons_pair.second;
+        for (auto const &curr_beacon : beacons)
         {
             if (curr_beacon != the_beacon)
             {

@@ -10,6 +10,7 @@
 #include "../headers/beaconing_strategy.h"
 #include "../headers/utils.h"
 #include "ns3/ptr.h"
+#include <omp.h>
 namespace ns3 {
 void BeaconingStrategy::SetNode (Ptr<SCION_Node> the_node)
 {
@@ -36,7 +37,8 @@ BeaconingStrategy::InitiateBeacons (SCION_Node::neighbour_relation relation)
         }
 
         uint16_t remote_as_no = node->neighbors.at (i).first;
-        for (auto const &self_egress_if_no : node->interfaces_per_neighbor_as.at (remote_as_no))
+        const auto & interfaces = node->interfaces_per_neighbor_as.at (remote_as_no);
+        for (auto const &self_egress_if_no : interfaces)
         {
             std::pair<uint16_t, Ptr<SCION_Node>>
                 remote_as_if_pair = GetRemoteAsInfo (self_egress_if_no);
@@ -134,11 +136,12 @@ BeaconingStrategy::processImmediateReceive (uint16_t dst_as, uint16_t ingress_if
 void
 BeaconingStrategy::UpdateStatePeriodic ()
 {
-    for (auto const &the_beacon_pair : node->path_map_to_beacon)
+    auto const& beacons = node->path_map_to_beacon;
+    for (auto const &the_beacon_pair : beacons)
     {
         beacon *the_beacon = the_beacon_pair.second;
         UpdateBeaconState(the_beacon);
-        this->MetaDataUpdatePeriodic(the_beacon); //this->remove_invalid_sent_beacons(the_beacon, dst_as);
+        MetaDataUpdatePeriodic(the_beacon); //this->remove_invalid_sent_beacons(the_beacon, dst_as);
     }
 }
 
@@ -290,7 +293,7 @@ BeaconingStrategy::GenerateBeaconAndSend (beacon *old_beacon, uint16_t self_egre
             (BEACON_HEADER_SIZE + BEACON_HOP_SIZE);
         dst_as = node->as_number;
 
-        // *** For immediately disseminating beacons received from neighbor source as
+#if IMMEDIATE_BEACONING
         if (remote_as->valid_beacons_count_per_dst_as.find (dst_as) ==
             remote_as->valid_beacons_count_per_dst_as.end () &&
             remote_as->next_round_valid_beacons_count_per_dst_as.find (dst_as) ==
@@ -298,6 +301,7 @@ BeaconingStrategy::GenerateBeaconAndSend (beacon *old_beacon, uint16_t self_egre
         {
             immediate_dst = true;
         }
+#endif
     }
     else
     {
@@ -308,6 +312,7 @@ BeaconingStrategy::GenerateBeaconAndSend (beacon *old_beacon, uint16_t self_egre
         key = old_beacon->key;
     }
 
+#if IMMEDIATE_BEACONING
     if (immediate)
     { // Indicates that this is part of an immediate beacon dissemination (only set in processImmediateReceive)
         // dst_AS not found in next_round beacon store. Or less than 5 beacons in next round store from this AS.
@@ -318,8 +323,10 @@ BeaconingStrategy::GenerateBeaconAndSend (beacon *old_beacon, uint16_t self_egre
         {
             immediate_non_dst = true;
         }
+
     }
     // ***
+#endif
 
     key = key + std::string ((char *) &node->as_number, 2) +
           std::string ((char *) &self_egress_if_no, 2);
@@ -420,6 +427,7 @@ BeaconingStrategy::GenerateBeaconAndSend (beacon *old_beacon, uint16_t self_egre
         remote_as->beacon_store.at (dst_as).at (path_len).insert (new_beacon);
     }
 
+#if IMMEDIATE_BEACONING
     if (immediate_dst)
     {
         // This is the processing delay of the receiving BR. Since this beacon can be generated at whichever border router (immediate_dst)
@@ -438,5 +446,6 @@ BeaconingStrategy::GenerateBeaconAndSend (beacon *old_beacon, uint16_t self_egre
                              remote_ingress_if_no, new_beacon);
         this->MetaDataUpdateAfterSend(new_beacon, self_egress_if_no, remote_as, dst_as);
     }
+#endif
 }
 } // namespace ns3

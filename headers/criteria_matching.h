@@ -21,8 +21,7 @@ class CriteriaMatching : public BeaconingStrategy
      * sending beacons with the same originating source AS to one neighbour is reached.
      */
     void
-    DisseminateBeacons (SCION_Node::neighbour_relation relation,
-                        Ptr<SCION_Node> node) override;
+    DisseminateBeacons (SCION_Node::neighbour_relation relation) override;
 
   protected:
     /**
@@ -33,7 +32,7 @@ class CriteriaMatching : public BeaconingStrategy
     void
     ReplacementPolicy (std::string key, uint16_t src_as, beacon *old_beacon,
                                  uint16_t self_egress_if_no, uint16_t remote_ingress_if_no,
-                                 Ptr<SCION_Node> node, Ptr<SCION_Node> remote_as, ld latency,
+                                 Ptr<SCION_Node> remote_as, ld latency,
                                  ld bwd) override;
 
     void

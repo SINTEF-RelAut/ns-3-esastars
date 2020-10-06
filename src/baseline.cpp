@@ -35,10 +35,15 @@ Baseline::DisseminateBeacons (SCION_Node::neighbour_relation relation)
         if (node->neighbors.at(i).second != relation) {
             continue;
         }
+
         uint16_t &remote_as_no = node->neighbors.at(i).first;
         const std::vector<uint16_t> &interfaces = node->interfaces_per_neighbor_as.at(remote_as_no);
-        for (auto const &[dst_as_no, equal_dst_as_beacons] : node->beacon_store)
+
+        for (auto const &dst_as_beacons_pair : node->beacon_store)
         {
+            const uint16_t& dst_as_no  = dst_as_beacons_pair.first;
+            const beacons_with_same_dst_as& equal_dst_as_beacons = dst_as_beacons_pair.second;
+
             int16_t sent_count = 0;
 
             if (remote_as_no == dst_as_no)
@@ -53,7 +58,9 @@ Baseline::DisseminateBeacons (SCION_Node::neighbour_relation relation)
                     break;
                 }
 
-                for (auto const &the_beacon : len_beacons_pair.second)
+                auto const &beacons = len_beacons_pair.second;
+
+                for (auto const &the_beacon : beacons)
                 {
                     if (sent_count >= FIXED_BEACONS_NUMBER_TO_SEND)
                     {
