@@ -26,6 +26,8 @@ namespace ns3 {
 
     class CriteriaMatching : public BeaconingStrategy {
     public:
+
+        void DoInitializations(uint32_t all_nodes) override;
         /**
          * @brief Disseminates highest scoring beacons towards multiple interfaces of the appropriate neighbours until the limit for
          * sending beacons with the same originating source AS to one neighbour is reached.

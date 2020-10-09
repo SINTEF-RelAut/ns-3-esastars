@@ -13,6 +13,10 @@
 
 namespace ns3 {
 
+    void Baseline::DoInitializations(uint32_t all_nodes) {
+
+    }
+
 /**
  * Iterates over all the beacons for all the neighbours of the node. If the beacon is valid, its dissemination towards
  * this neighbour does not create a loop in the path and the neighbour is not the same AS which originated the beacon

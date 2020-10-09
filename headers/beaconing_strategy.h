@@ -25,6 +25,8 @@ class BeaconingStrategy
 {
   public:
     void SetNode(Ptr<SCION_Node> node);
+
+    virtual void DoInitializations(uint32_t all_nodes) = 0;
     /**
      * @brief Iterates over all the valid interfaces of the nodes neighbours and generates and sends a new beacon on each.
      */

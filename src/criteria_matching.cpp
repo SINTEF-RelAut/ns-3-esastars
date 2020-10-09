@@ -6,7 +6,6 @@
  * @brief Implements the specialized functions for the criteria matching strategy.
  */
 #include<omp.h>
-#include<assert.h>
 #include "../headers/criteria_matching.h"
 #include "../headers/utils.h"
 #include "ns3/point-to-point-channel.h"
@@ -21,6 +20,28 @@
  * @param node The node which is disseminating beacons.
  */
 namespace ns3 {
+
+    void CriteriaMatching::DoInitializations(uint32_t all_nodes) {
+        sent_beacons.resize (node->GetNDevices ());
+
+        for (uint32_t i = 0; i < node->GetNDevices (); ++i)
+        {
+            sent_beacons.at (i) = new std::unordered_map<beacon *, std::pair<float, uint16_t>> ();
+        }
+
+        for (uint32_t i = 0; i < node->neighbors.size (); ++i)
+        {
+            uint16_t neighbor_as_no = node->neighbors.at(i).first;
+            links_jointnesses_on_sent_paths.insert (std::make_pair (
+                    neighbor_as_no, std::vector<std::unordered_map<uint32_t, uint32_t> *> ()));
+            links_jointnesses_on_sent_paths.at (neighbor_as_no).resize (all_nodes);
+            for (uint32_t j = 0; j < all_nodes; ++j)
+            {
+                links_jointnesses_on_sent_paths.at (neighbor_as_no).at (j) =
+                        new std::unordered_map<uint32_t, uint32_t> ();
+            }
+        }
+    }
 
     void
     CriteriaMatching::DisseminateBeacons(
@@ -44,8 +65,7 @@ namespace ns3 {
                 }
 
                 std::multimap<ld, std::tuple<beacon *, uint16_t, uint16_t, Ptr<SCION_Node>, ld, ld> > selected_beacons =
-                        this->select_beacons_to_disseminate_per_dst_per_nbr(remote_as_no, dst_as_no,
-                                                                            beacons_to_the_dst_as);
+                        select_beacons_to_disseminate_per_dst_per_nbr(remote_as_no, dst_as_no, beacons_to_the_dst_as);
 
                 for (auto const &the_tuple_pair : selected_beacons) {
                     beacon *the_beacon;
@@ -58,7 +78,7 @@ namespace ns3 {
                     std::tie(the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as, latency,
                              bwd) = the_tuple_pair.second;
 
-                    this->GenerateBeaconAndSend(the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as,
+                    GenerateBeaconAndSend(the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as,
                                                 latency, bwd, false, 0.0);
 
                 }
@@ -251,14 +271,18 @@ namespace ns3 {
         ld link_diversity_score = calculate_link_diversity_score_for_dissemination(
                 remote_as->as_number, dst_as_no, self_egress_if_no, the_beacon);
 
-        ld  raw_score = (
-                            (1 - latency / MAX_LAT) * remote_as->latency_coef +
-                            (bwd / MAX_BWD) * remote_as->bandwidth_coef +
-                            link_diversity_score * remote_as->link_level_diversity_coef
+        ld  raw_score =
+                    (
+                        (1 - latency / MAX_LAT) * remote_as->latency_coef +
+                        (bwd / MAX_BWD) * remote_as->bandwidth_coef +
+                        link_diversity_score * remote_as->link_level_diversity_coef
                     )
                     /
-                    (remote_as->latency_coef + remote_as->bandwidth_coef +
-                     remote_as->link_level_diversity_coef);
+                    (
+                        remote_as->latency_coef +
+                        remote_as->bandwidth_coef +
+                        remote_as->link_level_diversity_coef
+                    );
 
         raw_score = SCALING_FACTOR * raw_score;
 
@@ -277,7 +301,8 @@ namespace ns3 {
     CriteriaMatching::inc_links_jointness_on_sent_paths(uint16_t dst_as_no, uint16_t remote_as_no,
                                                         uint16_t self_egress_if_no, beacon *the_beacon) {
         if (the_beacon != NULL) {
-            for (auto const &seg : the_beacon->the_path) {
+            auto const & the_path = the_beacon->the_path;
+            for (auto const &seg : the_path) {
                 uint32_t link = UPPER_32_BITS(seg);
                 if (links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as_no)->find(link) ==
                     links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as_no)->end()) {
@@ -315,7 +340,8 @@ namespace ns3 {
         ld add_one = path_not_sent_before(remote_as, egress_if_no, the_beacon) ? 1.0 : 0.0;
 
         ld jointness = 1.0;
-        for (auto const &seg : the_beacon->the_path) {
+        auto const & the_path = the_beacon->the_path;
+        for (auto const &seg : the_path) {
             uint32_t link = UPPER_32_BITS(seg);
             if (links_jointnesses_on_sent_paths.at(remote_as).at(dst_as)->find(link) !=
                 links_jointnesses_on_sent_paths.at(remote_as).at(dst_as)->end()) {
@@ -356,14 +382,15 @@ namespace ns3 {
 
             if (sent_beacons.at(i)->at(the_beacon).second <= node->next_period) {
                 sent_beacons.at(i)->erase(the_beacon);
-                this->dec_links_jointnesses_on_sent_paths(the_beacon, dst_as, remote_as_no, i);
+                dec_links_jointnesses_on_sent_paths(the_beacon, dst_as, remote_as_no, i);
             }
         }
     }
 
     void
     CriteriaMatching::dec_links_jointnesses_on_sent_paths(beacon* the_beacon, uint16_t  dst_as, uint16_t remote_as_no, uint16_t self_egress_if) {
-        for (auto const & seg : the_beacon->the_path) {
+        auto const & the_path = the_beacon->the_path;
+        for (auto const & seg : the_path) {
             uint32_t link = UPPER_32_BITS(seg);
             links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as)->at(link) = links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as)->at(link) - 1;
             if (links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as)->at(link) == 0) {

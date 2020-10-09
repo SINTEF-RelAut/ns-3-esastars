@@ -31,7 +31,7 @@ SCION_As::IntraISDBeaconing ()
 {
     UpdateTimeAndStats ();
     // Select the valid interfaces
-    this->strategy->DisseminateBeacons (neighbour_relation::CUSTOMER);
+    strategy->DisseminateBeacons (neighbour_relation::CUSTOMER);
     // A leaf AS never initiates beacons
 }
 
@@ -48,7 +48,7 @@ void
 SCION_As::ProcessReceivedBeacons (uint16_t beacon_origin_as_no, uint16_t ingress_if,
                                   beacon *the_beacon)
 {
-    this->strategy->processImmediateReceive (beacon_origin_as_no, ingress_if, the_beacon,
+    strategy->processImmediateReceive (beacon_origin_as_no, ingress_if, the_beacon,
                                              neighbour_relation::CUSTOMER);
 }
 }

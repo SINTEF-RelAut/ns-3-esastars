@@ -157,15 +157,9 @@ namespace ns3 {
             return;
         }
 
-        // Update statistics & check if you are sending too many beacons
-        if (remote_as->next_round_valid_beacons_count_per_dst_as.find(
-                dst_as) !=
-            // This check makes sure that the old beacon could not have been null. If this was the case the remote AS would not have already seen this as
+        if (remote_as->next_round_valid_beacons_count_per_dst_as.find(dst_as) !=
             remote_as->next_round_valid_beacons_count_per_dst_as.end()) {
-            if (remote_as->next_round_valid_beacons_count_per_dst_as.at(dst_as) >=
-                FIXED_BEACONS_NUMBER_TO_STORE) {
-                // Call via remote ASes node since this is the strategy that matters
-
+            if (remote_as->next_round_valid_beacons_count_per_dst_as.at(dst_as) >= FIXED_BEACONS_NUMBER_TO_STORE) {
                 remote_as->strategy->ReplacementPolicy(key, dst_as, old_beacon,
                                                        self_egress_if_no, remote_ingress_if_no,
                                                        remote_as, latency, bwd);
@@ -320,7 +314,7 @@ namespace ns3 {
         for (auto const &the_beacon_pair : beacons) {
             beacon *the_beacon = the_beacon_pair.second;
             UpdateBeaconState(the_beacon);
-            MetaDataUpdatePeriodic(the_beacon); //this->remove_invalid_sent_beacons(the_beacon, dst_as);
+            MetaDataUpdatePeriodic(the_beacon);
         }
     }
 

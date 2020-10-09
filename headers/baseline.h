@@ -21,6 +21,8 @@ class Baseline : public BeaconingStrategy
     void
     DisseminateBeacons (SCION_Node::neighbour_relation relation) override;
 
+    void DoInitializations(uint32_t all_nodes) override;
+
   protected:
     /**
      * @brief Does nothing. This strategy does not evict any beacons.

@@ -14,6 +14,7 @@
 #include "ns3/point-to-point-helper.h"
 #include "ns3/point-to-point-net-device.h"
 #include "ns3/point-to-point-channel.h"
+#include "../headers/beaconing_strategy.h"
 #include <unordered_set>
 #include <unordered_map>
 
@@ -58,7 +59,7 @@ typedef std::map<uint16_t, beacons_with_equal_length> beacons_with_same_dst_as;
  * - beaconing_period
  * - expiration_period
  */
-typedef std::pair<Time, int64_t> simulator_params;
+typedef std::pair<Time, uint16_t> beaconign_timing_params;
 
 /**
  * @brief Holds 0:latency_coef, 1:bandwidth_coef, 2:AS_level_diversity_coef, 3:link_level_diversity_coef
@@ -173,7 +174,7 @@ class SCION_Node : public Node
     std::unordered_map<uint16_t, std::vector<uint32_t>> bytes_sent_per_interface_per_period;
 
     SCION_Node (uint16_t as_number, uint32_t system_id, coefficients coefs,
-                const simulator_params &periods, BeaconingStrategy *strategy)
+                const beaconign_timing_params &periods, BeaconingStrategy *strategy)
         : Node (system_id),
           as_number (as_number),
           beaconing_period (periods.first),
@@ -193,6 +194,8 @@ class SCION_Node : public Node
     /**
      * @brief Initializes the intra_as_latencies and the as_max_bw fields.
      */
+
+    void DoInitializations();
     void DoInitializations (uint32_t all_nodes);
 
 

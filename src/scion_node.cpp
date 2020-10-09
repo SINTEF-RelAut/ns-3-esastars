@@ -18,54 +18,43 @@ namespace ns3 {
  *
  * @see calculate_great_circle_latency
  */
+
+void
+SCION_Node::DoInitializations() {
+        intra_as_latencies.resize (GetNDevices ());
+        for (uint64_t i = 0; i < GetNDevices (); ++i)
+        {
+            intra_as_latencies.at (i).resize (GetNDevices ());
+        }
+
+        for (uint32_t i = 0; i < GetNDevices (); ++i)
+        {
+            for (uint32_t j = i + 1; j < GetNDevices (); ++j)
+            {
+                intra_as_latencies.at (i).at (j) = calculate_great_circle_latency (
+                        interfaces_coordinates.at (i).first, interfaces_coordinates.at (i).second,
+                        interfaces_coordinates.at (j).first, interfaces_coordinates.at (j).second);
+                intra_as_latencies.at (j).at (i) = intra_as_latencies.at (i).at (j);
+            }
+        }
+
+        AS_max_bwd = 0;
+        for (auto const curr_bwd : inter_as_bwds)
+        {
+            if (curr_bwd > AS_max_bwd)
+            {
+                AS_max_bwd = curr_bwd;
+            }
+        }
+}
+
 void
 SCION_Node::DoInitializations (uint32_t all_nodes)
 {
-    intra_as_latencies.resize (GetNDevices ());
-    for (uint64_t i = 0; i < GetNDevices (); ++i)
-    {
-        intra_as_latencies.at (i).resize (GetNDevices ());
-    }
 
-    for (uint32_t i = 0; i < GetNDevices (); ++i)
-    {
-        for (uint32_t j = i + 1; j < GetNDevices (); ++j)
-        {
-            intra_as_latencies.at (i).at (j) = calculate_great_circle_latency (
-                interfaces_coordinates.at (i).first, interfaces_coordinates.at (i).second,
-                interfaces_coordinates.at (j).first, interfaces_coordinates.at (j).second);
-            intra_as_latencies.at (j).at (i) = intra_as_latencies.at (i).at (j);
-        }
-    }
+    DoInitializations();
+    strategy->DoInitializations(all_nodes);
 
-    AS_max_bwd = 0;
-    for (auto const curr_bwd : inter_as_bwds)
-    {
-        if (curr_bwd > AS_max_bwd)
-        {
-            AS_max_bwd = curr_bwd;
-        }
-    }
-
-    sent_beacons.resize (this->GetNDevices ());
-
-    for (uint32_t i = 0; i < this->GetNDevices (); ++i)
-    {
-        sent_beacons.at (i) = new std::unordered_map<beacon *, std::pair<float, uint16_t>> ();
-    }
-
-    for (uint32_t i = 0; i < neighbors.size (); ++i)
-    {
-        uint16_t neighbor_as_no = neighbors.at(i).first;
-        links_jointnesses_on_sent_paths.insert (std::make_pair (
-            neighbor_as_no, std::vector<std::unordered_map<uint32_t, uint32_t> *> ()));
-        links_jointnesses_on_sent_paths.at (neighbor_as_no).resize (all_nodes);
-        for (uint32_t j = 0; j < all_nodes; ++j)
-        {
-            links_jointnesses_on_sent_paths.at (neighbor_as_no).at (j) =
-                new std::unordered_map<uint32_t, uint32_t> ();
-        }
-    }
 }
 
 /**
