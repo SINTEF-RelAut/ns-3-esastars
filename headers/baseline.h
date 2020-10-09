@@ -30,7 +30,7 @@ class Baseline : public BeaconingStrategy
                             Ptr<SCION_Node> remote_as, ld latency,
                             ld bwd) override;
 
-    void MetaDataUpdateAfterSend (beacon *the_beacon, uint16_t local_iface, Ptr<SCION_Node> remote_as,
+    void MetaDataUpdateAfterImmediateSend (beacon *the_beacon, uint16_t local_iface, Ptr<SCION_Node> remote_as,
                                   uint16_t dst_as_no) override;
     void MetaDataUpdatePeriodic (beacon* the_beacon) override;
 };

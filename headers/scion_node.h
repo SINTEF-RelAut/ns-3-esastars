@@ -11,6 +11,9 @@
 #include "beacon.h"
 #include "ns3/network-module.h"
 #include "ns3/node.h"
+#include "ns3/point-to-point-helper.h"
+#include "ns3/point-to-point-net-device.h"
+#include "ns3/point-to-point-channel.h"
 #include <unordered_set>
 #include <unordered_map>
 
@@ -142,17 +145,7 @@ class SCION_Node : public Node
      * @see key
      * */
     std::unordered_map<std::string, beacon *> path_map_to_beacon;
-    /** @brief
-     * holds a history of sent beacons; it is a map from the pointer to the beacon to a pair
-     * containing the raw score of the beacon
-     * and its expiration time at the time it was sent
-     * */
-    std::vector<std::unordered_map<beacon *, std::pair<float, uint16_t>> *> sent_beacons;
-    /** @brief
-    * holds repetition counter of every link on the path from a source AS to a destination AS
-    * */
-    std::unordered_map<uint16_t, std::vector<std::unordered_map<uint32_t, uint32_t> *>>
-        links_jointnesses_on_sent_paths;
+
 
     // helper structures ********************************************************************************************************
     /**
@@ -202,6 +195,9 @@ class SCION_Node : public Node
      */
     void DoInitializations (uint32_t all_nodes);
 
+
+    std::pair<uint16_t, Ptr<SCION_Node>>
+    GetRemoteAsInfo (uint16_t egress_interface_no);
     /**
      * @brief Called to initiate CoreBeaconing.
      *

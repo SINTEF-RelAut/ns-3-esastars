@@ -94,38 +94,24 @@ PropertyContainer parseProperties (rapidxml::xml_node<> *node);
 /**
  * @brief Prettyprints bytes_sent_per_interface_per_period on the passed SCION_Node. Currently works over std::cerr and prints only for time == 0.
  */
-void print_consumed_bw_structure (SCION_Node *node);
+void print_consumed_bw_structure (Ptr<SCION_Node> node, const std::map<uint16_t, int32_t>& index_to_AS_no);
 
-/**
- * @brief Prettyprints the valid_intfs structure and some information on the passed node. Currently works with std::cerr.
- */
-void print_valid_intfs (SCION_Node *node,
-                        std::unordered_map<uint16_t, std::vector<uint16_t>> valid_intfs);
 
 /**
  * @brief Prettyprints the beacon store of the passed node.
  */
-void print_beacon_store (SCION_Node *node, std::ofstream &out);
+void print_beacon_store (Ptr<SCION_Node> the_node, const std::map<uint16_t, int32_t>& index_to_AS_no);
 
 /**
  * @brief Prettyprints a valid beacon counter structure. Currently works with std::cerr.
  */
-void print_valid_beacon_counter (SCION_Node *node, std::unordered_map<uint16_t, uint64_t> counter);
-
-/**
- * @brief Prettyprints the AS mapping. Currently works with std::cerr.
- */
-void print_as_mappings (std::map<int32_t, uint16_t> ASes);
-
-/**
- * @brief Checks for loops in a beacon.
- */
-bool has_loop (beacon *beacon);
+void print_valid_beacon_counter (Ptr<SCION_Node> node, const std::map<uint16_t, int32_t>& index_to_AS_no, std::unordered_map<uint16_t, uint64_t> counter);
 
 /**
  * @brief Iterates over the nodes beacon store and prints how many valid entries for each AS are present. Currently works with std::cerr.
  */
-void print_number_of_valid_beacon_entries_in_beacon_store (SCION_Node *node);
+void
+print_number_of_valid_beacon_entries_in_beacon_store (Ptr<SCION_Node> node, const std::map<uint16_t, int32_t>& index_to_AS_no);
 
 }
 #endif //SCION_BEACONING_SIMMULATOR_UTILS_H

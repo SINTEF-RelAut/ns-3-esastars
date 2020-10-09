@@ -9,7 +9,6 @@
 #include <omp.h>
 #include "../headers/utils.h"
 #include "../headers/baseline.h"
-#include "ns3/point-to-point-net-device.h"
 #include "ns3/point-to-point-channel.h"
 
 namespace ns3 {
@@ -90,7 +89,7 @@ Baseline::DisseminateBeacons (SCION_Node::neighbour_relation relation)
                     for (auto const &egress_interface_no : interfaces)
                     {
                         std::pair<uint16_t, Ptr<SCION_Node>>
-                            remote_as_if_pair = GetRemoteAsInfo (egress_interface_no);
+                            remote_as_if_pair = node->GetRemoteAsInfo (egress_interface_no);
 
                         uint16_t remote_ingress_if_no = remote_as_if_pair.first;
                         Ptr<SCION_Node> remote_as = remote_as_if_pair.second;
@@ -134,21 +133,17 @@ Baseline::ReplacementPolicy (std::string key, uint16_t src_as, beacon *old_beaco
                              Ptr<SCION_Node> remote_as, ld latency,
                              ld bwd)
 {
-    // In the Baseline strategy, we don't evict any beacons but simply ignore the new one
-    return;
 }
 
 
 void
-Baseline::MetaDataUpdateAfterSend (beacon *the_beacon, uint16_t local_iface, Ptr<SCION_Node> remote_as,
+Baseline::MetaDataUpdateAfterImmediateSend (beacon *the_beacon, uint16_t local_iface, Ptr<SCION_Node> remote_as,
                               uint16_t dst_as_no)
 {
-    return;
 }
 void
 Baseline::MetaDataUpdatePeriodic (beacon* the_beacon)
 {
-    return;
 }
 
 } // namespace ns3

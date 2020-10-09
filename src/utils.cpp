@@ -22,35 +22,26 @@
  * @return The link-level jaccard distance between the two paths.
  */
  namespace ns3 {
-ld
-link_level_jaccard_distance_between_two_paths (beacon *beacon1, beacon *beacon2)
-{
-    std::set<uint32_t> set_of_links_on_path1;
-    int32_t intersection = 0;
+     ld link_level_jaccard_distance_between_two_paths(beacon *beacon1, beacon *beacon2) {
+         std::set<uint32_t> set_of_links_on_path1;
+         int32_t intersection = 0;
 
-    for (auto const &link_info : *beacon1->the_path)
-        {
-            set_of_links_on_path1.insert (((uint32_t) link_info[0]) << 16 |
-                                          (uint32_t) link_info[1]);
-        }
+         for (auto const &link_info : beacon1->the_path) {
+             set_of_links_on_path1.insert(UPPER_32_BITS(link_info));
+         }
 
-    for (auto const &link_info : *beacon2->the_path)
-        {
-            if (set_of_links_on_path1.find (((uint32_t) link_info[0]) << 16 |
-                                            (uint32_t) link_info[1]) !=
-                set_of_links_on_path1.end ())
-                {
-                    intersection++;
-                }
-            else
-                {
-                    set_of_links_on_path1.insert (((uint32_t) link_info[0]) << 16 |
-                                                  (uint32_t) link_info[1]);
-                }
-        }
+         for (auto const &link_info : beacon2->the_path) {
+             if (set_of_links_on_path1.find(UPPER_32_BITS(link_info)) !=
+                 set_of_links_on_path1.end()) {
+                 intersection++;
+             } else {
+                 set_of_links_on_path1.insert(UPPER_32_BITS(link_info));
+             }
+         }
 
-    return 1 - 1.0 * intersection / set_of_links_on_path1.size ();
-}
+         return 1 - 1.0 * intersection / set_of_links_on_path1.size();
+     }
+
 
 /**
  * The jaccard distance measures the dissimilarity between two sets. This function considers only the AS number and
@@ -61,31 +52,26 @@ link_level_jaccard_distance_between_two_paths (beacon *beacon1, beacon *beacon2)
  * @param beacon2 A beacon containing a path.
  * @return The AS-level jaccard distance between the two paths.
  */
-ld
-AS_level_jaccard_distance_between_two_paths (beacon *beacon1, beacon *beacon2)
-{
-    std::set<uint16_t> set_of_ASes_on_path1;
-    int32_t intersection = 0;
+     ld AS_level_jaccard_distance_between_two_paths(beacon *beacon1, beacon *beacon2) {
+         std::set<uint16_t> set_of_ASes_on_path1;
+         int32_t intersection = 0;
 
-    for (auto const &link_info : *beacon1->the_path)
-        {
-            set_of_ASes_on_path1.insert (link_info[0]);
-        }
+         for (auto const &link_info : beacon1->the_path) {
+             set_of_ASes_on_path1.insert(UPPER_16_BITS(link_info));
+         }
 
-    for (auto const &link_info : *beacon2->the_path)
-        {
-            if (set_of_ASes_on_path1.find (link_info[0]) != set_of_ASes_on_path1.end ())
-                {
-                    intersection++;
-                }
-            else
-                {
-                    set_of_ASes_on_path1.insert (link_info[0]);
-                }
-        }
+         for (auto const &link_info : beacon2->the_path) {
+             if (set_of_ASes_on_path1.find(UPPER_16_BITS(link_info)) != set_of_ASes_on_path1.end()) {
+                 intersection++;
+             } else {
+                 set_of_ASes_on_path1.insert(UPPER_16_BITS(link_info));
+             }
+         }
 
-    return 1 - 1.0 * intersection / set_of_ASes_on_path1.size ();
-}
+         return 1 - 1.0 * intersection / set_of_ASes_on_path1.size();
+
+     }
+
 
 /**
  * Calculates the great circle distance between the two coordinate pairs. Uses this distance and the assumption of
@@ -211,68 +197,59 @@ parseProperties (rapidxml::xml_node<> *node)
  * @param node The node whose bandwidth stats you want to print.
  */
 void
-print_consumed_bw_structure (SCION_Node *node)
+print_consumed_bw_structure (Ptr<SCION_Node> node, const std::map<uint16_t, int32_t>& index_to_AS_no)
 {
     for (auto const &el : node->bytes_sent_per_interface_per_period)
         {
-            auto vector = el.second;
-            std::cerr << "\nNode: " << node->as_number << " at time 0." << std::endl;
-            for (auto element : vector)
+            auto const & vector = el.second;
+            std::cerr << "\nNode: " << index_to_AS_no.at(node->as_number) << " at time 0." << std::endl;
+            for (auto const & element : vector)
                 {
                     std::cerr << element << " ";
                 }
         }
 }
 
-/**
- * @param node The node using these interfaces.
- * @param valid_intfs The valid interfaces returned by calling SCION_Node.GetValidInterfaces.
- * @see SCION_Node.GetValidInterfaces
- */
-void
-print_valid_intfs (SCION_Node *node,
-                   std::unordered_map<uint16_t, std::vector<uint16_t>> valid_intfs)
-{
-    std::cerr << "\n\nNode: " << node->as_number << " Works on the interfaces: " << std::endl;
-    for (auto &[as_no, interface_rel_pairs] : valid_intfs)
-        {
-            std::cerr << as_no << ": ";
-            for (auto &intf_no : interface_rel_pairs)
-                {
-                    std::cerr << "[" << intf_no << "], ";
-                }
-        }
-    std::cerr << std::endl;
-}
+
 
 /**
  * @param node The node holding the beacon_store to be printed.
  * @param out Where to print the beacon store. 
  */
 void
-print_beacon_store (SCION_Node *node, std::ofstream &out)
+print_beacon_store (Ptr<SCION_Node> the_node, const std::map<uint16_t, int32_t>& index_to_AS_no)
 {
-    const std::string first_lvl_offset = "\t";
-    const std::string second_lvl_offset = "\t\t";
-    const std::string third_lvl_offset = "\t\t\t";
-    out << "From: " << node->as_number << std::endl;
-    for (auto const [dst_as_no, equal_as_beacons] : node->beacon_store)
-        {
-            out << first_lvl_offset << "To: " << dst_as_no << std::endl;
-            for (auto const [length, beacons] : *equal_as_beacons)
-                {
-                    out << second_lvl_offset << length << ":" << std::endl;
-                    for (auto const beacon : *beacons)
-                        {
-                            out << third_lvl_offset;
-                            for (auto const path : *beacon->the_path)
-                                {
-                                    out << "->" << path[0] << ":" << path[1] << "]->[" << path[2]
-                                        << ":" << path[3];
-                                }
-                            out << std::endl;
+        std::cout << "From: " << index_to_AS_no.at(the_node->as_number) << std::endl;
+
+        for (auto const & dst_as_beacons_pair : the_node->beacon_store) {
+            uint16_t dst_as = dst_as_beacons_pair.first;
+            const beacons_with_same_dst_as& same_dst_as_beacons = dst_as_beacons_pair.second;
+
+            std::cout << "\t" << "To: " << index_to_AS_no.at(dst_as) << std::endl;
+
+            for (auto const & beacons_from_same_nbr : same_dst_as_beacons) {
+                for (auto const & the_beacon : beacons_from_same_nbr.second) {
+                    if (!the_beacon->is_valid) {
+                        continue;
+                    }
+                    std::cout << "\t" << "\t";
+                    int hop_cnt = 0;
+                    std::vector<link_information>::reverse_iterator hop = the_beacon->the_path.rbegin();
+                    for (; hop!= the_beacon->the_path.rend(); ++hop) {
+                        if (hop_cnt != 0) {
+                            std::cout << ", ";
                         }
+                        std::cout << index_to_AS_no.at(SECOND_LOWER_16_BITS(*hop)) << ":" << LOWER_16_BITS(*hop) << ", " << index_to_AS_no.at(UPPER_16_BITS(*hop)) << ":" << SECOND_UPPER_16_BITS(*hop);
+                        hop_cnt++;
+                    }
+                    std::cout << "; ";
+                    std::cout << "latency = " << the_beacon->latency_stat;
+                    std::cout << "; ";
+                    std::cout << "BWD = " << the_beacon->bwd_stat;
+                    std::cout << std::endl;
                 }
+
+            }
         }
 }
 
@@ -281,64 +258,38 @@ print_beacon_store (SCION_Node *node, std::ofstream &out)
  * @param counter The counter structure you want to print.
  */
 void
-print_valid_beacon_counter (SCION_Node *node, std::unordered_map<uint16_t, uint64_t> counter)
+print_valid_beacon_counter (Ptr<SCION_Node> node, const std::map<uint16_t, int32_t>& index_to_AS_no, const std::unordered_map<uint16_t, uint64_t>& counter)
 {
-    std::cerr << "On Node: " << node->as_number << std::endl;
+    std::cerr << "On Node: " << index_to_AS_no.at(node->as_number) << std::endl;
     std::cerr << "Src_AS:Count\n";
-    for (auto [src_as, count] : counter)
+    for (auto const & src_as_count_pair : counter)
         {
-            std::cerr << src_as << ":" << count << std::endl;
-        }
-}
+            auto const & src_as = src_as_count_pair.first;
+            auto const & count = src_as_count_pair.second;
 
-/**
- * @param ASes The AS mapping to print
- */
-void
-print_as_mappings (std::map<int32_t, uint16_t> ASes)
-{
-    std::cerr << std::endl;
-    for (auto [AS_no, src_as] : ASes)
-        {
-            std::cerr << AS_no << ":" << src_as << std::endl;
+            std::cerr << index_to_AS_no.at(src_as) << ":" << count << std::endl;
         }
-}
-/**
- *
- * @param beacon The beacon to be checked for loops
- */
-bool
-has_loop (beacon *beacon)
-{
-    std::vector<uint8_t> AS_nrs = std::vector<uint8_t> ();
-    for (auto const &link_info : *beacon->the_path)
-        {
-            auto as_no = link_info[0];
-            for (auto as : AS_nrs)
-                {
-                    if (as == as_no)
-                        return true;
-                    else
-                        AS_nrs.push_back (as_no);
-                }
-        }
-    return false;
 }
 
 /**
  * @param node The node whose beacon store you want to analyze.
  */
 void
-print_number_of_valid_beacon_entries_in_beacon_store (SCION_Node *node)
+print_number_of_valid_beacon_entries_in_beacon_store (Ptr<SCION_Node> node, const std::map<uint16_t, int32_t>& index_to_AS_no)
 {
-    std::cerr << "Beacon Store on Node: " << node->as_number << std::endl;
-    for (auto [src_as, beacons] : node->beacon_store)
+    std::cerr << "Beacon Store on Node: " << index_to_AS_no.at(node->as_number) << std::endl;
+    for (auto const & src_as_beacons_pair : node->beacon_store)
         {
+            auto const & src_as = src_as_beacons_pair.first;
+            auto const & beacons = src_as_beacons_pair.second;
+
             int count = 0;
-            for (auto [length, b_set] : *beacons)
+            for (auto const & len_beacon_set_pair : beacons)
                 {
+                    auto const & length = len_beacon_set_pair.first;
+                    auto const & beacon_set = len_beacon_set_pair.second;
                     std::cout << length;
-                    for (auto b : *b_set)
+                    for (auto b : beacon_set)
                         {
                             if (b->is_valid)
                                 {
@@ -346,7 +297,7 @@ print_number_of_valid_beacon_entries_in_beacon_store (SCION_Node *node)
                                 }
                         }
                 }
-            std::cerr << "\t" << src_as << ":" << count << std::endl;
+            std::cerr << "\t" << index_to_AS_no.at(src_as) << ":" << count << std::endl;
         }
     std::cerr << std::endl;
 }

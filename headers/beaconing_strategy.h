@@ -11,9 +11,6 @@
 
 #include <unordered_map>
 #include "beacon.h"
-#include "ns3/point-to-point-helper.h"
-#include "ns3/point-to-point-net-device.h"
-#include "ns3/point-to-point-channel.h"
 #include "../headers/scion_node.h"
 
 namespace ns3 {
@@ -23,7 +20,7 @@ namespace ns3 {
  */
 #define MAX_IMMEDIATE_BEACONS 5
 #define NUM_CORE 128
-#define IMMEDIATE_BEACONING 0
+#define IMMEDIATE_BEACONING 1
 class BeaconingStrategy
 {
   public:
@@ -71,11 +68,6 @@ class BeaconingStrategy
      bool GeneratesLoop (beacon const *the_beacon, uint16_t remote_as_no);
 
     /**
-     * @brief Fetches the remote interface number and a handle to the remote AS given an egress interface on the node.
-     */
-     std::pair<uint16_t, Ptr<SCION_Node>> GetRemoteAsInfo (uint16_t egress_interface_no);
-
-    /**
      * @brief Creates the new beacon if necessary, updates the structures recording how many bytes were sent per interface,
      * writes the new beacon into the remote ASes beacon store structures if the remote ASes import policy does not discard it,
      * and schedules a processing event on the simulator if the beacon needs to continue being disseminated right away.
@@ -97,7 +89,7 @@ class BeaconingStrategy
                                         ld bwd) = 0;
 
 
-    virtual void MetaDataUpdateAfterSend (beacon *the_beacon, uint16_t local_iface, Ptr<SCION_Node> remote_as,
+    virtual void MetaDataUpdateAfterImmediateSend (beacon *the_beacon, uint16_t local_iface, Ptr<SCION_Node> remote_as,
                                                uint16_t dst_as_no) = 0;
 
     virtual void MetaDataUpdatePeriodic (beacon* the_beacon) = 0;

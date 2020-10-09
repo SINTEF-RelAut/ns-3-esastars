@@ -88,6 +88,27 @@ SCION_Node::UpdateTimeAndStats ()
 }
 
 /**
+ * @param node The node on which the egress interface is connected.
+ * @param egress_interface_no The number of the egress interface.
+ * @return A pair holding the remote ingress interface number and the remote AS number.
+ */
+    std::pair<uint16_t, Ptr<SCION_Node>>
+    SCION_Node::GetRemoteAsInfo (uint16_t egress_interface_no)
+    {
+        Ptr<PointToPointNetDevice> self_egress_device = DynamicCast<PointToPointNetDevice> (GetDevice (egress_interface_no));
+
+        Ptr<PointToPointChannel> channel = DynamicCast<PointToPointChannel> (self_egress_device->GetChannel ());
+        uint32_t wire = self_egress_device == channel->GetSource (0) ? 0 : 1;
+        Ptr<PointToPointNetDevice> remote_device = channel->GetDestination (wire);
+
+        uint16_t remote_ingress_if_no = (uint16_t) remote_device->GetIfIndex ();
+
+        Ptr<SCION_Node> remote_as = (DynamicCast<SCION_Node> (remote_device->GetNode ()));
+
+        return std::make_pair (remote_ingress_if_no, remote_as);
+    }
+
+/**
  * Calculates the link-level and as-level path diversity scores and a quality metric
  * (based on the latency and bandwidth coefficients in the beacons and the node) for each beacon.
  * Saves the numeric value and the distribution (frequency of occurrence of a certain score) in the passed maps.
