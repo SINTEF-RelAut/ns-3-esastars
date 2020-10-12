@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
 
     //rapidxml::xml_node<>* rootNode = SetupTopologyFile (topology_name);
 
-    std::string file = "/home/tabaeias/ns-3_beaconing_simulator/topology/" + std::string(topology_name) + ".xml";
+    std::string file = "~/ns-3_beaconing_simulator/topology/" + std::string(topology_name) + ".xml";
     std::ifstream fin(file.c_str());
     std::ostringstream sstr;
     sstr << fin.rdbuf();
@@ -632,11 +632,11 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
                 for (uint32_t j = i + 1; j < st_nodes.size(); ++j) {
                     bool s_t_connected = false;
 
-                    ns3::Ptr<ns3::SCION_Node> t_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(j)));
+                    //ns3::Ptr<ns3::SCION_Node> t_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(j)));
                     uint32_t s_t_pair = (st_nodes.at(i) << 16) | st_nodes.at(j);
 
                     int path_no = -1;
-                    for(auto const & len_beacons_set : s_node->beacon_store.at(t_node->as_number)) {
+                    for(auto const & len_beacons_set : s_node->beacon_store.at(st_nodes.at(j))) {
                         for (auto const & the_beacon : len_beacons_set.second) {
                             path_no++;
                             bool path_connected = true;
@@ -678,11 +678,11 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
     for (uint32_t i = 0; i < st_nodes.size(); ++i) {
         ns3::Ptr<ns3::SCION_Node> s_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(i)));
         for (uint32_t j = i + 1; j < st_nodes.size(); ++j) {
-            ns3::Ptr<ns3::SCION_Node> t_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(j)));
+//            ns3::Ptr<ns3::SCION_Node> t_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(j)));
             uint32_t s_t_pair = (st_nodes.at(i) << 16) | st_nodes.at(j);
             for (uint32_t p = 0; p < MAX_FAILURE_RATE; ++p) {
                 int Snode = s_node->as_number;
-                int Tnode = t_node->as_number;
+                int Tnode = st_nodes.at(j);
                 int h = s_node->beacon_store.at(Tnode).begin()->first;
                 int paths = s_node->valid_beacons_count_per_dst_as.at(Tnode);
                 int c = MMP_connectivity.at(p).at(s_t_pair);
@@ -700,11 +700,11 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
     for (uint32_t i = 0; i < st_nodes.size(); ++i) {
         ns3::Ptr<ns3::SCION_Node> s_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(i)));
         for (uint32_t j = i + 1; j < st_nodes.size(); ++j) {
-            ns3::Ptr<ns3::SCION_Node> t_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(j)));
+//            ns3::Ptr<ns3::SCION_Node> t_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(j)));
             uint32_t s_t_pair = (st_nodes.at(i) << 16) | st_nodes.at(j);
             for (uint32_t p = 0; p < MAX_FAILURE_RATE; ++p) {
                 int Snode = s_node->as_number;
-                int Tnode = t_node->as_number;
+                int Tnode = st_nodes.at(j);
                 int h = s_node->beacon_store.at(Tnode).begin()->first;
                 int paths = s_node->valid_beacons_count_per_dst_as.at(Tnode) > 2 ? 2 : s_node->valid_beacons_count_per_dst_as.at(Tnode);
                 int c = FMP_connectivity.at(p).at(s_t_pair);
@@ -722,11 +722,11 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
     for (uint32_t i = 0; i < st_nodes.size(); ++i) {
         ns3::Ptr<ns3::SCION_Node> s_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(i)));
         for (uint32_t j = i + 1; j < st_nodes.size(); ++j) {
-            ns3::Ptr<ns3::SCION_Node> t_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(j)));
+//            ns3::Ptr<ns3::SCION_Node> t_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(j)));
             uint32_t s_t_pair = (st_nodes.at(i) << 16) | st_nodes.at(j);
             for (uint32_t p = 0; p < MAX_FAILURE_RATE; ++p) {
                 int Snode = s_node->as_number;
-                int Tnode = t_node->as_number;
+                int Tnode = st_nodes.at(j);
                 int h = s_node->beacon_store.at(Tnode).begin()->first;
                 int paths = s_node->valid_beacons_count_per_dst_as.at(Tnode) > 1 ? 1 : s_node->valid_beacons_count_per_dst_as.at(Tnode);
                 int c = FMP_connectivity.at(p).at(s_t_pair);
