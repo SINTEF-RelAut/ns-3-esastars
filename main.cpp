@@ -130,14 +130,14 @@ int main(int argc, char *argv[]) {
 
 rapidxml::xml_node<>* SetupTopologyFile (std::string topology_name) {
     std::string file = "/home/tabaeias/ns-3_beaconing_simulator/topology/" + std::string(topology_name) + ".xml";
-    std::ifstream fin(file.c_str());
-    std::ostringstream sstr;
-    sstr << fin.rdbuf();
+    std::ifstream* fin = new std::ifstream(file.c_str());
+    std::ostringstream* sstr = new std::ostringstream();
+    *sstr << fin->rdbuf();
 
-    sstr.flush();
-    fin.close();
+    sstr->flush();
+    fin->close();
 
-    std::string xmlData = sstr.str();
+    std::string xmlData = sstr->str();
     rapidxml::xml_document<>* doc = new rapidxml::xml_document<>();
     doc->parse<0>(&xmlData[0]);
 
