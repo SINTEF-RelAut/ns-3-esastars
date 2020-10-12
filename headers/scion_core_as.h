@@ -17,7 +17,7 @@ class SCION_Core_As : public SCION_Node
 {
   public:
     SCION_Core_As (uint16_t as_number, uint32_t system_id, coefficients coefs,
-                   const beaconign_timing_params &periods, BeaconingStrategy *strategy)
+                   const beaconing_timing_params &periods, BeaconingStrategy *strategy)
         : SCION_Node (as_number, system_id, coefs, periods, strategy)
     {
     }
