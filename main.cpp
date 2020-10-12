@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
 
     //rapidxml::xml_node<>* rootNode = SetupTopologyFile (topology_name);
 
-    std::string file = "~/ns-3_beaconing_simulator/topology/" + std::string(topology_name) + ".xml";
+    std::string file = "/cluster/home/tabaeias/ns-3_beaconing_simulator/topology/" + std::string(topology_name) + ".xml";
     std::ifstream fin(file.c_str());
     std::ostringstream sstr;
     sstr << fin.rdbuf();
@@ -553,7 +553,7 @@ void PrintPathQualities(ns3::NodeContainer& nodes) {
 }
 
 void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
-    uint32_t NUMBER_OF_NODES = 50;
+    uint32_t NUMBER_OF_NODES = 5;
 
     uint32_t MAX_FAILURE_RATE = 100;
 
@@ -610,7 +610,7 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
     }
 
     omp_set_num_threads(MAX_FAILURE_RATE > NUM_CORE ? NUM_CORE : MAX_FAILURE_RATE);
-#pragma omp parallel for
+//#pragma omp parallel for
     for (uint32_t p = 0; p < MAX_FAILURE_RATE; ++p) {
 
         for (uint32_t ts = 0; ts < NUMBER_OF_TIME_SLICES; ++ts) {
@@ -618,9 +618,10 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
             disabled_links.clear();
 
             std::random_device randomDevice;
-            std::uniform_real_distribution<double> dist(0.0,MAX_FAILURE_RATE);
+            std::uniform_real_distribution<double> dist(0.0, (double) MAX_FAILURE_RATE);
             for (uint32_t link_index = 0; link_index < links.size(); ++link_index) {
                 double r = distribution(randomDevice);
+                std::cout << p << "  " << r << std::endl;
                 if (r < (double ) (p + 1)) {
                     disabled_links.push_back(links.at(link_index));
                     disabled_links.push_back(links_reverse.at(link_index));
@@ -686,7 +687,7 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
                 int h = s_node->beacon_store.at(Tnode).begin()->first;
                 int paths = s_node->valid_beacons_count_per_dst_as.at(Tnode);
                 int c = MMP_connectivity.at(p).at(s_t_pair);
-                double c_ts = c / NUMBER_OF_TIME_SLICES;
+                double c_ts = (double ) c / NUMBER_OF_TIME_SLICES;
                 std::cout << Snode << "\t" << Tnode << "\t" << h << "\t" << paths << "\t" << p << "\t" << c << "\t" << c_ts << std::endl;
             }
 
@@ -708,7 +709,7 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
                 int h = s_node->beacon_store.at(Tnode).begin()->first;
                 int paths = s_node->valid_beacons_count_per_dst_as.at(Tnode) > 2 ? 2 : s_node->valid_beacons_count_per_dst_as.at(Tnode);
                 int c = FMP_connectivity.at(p).at(s_t_pair);
-                double c_ts = c / NUMBER_OF_TIME_SLICES;
+                double c_ts = (double ) c / NUMBER_OF_TIME_SLICES;
                 std::cout << Snode << "\t" << Tnode << "\t" << h << "\t" << paths << "\t" << p << "\t" << c << "\t" << c_ts << std::endl;
             }
 
@@ -730,7 +731,7 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
                 int h = s_node->beacon_store.at(Tnode).begin()->first;
                 int paths = s_node->valid_beacons_count_per_dst_as.at(Tnode) > 1 ? 1 : s_node->valid_beacons_count_per_dst_as.at(Tnode);
                 int c = FMP_connectivity.at(p).at(s_t_pair);
-                double c_ts = c / NUMBER_OF_TIME_SLICES;
+                double c_ts = (double ) c / NUMBER_OF_TIME_SLICES;
                 std::cout << Snode << "\t" << Tnode << "\t" << h << "\t" << paths << "\t" << p << "\t" << c << "\t" << c_ts << std::endl;
             }
 
