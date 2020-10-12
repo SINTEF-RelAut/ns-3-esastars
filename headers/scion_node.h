@@ -14,7 +14,6 @@
 #include "ns3/point-to-point-helper.h"
 #include "ns3/point-to-point-net-device.h"
 #include "ns3/point-to-point-channel.h"
-#include "../headers/beaconing_strategy.h"
 #include <unordered_set>
 #include <unordered_map>
 

@@ -571,14 +571,14 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
     std::vector<std::unordered_map<uint32_t, uint32_t> > FMP_connectivity(MAX_FAILURE_RATE, std::unordered_map<uint32_t, uint32_t>());
     std::vector<std::unordered_map<uint32_t, uint32_t> > SP_connectivity(MAX_FAILURE_RATE, std::unordered_map<uint32_t, uint32_t>());
 
-    for (int i = 0; i < st_nodes.size(); ++i) {
+    for (uint32_t i = 0; i < st_nodes.size(); ++i) {
         uint32_t s_node = st_nodes.at(i);
-        for (int j = i + 1; j < st_nodes.size(); ++j) {
+        for (uint32_t j = i + 1; j < st_nodes.size(); ++j) {
             uint32_t t_node = st_nodes.at(j);
 
             uint32_t s_t_pair = (s_node << 16) | t_node;
 
-            for (int p = 0; p < MAX_FAILURE_RATE; ++p) {
+            for (uint32_t p = 0; p < MAX_FAILURE_RATE; ++p) {
                 MMP_connectivity.at(p).insert(std::make_pair(s_t_pair, 0));
                 FMP_connectivity.at(p).insert(std::make_pair(s_t_pair, 0));
                 SP_connectivity.at(p).insert(std::make_pair(s_t_pair, 0));
@@ -588,9 +588,9 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
 
     omp_set_num_threads(MAX_FAILURE_RATE > NUM_CORE ? NUM_CORE : MAX_FAILURE_RATE);
 #pragma omp parallel for
-    for (int p = 0; p < MAX_FAILURE_RATE; ++p) {
+    for (uint32_t p = 0; p < MAX_FAILURE_RATE; ++p) {
 
-        for (int ts = 0; ts < NUMBER_OF_TIME_SLICES; ++ts) {
+        for (uint32_t ts = 0; ts < NUMBER_OF_TIME_SLICES; ++ts) {
             std::vector<uint64_t> disabled_links;
             disabled_links.clear();
 
@@ -604,7 +604,7 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
                 }
             }
 
-            for (int i = 0; i < st_nodes.size(); ++i) {
+            for (uint32_t i = 0; i < st_nodes.size(); ++i) {
                 ns3::Ptr<ns3::SCION_Node> s_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(i)));
                 for (int j = i + 1; j < st_nodes.size(); ++j) {
                     bool s_t_connected = false;
@@ -652,12 +652,12 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
     std::cout << "MMP" << std::endl;
     std::cout << "Snode" << "\t" << "Tnode" << "\t" << "h" << "\t" << "paths" << "\t" << "p" << "\t" << "c" << "\t" << "c/ts" << std::endl;
 
-    for (int i = 0; i < st_nodes.size(); ++i) {
+    for (uint32_t i = 0; i < st_nodes.size(); ++i) {
         ns3::Ptr<ns3::SCION_Node> s_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(i)));
-        for (int j = i + 1; j < st_nodes.size(); ++j) {
+        for (uint32_t j = i + 1; j < st_nodes.size(); ++j) {
             ns3::Ptr<ns3::SCION_Node> t_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(j)));
             uint32_t s_t_pair = (st_nodes.at(i) << 16) | st_nodes.at(j);
-            for (int p = 0; p < MAX_FAILURE_RATE; ++p) {
+            for (uint32_t p = 0; p < MAX_FAILURE_RATE; ++p) {
                 int Snode = s_node->as_number;
                 int Tnode = t_node->as_number;
                 int h = s_node->beacon_store.at(Tnode).begin()->first;
@@ -674,12 +674,12 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
     std::cout << "FMP" << std::endl;
     std::cout << "Snode" << "\t" << "Tnode" << "\t" << "h" << "\t" << "paths" << "\t" << "p" << "\t" << "c" << "\t" << "c/ts" << std::endl;
 
-    for (int i = 0; i < st_nodes.size(); ++i) {
+    for (uint32_t i = 0; i < st_nodes.size(); ++i) {
         ns3::Ptr<ns3::SCION_Node> s_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(i)));
-        for (int j = i + 1; j < st_nodes.size(); ++j) {
+        for (uint32_t j = i + 1; j < st_nodes.size(); ++j) {
             ns3::Ptr<ns3::SCION_Node> t_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(j)));
             uint32_t s_t_pair = (st_nodes.at(i) << 16) | st_nodes.at(j);
-            for (int p = 0; p < MAX_FAILURE_RATE; ++p) {
+            for (uint32_t p = 0; p < MAX_FAILURE_RATE; ++p) {
                 int Snode = s_node->as_number;
                 int Tnode = t_node->as_number;
                 int h = s_node->beacon_store.at(Tnode).begin()->first;
@@ -696,12 +696,12 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
     std::cout << "SP" << std::endl;
     std::cout << "Snode" << "\t" << "Tnode" << "\t" << "h" << "\t" << "paths" << "\t" << "p" << "\t" << "c" << "\t" << "c/ts" << std::endl;
 
-    for (int i = 0; i < st_nodes.size(); ++i) {
+    for (uint32_t i = 0; i < st_nodes.size(); ++i) {
         ns3::Ptr<ns3::SCION_Node> s_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(i)));
-        for (int j = i + 1; j < st_nodes.size(); ++j) {
+        for (uint32_t j = i + 1; j < st_nodes.size(); ++j) {
             ns3::Ptr<ns3::SCION_Node> t_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(j)));
             uint32_t s_t_pair = (st_nodes.at(i) << 16) | st_nodes.at(j);
-            for (int p = 0; p < MAX_FAILURE_RATE; ++p) {
+            for (uint32_t p = 0; p < MAX_FAILURE_RATE; ++p) {
                 int Snode = s_node->as_number;
                 int Tnode = t_node->as_number;
                 int h = s_node->beacon_store.at(Tnode).begin()->first;
