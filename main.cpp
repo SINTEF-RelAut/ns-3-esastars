@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
 }
 
 rapidxml::xml_node<>* SetupTopologyFile (std::string topology_name) {
-    std::string file = "~/ns-3_beaconing_simulator/topology/" + std::string(topology_name) + ".xml";
+    std::string file = "/home/tabaeias/ns-3_beaconing_simulator/topology/" + std::string(topology_name) + ".xml";
     std::ifstream fin(file.c_str());
     std::ostringstream sstr;
     sstr << fin.rdbuf();
@@ -138,10 +138,10 @@ rapidxml::xml_node<>* SetupTopologyFile (std::string topology_name) {
     fin.close();
 
     std::string xmlData = sstr.str();
-    rapidxml::xml_document<> doc;
-    doc.parse<0>(&xmlData[0]);
+    rapidxml::xml_document<>* doc = new rapidxml::xml_document<>();
+    doc->parse<0>(&xmlData[0]);
 
-    rapidxml::xml_node<> *rootNode = doc.first_node("topology");
+    rapidxml::xml_node<> *rootNode = doc->first_node("topology");
 
     if (!rootNode) {
         std::cerr << "Empty topology!" << std::endl;
