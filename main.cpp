@@ -610,7 +610,7 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
     }
 
     omp_set_num_threads(MAX_FAILURE_RATE > NUM_CORE ? NUM_CORE : MAX_FAILURE_RATE);
-//#pragma omp parallel for
+#pragma omp parallel for
     for (uint32_t p = 0; p < MAX_FAILURE_RATE; ++p) {
 
         for (uint32_t ts = 0; ts < NUMBER_OF_TIME_SLICES; ++ts) {
@@ -620,8 +620,7 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
             std::random_device randomDevice;
             std::uniform_real_distribution<double> dist(0.0, (double) MAX_FAILURE_RATE);
             for (uint32_t link_index = 0; link_index < links.size(); ++link_index) {
-                double r = distribution(randomDevice);
-                std::cout << p << "  " << r << std::endl;
+                double r = dist(randomDevice);
                 if (r < (double ) (p + 1)) {
                     disabled_links.push_back(links.at(link_index));
                     disabled_links.push_back(links_reverse.at(link_index));
