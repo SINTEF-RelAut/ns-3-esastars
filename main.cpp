@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
 
     // TODO: Think about how to automatically set an appropriate name, maybe in conjunction with simulator configs?
     std::string out_path =
-            "/cluster/scratch/tabaeias/" + beaconing_period_str + "_" + topology_name + "_" +
+            "/cluster/scratch/tabaeias/" + beaconing_policy_str + "_" + topology_name + "_" +
             beaconing_period_str + "_" + expiration_period_str + "_" + last_beaconing_event_time_str + ".txt";
     std::ofstream out(out_path);
     std::cout.rdbuf(out.rdbuf());
