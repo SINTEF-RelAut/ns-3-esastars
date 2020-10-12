@@ -92,8 +92,10 @@ namespace ns3 {
         std::string key;
 
         uint16_t remote_as_no = remote_as->as_number;
+#if IMMEDIATE_BEACONING
         bool immediate_dst = false;
         bool immediate_non_dst = false;
+#endif
 
         // Even if the remote AS ends up ignoring the beacon later on, we update the interface values anyways since, in the real deployment,
         // we need to send the beacon before the remote AS can decide if it will be ignored.

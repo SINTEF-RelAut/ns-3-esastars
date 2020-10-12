@@ -166,7 +166,7 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* rootNode, std::string beaconi
         ns3::ld link_level_diversity_coef = 1.0; //std::stod(p.getProperty("link_level_diversity_coef"));
         std::string type = "core"; //p.getProperty("type");
 
-        ns3::beaconign_timing_params params = std::make_pair(beaconing_period, expiration_period);
+        ns3::beaconing_timing_params params = std::make_pair(beaconing_period, expiration_period);
         ns3::coefficients coefs = std::make_tuple(latency_coef, bandwidth_coef, AS_level_diversity_coef,
                                                   link_level_diversity_coef);
 
@@ -596,7 +596,7 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
 
             std::random_device randomDevice;
             std::uniform_real_distribution<double> dist(0.0,MAX_FAILURE_RATE);
-            for (int link_index = 0; link_index < links.size(); ++link_index) {
+            for (uint32_t link_index = 0; link_index < links.size(); ++link_index) {
                 double r = distribution(randomDevice);
                 if (r < (double ) (p + 1)) {
                     disabled_links.push_back(links.at(link_index));
@@ -606,7 +606,7 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
 
             for (uint32_t i = 0; i < st_nodes.size(); ++i) {
                 ns3::Ptr<ns3::SCION_Node> s_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(i)));
-                for (int j = i + 1; j < st_nodes.size(); ++j) {
+                for (uint32_t j = i + 1; j < st_nodes.size(); ++j) {
                     bool s_t_connected = false;
 
                     ns3::Ptr<ns3::SCION_Node> t_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(j)));
