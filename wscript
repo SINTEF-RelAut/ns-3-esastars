@@ -27,15 +27,11 @@ def build(bld):
                      'headers/scion_node.h',
                      'headers/utils.h']
 
-    obj = bld.create_ns3_program('baseline_sim',
+    obj = bld.create_ns3_program('main',
                                 ['SCION', 'point-to-point'])
 
-    obj.source = 'baseline_sim.cpp'
+    obj.source = 'main.cpp'
 
-    obj = bld.create_ns3_program('criteria_matching_sim',
-                                    ['SCION', 'point-to-point'])
-
-    obj.source = 'criteria_matching_sim.cpp'
 
     obj = bld.create_ns3_program('scion-criteria-matching',
                                         ['SCION', 'point-to-point'])
