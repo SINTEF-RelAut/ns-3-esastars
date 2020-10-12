@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
 
     ns3::Time simulation_end_time;
 
-    if (argc == 5) {
+    if (argc == 4) {
         beaconing_policy_str = std::string (argv[1]);
         beaconing_period_str = std::string(argv[2]);
         expiration_period_str = std::string(argv[3]);
