@@ -29,7 +29,7 @@
 #include <random>
 
 
-rapidxml::xml_node<>* SetupTopologyFile (std::string topology_name);
+//rapidxml::xml_node<>* SetupTopologyFile (std::string topology_name);
 
 void InstantiateASesFromTopo(rapidxml::xml_node<>* rootNode, std::string beaconing_policy_str, std::map<int32_t, uint16_t>& ASes, std::map<uint16_t,
                              int32_t>& index_to_AS_no, ns3::NodeContainer& nodes, uint16_t expiration_period, ns3::Time beaconing_period);
@@ -103,7 +103,26 @@ int main(int argc, char *argv[]) {
     // simulation_end_time can be something other than last_beaconing_event_time if we want to simulate other stuff as well
     simulation_end_time = last_beaconing_event_time;
 
-    rapidxml::xml_node<>* rootNode = SetupTopologyFile (topology_name);
+    //rapidxml::xml_node<>* rootNode = SetupTopologyFile (topology_name);
+
+    std::string file = "/home/tabaeias/ns-3_beaconing_simulator/topology/" + std::string(topology_name) + ".xml";
+    std::ifstream fin(file.c_str());
+    std::ostringstream sstr;
+    sstr << fin.rdbuf();
+
+    sstr.flush();
+    fin.close();
+
+    std::string xmlData = sstr.str();
+    rapidxml::xml_document<> doc;
+    doc.parse<0>(&xmlData[0]);
+
+    rapidxml::xml_node<> *rootNode = doc.first_node("topology");
+
+    if (!rootNode) {
+        std::cerr << "Empty topology!" << std::endl;
+        exit(1);
+    }
 
     InstantiateASesFromTopo(rootNode, beaconing_policy_str, ASes, index_to_AS_no, nodes, expiration_period, beaconing_period);
     InstantiateLinksFromTopo(rootNode, nodes, ASes);
@@ -128,28 +147,28 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-rapidxml::xml_node<>* SetupTopologyFile (std::string topology_name) {
-    std::string file = "/home/tabaeias/ns-3_beaconing_simulator/topology/" + std::string(topology_name) + ".xml";
-    std::ifstream* fin = new std::ifstream(file.c_str());
-    std::ostringstream* sstr = new std::ostringstream();
-    *sstr << fin->rdbuf();
-
-    sstr->flush();
-    fin->close();
-
-    std::string xmlData = sstr->str();
-    rapidxml::xml_document<>* doc = new rapidxml::xml_document<>();
-    doc->parse<0>(&xmlData[0]);
-
-    rapidxml::xml_node<> *rootNode = doc->first_node("topology");
-
-    if (!rootNode) {
-        std::cerr << "Empty topology!" << std::endl;
-        exit(1);
-    }
-
-    return rootNode;
-}
+//rapidxml::xml_node<>* SetupTopologyFile (std::string topology_name) {
+//    std::string file = "/home/tabaeias/ns-3_beaconing_simulator/topology/" + std::string(topology_name) + ".xml";
+//    std::ifstream* fin = new std::ifstream(file.c_str());
+//    std::ostringstream* sstr = new std::ostringstream();
+//    *sstr << fin->rdbuf();
+//
+//    sstr->flush();
+//    fin->close();
+//
+//    std::string xmlData = sstr->str();
+//    rapidxml::xml_document<>* doc = new rapidxml::xml_document<>();
+//    doc->parse<0>(&xmlData[0]);
+//
+//    rapidxml::xml_node<> *rootNode = doc->first_node("topology");
+//
+//    if (!rootNode) {
+//        std::cerr << "Empty topology!" << std::endl;
+//        exit(1);
+//    }
+//
+//    return rootNode;
+//}
 
 void InstantiateASesFromTopo(rapidxml::xml_node<>* rootNode, std::string beaconing_policy_str, std::map<int32_t, uint16_t>& ASes, std::map<uint16_t,
         int32_t>& index_to_AS_no, ns3::NodeContainer& nodes, uint16_t expiration_period, ns3::Time beaconing_period) {
