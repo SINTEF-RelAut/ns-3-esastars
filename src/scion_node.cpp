@@ -7,7 +7,8 @@
  */
 
 #include "src/SCION/headers/scion_node.h"
-#include "../headers/utils.h"
+#include "src/SCION/headers/utils.h"
+#include "src/SCION/headers/beaconing_strategy.h"
 #include "ns3/core-module.h"
 
 namespace ns3 {

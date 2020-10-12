@@ -23,7 +23,7 @@ class SCION_Node;
 #define MAX_IMMEDIATE_BEACONS 5
 #define NUM_CORE 128
 #define IMMEDIATE_BEACONING 0
-{
+class BeaconingStrategy{
   public:
     void SetNode(Ptr<SCION_Node> node);
 
