@@ -175,6 +175,8 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* rootNode, std::string beaconi
             beaconing_policy = (ns3::BeaconingStrategy*) new ns3::Baseline();
         } else if (beaconing_policy_str == "criteria_matching") {
             beaconing_policy = (ns3::BeaconingStrategy*) new ns3::CriteriaMatching();
+        } else {
+            beaconing_policy = (ns3::BeaconingStrategy*) new ns3::Baseline();
         }
 
         ns3::Ptr<ns3::SCION_Node> node;
@@ -219,6 +221,8 @@ void InstantiateLinksFromTopo (rapidxml::xml_node<>* rootNode, ns3::NodeContaine
             relation = ns3::SCION_Node::neighbour_relation::CORE;
         } else if (rel == "customer") {
             relation = ns3::SCION_Node::neighbour_relation::CUSTOMER;
+        } else {
+            relation = ns3::SCION_Node::neighbour_relation::CORE;
         }
 
         ns3::Ptr<ns3::SCION_Node> fromNode;
