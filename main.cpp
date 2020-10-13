@@ -68,6 +68,8 @@ void PrintPathQualities(ns3::NodeContainer& nodes);
 
 void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes);
 
+void PrintMinimumLatencyDist(ns3::NodeContainer& nodes);
+
 int main(int argc, char *argv[]) {
     ns3::NodeContainer nodes;
     std::map<int32_t, uint16_t> ASes;
@@ -367,7 +369,8 @@ void DoFinalEvaluations(ns3::NodeContainer& nodes, std::map<int32_t, uint16_t>& 
                         uint16_t expiration_period, ns3::Time beaconing_period, ns3::Time last_beaconing_event_time) {
 
     PrintTrafficSentFromCollectorsPerDstPerPeriod(nodes, ASes, index_to_AS_no, expiration_period,  beaconing_period,  last_beaconing_event_time);
-    Evaluate_S_T_Connectivity(nodes);
+    PrintMinimumLatencyDist(nodes);
+    //    Evaluate_S_T_Connectivity(nodes);
 //    PrintAllDiscoveredPaths(nodes, ASes, index_to_AS_no);
 
 //    PrintConsumedBWAtEachPeriod(nodes, beaconing_period, last_beaconing_event_time);
@@ -735,5 +738,42 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
             }
 
         }
+    }
+}
+
+void PrintMinimumLatencyDist(ns3::NodeContainer& nodes) {
+    std::cout << "###################################################### MINIMUM LATENCY####################################" << std::endl;
+
+    std::map<double, int> distribution;
+    for (uint32_t i = 0; i < nodes.GetN(); i++) {
+        ns3::Ptr<ns3::SCION_Node> the_node = nodes.Get(i);
+        for (int j = 0; j < nodes.GetN(); ++j) {
+            if (i == j) continue;
+            double min_latency = std::numeric_limits<double>::max();
+            for (auto const & len_beacons_pair : the_node->beacon_store.at(j)) {
+                for (auto const & the_beacon : len_beacons_pair.second) {
+                    if (the_beacon->latency_stat < min_latency) {
+                        min_latency = the_beacon->latency_stat;
+                    }
+                }
+            }
+
+            if (distribution.find(min_latency) == distribution.end()) {
+                distribution.insert(std::make_pair(min_latency, 0));
+            }
+            distribution.at(min_latency)++;
+        }
+    }
+
+    int cumulative_counter = 0;
+    for (auto const & entry : distribution) {
+        double latency = entry.first;
+        distribution.at(latency) += cumulative_counter;
+        cumulative_counter = distribution.at(latency);
+        std::cout << latency << "\t" << cumulative_counter;
+    }
+
+    for (auto const & entry : distribution) {
+        std::cout << entry.first << "\t" << (double) entry.second / cumulative_counter << std::endl;
     }
 }
