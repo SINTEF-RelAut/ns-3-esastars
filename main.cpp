@@ -770,7 +770,6 @@ void PrintMinimumLatencyDist(ns3::NodeContainer& nodes) {
         double latency = entry.first;
         distribution.at(latency) += cumulative_counter;
         cumulative_counter = distribution.at(latency);
-        std::cout << latency << "\t" << cumulative_counter;
     }
 
     for (auto const & entry : distribution) {
