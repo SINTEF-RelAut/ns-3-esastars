@@ -747,7 +747,7 @@ void PrintMinimumLatencyDist(ns3::NodeContainer& nodes) {
     std::map<double, int> distribution;
     for (uint32_t i = 0; i < nodes.GetN(); i++) {
         ns3::Ptr<ns3::SCION_Node> the_node = nodes.Get(i);
-        for (int j = 0; j < nodes.GetN(); ++j) {
+        for (uint32_t j = 0; j < nodes.GetN(); ++j) {
             if (i == j) continue;
             double min_latency = std::numeric_limits<double>::max();
             for (auto const & len_beacons_pair : the_node->beacon_store.at(j)) {
