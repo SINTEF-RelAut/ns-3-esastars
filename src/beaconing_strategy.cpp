@@ -192,7 +192,6 @@ namespace ns3 {
         new_path.push_back(link_info);
         uint16_t path_len = (uint16_t) new_path.size();
 
-        assert(old_beacon != NULL || latency == (float ) 0);
         beacon *new_beacon = new beacon((float) latency, (float) bwd, 0, 0, next_initiation_time,
                                         next_expiration_time, true, false, new_path, key);
 

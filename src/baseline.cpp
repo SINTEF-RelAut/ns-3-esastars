@@ -65,7 +65,6 @@ Baseline::DisseminateBeacons (SCION_Node::neighbour_relation relation)
 
                 for (auto const &the_beacon : beacons)
                 {
-                    assert(the_beacon->the_path.size() != 1 || the_beacon->latency_stat == (float) 0);
                     if (sent_count >= FIXED_BEACONS_NUMBER_TO_SEND)
                     {
                         break;
@@ -115,7 +114,6 @@ Baseline::DisseminateBeacons (SCION_Node::neighbour_relation relation)
                                                remote_as, latency, bwd, false,
                                                0.0);
                     }
-                    assert(the_beacon->the_path.size() != 1 || the_beacon->latency_stat == (float) 0);
                 }
             }
         }
