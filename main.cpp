@@ -744,14 +744,15 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
 void PrintMinimumLatencyDist(ns3::NodeContainer& nodes) {
     std::cout << "###################################################### MINIMUM LATENCY####################################" << std::endl;
 
-    std::map<double, int> distribution;
+    std::map<float, int> distribution;
     for (uint32_t i = 0; i < nodes.GetN(); i++) {
         ns3::Ptr<ns3::SCION_Node> the_node = ns3::DynamicCast<ns3::SCION_Node> (nodes.Get(i));
         for (uint32_t j = 0; j < nodes.GetN(); ++j) {
             if (i == j) continue;
-            double min_latency = std::numeric_limits<double>::max();
+            float min_latency = std::numeric_limits<float>::max();
             for (auto const & len_beacons_pair : the_node->beacon_store.at(j)) {
                 for (auto const & the_beacon : len_beacons_pair.second) {
+                    assert(the_beacon->the_path.size() != 1 || the_beacon->latency_stat == (float) 0);
                     if (the_beacon->latency_stat < min_latency) {
                         min_latency = the_beacon->latency_stat;
                     }
@@ -767,7 +768,7 @@ void PrintMinimumLatencyDist(ns3::NodeContainer& nodes) {
 
     int cumulative_counter = 0;
     for (auto const & entry : distribution) {
-        double latency = entry.first;
+        float latency = entry.first;
         distribution.at(latency) += cumulative_counter;
         cumulative_counter = distribution.at(latency);
     }

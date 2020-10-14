@@ -43,7 +43,7 @@ namespace ns3 {
                 Ptr<SCION_Node> remote_as = remote_as_if_pair.second;
 
                 GenerateBeaconAndSend(
-                        NULL, self_egress_if_no, remote_ingress_if_no, remote_as, 0.0,
+                        NULL, self_egress_if_no, remote_ingress_if_no, remote_as, 0,
                         node->inter_as_bwds.at(self_egress_if_no), false, 0.0);
             }
         }
@@ -192,6 +192,7 @@ namespace ns3 {
         new_path.push_back(link_info);
         uint16_t path_len = (uint16_t) new_path.size();
 
+        assert(old_beacon != NULL || latency == (float ) 0);
         beacon *new_beacon = new beacon((float) latency, (float) bwd, 0, 0, next_initiation_time,
                                         next_expiration_time, true, false, new_path, key);
 
