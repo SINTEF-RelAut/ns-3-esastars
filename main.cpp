@@ -588,7 +588,7 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
     std::uniform_int_distribution<uint32_t> distribution(0, nodes.GetN());
     while (st_nodes.size() < NUMBER_OF_NODES) {
         uint32_t node = distribution(rd);
-        ns3::Ptr<ns3::SCION_Node> the_node = nodes.Get(node);
+        ns3::Ptr<ns3::SCION_Node> the_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(node));
         if (std::find(st_nodes.begin(), st_nodes.end(), node) == st_nodes.end() && the_node->interfaces_coordinates.size() >= 2) {
             st_nodes.push_back(node);
         }
