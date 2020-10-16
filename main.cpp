@@ -369,8 +369,8 @@ void DoFinalEvaluations(ns3::NodeContainer& nodes, std::map<int32_t, uint16_t>& 
                         uint16_t expiration_period, ns3::Time beaconing_period, ns3::Time last_beaconing_event_time) {
 
     PrintTrafficSentFromCollectorsPerDstPerPeriod(nodes, ASes, index_to_AS_no, expiration_period,  beaconing_period,  last_beaconing_event_time);
-    PrintMinimumLatencyDist(nodes);
-    //    Evaluate_S_T_Connectivity(nodes);
+//    PrintMinimumLatencyDist(nodes);
+    Evaluate_S_T_Connectivity(nodes);
 //    PrintAllDiscoveredPaths(nodes, ASes, index_to_AS_no);
 
 //    PrintConsumedBWAtEachPeriod(nodes, beaconing_period, last_beaconing_event_time);
