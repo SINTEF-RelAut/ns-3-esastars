@@ -556,11 +556,11 @@ void PrintPathQualities(ns3::NodeContainer& nodes) {
 }
 
 void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
-    uint32_t NUMBER_OF_NODES = 5;
+    uint32_t NUMBER_OF_NODES = 10;
 
     uint32_t MAX_FAILURE_RATE = 100;
 
-    uint32_t NUMBER_OF_TIME_SLICES = 100;
+    uint32_t NUMBER_OF_TIME_SLICES = 500;
 
     std::vector<uint64_t > links;
     std::vector<uint64_t > links_reverse;
@@ -588,14 +588,21 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
     std::uniform_int_distribution<uint32_t> distribution(0, nodes.GetN());
     while (st_nodes.size() < NUMBER_OF_NODES) {
         uint32_t node = distribution(rd);
-        if (std::find(st_nodes.begin(), st_nodes.end(), node) == st_nodes.end()) {
+        ns3::Ptr<ns3::SCION_Node> the_node = nodes.Get(node);
+        if (std::find(st_nodes.begin(), st_nodes.end(), node) == st_nodes.end() && the_node->interfaces_coordinates.size() >= 2) {
             st_nodes.push_back(node);
         }
     }
 
-    std::vector<std::unordered_map<uint32_t, uint32_t > > MMP_connectivity(MAX_FAILURE_RATE, std::unordered_map<uint32_t, uint32_t>());
-    std::vector<std::unordered_map<uint32_t, uint32_t> > FMP_connectivity(MAX_FAILURE_RATE, std::unordered_map<uint32_t, uint32_t>());
-    std::vector<std::unordered_map<uint32_t, uint32_t> > SP_connectivity(MAX_FAILURE_RATE, std::unordered_map<uint32_t, uint32_t>());
+    std::vector<std::unordered_map<uint32_t, uint32_t > > MMP_connectivity(MAX_FAILURE_RATE + 1, std::unordered_map<uint32_t, uint32_t>());
+    std::vector<std::unordered_map<uint32_t, uint32_t> > FMP_connectivity(MAX_FAILURE_RATE + 1, std::unordered_map<uint32_t, uint32_t>());
+    std::vector<std::unordered_map<uint32_t, uint32_t> > SP_connectivity(MAX_FAILURE_RATE + 1, std::unordered_map<uint32_t, uint32_t>());
+
+    std::vector<std::unordered_map<uint32_t, std::unordered_map<float, uint32_t> > > MMP_latency_stretch(MAX_FAILURE_RATE + 1, std::unordered_map<uint32_t, std::unordered_map<float, uint32_t> > ());
+    std::vector<std::unordered_map<uint32_t, std::unordered_map<float, uint32_t> > > FMP_latency_stretch(MAX_FAILURE_RATE + 1, std::unordered_map<uint32_t, std::unordered_map<float, uint32_t> > ());
+
+    std::vector<std::unordered_map<uint32_t, uint32_t > > MMP_path_no(MAX_FAILURE_RATE + 1, std::unordered_map<uint32_t, uint32_t>());
+    std::vector<std::unordered_map<uint32_t, uint32_t > > FMP_path_no(MAX_FAILURE_RATE + 1, std::unordered_map<uint32_t, uint32_t>());
 
     for (uint32_t i = 0; i < st_nodes.size(); ++i) {
         uint32_t s_node = st_nodes.at(i);
@@ -604,44 +611,93 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
 
             uint32_t s_t_pair = (s_node << 16) | t_node;
 
-            for (uint32_t p = 0; p < MAX_FAILURE_RATE; ++p) {
+            for (uint32_t p = 0; p <= MAX_FAILURE_RATE; ++p) {
                 MMP_connectivity.at(p).insert(std::make_pair(s_t_pair, 0));
                 FMP_connectivity.at(p).insert(std::make_pair(s_t_pair, 0));
                 SP_connectivity.at(p).insert(std::make_pair(s_t_pair, 0));
+
+                MMP_latency_stretch.at(p).insert(std::make_pair(s_t_pair, std::unordered_map<float, uint32_t>()));
+                MMP_latency_stretch.at(p).at(s_t_pair).insert(std::make_pair(1.5, 0));
+                MMP_latency_stretch.at(p).at(s_t_pair).insert(std::make_pair(2, 0));
+
+                FMP_latency_stretch.at(p).insert(std::make_pair(s_t_pair, std::unordered_map<float, uint32_t>()));
+                FMP_latency_stretch.at(p).at(s_t_pair).insert(std::make_pair(1.5, 0));
+                FMP_latency_stretch.at(p).at(s_t_pair).insert(std::make_pair(2, 0));
+
+                MMP_path_no.at(p).insert(std::make_pair(s_t_pair, 0));
+                FMP_path_no.at(p).insert(std::make_pair(s_t_pair, 0));
             }
         }
     }
 
-    omp_set_num_threads(MAX_FAILURE_RATE > NUM_CORE ? NUM_CORE : MAX_FAILURE_RATE);
-#pragma omp parallel for
-    for (uint32_t p = 0; p < MAX_FAILURE_RATE; ++p) {
+    std::unordered_map<uint32_t, std::pair<ns3::beacon*, ns3::beacon*> > SP_and_FMP_paths;
 
+    for (uint32_t i = 0; i < st_nodes.size(); ++i) {
+        ns3::Ptr<ns3::SCION_Node> s_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(i)));
+        for (uint32_t j = i + 1; j < st_nodes.size(); ++j) {
+            uint32_t s_t_pair = (st_nodes.at(i) << 16) | st_nodes.at(j);
+
+            float min_latency = std::numeric_limits<float>::max();
+            float second_min_latency = std::numeric_limits<float>::max();
+            ns3::beacon* min_latency_beacon = NULL;
+            ns3::beacon* second_min_latency_beacon = NULL;
+
+            auto shortest_paths = s_node->beacon_store.at(st_nodes.at(j)).begin();
+            for (auto const & the_beacon : shortest_paths->second) {
+                if (the_beacon->latency_stat < min_latency) {
+                    min_latency = the_beacon->latency_stat;
+                    min_latency_beacon = the_beacon;
+                }
+            }
+
+            do {
+                for (auto const &the_beacon : shortest_paths->second) {
+                    if (the_beacon != min_latency_beacon &&
+                        the_beacon->latency_stat < second_min_latency &&
+                        the_beacon->the_path.back() != min_latency_beacon->the_path.back()) {
+                        second_min_latency = the_beacon->latency_stat;
+                        second_min_latency_beacon = the_beacon;
+                    }
+                }
+                shortest_paths++;
+            } while (second_min_latency_beacon == NULL && shortest_paths != s_node->beacon_store.at(st_nodes.at(j)).end());
+
+            assert(min_latency_beacon != NULL && second_min_latency_beacon != NULL);
+            assert(min_latency_beacon->the_path.back() != second_min_latency_beacon->the_path.back());
+            assert(min_latency_beacon != second_min_latency_beacon);
+
+            SP_and_FMP_paths.insert(std::make_pair(s_t_pair, std::make_pair(min_latency_beacon, second_min_latency_beacon)));
+        }
+
+    }
+
+    for (uint32_t p = 0; p <= MAX_FAILURE_RATE; ++p) {
         for (uint32_t ts = 0; ts < NUMBER_OF_TIME_SLICES; ++ts) {
             std::vector<uint64_t> disabled_links;
             disabled_links.clear();
 
             std::random_device randomDevice;
-            std::uniform_real_distribution<double> dist(0.0, (double) MAX_FAILURE_RATE);
+            std::uniform_real_distribution<double> dist((double) 0, (double) MAX_FAILURE_RATE);
             for (uint32_t link_index = 0; link_index < links.size(); ++link_index) {
                 double r = dist(randomDevice);
-                if (r < (double ) (p + 1)) {
+                if (r < (double ) p) {
                     disabled_links.push_back(links.at(link_index));
                     disabled_links.push_back(links_reverse.at(link_index));
                 }
             }
 
+omp_set_num_threads(st_nodes.size() > NUM_CORE ? NUM_CORE : st_nodes.size());
+#pragma omp parallel for
             for (uint32_t i = 0; i < st_nodes.size(); ++i) {
                 ns3::Ptr<ns3::SCION_Node> s_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(i)));
                 for (uint32_t j = i + 1; j < st_nodes.size(); ++j) {
-                    bool s_t_connected = false;
-
-                    //ns3::Ptr<ns3::SCION_Node> t_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(j)));
                     uint32_t s_t_pair = (st_nodes.at(i) << 16) | st_nodes.at(j);
 
-                    int path_no = -1;
+                    int path_no = s_node->valid_beacons_count_per_dst_as.at(j);
+                    bool sp_connected = false;
+                    bool fmp_connected = false;
                     for(auto const & len_beacons_set : s_node->beacon_store.at(st_nodes.at(j))) {
                         for (auto const & the_beacon : len_beacons_set.second) {
-                            path_no++;
                             bool path_connected = true;
                             for (uint64_t link : the_beacon->the_path) {
                                 if (std::find(disabled_links.begin(), disabled_links.end(), link) != disabled_links.end()) {
@@ -650,25 +706,49 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
                                 }
                             }
 
+                            if (!path_connected) {
+                                path_no--;
+                            }
+
+
+                            if (path_connected && SP_and_FMP_paths.at(s_t_pair).first == the_beacon) {
+                                sp_connected = true;
+                                fmp_connected = true;
+                                FMP_path_no.at(p).at(s_t_pair)++;
+                            } else if (path_connected && SP_and_FMP_paths.at(s_t_pair).second == the_beacon) {
+                                fmp_connected = true;
+                                FMP_path_no.at(p).at(s_t_pair)++;
+                            }
+
                             if (path_connected) {
-                                if (path_no == 0) {
-                                    SP_connectivity.at(p).at(s_t_pair)++;
-                                    FMP_connectivity.at(p).at(s_t_pair)++;
-                                    MMP_connectivity.at(p).at(s_t_pair)++;
-                                } else if (path_no == 1) {
-                                    FMP_connectivity.at(p).at(s_t_pair)++;
-                                    MMP_connectivity.at(p).at(s_t_pair)++;
-                                } else if (path_no > 1) {
-                                    MMP_connectivity.at(p).at(s_t_pair)++;
+                                for (auto const & latency_stretches : MMP_latency_stretch.at(p).at(s_t_pair)) {
+                                    if (the_beacon->latency_stat < latency_stretches.first * SP_and_FMP_paths.at(s_t_pair).first->latency_stat) {
+                                        MMP_latency_stretch.at(p).at(s_t_pair).at(latency_stretches.first)++;
+                                    }
                                 }
 
-                                s_t_connected = true;
-                                break;
+                                if (SP_and_FMP_paths.at(s_t_pair).first == the_beacon || SP_and_FMP_paths.at(s_t_pair).second == the_beacon) {
+                                    for (auto const & latency_stretches : FMP_latency_stretch.at(p).at(s_t_pair)) {
+                                        if (the_beacon->latency_stat < latency_stretches.first * SP_and_FMP_paths.at(s_t_pair).first->latency_stat) {
+                                            FMP_latency_stretch.at(p).at(s_t_pair).at(latency_stretches.first)++;
+                                        }
+                                    }
+                                }
                             }
                         }
-                        if (s_t_connected) {
-                            break;
-                        }
+                    }
+
+                    if (path_no > 0) {
+                        MMP_connectivity.at(p).at(s_t_pair)++;
+                        MMP_path_no.at(p).at(s_t_pair) += path_no;
+                    }
+
+                    if (sp_connected) {
+                        SP_connectivity.at(p).at(s_t_pair)++;
+                    }
+
+                    if (fmp_connected) {
+                        FMP_connectivity.at(p).at(s_t_pair)++;
                     }
                 }
             }
@@ -676,21 +756,23 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
     }
 
     std::cout << "MMP" << std::endl;
-    std::cout << "Snode" << "\t" << "Tnode" << "\t" << "h" << "\t" << "paths" << "\t" << "p" << "\t" << "c" << "\t" << "c/ts" << std::endl;
+    std::cout << "Snode" << "\t" << "Tnode" << "\t" << "h" << "\t" << "paths(p)" << "\t" << "paths(p, 1.5)" << "\t" << "paths(p, 2)" << "\t" << "p" << "\t" << "c" << "\t" << "c/ts" << std::endl;
 
     for (uint32_t i = 0; i < st_nodes.size(); ++i) {
         ns3::Ptr<ns3::SCION_Node> s_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(i)));
         for (uint32_t j = i + 1; j < st_nodes.size(); ++j) {
-//            ns3::Ptr<ns3::SCION_Node> t_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(j)));
             uint32_t s_t_pair = (st_nodes.at(i) << 16) | st_nodes.at(j);
-            for (uint32_t p = 0; p < MAX_FAILURE_RATE; ++p) {
+            for (uint32_t p = 0; p <= MAX_FAILURE_RATE; ++p) {
                 int Snode = s_node->as_number;
                 int Tnode = st_nodes.at(j);
                 int h = s_node->beacon_store.at(Tnode).begin()->first;
-                int paths = s_node->valid_beacons_count_per_dst_as.at(Tnode);
+                double paths_p = (double ) MMP_path_no.at(p).at(s_t_pair) / NUMBER_OF_TIME_SLICES;
+                double stretch_1 = (double ) MMP_latency_stretch.at(p).at(s_t_pair).at(1.5) / NUMBER_OF_TIME_SLICES;
+                double stretch_2 = (double ) MMP_latency_stretch.at(p).at(s_t_pair).at(2) / NUMBER_OF_TIME_SLICES;
                 int c = MMP_connectivity.at(p).at(s_t_pair);
-                double c_ts = (double ) c / NUMBER_OF_TIME_SLICES;
-                std::cout << Snode << "\t" << Tnode << "\t" << h << "\t" << paths << "\t" << p << "\t" << c << "\t" << c_ts << std::endl;
+                double c_ts = (double ) MMP_connectivity.at(p).at(s_t_pair) / NUMBER_OF_TIME_SLICES;
+                std::cout << Snode << "\t" << Tnode << "\t" << h << "\t" << paths_p << "\t" << stretch_1 << "\t" << stretch_2 << "\t"
+                           << p << "\t" << c << "\t" << c_ts << std::endl;
             }
 
         }
@@ -698,21 +780,23 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
 
     std::cout << "*************************************" << std::endl;
     std::cout << "FMP" << std::endl;
-    std::cout << "Snode" << "\t" << "Tnode" << "\t" << "h" << "\t" << "paths" << "\t" << "p" << "\t" << "c" << "\t" << "c/ts" << std::endl;
+    std::cout << "Snode" << "\t" << "Tnode" << "\t" << "h" << "\t" << "paths(p)" << "\t" << "paths(p, 1.5)" << "\t" << "paths(p, 2)" << "\t" << "p" << "\t" << "c" << "\t" << "c/ts" << std::endl;
 
     for (uint32_t i = 0; i < st_nodes.size(); ++i) {
         ns3::Ptr<ns3::SCION_Node> s_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(i)));
         for (uint32_t j = i + 1; j < st_nodes.size(); ++j) {
-//            ns3::Ptr<ns3::SCION_Node> t_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(j)));
             uint32_t s_t_pair = (st_nodes.at(i) << 16) | st_nodes.at(j);
-            for (uint32_t p = 0; p < MAX_FAILURE_RATE; ++p) {
+            for (uint32_t p = 0; p <= MAX_FAILURE_RATE; ++p) {
                 int Snode = s_node->as_number;
                 int Tnode = st_nodes.at(j);
                 int h = s_node->beacon_store.at(Tnode).begin()->first;
-                int paths = s_node->valid_beacons_count_per_dst_as.at(Tnode) > 2 ? 2 : s_node->valid_beacons_count_per_dst_as.at(Tnode);
+                double paths_p = (double) FMP_path_no.at(p).at(s_t_pair) / NUMBER_OF_TIME_SLICES;
+                double stretch_1 = (double ) FMP_latency_stretch.at(p).at(s_t_pair).at(1.5) / NUMBER_OF_TIME_SLICES;
+                double stretch_2 = (double ) FMP_latency_stretch.at(p).at(s_t_pair).at(1.5) / NUMBER_OF_TIME_SLICES;
                 int c = FMP_connectivity.at(p).at(s_t_pair);
-                double c_ts = (double ) c / NUMBER_OF_TIME_SLICES;
-                std::cout << Snode << "\t" << Tnode << "\t" << h << "\t" << paths << "\t" << p << "\t" << c << "\t" << c_ts << std::endl;
+                double c_ts = (double ) FMP_connectivity.at(p).at(s_t_pair) / NUMBER_OF_TIME_SLICES;
+                std::cout << Snode << "\t" << Tnode << "\t" << h << "\t" << paths_p << "\t" << stretch_1 << "\t" << stretch_2 << "\t"
+                          << p << "\t" << c << "\t" << c_ts << std::endl;
             }
 
         }
@@ -720,21 +804,23 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
 
     std::cout << "*************************************" << std::endl;
     std::cout << "SP" << std::endl;
-    std::cout << "Snode" << "\t" << "Tnode" << "\t" << "h" << "\t" << "paths" << "\t" << "p" << "\t" << "c" << "\t" << "c/ts" << std::endl;
+    std::cout << "Snode" << "\t" << "Tnode" << "\t" << "h" << "\t" << "paths(p)" << "\t" << "paths(p, 1.5)" << "\t" << "paths(p, 2)" << "\t" << "p" << "\t" << "c" << "\t" << "c/ts" << std::endl;
 
     for (uint32_t i = 0; i < st_nodes.size(); ++i) {
         ns3::Ptr<ns3::SCION_Node> s_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(i)));
         for (uint32_t j = i + 1; j < st_nodes.size(); ++j) {
-//            ns3::Ptr<ns3::SCION_Node> t_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(j)));
             uint32_t s_t_pair = (st_nodes.at(i) << 16) | st_nodes.at(j);
-            for (uint32_t p = 0; p < MAX_FAILURE_RATE; ++p) {
+            for (uint32_t p = 0; p <= MAX_FAILURE_RATE; ++p) {
                 int Snode = s_node->as_number;
                 int Tnode = st_nodes.at(j);
                 int h = s_node->beacon_store.at(Tnode).begin()->first;
-                int paths = s_node->valid_beacons_count_per_dst_as.at(Tnode) > 1 ? 1 : s_node->valid_beacons_count_per_dst_as.at(Tnode);
-                int c = FMP_connectivity.at(p).at(s_t_pair);
-                double c_ts = (double ) c / NUMBER_OF_TIME_SLICES;
-                std::cout << Snode << "\t" << Tnode << "\t" << h << "\t" << paths << "\t" << p << "\t" << c << "\t" << c_ts << std::endl;
+                double paths_p = (double ) SP_connectivity.at(p).at(s_t_pair) / NUMBER_OF_TIME_SLICES;
+                double stretch_1 = (double ) SP_connectivity.at(p).at(s_t_pair) / NUMBER_OF_TIME_SLICES;
+                double stretch_2 = (double ) SP_connectivity.at(p).at(s_t_pair) / NUMBER_OF_TIME_SLICES;
+                int c = SP_connectivity.at(p).at(s_t_pair);
+                double c_ts = (double ) SP_connectivity.at(p).at(s_t_pair) / NUMBER_OF_TIME_SLICES;
+                std::cout << Snode << "\t" << Tnode << "\t" << h << "\t" << paths_p << "\t" << stretch_1 << "\t" << stretch_2 << "\t"
+                          << p << "\t" << c << "\t" << c_ts << std::endl;
             }
 
         }
