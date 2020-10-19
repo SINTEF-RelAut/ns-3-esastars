@@ -671,9 +671,11 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
 
     }
 
+omp_set_num_threads(MAX_FAILURE_RATE > NUM_CORE ? NUM_CORE : MAX_FAILURE_RATE);
+#pragma omp parallel for
     for (uint32_t p = 0; p <= MAX_FAILURE_RATE; ++p) {
         for (uint32_t ts = 0; ts < NUMBER_OF_TIME_SLICES; ++ts) {
-            std::vector<uint64_t> disabled_links;
+            std::unordered_set<uint64_t> disabled_links;
             disabled_links.clear();
 
             std::random_device randomDevice;
@@ -681,13 +683,11 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes) {
             for (uint32_t link_index = 0; link_index < links.size(); ++link_index) {
                 double r = dist(randomDevice);
                 if (r < (double ) p) {
-                    disabled_links.push_back(links.at(link_index));
-                    disabled_links.push_back(links_reverse.at(link_index));
+                    disabled_links.insert(links.at(link_index));
+                    disabled_links.insert(links_reverse.at(link_index));
                 }
             }
 
-omp_set_num_threads(st_nodes.size() > NUM_CORE ? NUM_CORE : st_nodes.size());
-#pragma omp parallel for
             for (uint32_t i = 0; i < st_nodes.size(); ++i) {
                 ns3::Ptr<ns3::SCION_Node> s_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(i)));
                 for (uint32_t j = i + 1; j < st_nodes.size(); ++j) {
@@ -700,7 +700,7 @@ omp_set_num_threads(st_nodes.size() > NUM_CORE ? NUM_CORE : st_nodes.size());
                         for (auto const & the_beacon : len_beacons_set.second) {
                             bool path_connected = true;
                             for (uint64_t link : the_beacon->the_path) {
-                                if (std::find(disabled_links.begin(), disabled_links.end(), link) != disabled_links.end()) {
+                                if (disabled_links.find(link) != disabled_links.end()) {
                                     path_connected = false;
                                     break;
                                 }
@@ -792,7 +792,7 @@ omp_set_num_threads(st_nodes.size() > NUM_CORE ? NUM_CORE : st_nodes.size());
                 int h = s_node->beacon_store.at(Tnode).begin()->first;
                 double paths_p = (double) FMP_path_no.at(p).at(s_t_pair) / NUMBER_OF_TIME_SLICES;
                 double stretch_1 = (double ) FMP_latency_stretch.at(p).at(s_t_pair).at(1.5) / NUMBER_OF_TIME_SLICES;
-                double stretch_2 = (double ) FMP_latency_stretch.at(p).at(s_t_pair).at(1.5) / NUMBER_OF_TIME_SLICES;
+                double stretch_2 = (double ) FMP_latency_stretch.at(p).at(s_t_pair).at(2) / NUMBER_OF_TIME_SLICES;
                 int c = FMP_connectivity.at(p).at(s_t_pair);
                 double c_ts = (double ) FMP_connectivity.at(p).at(s_t_pair) / NUMBER_OF_TIME_SLICES;
                 std::cout << Snode << "\t" << Tnode << "\t" << h << "\t" << paths_p << "\t" << stretch_1 << "\t" << stretch_2 << "\t"
