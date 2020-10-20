@@ -693,7 +693,7 @@ omp_set_num_threads(MAX_FAILURE_RATE > NUM_CORE ? NUM_CORE : MAX_FAILURE_RATE);
                 for (uint32_t j = i + 1; j < st_nodes.size(); ++j) {
                     uint32_t s_t_pair = (st_nodes.at(i) << 16) | st_nodes.at(j);
 
-                    int path_no = s_node->valid_beacons_count_per_dst_as.at(j);
+                    int path_no = s_node->valid_beacons_count_per_dst_as.at(st_nodes.at(j));
                     bool sp_connected = false;
                     bool fmp_connected = false;
                     for(auto const & len_beacons_set : s_node->beacon_store.at(st_nodes.at(j))) {
@@ -722,14 +722,14 @@ omp_set_num_threads(MAX_FAILURE_RATE > NUM_CORE ? NUM_CORE : MAX_FAILURE_RATE);
 
                             if (path_connected) {
                                 for (auto const & latency_stretches : MMP_latency_stretch.at(p).at(s_t_pair)) {
-                                    if (the_beacon->latency_stat < latency_stretches.first * SP_and_FMP_paths.at(s_t_pair).first->latency_stat) {
+                                    if (the_beacon->latency_stat <= latency_stretches.first * SP_and_FMP_paths.at(s_t_pair).first->latency_stat) {
                                         MMP_latency_stretch.at(p).at(s_t_pair).at(latency_stretches.first)++;
                                     }
                                 }
 
                                 if (SP_and_FMP_paths.at(s_t_pair).first == the_beacon || SP_and_FMP_paths.at(s_t_pair).second == the_beacon) {
                                     for (auto const & latency_stretches : FMP_latency_stretch.at(p).at(s_t_pair)) {
-                                        if (the_beacon->latency_stat < latency_stretches.first * SP_and_FMP_paths.at(s_t_pair).first->latency_stat) {
+                                        if (the_beacon->latency_stat <= latency_stretches.first * SP_and_FMP_paths.at(s_t_pair).first->latency_stat) {
                                             FMP_latency_stretch.at(p).at(s_t_pair).at(latency_stretches.first)++;
                                         }
                                     }
