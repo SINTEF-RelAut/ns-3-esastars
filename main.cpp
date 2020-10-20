@@ -756,7 +756,7 @@ omp_set_num_threads(MAX_FAILURE_RATE > NUM_CORE ? NUM_CORE : MAX_FAILURE_RATE);
     }
 
     std::cout << "MMP" << std::endl;
-    std::cout << "Snode" << "\t" << "Tnode" << "\t" << "h" << "\t" << "paths(p)" << "\t" << "paths(p, 1.5)" << "\t" << "paths(p, 2)" << "\t" << "p" << "\t" << "c" << "\t" << "c/ts" << std::endl;
+    std::cout << "Snode" << "\t" << "Tnode" << "\t" << "h" << "\t" << "paths" << "\t" << "paths(p)" << "\t" << "paths(p, 1.5)" << "\t" << "paths(p, 2)" << "\t" << "p" << "\t" << "c" << "\t" << "c/ts" << std::endl;
 
     for (uint32_t i = 0; i < st_nodes.size(); ++i) {
         ns3::Ptr<ns3::SCION_Node> s_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(i)));
@@ -766,12 +766,13 @@ omp_set_num_threads(MAX_FAILURE_RATE > NUM_CORE ? NUM_CORE : MAX_FAILURE_RATE);
                 int Snode = s_node->as_number;
                 int Tnode = st_nodes.at(j);
                 int h = s_node->beacon_store.at(Tnode).begin()->first;
+                int paths = s_node->valid_beacons_count_per_dst_as.at(st_nodes.at(j));
                 double paths_p = (double ) MMP_path_no.at(p).at(s_t_pair) / NUMBER_OF_TIME_SLICES;
                 double stretch_1 = (double ) MMP_latency_stretch.at(p).at(s_t_pair).at(1.5) / NUMBER_OF_TIME_SLICES;
                 double stretch_2 = (double ) MMP_latency_stretch.at(p).at(s_t_pair).at(2) / NUMBER_OF_TIME_SLICES;
                 int c = MMP_connectivity.at(p).at(s_t_pair);
                 double c_ts = (double ) MMP_connectivity.at(p).at(s_t_pair) / NUMBER_OF_TIME_SLICES;
-                std::cout << Snode << "\t" << Tnode << "\t" << h << "\t" << paths_p << "\t" << stretch_1 << "\t" << stretch_2 << "\t"
+                std::cout << Snode << "\t" << Tnode << "\t" << h << "\t" << paths << "\t" << paths_p << "\t" << stretch_1 << "\t" << stretch_2 << "\t"
                            << p << "\t" << c << "\t" << c_ts << std::endl;
             }
 
@@ -780,7 +781,7 @@ omp_set_num_threads(MAX_FAILURE_RATE > NUM_CORE ? NUM_CORE : MAX_FAILURE_RATE);
 
     std::cout << "*************************************" << std::endl;
     std::cout << "FMP" << std::endl;
-    std::cout << "Snode" << "\t" << "Tnode" << "\t" << "h" << "\t" << "paths(p)" << "\t" << "paths(p, 1.5)" << "\t" << "paths(p, 2)" << "\t" << "p" << "\t" << "c" << "\t" << "c/ts" << std::endl;
+    std::cout << "Snode" << "\t" << "Tnode" << "\t" << "h" << "\t" << "paths" << "\t" << "paths(p)" << "\t" << "paths(p, 1.5)" << "\t" << "paths(p, 2)" << "\t" << "p" << "\t" << "c" << "\t" << "c/ts" << std::endl;
 
     for (uint32_t i = 0; i < st_nodes.size(); ++i) {
         ns3::Ptr<ns3::SCION_Node> s_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(st_nodes.at(i)));
@@ -790,12 +791,13 @@ omp_set_num_threads(MAX_FAILURE_RATE > NUM_CORE ? NUM_CORE : MAX_FAILURE_RATE);
                 int Snode = s_node->as_number;
                 int Tnode = st_nodes.at(j);
                 int h = s_node->beacon_store.at(Tnode).begin()->first;
+                int paths = 2;
                 double paths_p = (double) FMP_path_no.at(p).at(s_t_pair) / NUMBER_OF_TIME_SLICES;
                 double stretch_1 = (double ) FMP_latency_stretch.at(p).at(s_t_pair).at(1.5) / NUMBER_OF_TIME_SLICES;
                 double stretch_2 = (double ) FMP_latency_stretch.at(p).at(s_t_pair).at(2) / NUMBER_OF_TIME_SLICES;
                 int c = FMP_connectivity.at(p).at(s_t_pair);
                 double c_ts = (double ) FMP_connectivity.at(p).at(s_t_pair) / NUMBER_OF_TIME_SLICES;
-                std::cout << Snode << "\t" << Tnode << "\t" << h << "\t" << paths_p << "\t" << stretch_1 << "\t" << stretch_2 << "\t"
+                std::cout << Snode << "\t" << Tnode << "\t" << h << "\t" << paths << "\t" << paths_p << "\t" << stretch_1 << "\t" << stretch_2 << "\t"
                           << p << "\t" << c << "\t" << c_ts << std::endl;
             }
 
@@ -814,12 +816,13 @@ omp_set_num_threads(MAX_FAILURE_RATE > NUM_CORE ? NUM_CORE : MAX_FAILURE_RATE);
                 int Snode = s_node->as_number;
                 int Tnode = st_nodes.at(j);
                 int h = s_node->beacon_store.at(Tnode).begin()->first;
+                int paths = 1;
                 double paths_p = (double ) SP_connectivity.at(p).at(s_t_pair) / NUMBER_OF_TIME_SLICES;
                 double stretch_1 = (double ) SP_connectivity.at(p).at(s_t_pair) / NUMBER_OF_TIME_SLICES;
                 double stretch_2 = (double ) SP_connectivity.at(p).at(s_t_pair) / NUMBER_OF_TIME_SLICES;
                 int c = SP_connectivity.at(p).at(s_t_pair);
                 double c_ts = (double ) SP_connectivity.at(p).at(s_t_pair) / NUMBER_OF_TIME_SLICES;
-                std::cout << Snode << "\t" << Tnode << "\t" << h << "\t" << paths_p << "\t" << stretch_1 << "\t" << stretch_2 << "\t"
+                std::cout << Snode << "\t" << Tnode << "\t" << h << "\t" << paths << "\t" << paths_p << "\t" << stretch_1 << "\t" << stretch_2 << "\t"
                           << p << "\t" << c << "\t" << c_ts << std::endl;
             }
 
