@@ -15,14 +15,14 @@
 
 namespace ns3 {
 
-#define MAX_ACCEPTABLE_JOINTNESS 2.0
+#define MAX_ACCEPTABLE_JOINTNESS 3.0
 #define MAX_LAT 1000.0
 #define MAX_BWD 400.0
 #define ALPHA 12.0
 #define BETA 6.0
 #define GAMMA 11.0
 #define SCALING_FACTOR 0.95
-#define SCORE_THRESHOLD 0.9
+#define SCORE_THRESHOLD 0.7
 
     class CriteriaMatching : public BeaconingStrategy {
     public:

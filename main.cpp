@@ -70,6 +70,8 @@ void Evaluate_S_T_Connectivity(ns3::NodeContainer& nodes);
 
 void PrintMinimumLatencyDist(ns3::NodeContainer& nodes);
 
+void PrintPathNoDistribution (ns3::NodeContainer& nodes);
+
 int main(int argc, char *argv[]) {
     ns3::NodeContainer nodes;
     std::map<int32_t, uint16_t> ASes;
@@ -369,9 +371,10 @@ void DoFinalEvaluations(ns3::NodeContainer& nodes, std::map<int32_t, uint16_t>& 
                         uint16_t expiration_period, ns3::Time beaconing_period, ns3::Time last_beaconing_event_time) {
 
     PrintTrafficSentFromCollectorsPerDstPerPeriod(nodes, ASes, index_to_AS_no, expiration_period,  beaconing_period,  last_beaconing_event_time);
-//    PrintMinimumLatencyDist(nodes);
-    Evaluate_S_T_Connectivity(nodes);
-//    PrintAllDiscoveredPaths(nodes, ASes, index_to_AS_no);
+    PrintPathNoDistribution (nodes);
+    //    PrintMinimumLatencyDist(nodes);
+//    Evaluate_S_T_Connectivity(nodes);
+    PrintAllDiscoveredPaths(nodes, ASes, index_to_AS_no);
 
 //    PrintConsumedBWAtEachPeriod(nodes, beaconing_period, last_beaconing_event_time);
 //    PrintDistributionOfPathsWithSpecificHopCount(nodes);
@@ -865,4 +868,32 @@ void PrintMinimumLatencyDist(ns3::NodeContainer& nodes) {
     for (auto const & entry : distribution) {
         std::cout << entry.first << "\t" << (double) entry.second / cumulative_counter << std::endl;
     }
+}
+
+void PrintPathNoDistribution (ns3::NodeContainer& nodes) {
+    std::map<uint32_t, uint32_t> distribution;
+    for (uint32_t  i = 0; i < nodes.GetN (); ++i)
+        {
+            ns3::Ptr<ns3::SCION_Node> node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(i));
+            for (auto const & dst_count_pair : node->valid_beacons_count_per_dst_as) {
+                    if (distribution.find(dst_count_pair.second) == distribution.end()) {
+                        distribution.insert(std::make_pair(dst_count_pair.second,  0));
+                        }
+
+                distribution.at(dst_count_pair.second) = distribution.at(dst_count_pair.second) + 1;
+                }
+        }
+
+    uint32_t cumulative_counter = 0;
+    for (auto const & path_cnt_cnt_pair:distribution) {
+        distribution.at(path_cnt_cnt_pair.first) = distribution.at(path_cnt_cnt_pair.first) + cumulative_counter;
+        cumulative_counter = distribution.at(path_cnt_cnt_pair.first);
+    }
+
+
+    for (auto const & entry : distribution) {
+        std::cout << entry.first << "\t" << (double) entry.second / cumulative_counter << std::endl;
+    }
+
+
 }
