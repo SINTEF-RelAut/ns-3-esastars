@@ -167,7 +167,9 @@ namespace ns3 {
 //                                                       remote_as, latency, bwd);
 //                return; // If the beacon store was full, we are done after this call.
 //            }
-            if (remote_as->valid_beacons_count_per_dst_as.at(dst_as) >= FIXED_BEACONS_NUMBER_TO_STORE) {
+            if (remote_as->valid_beacons_count_per_dst_as.find(dst_as) !=
+                remote_as->valid_beacons_count_per_dst_as.end() &&
+                remote_as->valid_beacons_count_per_dst_as.at(dst_as) >= FIXED_BEACONS_NUMBER_TO_STORE) {
                 remote_as->strategy->ReplacementPolicy(key, dst_as, old_beacon,
                                                        self_egress_if_no, remote_ingress_if_no,
                                                        remote_as, latency, bwd);
