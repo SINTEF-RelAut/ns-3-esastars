@@ -44,7 +44,7 @@ namespace ns3 {
 
                 GenerateBeaconAndSend(
                         NULL, self_egress_if_no, remote_ingress_if_no, remote_as, 0,
-                        node->inter_as_bwds.at(self_egress_if_no), false, 0.0);
+                        node->inter_as_bwds.at(self_egress_if_no), 1, false, 0);
             }
         }
     }
@@ -87,7 +87,8 @@ namespace ns3 {
     BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if_no,
                                              uint16_t remote_ingress_if_no, Ptr<SCION_Node> remote_as,
                                              ld latency, ld bwd,
-                                             bool immediate = false, ld latency_for_immediate = 0.0) {
+                                             ld  score,
+                                             bool immediate = false, ld latency_for_immediate = 0) {
         uint16_t dst_as;
         std::string key;
 
@@ -161,15 +162,13 @@ namespace ns3 {
 
         if (remote_as->next_round_valid_beacons_count_per_dst_as.find(dst_as) !=
             remote_as->next_round_valid_beacons_count_per_dst_as.end()) {
-//            if (remote_as->next_round_valid_beacons_count_per_dst_as.at(dst_as) >= FIXED_BEACONS_NUMBER_TO_STORE) {
-//                remote_as->strategy->ReplacementPolicy(key, dst_as, old_beacon,
-//                                                       self_egress_if_no, remote_ingress_if_no,
-//                                                       remote_as, latency, bwd);
-//                return; // If the beacon store was full, we are done after this call.
-//            }
-            if (remote_as->valid_beacons_count_per_dst_as.find(dst_as) !=
-                remote_as->valid_beacons_count_per_dst_as.end() &&
-                remote_as->valid_beacons_count_per_dst_as.at(dst_as) >= FIXED_BEACONS_NUMBER_TO_STORE) {
+            if (remote_as->next_round_valid_beacons_count_per_dst_as.at(dst_as) >= (FIXED_BEACONS_NUMBER_TO_STORE / 2)) {
+                if (score < SCORE_THRESHOLD_TO_ADD_PATH) {
+                    return;
+                }
+            }
+
+            if (remote_as->next_round_valid_beacons_count_per_dst_as.at(dst_as) >= FIXED_BEACONS_NUMBER_TO_STORE) {
                 remote_as->strategy->ReplacementPolicy(key, dst_as, old_beacon,
                                                        self_egress_if_no, remote_ingress_if_no,
                                                        remote_as, latency, bwd);
@@ -304,7 +303,7 @@ namespace ns3 {
                      : the_beacon->bwd_stat;
 
             GenerateBeaconAndSend(the_beacon, min_egress_if, remote_ingress_if_no, remote_as,
-                                  latency, bwd, true, min_latency);
+                                  latency, bwd, 1, true, min_latency);
         }
     }
 

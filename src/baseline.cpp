@@ -111,8 +111,8 @@ Baseline::DisseminateBeacons (SCION_Node::neighbour_relation relation)
 
                         GenerateBeaconAndSend (the_beacon, egress_interface_no,
                                                remote_ingress_if_no,
-                                               remote_as, latency, bwd, false,
-                                               0.0);
+                                               remote_as, latency, bwd, 1, false,
+                                               0);
                     }
                 }
             }

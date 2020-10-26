@@ -79,7 +79,7 @@ namespace ns3 {
                              bwd) = the_tuple_pair.second;
 
                     GenerateBeaconAndSend(the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as,
-                                                latency, bwd, false, 0.0);
+                                                latency, bwd, the_tuple_pair.first, false, 0);
 
                 }
             }

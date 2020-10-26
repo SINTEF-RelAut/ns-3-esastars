@@ -20,6 +20,7 @@ class SCION_Node;
 /**
  * @brief Maximum number of beacons to immediately disseminate per neighbour and beacon source AS.
  */
+#define SCORE_THRESHOLD_TO_ADD_PATH 0.9
 #define MAX_IMMEDIATE_BEACONS 5
 #define NUM_CORE 128
 #define IMMEDIATE_BEACONING 0
@@ -76,7 +77,7 @@ class BeaconingStrategy{
      * and schedules a processing event on the simulator if the beacon needs to continue being disseminated right away.
      */
     void GenerateBeaconAndSend (beacon *old_beacon, uint16_t self_egress_if_no,
-                                uint16_t remote_ingress_if_no, Ptr<SCION_Node> remote_as, ld latency, ld bwd, bool immediate,
+                                uint16_t remote_ingress_if_no, Ptr<SCION_Node> remote_as, ld latency, ld bwd, ld  score, bool immediate,
                                 ld latency_for_immediate);
 
     /**
