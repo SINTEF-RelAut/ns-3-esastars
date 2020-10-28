@@ -122,6 +122,11 @@ namespace ns3 {
         std::multimap<ld, std::tuple<beacon *, uint16_t, uint16_t, Ptr<SCION_Node>, ld, ld> > score_map_to_beacon_and_metadata;
         std::map<std::pair<beacon *, uint16_t>, std::pair<ld, ld> > valid_candidates;
 
+        uint32_t number_of_previously_sent_beacons = 0;
+        for (auto const & iface : node->interfaces_per_neighbor_as.at(remote_as_no)) {
+            number_of_previously_sent_beacons += sent_beacons.at(iface)->size();
+        }
+
         ld max_score = 0.0;
         ld max_score_raw_score = 0.0;
         beacon *max_score_beacon = NULL;
@@ -159,6 +164,14 @@ namespace ns3 {
                         ld beacon_age = (ld) (node->now - the_beacon->initiation_time);
                         ld beacon_exp_period = (ld) (the_beacon->expiration_time - the_beacon->initiation_time);
                         score = std::pow(raw_score, ALPHA * (beacon_age / beacon_exp_period));
+
+                        if (number_of_previously_sent_beacons >= 10 && score < 0.9) {
+                            continue;
+                        }
+
+                        if (number_of_previously_sent_beacons >= 5 && score < 0.8) {
+                            continue;
+                        }
                     } else {
                         raw_score = sent_beacons.at(self_egress_if_no)->at(the_beacon).first;
                         ld sent_beacon_time_to_expiration = (ld) (
@@ -212,6 +225,7 @@ namespace ns3 {
 
                 if (path_not_sent_before(remote_as_no, max_score_iface, max_score_beacon)) {
                     counters_changed = true;
+                    number_of_previously_sent_beacons++;
                     add_to_sent_beacons(remote_as_no, max_score_iface, max_score_beacon, (float) max_score_raw_score);
                     inc_links_jointness_on_sent_paths(dst_as_no, remote_as_no, max_score_iface, max_score_beacon);
                 } else {
@@ -241,6 +255,14 @@ namespace ns3 {
                     score = std::pow(raw_score, ALPHA * (beacon_age / beacon_exp_period));
                     valid_candidates.at(std::make_pair(the_beacon, self_egress_if_no)) = std::make_pair(raw_score,
                                                                                                         score);
+
+                    if (number_of_previously_sent_beacons >= 10 && score < 0.9) {
+                        continue;
+                    }
+
+                    if (number_of_previously_sent_beacons >= 5 && score < 0.8) {
+                        continue;
+                    }
                 }
 
                 if (score < SCORE_THRESHOLD) {
