@@ -365,6 +365,10 @@ void ActionsBetweenBeaconingIntervals(ns3::NodeContainer nodes) {
         all_connected_pairs += ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(i))->valid_beacons_count_per_dst_as.size();
     }
     std::cout << all_connected_pairs << std::endl;
+
+    if (ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(0))->now == 180) {
+        PrintPathNoDistribution (nodes);
+    }
 }
 
 void DoFinalEvaluations(ns3::NodeContainer& nodes, std::map<int32_t, uint16_t>& ASes, std::map<uint16_t, int32_t>& index_to_AS_no,
@@ -871,6 +875,7 @@ void PrintMinimumLatencyDist(ns3::NodeContainer& nodes) {
 }
 
 void PrintPathNoDistribution (ns3::NodeContainer& nodes) {
+    std::cout << "############################################# Path No Distribution ##################################" << std::endl;
     std::map<uint32_t, uint32_t> distribution;
     for (uint32_t  i = 0; i < nodes.GetN (); ++i)
         {
