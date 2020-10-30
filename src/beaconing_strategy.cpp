@@ -163,7 +163,7 @@ namespace ns3 {
         if (remote_as->next_round_valid_beacons_count_per_dst_as.find(dst_as) !=
             remote_as->next_round_valid_beacons_count_per_dst_as.end()) {
             if (old_beacon != NULL) {
-                if (remote_as->next_round_valid_beacons_count_per_dst_as.at(dst_as) >= (FIXED_BEACONS_NUMBER_TO_STORE / 2)) {
+                if (remote_as->next_round_valid_beacons_count_per_dst_as.at(dst_as) >= 10) {
                     if (score < SCORE_THRESHOLD_TO_ADD_PATH) {
                         return;
                     }

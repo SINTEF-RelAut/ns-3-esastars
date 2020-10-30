@@ -26,7 +26,7 @@ namespace ns3 {
 /**
  * @brief Steers how many beacons are maximally stored on each node per fixed destination AS.
  */
-#define FIXED_BEACONS_NUMBER_TO_STORE 30
+#define FIXED_BEACONS_NUMBER_TO_STORE 60
 
 /**
  * @brief Time a router needs to process a beacon.
