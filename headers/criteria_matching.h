@@ -56,11 +56,12 @@ namespace ns3 {
 
     private:
         /** @brief
-         * holds a history of sent beacons; it is a map from the pointer to the beacon to a pair
-         * containing the raw score of the beacon
-         * and its expiration time at the time it was sent
+         * holds a history of sent beacons;
+         * For each interface we keep a map from disseminated beacons pointers in self beacon store to the disseminated beacon's raw score and expiration time
          * */
         std::vector<std::unordered_map<beacon *, std::pair<float, uint16_t>> *> sent_beacons;
+
+        std::vector<std::unordered_map<uint16_t, uint16_t>* > sent_beacons_cnt;
         /** @brief
         * holds repetition counter of every link on the path from a source AS to a destination AS
         * */
@@ -72,7 +73,7 @@ namespace ns3 {
         void inc_links_jointness_on_sent_paths(uint16_t dst_as_no, uint16_t remote_as_no, uint16_t self_egress_if_no,
                                                beacon *the_beacon);
 
-        void add_to_sent_beacons(uint16_t remote_as, uint16_t self_egress_if_no, beacon *the_beacon, float raw_score);
+        void add_to_sent_beacons(uint16_t dst_as_no, uint16_t remote_as, uint16_t self_egress_if_no, beacon *the_beacon, float raw_score);
 
         ld calculate_link_diversity_score_for_dissemination(uint16_t remote_as, uint16_t dst_as, uint16_t egress_if_no,
                                                             beacon *the_beacon);
