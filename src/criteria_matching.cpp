@@ -169,11 +169,11 @@ namespace ns3 {
                         ld beacon_exp_period = (ld) (the_beacon->expiration_time - the_beacon->initiation_time);
                         score = std::pow(raw_score, ALPHA * (beacon_age / beacon_exp_period));
 
-                        if (sent_beacons_cnt.at(dst_as_no)->at(remote_as_no) >= 10 && score < 0.9) {
-                            continue;
-                        }
+//                        if (sent_beacons_cnt.at(dst_as_no)->at(remote_as_no) >= 10 && score < 0.9) {
+//                            continue;
+//                        }
 
-                        if (sent_beacons_cnt.at(dst_as_no)->at(remote_as_no) >= 5 && score < 0.8) {
+                        if (sent_beacons_cnt.at(dst_as_no)->at(remote_as_no) >= 5 && score < 0.9) {
                             continue;
                         }
                     } else {
@@ -259,11 +259,11 @@ namespace ns3 {
                     valid_candidates.at(std::make_pair(the_beacon, self_egress_if_no)) = std::make_pair(raw_score,
                                                                                                         score);
 
-                    if (sent_beacons_cnt.at(dst_as_no)->at(remote_as_no) >= 10 && score < 0.9) {
-                        continue;
-                    }
+//                    if (sent_beacons_cnt.at(dst_as_no)->at(remote_as_no) >= 10 && score < 0.9) {
+//                        continue;
+//                    }
 
-                    if (sent_beacons_cnt.at(dst_as_no)->at(remote_as_no) >= 5 && score < 0.8) {
+                    if (sent_beacons_cnt.at(dst_as_no)->at(remote_as_no) >= 5 && score < 0.9) {
                         continue;
                     }
                 }
