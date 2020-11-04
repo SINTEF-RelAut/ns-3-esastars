@@ -173,9 +173,9 @@ namespace ns3 {
 //                            continue;
 //                        }
 
-                        if (sent_beacons_cnt.at(dst_as_no)->at(remote_as_no) >= 5 && score < 0.9) {
-                            continue;
-                        }
+//                        if (sent_beacons_cnt.at(dst_as_no)->at(remote_as_no) >= 5 && score < 0.9) {
+//                            continue;
+//                        }
                     } else {
                         raw_score = sent_beacons.at(self_egress_if_no)->at(the_beacon).first;
                         ld sent_beacon_time_to_expiration = (ld) (
@@ -263,9 +263,9 @@ namespace ns3 {
 //                        continue;
 //                    }
 
-                    if (sent_beacons_cnt.at(dst_as_no)->at(remote_as_no) >= 5 && score < 0.9) {
-                        continue;
-                    }
+//                    if (sent_beacons_cnt.at(dst_as_no)->at(remote_as_no) >= 5 && score < 0.9) {
+//                        continue;
+//                    }
                 }
 
                 if (score < SCORE_THRESHOLD) {

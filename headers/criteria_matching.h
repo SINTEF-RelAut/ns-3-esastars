@@ -22,7 +22,7 @@ namespace ns3 {
 #define BETA 6.0
 #define GAMMA 11.0
 #define SCALING_FACTOR 0.95
-#define SCORE_THRESHOLD 0.7
+#define SCORE_THRESHOLD 0.9
 
     class CriteriaMatching : public BeaconingStrategy {
     public:
