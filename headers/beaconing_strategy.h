@@ -87,10 +87,9 @@ class BeaconingStrategy{
      *
      * Must be overwritten by descendants of BeaconingStrategy.
      */
-    virtual void ReplacementPolicy (std::string key, uint16_t dst_as, beacon *old_beacon,
-                                        uint16_t self_egress_if_no, uint16_t remote_ingress_if_no,
-                                        Ptr<SCION_Node> remote_as, ld latency,
-                                        ld bwd) = 0;
+    virtual bool ImportPolicy (std::string key, uint16_t dst_as, beacon *old_beacon,
+                               uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
+                               ld latency, ld bwd) = 0;
 
 
     virtual void MetaDataUpdateAfterImmediateSend (beacon *the_beacon, uint16_t local_iface, Ptr<SCION_Node> remote_as,

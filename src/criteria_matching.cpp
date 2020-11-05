@@ -44,10 +44,12 @@ namespace ns3 {
             links_jointnesses_on_sent_paths.insert (std::make_pair (
                     neighbor_as_no, std::vector<std::unordered_map<uint32_t, uint32_t> *> ()));
             links_jointnesses_on_sent_paths.at (neighbor_as_no).resize (all_nodes);
+            links_jointnesses_on_received_paths.resize(all_nodes);
             for (uint32_t j = 0; j < all_nodes; ++j)
             {
                 links_jointnesses_on_sent_paths.at (neighbor_as_no).at (j) =
                         new std::unordered_map<uint32_t, uint32_t> ();
+                links_jointnesses_on_received_paths.at(j) = new std::unordered_map<uint32_t, uint32_t> ();
             }
         }
     }
@@ -97,12 +99,37 @@ namespace ns3 {
     }
 
 
-    void
-    CriteriaMatching::ReplacementPolicy(std::string key, uint16_t src_as, beacon *old_beacon,
-                                        uint16_t self_egress_if_no, uint16_t remote_ingress_if_no,
-                                        Ptr<SCION_Node> remote_as, ld latency,
-                                        ld bwd)
+    bool CriteriaMatching::ImportPolicy (std::string key, uint16_t dst_as, beacon *old_beacon,
+                       uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
+                       ld latency, ld bwd)
     {
+        if (node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < 3) {
+            inc_links_jointness_on_received_paths(dst_as, sender_as, remote_egress_if_no, old_beacon);
+            return true;
+        }
+
+        ld raw_score = calculate_import_raw_score (old_beacon, dst_as, sender_as, remote_egress_if_no, latency, bwd);
+        ld beacon_age = (ld) (node->now - old_beacon->initiation_time);
+        ld beacon_exp_period = (ld) (old_beacon->expiration_time - old_beacon->initiation_time);
+        ld score = std::pow(raw_score, ALPHA * (beacon_age / beacon_exp_period));
+
+        if (node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < 5 && score > 0.7) {
+            inc_links_jointness_on_received_paths(dst_as, sender_as, remote_egress_if_no, old_beacon);
+            return true;
+        }
+
+        if (node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < 10 && score > 0.8) {
+            inc_links_jointness_on_received_paths(dst_as, sender_as, remote_egress_if_no, old_beacon);
+            return true;
+        }
+
+        if (node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < FIXED_BEACONS_NUMBER_TO_STORE && score > 0.9) {
+            inc_links_jointness_on_received_paths(dst_as, sender_as, remote_egress_if_no, old_beacon);
+            return true;
+        }
+
+        return false;
+
     }
 
 
@@ -315,6 +342,28 @@ namespace ns3 {
     }
 
 
+    inline ld
+    CriteriaMatching::calculate_import_raw_score (beacon* the_beacon, uint16_t dst_as_no, uint16_t sender_as, uint16_t remote_egress_if_no, ld latency, ld bwd) {
+        ld link_diversity_score = calculate_link_diversity_score_for_import(sender_as, dst_as_no, remote_egress_if_no, the_beacon);
+
+        ld  raw_score =
+                (
+                        (1 - latency / MAX_LAT) * this->node->latency_coef +
+                        (bwd / MAX_BWD) * this->node->bandwidth_coef +
+                        link_diversity_score * this->node->link_level_diversity_coef
+                )
+                /
+                (
+                        this->node->latency_coef +
+                        this->node->bandwidth_coef +
+                        this->node->link_level_diversity_coef
+                );
+
+        raw_score = SCALING_FACTOR * raw_score;
+
+        return raw_score;
+    }
+
     void
     CriteriaMatching::update_sent_beacon_timer(uint16_t remote_as, uint16_t self_egress_if_no, beacon *the_beacon) {
         uint16_t new_exp_time = the_beacon->expiration_time;
@@ -345,6 +394,32 @@ namespace ns3 {
         }
         links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as_no)->at(link) =
                 links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as_no)->at(link) + 1;
+
+    }
+
+    void
+    CriteriaMatching::inc_links_jointness_on_received_paths(uint16_t dst_as_no, uint16_t sender_as_no,
+                                                            uint16_t remote_egress_if_no, beacon *the_beacon) {
+        if (the_beacon != NULL) {
+            auto const & the_path = the_beacon->the_path;
+            for (auto const &seg : the_path) {
+                uint32_t link = UPPER_32_BITS(seg);
+                if (links_jointnesses_on_received_paths.at(dst_as_no)->find(link) ==
+                    links_jointnesses_on_received_paths.at(dst_as_no)->end()) {
+                    links_jointnesses_on_received_paths.at(dst_as_no)->insert(std::make_pair(link, 0));
+                }
+                links_jointnesses_on_received_paths.at(dst_as_no)->at(link) =
+                        links_jointnesses_on_received_paths.at(dst_as_no)->at(link) + 1;
+            }
+        }
+
+        uint32_t link = (((uint32_t) sender_as_no) << 16) | ((uint32_t) remote_egress_if_no);
+        if (links_jointnesses_on_received_paths.at(dst_as_no)->find(link) ==
+            links_jointnesses_on_received_paths.at(dst_as_no)->end()) {
+            links_jointnesses_on_received_paths.at(dst_as_no)->insert(std::make_pair(link, 0));
+        }
+        links_jointnesses_on_received_paths.at(dst_as_no)->at(link) =
+                links_jointnesses_on_received_paths.at(dst_as_no)->at(link) + 1;
 
     }
 
@@ -389,6 +464,35 @@ namespace ns3 {
         return (MAX_ACCEPTABLE_JOINTNESS - jointness) / (MAX_ACCEPTABLE_JOINTNESS - 1.0);
     }
 
+    ld
+    CriteriaMatching::calculate_link_diversity_score_for_import(uint16_t sender_as, uint16_t dst_as, uint16_t remote_egress_if, beacon* the_beacon) {
+        if (links_jointnesses_on_received_paths.at(dst_as)->empty()) {
+            return 1.0;
+        }
+
+        ld jointness = 1.0;
+        auto const & the_path = the_beacon->the_path;
+        for (auto const &seg : the_path) {
+            uint32_t link = UPPER_32_BITS(seg);
+            if (links_jointnesses_on_received_paths.at(dst_as)->find(link) !=
+                    links_jointnesses_on_received_paths.at(dst_as)->end()) {
+                jointness *= (1.0 + 1.0 * links_jointnesses_on_received_paths.at(dst_as)->at(link));
+            }
+        }
+
+        uint32_t link = (((uint32_t) sender_as) << 16) | ((uint32_t) remote_egress_if);
+        if (links_jointnesses_on_received_paths.at(dst_as)->find(link) !=
+                links_jointnesses_on_received_paths.at(dst_as)->end()) {
+            jointness *= (1.0 + 1.0 * links_jointnesses_on_received_paths.at(dst_as)->at(link));
+        }
+
+        jointness = std::pow(jointness, 1.0 / (the_beacon->the_path.size() + 1.0));
+
+        if (jointness >= MAX_ACCEPTABLE_JOINTNESS) {
+            return 0.0;
+        }
+        return (MAX_ACCEPTABLE_JOINTNESS - jointness) / (MAX_ACCEPTABLE_JOINTNESS - 1.0);
+    }
     bool
     CriteriaMatching::path_not_sent_before(uint16_t remote_as, uint16_t self_egress_if_no, beacon *the_beacon) {
         if (sent_beacons.at(self_egress_if_no)->find(the_beacon) == sent_beacons.at(self_egress_if_no)->end()) {
@@ -432,6 +536,18 @@ namespace ns3 {
         links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as)->at(link) = links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as)->at(link) - 1;
         if (links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as)->at(link) == 0) {
             links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as)->erase(link);
+        }
+    }
+
+    void
+    CriteriaMatching::dec_links_jointnesses_on_received_paths(beacon* the_beacon, uint16_t  dst_as) {
+        auto const & the_path = the_beacon->the_path;
+        for (auto const & seg : the_path) {
+            uint32_t link = UPPER_32_BITS(seg);
+            links_jointnesses_on_received_paths.at(dst_as)->at(link) = links_jointnesses_on_received_paths.at(dst_as)->at(link) - 1;
+            if (links_jointnesses_on_received_paths.at(dst_as)->at(link) == 0) {
+                links_jointnesses_on_received_paths.at(dst_as)->erase(link);
+            }
         }
     }
 }

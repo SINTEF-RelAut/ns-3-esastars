@@ -131,12 +131,16 @@ Baseline::DisseminateBeacons (SCION_Node::neighbour_relation relation)
  * @param latency The new beacon latency.
  * @param bwd The new beacon bandwidth stat.
  */
-void
-Baseline::ReplacementPolicy (std::string key, uint16_t src_as, beacon *old_beacon,
-                             uint16_t self_egress_if_no, uint16_t remote_ingress_if_no,
-                             Ptr<SCION_Node> remote_as, ld latency,
-                             ld bwd)
+bool
+Baseline::ImportPolicy (std::string key, uint16_t dst_as, beacon *old_beacon,
+                        uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
+                        ld latency, ld bwd)
 {
+    if (this->node->next_round_valid_beacons_count_per_dst_as.at(dst_as) > FIXED_BEACONS_NUMBER_TO_STORE) {
+        return false;
+    }
+
+    return true;
 }
 
 
