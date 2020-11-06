@@ -88,14 +88,14 @@ class BeaconingStrategy{
      * Must be overwritten by descendants of BeaconingStrategy.
      */
     virtual bool ImportPolicy (std::string key, uint16_t dst_as, beacon *old_beacon,
-                               uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
-                               ld latency, ld bwd) = 0;
+                                                 uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
+                                                 ld latency, ld bwd, uint16_t now) = 0;
 
 
     virtual void MetaDataUpdateAfterImmediateSend (beacon *the_beacon, uint16_t local_iface, Ptr<SCION_Node> remote_as,
                                                uint16_t dst_as_no) = 0;
 
-    virtual void MetaDataUpdatePeriodic (beacon* the_beacon) = 0;
+    virtual void MetaDataUpdatePeriodic (beacon* the_beacon, bool invalidated) = 0;
 };
 }
 #endif //SCION_BEACONING_SIMMULATOR_BEACONING_STRATEGY_H

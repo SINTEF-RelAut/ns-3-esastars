@@ -101,7 +101,7 @@ namespace ns3 {
 
     bool CriteriaMatching::ImportPolicy (std::string key, uint16_t dst_as, beacon *old_beacon,
                        uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
-                       ld latency, ld bwd)
+                       ld latency, ld bwd, uint16_t now)
     {
         if (node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < 3) {
             inc_links_jointness_on_received_paths(dst_as, sender_as, remote_egress_if_no, old_beacon);
@@ -109,16 +109,16 @@ namespace ns3 {
         }
 
         ld raw_score = calculate_import_raw_score (old_beacon, dst_as, sender_as, remote_egress_if_no, latency, bwd);
-        ld beacon_age = (ld) (node->now - old_beacon->initiation_time);
+        ld beacon_age = (ld) (now - old_beacon->initiation_time);
         ld beacon_exp_period = (ld) (old_beacon->expiration_time - old_beacon->initiation_time);
         ld score = std::pow(raw_score, ALPHA * (beacon_age / beacon_exp_period));
 
-        if (node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < 5 && score > 0.7) {
-            inc_links_jointness_on_received_paths(dst_as, sender_as, remote_egress_if_no, old_beacon);
-            return true;
-        }
+//        if (node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < 5 && score > 0.7) {
+//            inc_links_jointness_on_received_paths(dst_as, sender_as, remote_egress_if_no, old_beacon);
+//            return true;
+//        }
 
-        if (node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < 10 && score > 0.8) {
+        if (node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < 10 && score > 0.7) {
             inc_links_jointness_on_received_paths(dst_as, sender_as, remote_egress_if_no, old_beacon);
             return true;
         }
@@ -146,9 +146,13 @@ namespace ns3 {
     }
 
     void
-    CriteriaMatching::MetaDataUpdatePeriodic(beacon *the_beacon) {
+    CriteriaMatching::MetaDataUpdatePeriodic (beacon* the_beacon, bool invalidated) {
         uint16_t dst_as = UPPER_16_BITS(the_beacon->the_path.at(0));
         remove_invalid_sent_beacons(the_beacon, dst_as);
+
+        if (invalidated) {
+            dec_links_jointnesses_on_received_paths(the_beacon, dst_as);
+        }
     }
 
 

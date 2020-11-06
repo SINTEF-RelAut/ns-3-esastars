@@ -133,8 +133,8 @@ Baseline::DisseminateBeacons (SCION_Node::neighbour_relation relation)
  */
 bool
 Baseline::ImportPolicy (std::string key, uint16_t dst_as, beacon *old_beacon,
-                        uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
-                        ld latency, ld bwd)
+                                          uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
+                                          ld latency, ld bwd, uint16_t now)
 {
     if (this->node->next_round_valid_beacons_count_per_dst_as.at(dst_as) > FIXED_BEACONS_NUMBER_TO_STORE) {
         return false;
@@ -150,7 +150,7 @@ Baseline::MetaDataUpdateAfterImmediateSend (beacon *the_beacon, uint16_t local_i
 {
 }
 void
-Baseline::MetaDataUpdatePeriodic (beacon* the_beacon)
+Baseline::MetaDataUpdatePeriodic (beacon* the_beacon, bool invalidated)
 {
 }
 

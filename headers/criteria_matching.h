@@ -43,15 +43,15 @@ namespace ns3 {
 
         bool
         ImportPolicy (std::string key, uint16_t dst_as, beacon *old_beacon,
-                      uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
-                      ld latency, ld bwd) override;
+                                        uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
+                                        ld latency, ld bwd, uint16_t now) override;
 
         void
         MetaDataUpdateAfterImmediateSend(beacon *the_beacon, uint16_t self_egress_if_no, Ptr<SCION_Node> remote_as,
                                 uint16_t dst_as_no) override;
 
         void
-        MetaDataUpdatePeriodic(beacon *the_beacon) override;
+        MetaDataUpdatePeriodic (beacon* the_beacon, bool invalidated) override;
 
     private:
         /** @brief
@@ -100,7 +100,7 @@ namespace ns3 {
         inline ld calculate_raw_score (beacon* the_beacon, uint16_t dst_as_no, uint16_t self_egress_if_no, Ptr<SCION_Node> remote_as);
 
         inline ld
-        calculate_import_raw_score (beacon* the_beacon, uint16_t dst_as_no, uint16_t sender_as, uint16_t remote_egress_if_no, ld latency, ld bw)
+        calculate_import_raw_score (beacon* the_beacon, uint16_t dst_as_no, uint16_t sender_as, uint16_t remote_egress_if_no, ld latency, ld bw);
 
     };
 }

@@ -229,12 +229,14 @@ class SCION_Node : public Node
                               std::map<ld, uint64_t> &AS_level_diversity_stat,
                               std::map<ld, uint64_t> &link_level_diversity_stat);
 
-  protected:
-    /**
-     * @brief Prints the number of discovered ASes so far, updates the node time and initializes some memory for bandwidth statistics.
-     */
-    void UpdateTimeAndStats ();
 
+
+  protected:
+
+    /**
+    * @brief Prints the number of discovered ASes so far, updates the node time and initializes some memory for bandwidth statistics.
+    */
+    void UpdateTimeAndStats ();
   private:
     /**
      *  @brief Returns the average as-level diversity and link-level diversity scores of the passed beacon compared to all other beacons the node has which

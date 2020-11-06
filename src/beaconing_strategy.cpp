@@ -165,7 +165,7 @@ namespace ns3 {
             if (old_beacon != NULL) {
                 bool to_import = remote_as->strategy->ImportPolicy(key, dst_as, old_beacon,
                                                                    node->as_number, self_egress_if_no, remote_ingress_if_no,
-                                                                   latency, bwd);
+                                                                   latency, bwd, node->now);
                 if (!to_import) {
                     return; // If the beacon store was full, we are done after this call.
                 }
@@ -319,8 +319,14 @@ namespace ns3 {
         auto const &beacons = node->path_map_to_beacon;
         for (auto const &the_beacon_pair : beacons) {
             beacon *the_beacon = the_beacon_pair.second;
+
+            bool was_valid = the_beacon->is_valid;
             UpdateBeaconState(the_beacon);
-            MetaDataUpdatePeriodic(the_beacon);
+            bool is_valid = the_beacon->is_valid;
+            bool invalidated = was_valid && (!is_valid);
+
+
+            MetaDataUpdatePeriodic(the_beacon, invalidated);
         }
     }
 
