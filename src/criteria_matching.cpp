@@ -103,7 +103,7 @@ namespace ns3 {
                        uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
                        ld latency, ld bwd, uint16_t now)
     {
-        if (node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < 3) {
+        if (node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < 20) {
             inc_links_jointness_on_received_paths(dst_as, sender_as, remote_egress_if_no, old_beacon);
             return true;
         }
@@ -118,12 +118,17 @@ namespace ns3 {
 //            return true;
 //        }
 
-        if (node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < 10 && score > 0.7) {
-            inc_links_jointness_on_received_paths(dst_as, sender_as, remote_egress_if_no, old_beacon);
-            return true;
-        }
+//        if (node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < 20 && score > 0.7) {
+//            inc_links_jointness_on_received_paths(dst_as, sender_as, remote_egress_if_no, old_beacon);
+//            return true;
+//        }
 
-        if (node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < FIXED_BEACONS_NUMBER_TO_STORE && score > 0.9) {
+//        if (node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < FIXED_BEACONS_NUMBER_TO_STORE && score > 0.9) {
+//            inc_links_jointness_on_received_paths(dst_as, sender_as, remote_egress_if_no, old_beacon);
+//            return true;
+//        }
+
+        if (score > 0.9) {
             inc_links_jointness_on_received_paths(dst_as, sender_as, remote_egress_if_no, old_beacon);
             return true;
         }
