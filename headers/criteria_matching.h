@@ -15,7 +15,7 @@
 
 namespace ns3 {
 
-#define MAX_ACCEPTABLE_JOINTNESS 3.0
+#define MAX_ACCEPTABLE_JOINTNESS 2.0
 #define MAX_LAT 1000.0
 #define MAX_BWD 400.0
 #define ALPHA 12.0
