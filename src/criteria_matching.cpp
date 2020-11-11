@@ -128,7 +128,7 @@ namespace ns3 {
 //            return true;
 //        }
 
-        if (score > 0.9) {
+        if (node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < 60 && score > 0.9) {
             inc_links_jointness_on_received_paths(dst_as, sender_as, remote_egress_if_no, old_beacon);
             return true;
         }
@@ -176,6 +176,8 @@ namespace ns3 {
         Ptr<SCION_Node> remote_as = node->GetRemoteAsInfo(
                 node->interfaces_per_neighbor_as.at(remote_as_no).at(0)).second;
 
+        uint32_t min_no_paths_to_send = (20 * node->interfaces_per_neighbor_as.at(remote_as_no).size()) / remote_as->interfaces_coordinates.size();
+
         for (auto const &len_beacons_pair : beacons_to_the_dst_as) {
             auto const &beacons = len_beacons_pair.second;
             for (auto const &the_beacon : beacons) {
@@ -199,19 +201,17 @@ namespace ns3 {
                 for (auto const &self_egress_if_no : interfaces) {
                     ld raw_score = 0.0;
                     ld score = 0.0;
+                    bool must_be_added = false;
                     if (path_not_sent_before(remote_as_no, self_egress_if_no, the_beacon)) {
                         raw_score = calculate_raw_score(the_beacon, dst_as_no, self_egress_if_no, remote_as);
                         ld beacon_age = (ld) (node->now - the_beacon->initiation_time);
                         ld beacon_exp_period = (ld) (the_beacon->expiration_time - the_beacon->initiation_time);
                         score = std::pow(raw_score, ALPHA * (beacon_age / beacon_exp_period));
 
-//                        if (sent_beacons_cnt.at(dst_as_no)->at(remote_as_no) >= 10 && score < 0.9) {
-//                            continue;
-//                        }
+                        if (sent_beacons_cnt.at(dst_as_no)->at(remote_as_no) < min_no_paths_to_send && valid_candidates.size() < min_no_paths_to_send) {
+                            must_be_added = true;
+                        }
 
-//                        if (sent_beacons_cnt.at(dst_as_no)->at(remote_as_no) >= 5 && score < 0.9) {
-//                            continue;
-//                        }
                     } else {
                         raw_score = sent_beacons.at(self_egress_if_no)->at(the_beacon).first;
                         ld sent_beacon_time_to_expiration = (ld) (
@@ -223,7 +223,7 @@ namespace ns3 {
                                                   GAMMA));
                     }
 
-                    if (score < SCORE_THRESHOLD) {
+                    if (!must_be_added && score < SCORE_THRESHOLD) {
                         continue;
                     }
 
@@ -284,6 +284,9 @@ namespace ns3 {
                 ld score = 0.0;
                 ld raw_score = 0.0;
 
+                bool must_be_sent = path_not_sent_before(remote_as_no, self_egress_if_no, the_beacon) &&
+                        sent_beacons_cnt.at(dst_as_no)->at(remote_as_no) < min_no_paths_to_send;
+
                 if (!counters_changed || !path_not_sent_before(remote_as_no, self_egress_if_no, the_beacon)) {
                     raw_score = candidate.second.first;
                     score = candidate.second.second;
@@ -294,17 +297,9 @@ namespace ns3 {
                     score = std::pow(raw_score, ALPHA * (beacon_age / beacon_exp_period));
                     valid_candidates.at(std::make_pair(the_beacon, self_egress_if_no)) = std::make_pair(raw_score,
                                                                                                         score);
-
-//                    if (sent_beacons_cnt.at(dst_as_no)->at(remote_as_no) >= 10 && score < 0.9) {
-//                        continue;
-//                    }
-
-//                    if (sent_beacons_cnt.at(dst_as_no)->at(remote_as_no) >= 5 && score < 0.9) {
-//                        continue;
-//                    }
                 }
 
-                if (score < SCORE_THRESHOLD) {
+                if (!must_be_sent && score < SCORE_THRESHOLD) {
                     continue;
                 }
 
