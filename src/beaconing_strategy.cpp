@@ -141,6 +141,12 @@ namespace ns3 {
         key = key + std::string((char *) &node->as_number, 2) +
               std::string((char *) &self_egress_if_no, 2);
 
+        bool to_import = remote_as->strategy->ImportPolicy(key, dst_as, old_beacon,
+                                                           node->as_number, self_egress_if_no, remote_ingress_if_no,
+                                                           latency, bwd, node->now);
+        if (!to_import) {
+            return; // If the beacon store was full, we are done after this call.
+        }
         // If the beacon is already in the remote_ases beacon store
         if (remote_as->path_map_to_beacon.find(key) != remote_as->path_map_to_beacon.end()) {
             if (old_beacon == NULL) {
@@ -154,27 +160,7 @@ namespace ns3 {
                         old_beacon->expiration_time;
             }
             remote_as->path_map_to_beacon.at(key)->is_new = true;
-            if (!remote_as->path_map_to_beacon.at(key)->is_valid) {
-                remote_as->next_round_valid_beacons_count_per_dst_as.at(dst_as)++;
-            }
             return;
-        }
-
-        if (remote_as->next_round_valid_beacons_count_per_dst_as.find(dst_as) !=
-            remote_as->next_round_valid_beacons_count_per_dst_as.end()) {
-            if (old_beacon != NULL) {
-                bool to_import = remote_as->strategy->ImportPolicy(key, dst_as, old_beacon,
-                                                                   node->as_number, self_egress_if_no, remote_ingress_if_no,
-                                                                   latency, bwd, node->now);
-                if (!to_import) {
-                    return; // If the beacon store was full, we are done after this call.
-                }
-            }
-
-            remote_as->next_round_valid_beacons_count_per_dst_as.at(dst_as)++;
-        } else {
-            remote_as->next_round_valid_beacons_count_per_dst_as.insert(
-                    std::make_pair(dst_as, 1));
         }
 
         uint64_t link_info;
