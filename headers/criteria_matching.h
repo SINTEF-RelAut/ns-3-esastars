@@ -53,10 +53,6 @@ namespace ns3 {
         void
         MetaDataUpdatePeriodic (beacon* the_beacon, bool invalidated) override;
 
-        void
-        inc_links_jointness_on_received_paths(uint16_t dst_as_no, uint16_t sender_as_no,
-                                              uint16_t remote_egress_if_no, beacon *the_beacon);
-
     private:
         /** @brief
          * holds a history of sent beacons;
@@ -78,7 +74,9 @@ namespace ns3 {
         void inc_links_jointness_on_sent_paths(uint16_t dst_as_no, uint16_t remote_as_no, uint16_t self_egress_if_no,
                                                beacon *the_beacon);
 
-
+        void
+        inc_links_jointness_on_received_paths(uint16_t dst_as_no, uint16_t sender_as_no,
+                                              uint16_t remote_egress_if_no, beacon *the_beacon);
 
         void add_to_sent_beacons(uint16_t dst_as_no, uint16_t remote_as, uint16_t self_egress_if_no, beacon *the_beacon, float raw_score);
 
