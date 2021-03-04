@@ -136,7 +136,7 @@ namespace ns3 {
         ld beacon_exp_period = (ld) (old_beacon->expiration_time - old_beacon->initiation_time);
         ld score = std::pow(raw_score, ALPHA * (beacon_age / beacon_exp_period));
 
-        if (node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < 60 && score > 0.9) {
+        if (node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < FIXED_BEACON_NUMBERS_TO_STORE && score > 0.9) {
             node->next_round_valid_beacons_count_per_dst_as.at(dst_as)++;
             inc_links_jointness_on_received_paths(dst_as, sender_as, remote_egress_if_no, old_beacon);
             return true;
