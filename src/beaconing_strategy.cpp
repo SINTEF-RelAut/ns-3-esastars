@@ -83,148 +83,44 @@ namespace ns3 {
  * beacon. This extra bit is currently _not_ included in the beacon header size.
  * @param latency_for_immediate The intra AS latency the beacon traversed, used for the proper scheduling timing.
  */
-    void
-    BeaconingStrategy::GenerateBeaconAndSend(beacon *old_beacon, uint16_t self_egress_if_no,
-                                             uint16_t remote_ingress_if_no, Ptr<SCION_Node> remote_as,
-                                             ld latency, ld bwd,
-                                             ld  score,
-                                             bool immediate = false, ld latency_for_immediate = 0) {
-        uint16_t dst_as;
+
+   void BeaconingStrategy::GenerateBeaconAndSend(beacon *selected_beacon, uint16_t self_egress_if_no,
+                                                 uint16_t remote_ingress_if_no, Ptr<SCION_Node> remote_as,
+                                                 ld latency, ld bwd,
+                                                 ld  score,
+                                                 bool immediate = false, ld latency_for_immediate = 0)
+    {
         std::string key;
-
         uint16_t remote_as_no = remote_as->as_number;
-#if IMMEDIATE_BEACONING
-        bool immediate_dst = false;
-        bool immediate_non_dst = false;
-#endif
-
-        // Even if the remote AS ends up ignoring the beacon later on, we update the interface values anyways since, in the real deployment,
-        // we need to send the beacon before the remote AS can decide if it will be ignored.
-        if (old_beacon == NULL) {
-            node->bytes_sent_per_interface_per_period.at(node->now).at(self_egress_if_no) +=
-                    (BEACON_HEADER_SIZE + BEACON_HOP_SIZE);
-            dst_as = node->as_number;
-
-#if IMMEDIATE_BEACONING
-            if (remote_as->valid_beacons_count_per_dst_as.find (dst_as) ==
-            remote_as->valid_beacons_count_per_dst_as.end () &&
-            remote_as->next_round_valid_beacons_count_per_dst_as.find (dst_as) ==
-            remote_as->next_round_valid_beacons_count_per_dst_as.end ())
-        {
-            immediate_dst = true;
-        }
-#endif
-        } else {
-            node->bytes_sent_per_interface_per_period.at(node->now).at(self_egress_if_no) +=
-                    (BEACON_HEADER_SIZE + BEACON_HOP_SIZE +
-                     BEACON_HOP_SIZE * old_beacon->the_path.size());
-            dst_as = UPPER_16_BITS (old_beacon->the_path.at(0));
-            key = old_beacon->key;
-        }
-
-#if IMMEDIATE_BEACONING
-        if (immediate)
-    { // Indicates that this is part of an immediate beacon dissemination (only set in processImmediateReceive)
-        // dst_AS not found in next_round beacon store. Or less than 5 beacons in next round store from this AS.
-        if (remote_as->next_round_valid_beacons_count_per_dst_as.find (dst_as) ==
-            remote_as->next_round_valid_beacons_count_per_dst_as.end () ||
-            remote_as->next_round_valid_beacons_count_per_dst_as.at (dst_as) <
-            MAX_IMMEDIATE_BEACONS)
-        {
-            immediate_non_dst = true;
-        }
-
-    }
-    // ***
-#endif
-
-        key = key + std::string((char *) &node->as_number, 2) +
-              std::string((char *) &self_egress_if_no, 2);
-
-        bool to_import = remote_as->strategy->ImportPolicy(key, dst_as, old_beacon,
-                                                           node->as_number, self_egress_if_no, remote_ingress_if_no,
-                                                           latency, bwd, node->now);
-        if (!to_import) {
-            return; // If the beacon store was full, we are done after this call.
-        }
-        // If the beacon is already in the remote_ases beacon store
-        if (remote_as->path_map_to_beacon.find(key) != remote_as->path_map_to_beacon.end()) {
-            if (old_beacon == NULL) {
-                remote_as->path_map_to_beacon.at(key)->next_initiation_time = node->now;
-                remote_as->path_map_to_beacon.at(key)->next_expiration_time =
-                        node->now + node->expiration_period;
-            } else {
-                remote_as->path_map_to_beacon.at(key)->next_initiation_time =
-                        old_beacon->initiation_time;
-                remote_as->path_map_to_beacon.at(key)->next_expiration_time =
-                        old_beacon->expiration_time;
-            }
-            remote_as->path_map_to_beacon.at(key)->is_new = true;
-            return;
-        }
-
-        uint64_t link_info;
-        link_info = (((uint64_t) node->as_number) << 48) | (((uint64_t) self_egress_if_no) << 32) |
-                    (((uint64_t) remote_as_no) << 16) | ((uint64_t) remote_ingress_if_no);
 
         path new_path;
         uint16_t next_initiation_time;
         uint16_t next_expiration_time;
 
-        if (old_beacon == NULL) {
+        uint64_t link_info;
+        link_info = (((uint64_t) node->as_number) << 48) | (((uint64_t) self_egress_if_no) << 32) |
+                    (((uint64_t) remote_as_no) << 16) | ((uint64_t) remote_ingress_if_no);
+
+        if (selected_beacon == NULL) {
             next_initiation_time = node->now;
             next_expiration_time = node->now + node->expiration_period;
         } else {
-            next_initiation_time = old_beacon->initiation_time;
-            next_expiration_time = old_beacon->expiration_time;
-            new_path = old_beacon->the_path;
+            next_initiation_time = selected_beacon->initiation_time;
+            next_expiration_time = selected_beacon->expiration_time;
+            new_path = selected_beacon->the_path;
+            key = selected_beacon->key;
         }
+
+        key = key + std::string((char *) &node->as_number, 2) +
+              std::string((char *) &self_egress_if_no, 2);
         new_path.push_back(link_info);
-        uint16_t path_len = (uint16_t) new_path.size();
 
-        beacon *new_beacon = new beacon((float) latency, (float) bwd, 0, 0, next_initiation_time,
-                                        next_expiration_time, true, false, new_path, key);
+        beacon to_disseminate_beacon((float) latency, (float) bwd, 0, 0, next_initiation_time,
+                                           next_expiration_time, true, false, new_path, key);
 
-        remote_as->path_map_to_beacon.insert(std::make_pair(key, new_beacon));
-
-        if (remote_as->beacon_store.find(dst_as) != remote_as->beacon_store.end() &&
-            remote_as->beacon_store.at(dst_as).find(path_len) !=
-            remote_as->beacon_store.at(dst_as).end()) {
-            remote_as->beacon_store.at(dst_as).at(path_len).insert(new_beacon);
-        } else if (remote_as->beacon_store.find(dst_as) != remote_as->beacon_store.end() &&
-                   remote_as->beacon_store.at(dst_as).find(path_len) ==
-                   remote_as->beacon_store.at(dst_as).end()) {
-            remote_as->beacon_store.at(dst_as).insert(
-                    std::make_pair(path_len, beacons_with_equal_length()));
-            remote_as->beacon_store.at(dst_as).at(path_len).insert(new_beacon);
-        } else {
-            remote_as->beacon_store.insert(std::make_pair(dst_as, beacons_with_same_dst_as()));
-            remote_as->beacon_store.at(dst_as).insert(
-                    std::make_pair(path_len, beacons_with_equal_length()));
-            remote_as->beacon_store.at(dst_as).at(path_len).insert(new_beacon);
-        }
-
-#if IMMEDIATE_BEACONING
-        if (immediate_dst)
-    {
-        // This is the processing delay of the receiving BR. Since this beacon can be generated at whichever border router (immediate_dst)
-        // We don't need to consider the intra_as_latencies
-        Simulator::Schedule (PROCESSING_DELAY, &SCION_Node::ProcessReceivedBeacons, remote_as,
-                             dst_as, remote_ingress_if_no, new_beacon);
+        node->IncrementControlPlaneBytesSent(to_disseminate_beacon, self_egress_if_no);
+        remote_as->ReceiveBeacon(to_disseminate_beacon, node->as_number, self_egress_if_no, remote_ingress_if_no);
     }
-
-    if (immediate_non_dst)
-    {
-        uint64_t delay = (uint64_t) (latency_for_immediate * 1000000);
-        // Here the intra_as_latency is relevant and added to the processing delay.
-        Simulator::Schedule (NanoSeconds (delay) + PROCESSING_DELAY,
-                             &SCION_Node::ProcessReceivedBeacons, remote_as, dst_as,
-                             remote_ingress_if_no, new_beacon);
-        MetaDataUpdateAfterImmediateSend(new_beacon, self_egress_if_no, remote_as, dst_as);
-    }
-#endif
-    }
-
 
 /**
  * This function only executes if the source AS number at the origin of the beacon-path is unknown to the node.

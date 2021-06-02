@@ -57,6 +57,20 @@ class BeaconingStrategy{
     virtual void
     DisseminateBeacons (SCION_Node::neighbour_relation relation) = 0;
 
+
+    /**
+ * @brief Implements the decision logic of the remote AS in case a beacon arrives that does not fit into the beacon store anymore.
+ *
+ * Must be called via the remote_ases strategy handler, since this is the strategy that matters.
+ *
+ * Must be overwritten by descendants of BeaconingStrategy.
+ */
+    virtual bool ImportPolicy (beacon& the_beacon,
+                               uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
+                               uint16_t now) = 0;
+
+    virtual void UpdateStrategyMetaDataAfterImport (beacon* the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no) = 0;
+
   protected:
     Ptr<SCION_Node> node;
 
@@ -80,16 +94,7 @@ class BeaconingStrategy{
                                 uint16_t remote_ingress_if_no, Ptr<SCION_Node> remote_as, ld latency, ld bwd, ld  score, bool immediate,
                                 ld latency_for_immediate);
 
-    /**
-     * @brief Implements the decision logic of the remote AS in case a beacon arrives that does not fit into the beacon store anymore.
-     *
-     * Must be called via the remote_ases strategy handler, since this is the strategy that matters.
-     *
-     * Must be overwritten by descendants of BeaconingStrategy.
-     */
-    virtual bool ImportPolicy (std::string key, uint16_t dst_as, beacon *old_beacon,
-                                                 uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
-                                                 ld latency, ld bwd, uint16_t now) = 0;
+
 
 
     virtual void MetaDataUpdateAfterImmediateSend (beacon *the_beacon, uint16_t local_iface, Ptr<SCION_Node> remote_as,

@@ -214,6 +214,10 @@ class SCION_Node : public Node
      */
     virtual void IntraISDBeaconing () = 0;
 
+
+    void IncrementControlPlaneBytesSent(beacon& the_beacon, uint16_t interface);
+
+    void ReceiveBeacon (beacon &the_beacon, uint16_t sender_as, uint16_t remote_if, uint16_t local_if);
     /**
      * @brief Called to initiate the processing of beacons received in the last beaconing period.
      *

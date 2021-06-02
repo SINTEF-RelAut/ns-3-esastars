@@ -91,6 +91,20 @@ struct beacon
           key (k)
     {
     }
+
+    beacon (beacon& the_beacon) :
+        latency_stat(the_beacon.latency_stat),
+        bwd_stat(the_beacon.bwd_stat),
+        initiation_time(the_beacon.initiation_time),
+        expiration_time(the_beacon.expiration_time),
+        next_initiation_time(the_beacon.next_initiation_time),
+        next_expiration_time (the_beacon.next_expiration_time),
+        is_new (the_beacon.is_new),
+        is_valid(the_beacon.is_valid),
+        the_path(the_beacon.the_path),
+        key(the_beacon.key)
+    {
+    }
 };
 }
 #endif //SCION_BEACONING_SIMMULATOR_BEACON_H

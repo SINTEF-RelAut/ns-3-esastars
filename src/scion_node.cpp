@@ -212,4 +212,69 @@ SCION_Node::calculate_final_diversity_scores (beacon *the_beacon)
         std::make_pair (AS_level_diversity_score / counter, link_level_diversity_score / counter));
 }
 
+
+void
+SCION_Node::IncrementControlPlaneBytesSent(beacon &the_beacon, uint16_t interface) {
+    bytes_sent_per_interface_per_period.at(now).at(interface) +=
+            (BEACON_HEADER_SIZE + BEACON_HOP_SIZE * the_beacon.the_path.size());
+}
+
+void
+SCION_Node::ReceiveBeacon(beacon &received_beacon, uint16_t sender_as, uint16_t remote_if, uint16_t local_if) {
+
+    uint16_t dst_as = UPPER_16_BITS(received_beacon.the_path.at(0));
+    bool to_import = strategy->ImportPolicy(received_beacon, sender_as, remote_if, local_if, now);
+    bool update_strategy_metadata = false;
+
+    if (!to_import){
+        return;
+    }
+
+    beacon* beacon_in_the_store = NULL;
+
+    if (next_round_valid_beacons_count_per_dst_as.find(dst_as) == next_round_valid_beacons_count_per_dst_as.end()) {
+        next_round_valid_beacons_count_per_dst_as.insert(std::make_pair(dst_as, 0));
+    }
+
+    if (path_map_to_beacon.find(received_beacon.key) != path_map_to_beacon.end()) {
+        beacon_in_the_store = path_map_to_beacon.at(received_beacon.key);
+
+        beacon_in_the_store->next_initiation_time = received_beacon.next_initiation_time;
+        beacon_in_the_store->next_expiration_time = received_beacon.next_expiration_time;
+
+        if (!beacon_in_the_store->is_valid) {
+            next_round_valid_beacons_count_per_dst_as.at(dst_as)++;
+            update_strategy_metadata = true;
+        }
+    } else {
+        next_round_valid_beacons_count_per_dst_as.at(dst_as)++;
+        update_strategy_metadata = true;
+
+        beacon_in_the_store = new beacon(received_beacon);
+        path_map_to_beacon.insert(std::make_pair(beacon_in_the_store->key, beacon_in_the_store));
+
+        uint16_t path_len = (uint16_t) beacon_in_the_store->the_path.size();
+
+        if (beacon_store.find(dst_as) != beacon_store.end() &&
+            beacon_store.at(dst_as).find(path_len) !=
+            beacon_store.at(dst_as).end()) {
+            beacon_store.at(dst_as).at(path_len).insert(beacon_in_the_store);
+        } else if (beacon_store.find(dst_as) != beacon_store.end() &&
+                   beacon_store.at(dst_as).find(path_len) ==
+                   beacon_store.at(dst_as).end()) {
+            beacon_store.at(dst_as).insert(std::make_pair(path_len, beacons_with_equal_length()));
+            beacon_store.at(dst_as).at(path_len).insert(beacon_in_the_store);
+        } else {
+            beacon_store.insert(std::make_pair(dst_as, beacons_with_same_dst_as()));
+            beacon_store.at(dst_as).insert(
+                    std::make_pair(path_len, beacons_with_equal_length()));
+            beacon_store.at(dst_as).at(path_len).insert(beacon_in_the_store);
+        }
+    }
+
+    if (update_strategy_metadata) {
+        strategy->UpdateStrategyMetaDataAfterImport(beacon_in_the_store, sender_as, remote_if, local_if);
+    }
+}
+
 } // namespace ns3

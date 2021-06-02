@@ -132,35 +132,29 @@ Baseline::DisseminateBeacons (SCION_Node::neighbour_relation relation)
  * @param bwd The new beacon bandwidth stat.
  */
 bool
-Baseline::ImportPolicy (std::string key, uint16_t dst_as, beacon *old_beacon,
-                                          uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
-                                          ld latency, ld bwd, uint16_t now)
+Baseline::ImportPolicy(beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
+                       uint16_t self_ingress_if_no, uint16_t now)
 {
-    if (node->next_round_valid_beacons_count_per_dst_as.find(dst_as) ==
-        node->next_round_valid_beacons_count_per_dst_as.end()) {
-        node->next_round_valid_beacons_count_per_dst_as.insert(
-                std::make_pair(dst_as, 0));
-    }
+    uint16_t dst_as = UPPER_16_BITS(the_beacon.the_path.at(0));
 
-    if (node->path_map_to_beacon.find(key) != node->path_map_to_beacon.end()) {
-        if (!node->path_map_to_beacon.at(key)->is_valid) {
-            node->next_round_valid_beacons_count_per_dst_as.at(dst_as)++;
-        }
+    if (node->path_map_to_beacon.find(the_beacon.key) != node->path_map_to_beacon.end()) {
         return true;
     }
 
-    if (old_beacon == NULL) {
-        node->next_round_valid_beacons_count_per_dst_as.at(dst_as)++;
+    if (the_beacon.the_path.size() == 1) {
         return true;
     }
 
     if (this->node->next_round_valid_beacons_count_per_dst_as.at(dst_as) <= FIXED_BEACONS_NUMBER_TO_STORE) {
-        node->next_round_valid_beacons_count_per_dst_as.at(dst_as)++;
         return true;
     }
 
     return false;
 }
+
+void
+Baseline::UpdateStrategyMetaDataAfterImport (beacon* the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no)
+{}
 
 
 void

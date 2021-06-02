@@ -14,7 +14,9 @@
 #include "beaconing_strategy.h"
 
 namespace ns3 {
-
+#ifndef MAX_BEACON_NUMBERS_TO_STORE
+#define MAX_BEACON_NUMBERS_TO_STORE 60
+#endif
 #define MAX_ACCEPTABLE_JOINTNESS 2.0
 #define MAX_LAT 1000.0
 #define MAX_BWD 400.0
@@ -35,16 +37,20 @@ namespace ns3 {
         void
         DisseminateBeacons(SCION_Node::neighbour_relation relation) override;
 
-    protected:
         /**
-         * @brief Evicts the lowest scored beacon for the beacons originating AS if the score of the new beacon is larger
-         * than the lowest scored matching beacon found in the remote ASes beacon store.
-         */
+        * @brief Evicts the lowest scored beacon for the beacons originating AS if the score of the new beacon is larger
+        * than the lowest scored matching beacon found in the remote ASes beacon store.
+        */
 
         bool
-        ImportPolicy (std::string key, uint16_t dst_as, beacon *old_beacon,
-                                        uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
-                                        ld latency, ld bwd, uint16_t now) override;
+        ImportPolicy (beacon& the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
+                      uint16_t now) override;
+
+        void
+        UpdateStrategyMetaDataAfterImport (beacon* the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no) override;
+
+    protected:
+
 
         void
         MetaDataUpdateAfterImmediateSend(beacon *the_beacon, uint16_t self_egress_if_no, Ptr<SCION_Node> remote_as,
@@ -75,15 +81,14 @@ namespace ns3 {
                                                beacon *the_beacon);
 
         void
-        inc_links_jointness_on_received_paths(uint16_t dst_as_no, uint16_t sender_as_no,
-                                              uint16_t remote_egress_if_no, beacon *the_beacon);
+        inc_links_jointness_on_received_paths(uint16_t dst_as_no, beacon *the_beacon);
 
         void add_to_sent_beacons(uint16_t dst_as_no, uint16_t remote_as, uint16_t self_egress_if_no, beacon *the_beacon, float raw_score);
 
         ld calculate_link_diversity_score_for_dissemination(uint16_t remote_as, uint16_t dst_as, uint16_t egress_if_no,
                                                             beacon *the_beacon);
 
-        ld  calculate_link_diversity_score_for_import(uint16_t sender_as, uint16_t dst_as, uint16_t remote_egress_if, beacon* the_beacon);
+        ld  calculate_link_diversity_score_for_import(uint16_t dst_as, beacon& the_beacon);
 
         bool path_not_sent_before(uint16_t remote_as, uint16_t self_egress_if_no, beacon *the_beacon);
 
@@ -100,7 +105,7 @@ namespace ns3 {
         inline ld calculate_raw_score (beacon* the_beacon, uint16_t dst_as_no, uint16_t self_egress_if_no, Ptr<SCION_Node> remote_as);
 
         inline ld
-        calculate_import_raw_score (beacon* the_beacon, uint16_t dst_as_no, uint16_t sender_as, uint16_t remote_egress_if_no, ld latency, ld bw);
+        calculate_import_raw_score (beacon& the_beacon);
 
     };
 }
