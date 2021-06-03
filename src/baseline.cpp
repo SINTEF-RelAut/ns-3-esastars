@@ -56,7 +56,7 @@ Baseline::DisseminateBeacons (SCION_Node::neighbour_relation relation)
 
             for (auto const &len_beacons_pair : equal_dst_as_beacons)
             { // for each length
-                if (sent_count >= FIXED_BEACONS_NUMBER_TO_SEND)
+                if (sent_count >= MAX_BEACONS_TO_SEND)
                 {
                     break;
                 }
@@ -65,7 +65,7 @@ Baseline::DisseminateBeacons (SCION_Node::neighbour_relation relation)
 
                 for (auto const &the_beacon : beacons)
                 {
-                    if (sent_count >= FIXED_BEACONS_NUMBER_TO_SEND)
+                    if (sent_count >= MAX_BEACONS_TO_SEND)
                     {
                         break;
                     }
@@ -131,30 +131,36 @@ Baseline::DisseminateBeacons (SCION_Node::neighbour_relation relation)
  * @param latency The new beacon latency.
  * @param bwd The new beacon bandwidth stat.
  */
-bool
+std::tuple<bool, bool, bool, beacon*>
 Baseline::ImportPolicy(beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
                        uint16_t self_ingress_if_no, uint16_t now)
 {
     uint16_t dst_as = UPPER_16_BITS(the_beacon.the_path.at(0));
 
     if (node->path_map_to_beacon.find(the_beacon.key) != node->path_map_to_beacon.end()) {
-        return true;
+        beacon* existing_beacon = node->path_map_to_beacon.at(the_beacon.key);
+        if (!existing_beacon->is_valid){
+            return std::tuple<bool, bool, bool, beacon*>(true, true, false, existing_beacon);
+        }
+        return std::tuple<bool, bool, bool, beacon*>(true, true, true, existing_beacon);
     }
 
     if (the_beacon.the_path.size() == 1) {
-        return true;
+        return std::tuple<bool, bool, bool, beacon*>(true, false, false, NULL);
     }
 
-    if (this->node->next_round_valid_beacons_count_per_dst_as.at(dst_as) <= FIXED_BEACONS_NUMBER_TO_STORE) {
-        return true;
+    if (this->node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < MAX_BEACONS_TO_STORE) {
+        return std::tuple<bool, bool, bool, beacon*>(true, false, false, NULL);
     }
 
-    return false;
+    return std::tuple<bool, bool, bool, beacon*>(false, false, false, NULL);
 }
 
-void
-Baseline::UpdateStrategyMetaDataAfterImport (beacon* the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no)
-{}
+    void
+    Baseline::InsertToStrategyMetaData (beacon* the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no){}
+
+    void
+    Baseline::DeleteFromStrategyMetaData (beacon* the_beacon) {}
 
 
 void

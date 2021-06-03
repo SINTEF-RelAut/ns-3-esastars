@@ -14,9 +14,6 @@
 #include "beaconing_strategy.h"
 
 namespace ns3 {
-#ifndef MAX_BEACON_NUMBERS_TO_STORE
-#define MAX_BEACON_NUMBERS_TO_STORE 60
-#endif
 #define MAX_ACCEPTABLE_JOINTNESS 2.0
 #define MAX_LAT 1000.0
 #define MAX_BWD 400.0
@@ -42,12 +39,15 @@ namespace ns3 {
         * than the lowest scored matching beacon found in the remote ASes beacon store.
         */
 
-        bool
+        std::tuple<bool, bool, bool, beacon*>
         ImportPolicy (beacon& the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
                       uint16_t now) override;
 
         void
-        UpdateStrategyMetaDataAfterImport (beacon* the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no) override;
+        InsertToStrategyMetaData (beacon* the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no) override;
+
+        void
+        DeleteFromStrategyMetaData (beacon* the_beacon) override;
 
     protected:
 

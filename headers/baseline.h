@@ -23,11 +23,17 @@ class Baseline : public BeaconingStrategy
 
     void DoInitializations(uint32_t all_nodes) override;
 
+    void
+    InsertToStrategyMetaData (beacon* the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no) override;
+
+    void
+    DeleteFromStrategyMetaData (beacon* the_beacon) override;
+
   protected:
     /**
      * @brief Does nothing. This strategy does not evict any beacons.
      */
-    bool
+    std::tuple<bool, bool, bool, beacon*>
     ImportPolicy (beacon& the_beacon,
                   uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
                   uint16_t now) override;

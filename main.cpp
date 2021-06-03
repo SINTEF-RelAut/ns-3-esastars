@@ -17,6 +17,8 @@
 #include "headers/scion_node.h"
 #include "headers/scion_core_as.h"
 #include "headers/scion_as.h"
+#include "headers/criteria_matching.h"
+#include "headers/latency_optimized_beaconing.h"
 #include "ns3/ptr.h"
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
@@ -25,7 +27,7 @@
 #include <ns3/nstime.h>
 #include <istream>
 #include <omp.h>
-#include <src/SCION/headers/criteria_matching.h>
+
 #include <random>
 
 
@@ -197,7 +199,9 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* rootNode, std::string beaconi
         if (beaconing_policy_str == "baseline") {
             beaconing_policy = (ns3::BeaconingStrategy*) new ns3::Baseline();
         } else if (beaconing_policy_str == "criteria_matching") {
-            beaconing_policy = (ns3::BeaconingStrategy*) new ns3::CriteriaMatching();
+            beaconing_policy = (ns3::BeaconingStrategy *) new ns3::CriteriaMatching();
+        } else if (beaconing_policy_str == "latency_optimized") {
+            beaconing_policy = (ns3::BeaconingStrategy *) new ns3::LatencyOptimized();
         } else {
             beaconing_policy = (ns3::BeaconingStrategy*) new ns3::Baseline();
         }
@@ -333,6 +337,8 @@ void InitializeNodesAttributes(ns3::NodeContainer& nodes, std::string beaconing_
         if (beaconing_policy_str == "baseline") {
             ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(i))->DoInitializations();
         } else if (beaconing_policy_str == "criteria_matching") {
+            ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(i))->DoInitializations(nodes.GetN());
+        } else if (beaconing_policy_str == "latency_optimized") {
             ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(i))->DoInitializations(nodes.GetN());
         }
     }

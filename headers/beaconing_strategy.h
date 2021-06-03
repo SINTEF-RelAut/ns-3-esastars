@@ -11,7 +11,7 @@
 
 #include <unordered_map>
 #include "beacon.h"
-#include "../headers/scion_node.h"
+#include "scion_node.h"
 
 namespace ns3 {
 
@@ -65,11 +65,17 @@ class BeaconingStrategy{
  *
  * Must be overwritten by descendants of BeaconingStrategy.
  */
-    virtual bool ImportPolicy (beacon& the_beacon,
+    virtual std::tuple<bool, bool, bool, beacon*> ImportPolicy (beacon& the_beacon,
                                uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
                                uint16_t now) = 0;
 
-    virtual void UpdateStrategyMetaDataAfterImport (beacon* the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no) = 0;
+    virtual void InsertToStrategyMetaData (beacon* the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no) = 0;
+
+    virtual void DeleteFromStrategyMetaData (beacon* the_beacon) = 0;
+
+    virtual void InsertBeacon (beacon& the_beacon, uint16_t dst_as, uint16_t sender_as, uint16_t remote_egress_if, uint16_t local_ingress_if, bool path_exists, bool existing_path_valid, beacon* beacon_to_replace);
+
+    virtual void DeleteBeacon (beacon* to_be_removed_beacon, uint16_t dst_as);
 
   protected:
     Ptr<SCION_Node> node;
@@ -90,7 +96,7 @@ class BeaconingStrategy{
      * writes the new beacon into the remote ASes beacon store structures if the remote ASes import policy does not discard it,
      * and schedules a processing event on the simulator if the beacon needs to continue being disseminated right away.
      */
-    void GenerateBeaconAndSend (beacon *old_beacon, uint16_t self_egress_if_no,
+    void GenerateBeaconAndSend (beacon *selected_beacon, uint16_t self_egress_if_no,
                                 uint16_t remote_ingress_if_no, Ptr<SCION_Node> remote_as, ld latency, ld bwd, ld  score, bool immediate,
                                 ld latency_for_immediate);
 

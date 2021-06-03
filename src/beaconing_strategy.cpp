@@ -273,5 +273,81 @@ namespace ns3 {
         return false;
     }
 
+    void BeaconingStrategy::InsertBeacon (beacon& received_beacon, uint16_t dst_as, uint16_t sender_as, uint16_t remote_egress_if, uint16_t local_ingress_if, bool path_exists, bool existing_path_valid, beacon* beacon_to_replace)
+    {
+
+        if (node->next_round_valid_beacons_count_per_dst_as.find(dst_as) == node->next_round_valid_beacons_count_per_dst_as.end()) {
+            node->next_round_valid_beacons_count_per_dst_as.insert(std::make_pair(dst_as, 0));
+        }
+
+        if (path_exists) {
+            beacon_to_replace->next_initiation_time = received_beacon.next_initiation_time;
+            beacon_to_replace->next_expiration_time = received_beacon.next_expiration_time;
+
+            if (!existing_path_valid) {
+                node->next_round_valid_beacons_count_per_dst_as.at(dst_as)++;
+                InsertToStrategyMetaData(beacon_to_replace, sender_as, remote_egress_if, local_ingress_if);
+            }
+            return;
+        } else {
+            beacon* to_insert_beacon;
+
+            if (beacon_to_replace == NULL) {
+                to_insert_beacon = new beacon(received_beacon);
+            } else {
+                to_insert_beacon = beacon_to_replace;
+                *to_insert_beacon = received_beacon;
+            }
+
+            node->next_round_valid_beacons_count_per_dst_as.at(dst_as)++;
+
+            node->path_map_to_beacon.insert(std::make_pair(to_insert_beacon->key, to_insert_beacon));
+            uint16_t path_len = (uint16_t) to_insert_beacon->the_path.size();
+
+            if (node->beacon_store.find(dst_as) != node->beacon_store.end() &&
+                node->beacon_store.at(dst_as).find(path_len) != node->beacon_store.at(dst_as).end()) {
+                node->beacon_store.at(dst_as).at(path_len).insert(to_insert_beacon);
+            } else if (node->beacon_store.find(dst_as) != node->beacon_store.end() &&
+                       node->beacon_store.at(dst_as).find(path_len) == node->beacon_store.at(dst_as).end()) {
+                node->beacon_store.at(dst_as).insert(std::make_pair(path_len, beacons_with_equal_length()));
+                node->beacon_store.at(dst_as).at(path_len).insert(to_insert_beacon);
+            } else {
+                node->beacon_store.insert(std::make_pair(dst_as, beacons_with_same_dst_as()));
+                node->beacon_store.at(dst_as).insert(
+                        std::make_pair(path_len, beacons_with_equal_length()));
+                node->beacon_store.at(dst_as).at(path_len).insert(to_insert_beacon);
+            }
+
+            InsertToStrategyMetaData(to_insert_beacon, sender_as, remote_egress_if, local_ingress_if);
+        }
+    }
+
+    void BeaconingStrategy::DeleteBeacon (beacon* to_be_removed_beacon, uint16_t dst_as) {
+        assert(node->beacon_store.find(dst_as) != node->beacon_store.end());
+        assert(node->beacon_store.at(dst_as).find(to_be_removed_beacon->the_path.size()) != node->beacon_store.at(dst_as).end());
+        assert(node->beacon_store.at(dst_as).at(to_be_removed_beacon->the_path.size()).find(to_be_removed_beacon) != node->beacon_store.at(dst_as).at(to_be_removed_beacon->the_path.size()).end());
+
+        node->beacon_store.at(dst_as).at(to_be_removed_beacon->the_path.size()).erase(to_be_removed_beacon);
+        if (node->beacon_store.at(dst_as).at(to_be_removed_beacon->the_path.size()).empty()) {
+            node->beacon_store.at(dst_as).erase(to_be_removed_beacon->the_path.size());
+        }
+        if (node->beacon_store.at(dst_as).empty()) {
+            node->beacon_store.erase(dst_as);
+        }
+
+        node->path_map_to_beacon.erase(to_be_removed_beacon->key);
+
+        if (to_be_removed_beacon->is_valid && !to_be_removed_beacon->is_new){
+            node->valid_beacons_count_per_dst_as.at(dst_as)--;
+        }
+
+        if (to_be_removed_beacon->is_new) {
+            node->next_round_valid_beacons_count_per_dst_as.at(dst_as)--;
+        }
+
+        DeleteFromStrategyMetaData(to_be_removed_beacon);
+
+    }
+
 
 } // namespace ns3

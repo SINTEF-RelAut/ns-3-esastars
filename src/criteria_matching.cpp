@@ -55,8 +55,7 @@ namespace ns3 {
     }
 
     void
-    CriteriaMatching::DisseminateBeacons(
-            SCION_Node::neighbour_relation relation) {
+    CriteriaMatching::DisseminateBeacons(SCION_Node::neighbour_relation relation) {
         uint32_t neighbors_cnt = node->neighbors.size();
         omp_set_num_threads(NUM_CORE);
 #pragma omp parallel for
@@ -99,22 +98,27 @@ namespace ns3 {
     }
 
 
-    bool CriteriaMatching::ImportPolicy (beacon& the_beacon,
+    std::tuple<bool, bool, bool, beacon*> CriteriaMatching::ImportPolicy (beacon& the_beacon,
                                          uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
                                          uint16_t now)
     {
+
         uint16_t dst_as = UPPER_16_BITS(the_beacon.the_path.at(0));
 
         if (node->path_map_to_beacon.find(the_beacon.key) != node->path_map_to_beacon.end()) {
-            return true;
+            beacon* existing_beacon = node->path_map_to_beacon.at(the_beacon.key);
+            if (!existing_beacon->is_valid){
+                return std::tuple<bool, bool, bool, beacon*>(true, true, false, existing_beacon);
+            }
+            return std::tuple<bool, bool, bool, beacon*>(true, true, true, existing_beacon);
         }
 
         if (the_beacon.the_path.size() == 1) {
-            return true;
+            return std::tuple<bool, bool, bool, beacon*>(true, false, false, NULL);
         }
 
-        if (node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < 20) {
-            return true;
+        if (node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < MAX_BEACONS_TO_STORE) {
+            return std::tuple<bool, bool, bool, beacon*>(true, false, false, NULL);
         }
 
         ld raw_score = calculate_import_raw_score (the_beacon);
@@ -122,14 +126,19 @@ namespace ns3 {
         ld beacon_exp_period = (ld) (the_beacon.next_expiration_time - the_beacon.next_initiation_time);
         ld score = std::pow(raw_score, ALPHA * (beacon_age / beacon_exp_period));
 
-        if (node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < MAX_BEACON_NUMBERS_TO_STORE && score > 0.9) {
-            return true;
+        if (node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < MAX_BEACONS_TO_STORE && score > 0.9) {
+            return std::tuple<bool, bool, bool, beacon*>(true, false, false, NULL);
         }
 
-        return false;
+        return std::tuple<bool, bool, bool, beacon*>(false, false, false, NULL);
     }
 
-    void CriteriaMatching::UpdateStrategyMetaDataAfterImport (beacon* the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no) {
+    void
+    CriteriaMatching::DeleteFromStrategyMetaData (beacon* the_beacon) {
+        dec_links_jointnesses_on_received_paths(the_beacon, UPPER_16_BITS(the_beacon->the_path.at(0)));
+    }
+
+    void CriteriaMatching::InsertToStrategyMetaData (beacon* the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no) {
         inc_links_jointness_on_received_paths(UPPER_16_BITS(the_beacon->the_path.at(0)), the_beacon);
     }
 
@@ -238,7 +247,7 @@ namespace ns3 {
 
         bool counters_changed = false;
 
-        for (int i = 0; i < FIXED_BEACONS_NUMBER_TO_SEND; ++i) {
+        for (int i = 0; i < MAX_BEACONS_TO_SEND; ++i) {
             if (max_score_beacon == NULL) {
                 break;
             } else {
