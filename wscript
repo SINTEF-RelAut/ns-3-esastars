@@ -23,7 +23,7 @@ def build(bld):
                      'headers/beacon.h',
                      'headers/beaconing_strategy.h',
                      'headers/criteria_matching.h',
-                     'headers/latency_optimized_beaconing.h'
+                     'headers/latency_optimized_beaconing.h',
                      'headers/scion_as.h',
                      'headers/scion_core_as.h',
                      'headers/scion_node.h',
