@@ -10,6 +10,7 @@ def build(bld):
                    'src/beacon.cpp',
                    'src/beaconing_strategy.cpp',
                    'src/criteria_matching.cpp',
+                   'src/latency_optimized_beaconing.cpp',
                    'src/scion_as.cpp',
                    'src/scion_core_as.cpp',
                    'src/scion_node.cpp',
@@ -22,6 +23,7 @@ def build(bld):
                      'headers/beacon.h',
                      'headers/beaconing_strategy.h',
                      'headers/criteria_matching.h',
+                     'headers/latency_optimized_beaconing.h'
                      'headers/scion_as.h',
                      'headers/scion_core_as.h',
                      'headers/scion_node.h',
