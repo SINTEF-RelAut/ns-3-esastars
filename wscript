@@ -35,9 +35,5 @@ def build(bld):
     obj.source = 'main.cpp'
 
 
-    obj = bld.create_ns3_program('scion-criteria-matching',
-                                        ['SCION', 'point-to-point'])
-
-    obj.source = 'scion-criteria-matching.cc'
 
 
