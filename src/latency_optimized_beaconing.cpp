@@ -202,4 +202,9 @@ namespace ns3 {
             delete_from_beacons_per_dst_sorted_by_latency(dst_as, the_beacon);
         }
     }
+
+    void LatencyOptimized::MetaDataUpdateAfterImmediateSend(beacon *the_beacon, uint16_t self_egress_if_no, Ptr<SCION_Node> remote_as,
+    uint16_t dst_as_no) {
+
+    }
 }
