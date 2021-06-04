@@ -38,8 +38,6 @@ class Baseline : public BeaconingStrategy
                   uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
                   uint16_t now) override;
 
-    void UpdateStrategyMetaDataAfterImport (beacon* the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no) override;
-
     void MetaDataUpdateAfterImmediateSend (beacon *the_beacon, uint16_t local_iface, Ptr<SCION_Node> remote_as,
                                   uint16_t dst_as_no) override;
     void MetaDataUpdatePeriodic (beacon* the_beacon, bool invalidated) override;

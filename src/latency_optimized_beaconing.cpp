@@ -196,5 +196,10 @@ namespace ns3 {
         }
     }
 
-
+    void LatencyOptimized::MetaDataUpdatePeriodic(beacon* the_beacon, bool invalidated) {
+        uint16_t dst_as = UPPER_16_BITS(the_beacon->the_path.at(0));
+        if (invalidated) {
+            delete_from_beacons_per_dst_sorted_by_latency(dst_as, the_beacon);
+        }
+    }
 }
