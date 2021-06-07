@@ -38,6 +38,10 @@ namespace ns3 {
             return std::tuple<bool, bool, bool, beacon*>(true, false, false, NULL);
         }
 
+        if (node->next_round_valid_beacons_count_per_dst_as.find(dst_as) == node->next_round_valid_beacons_count_per_dst_as.end()) {
+            return std::tuple<bool, bool, bool, beacon*>(true, false, false, NULL);
+        }
+
         if (node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < MAX_BEACONS_TO_STORE) {
             return std::tuple<bool, bool, bool, beacon*>(true, false, false, NULL);
         }
