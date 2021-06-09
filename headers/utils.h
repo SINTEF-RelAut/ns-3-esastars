@@ -51,6 +51,11 @@ ld AS_level_jaccard_distance_between_two_paths (beacon *beacon1, beacon *beacon2
 ld calculate_great_circle_latency (ld lat1_deg, ld long1_deg, ld lat2_deg, ld long2_deg);
 
 /**
+ * @brief Calculates the great circle distance between two points using their coordinates.
+ */
+ld calculate_great_circle_distance (ld lat1_deg, ld long1_deg, ld lat2_deg, ld long2_deg);
+
+/**
  * @brief Searches the first attribute of the node for the value associated with name. Returns an empty string if not found.
  */
 std::string getAttribute (rapidxml::xml_node<> *node, const std::string &name);

@@ -85,6 +85,18 @@
 ld
 calculate_great_circle_latency (ld lat1_deg, ld long1_deg, ld lat2_deg, ld long2_deg)
 {
+
+
+    ld distance = calculate_great_circle_distance(lat1_deg, long1_deg, lat2_deg, long2_deg);
+    // 0.005 millisecods of latency per kilometer
+    ld latency = distance * 0.005;
+    return latency;
+}
+
+
+ld
+calculate_great_circle_distance (ld lat1_deg, ld long1_deg, ld lat2_deg, ld long2_deg)
+{
     ld lat1 = lat1_deg * (M_PI) / 180;
     ld long1 = long1_deg * (M_PI) / 180;
     ld lat2 = lat2_deg * (M_PI) / 180;
@@ -95,13 +107,10 @@ calculate_great_circle_latency (ld lat1_deg, ld long1_deg, ld lat2_deg, ld long2
     ld dlat = lat2 - lat1;
 
     ld distance =
-        6371 * 2 *
-        asin (sqrt (pow (sin (dlat / 2), 2) + cos (lat1) * cos (lat2) * pow (sin (dlong / 2), 2)));
+            6371 * 2 *
+            asin (sqrt (pow (sin (dlat / 2), 2) + cos (lat1) * cos (lat2) * pow (sin (dlong / 2), 2)));
 
-    // 0.005 millisecods of latency per kilometer
-    ld latency = distance * 0.005;
-
-    return latency;
+    return distance;
 }
 
 /**

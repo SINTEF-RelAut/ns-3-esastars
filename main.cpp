@@ -27,7 +27,7 @@
 #include <ns3/nstime.h>
 #include <istream>
 #include <omp.h>
-
+#include <yaml-cpp/yaml.h>
 #include <random>
 
 
@@ -421,6 +421,84 @@ uint16_t expiration_period, ns3::Time beaconing_period, ns3::Time last_beaconing
             }
         }
         std::cout << collector << "\t" << consumed_bwd << std::endl;
+    }
+}
+
+void FindMinLatencyToDNSRootServers(ns3::NodeContainer& nodes, std::map<int32_t, uint16_t>& ASes, std::map<uint16_t, int32_t>& index_to_AS_no) {
+    YAML::Node probes_yml = YAML::LoadFile("/cluster/scratch/tabaeias/atlas_probes.yml");
+    YAML::Node probes = probes_yml["Probes"];
+
+    std::list<std::string> root_server_names ({"a-root", "b-root", "c-root", "d-root", "e-root", "f-root", "h-root", "j-root", "k-root", "l-root", "m-root"});
+    for (auto const & root_server_name : root_server_names) {
+        std::cout << "################################################## " << root_server_name << " #########################################################" << std::endl;
+        YAML::Node the_root = YAML::LoadFile("/cluster/scratch/tabaeias/" + root_server_name + ".yml");
+        int32_t dst_as_no = the_root["ASN"].as<int32_t>();
+
+        if (ASes.find(dst_as_no) == ASes.end()) {
+            std::cout << root_server_name << ": " << dst_as_no << " The root DNS server's AS is not among the top 2000 ASes" << std::endl;
+            continue;
+        }
+        std::cout << "Probe\tASN\tInstance Coordinates\tLatency\tDistance" << std::endl;
+
+        uint16_t dst_index = ASes.at(dst_as_no);
+        ns3::Ptr<ns3::SCION_Node> dst_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(dst_index));
+
+        for(std::size_t i = 0; i < probes.size(); ++i) {
+            int32_t src_as_no = probes[i]["ASN"].as<int32_t>();
+            double probe_lat = probes[i]["Latitude"].as<double>();
+            double probe_long = probes[i]["Longitude"].as<double>();
+
+            if (ASes.find(src_as_no) == ASes.end()) {
+                continue;
+            }
+
+            ns3::Ptr<ns3::SCION_Node> src_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(ASes.at(src_as_no)));
+
+            uint16_t last_br;
+            double min_latency_to_dst_as = std::numeric_limits<double>::max();
+
+            auto const & beacons_to_dns_root_as = src_node->beacon_store.at(dst_index);
+            for (auto const & len_beacons_pair : beacons_to_dns_root_as) {
+                auto const & same_len_beacons = len_beacons_pair.second;
+                for (auto const & the_beacon : same_len_beacons) {
+                    if (the_beacon->is_valid) {
+                        assert(UPPER_16_BITS(the_beacon->the_path.at(0)) == dst_index);
+
+                        uint16_t first_br = LOWER_16_BITS(the_beacon->the_path.back());
+                        std::pair<double, double> first_br_coordinates = src_node->interfaces_coordinates.at(first_br);
+                        double latency_from_probe_to_first_hop = ns3::calculate_great_circle_latency(probe_lat, probe_long, first_br_coordinates.first, first_br_coordinates.second);
+                        if (the_beacon->latency_stat + latency_from_probe_to_first_hop < min_latency_to_dst_as) {
+                            min_latency_to_dst_as = the_beacon->latency_stat + latency_from_probe_to_first_hop;
+                            last_br = SECOND_UPPER_16_BITS(the_beacon->the_path.at(0));
+                        }
+                    }
+                }
+            }
+
+            double min_overall_latency = std::numeric_limits<double>::max();
+            std::pair<double, double> selected_instance_coordinates;
+
+            YAML::Node sites = the_root["Sites"];
+            for(std::size_t j = 0; j < sites.size(); ++j) {
+                double instance_lat = sites[j]["Latitude"].as<double>();
+                double instance_long = sites[j]["Longitude"].as<double>();
+                std::pair<double, double> last_br_coordinates = dst_node->interfaces_coordinates.at(last_br);
+                double overall_latency = min_latency_to_dst_as + ns3::calculate_great_circle_latency(instance_lat, instance_long, last_br_coordinates.first, last_br_coordinates.second);
+                if (overall_latency < min_overall_latency) {
+                    min_overall_latency = overall_latency;
+                    selected_instance_coordinates = std::pair<double, double> (instance_lat, instance_long);
+                }
+            }
+
+            std::cout << probes[i]["ID"] << "\t" << src_as_no << "\t"
+            << "(" << selected_instance_coordinates.first << ", " << selected_instance_coordinates.second << ")" << "\t"
+            << min_overall_latency << "\t"
+            << ns3::calculate_great_circle_distance(probe_lat, probe_long, selected_instance_coordinates.first, selected_instance_coordinates.second)
+            << std::endl;
+
+
+        }
+
     }
 }
 
