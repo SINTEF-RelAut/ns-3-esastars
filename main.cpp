@@ -74,6 +74,8 @@ void PrintMinimumLatencyDist(ns3::NodeContainer& nodes);
 
 void PrintPathNoDistribution (ns3::NodeContainer& nodes);
 
+void FindMinLatencyToDNSRootServers(ns3::NodeContainer& nodes, std::map<int32_t, uint16_t>& ASes, std::map<uint16_t, int32_t>& index_to_AS_no);
+
 int main(int argc, char *argv[]) {
     ns3::NodeContainer nodes;
     std::map<int32_t, uint16_t> ASes;
@@ -382,10 +384,10 @@ void DoFinalEvaluations(ns3::NodeContainer& nodes, std::map<int32_t, uint16_t>& 
 
 //    PrintTrafficSentFromCollectorsPerDstPerPeriod(nodes, ASes, index_to_AS_no, expiration_period,  beaconing_period,  last_beaconing_event_time);
 //    PrintPathNoDistribution (nodes);
-    //    PrintMinimumLatencyDist(nodes);
+//    PrintMinimumLatencyDist(nodes);
 //    Evaluate_S_T_Connectivity(nodes);
-    PrintAllDiscoveredPaths(nodes, ASes, index_to_AS_no);
-
+//    PrintAllDiscoveredPaths(nodes, ASes, index_to_AS_no);
+     FindMinLatencyToDNSRootServers(nodes, ASes, index_to_AS_no);
 //    PrintConsumedBWAtEachPeriod(nodes, beaconing_period, last_beaconing_event_time);
 //    PrintDistributionOfPathsWithSpecificHopCount(nodes);
 
