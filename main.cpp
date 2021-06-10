@@ -27,7 +27,6 @@
 #include <ns3/nstime.h>
 #include <istream>
 #include <omp.h>
-#include <yaml-cpp/yaml.h>
 #include <random>
 
 
@@ -427,14 +426,37 @@ uint16_t expiration_period, ns3::Time beaconing_period, ns3::Time last_beaconing
 }
 
 void FindMinLatencyToDNSRootServers(ns3::NodeContainer& nodes, std::map<int32_t, uint16_t>& ASes, std::map<uint16_t, int32_t>& index_to_AS_no) {
-    YAML::Node probes_yml = YAML::LoadFile("/cluster/scratch/tabaeias/atlas_probes.yml");
-    YAML::Node probes = probes_yml["Probes"];
+    std::string probes_file = "/cluster/scratch/tabaeias/atlas_rpobes.xml";
+    std::ifstream fin_probes(probes_file.c_str());
+    std::ostringstream probes_sstr;
+    probes_sstr << fin_probes.rdbuf();
+    probes_sstr.flush();
+    fin_probes.close();
+
+    std::string xmlProbesData = probes_sstr.str();
+    rapidxml::xml_document<> probes_doc;
+    probes_doc.parse<0>(&xmlProbesData[0]);
+
+    rapidxml::xml_node<> *probesRootNode = probes_doc.first_node("root");
+    rapidxml::xml_node<> *probesNode = probesRootNode->first_node("Probes");
 
     std::list<std::string> root_server_names ({"a-root", "b-root", "c-root", "d-root", "e-root", "f-root", "h-root", "j-root", "k-root", "l-root", "m-root"});
     for (auto const & root_server_name : root_server_names) {
         std::cout << "################################################## " << root_server_name << " #########################################################" << std::endl;
-        YAML::Node the_root = YAML::LoadFile("/cluster/scratch/tabaeias/" + root_server_name + ".yml");
-        int32_t dst_as_no = the_root["ASN"].as<int32_t>();
+
+        std::string dns_root_file = "/cluster/scratch/tabaeias/" + root_server_name + ".xml";
+        std::ifstream fin_dns_root(dns_root_file.c_str());
+        std::ostringstream dns_root_sstr;
+        dns_root_sstr << fin_dns_root.rdbuf();
+        dns_root_sstr.flush();
+        fin_dns_root.close();
+
+        std::string xmlDNSRootData = dns_root_sstr.str();
+        rapidxml::xml_document<> dns_root_doc;
+        dns_root_doc.parse<0>(&xmlDNSRootData[0]);
+
+        rapidxml::xml_node<> *dnsRootNode = dns_root_doc.first_node("root");
+        int32_t dst_as_no = std::stoi(dnsRootNode->first_node("ASN")->value());
 
         if (ASes.find(dst_as_no) == ASes.end()) {
             std::cout << root_server_name << ": " << dst_as_no << " The root DNS server's AS is not among the top 2000 ASes" << std::endl;
@@ -445,10 +467,11 @@ void FindMinLatencyToDNSRootServers(ns3::NodeContainer& nodes, std::map<int32_t,
         uint16_t dst_index = ASes.at(dst_as_no);
         ns3::Ptr<ns3::SCION_Node> dst_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(dst_index));
 
-        for(std::size_t i = 0; i < probes.size(); ++i) {
-            int32_t src_as_no = probes[i]["ASN"].as<int32_t>();
-            double probe_lat = probes[i]["Latitude"].as<double>();
-            double probe_long = probes[i]["Longitude"].as<double>();
+        rapidxml::xml_node<> *currProbe = probesNode->first_node("item");
+        while(currProbe) {
+            int32_t src_as_no = std::stoi(currProbe->first_node("ASN")->value());
+            double probe_lat = std::stod(currProbe->first_node("Latitude")->value());
+            double probe_long = std::stod(currProbe->first_node("Longitude")->value());
 
             if (ASes.find(src_as_no) == ASes.end()) {
                 continue;
@@ -480,25 +503,27 @@ void FindMinLatencyToDNSRootServers(ns3::NodeContainer& nodes, std::map<int32_t,
             double min_overall_latency = std::numeric_limits<double>::max();
             std::pair<double, double> selected_instance_coordinates;
 
-            YAML::Node sites = the_root["Sites"];
-            for(std::size_t j = 0; j < sites.size(); ++j) {
-                double instance_lat = sites[j]["Latitude"].as<double>();
-                double instance_long = sites[j]["Longitude"].as<double>();
+            rapidxml::xml_node<> *sitesNode = dnsRootNode->first_node("Sites");
+            rapidxml::xml_node<> *currSite = sitesNode->first_node("item");
+            while(currSite) {
+                double instance_lat = std::stod(currSite->first_node("Latitude")->value());
+                double instance_long = std::stod(currSite->first_node("Longitude")->value());
                 std::pair<double, double> last_br_coordinates = dst_node->interfaces_coordinates.at(last_br);
                 double overall_latency = min_latency_to_dst_as + ns3::calculate_great_circle_latency(instance_lat, instance_long, last_br_coordinates.first, last_br_coordinates.second);
                 if (overall_latency < min_overall_latency) {
                     min_overall_latency = overall_latency;
                     selected_instance_coordinates = std::pair<double, double> (instance_lat, instance_long);
                 }
+                currSite = currSite->next_sibling("item");
             }
 
-            std::cout << probes[i]["ID"] << "\t" << src_as_no << "\t"
+            std::cout << currProbe->first_node("ID")->value() << "\t" << src_as_no << "\t"
             << "(" << selected_instance_coordinates.first << ", " << selected_instance_coordinates.second << ")" << "\t"
             << min_overall_latency << "\t"
             << ns3::calculate_great_circle_distance(probe_lat, probe_long, selected_instance_coordinates.first, selected_instance_coordinates.second)
             << std::endl;
 
-
+            currProbe = currProbe->next_sibling("item");
         }
 
     }
