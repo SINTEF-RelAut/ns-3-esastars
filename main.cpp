@@ -481,8 +481,8 @@ void FindMinLatencyToDNSRootServers(ns3::NodeContainer& nodes, std::map<int32_t,
 
             ns3::Ptr<ns3::SCION_Node> src_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(ASes.at(src_as_no)));
 
-            uint16_t last_br;
-            double min_latency_to_dst_as = std::numeric_limits<double>::max();
+            //uint16_t last_br;
+            //double min_latency_to_dst_as = std::numeric_limits<double>::max();
 
 //            auto const & beacons_to_dns_root_as = src_node->beacon_store.at(dst_index);
 //            for (auto const & len_beacons_pair : beacons_to_dns_root_as) {
@@ -510,6 +510,7 @@ void FindMinLatencyToDNSRootServers(ns3::NodeContainer& nodes, std::map<int32_t,
             while(currSite) {
                 double instance_lat = std::stod(currSite->first_node("Latitude")->value());
                 double instance_long = std::stod(currSite->first_node("Longitude")->value());
+                std::cout << instance_lat << "\t" << instance_long << std::endl;
 //                std::pair<double, double> last_br_coordinates = dst_node->interfaces_coordinates.at(last_br);
 //                double overall_latency = min_latency_to_dst_as + ns3::calculate_great_circle_latency(instance_lat, instance_long, last_br_coordinates.first, last_br_coordinates.second);
 //                if (overall_latency < min_overall_latency) {
