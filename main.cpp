@@ -143,8 +143,6 @@ int main(int argc, char *argv[]) {
     std::ofstream out(out_path);
     std::cout.rdbuf(out.rdbuf());
 
-    FindMinLatencyToDNSRootServers(nodes, ASes, index_to_AS_no);
-
     ScheduleBeaconingEvents(nodes, beaconing_period, last_beaconing_event_time);
     ns3::Simulator::Stop(simulation_end_time);
     ns3::Simulator::Run();
@@ -428,7 +426,7 @@ uint16_t expiration_period, ns3::Time beaconing_period, ns3::Time last_beaconing
 }
 
 void FindMinLatencyToDNSRootServers(ns3::NodeContainer& nodes, std::map<int32_t, uint16_t>& ASes, std::map<uint16_t, int32_t>& index_to_AS_no) {
-    std::string probes_file = "/cluster/scratch/tabaeias/atlas_rpobes.xml";
+    std::string probes_file = "/cluster/scratch/tabaeias/atlas_probes.xml";
     std::ifstream fin_probes(probes_file.c_str());
     std::ostringstream probes_sstr;
     probes_sstr << fin_probes.rdbuf();
@@ -476,31 +474,32 @@ void FindMinLatencyToDNSRootServers(ns3::NodeContainer& nodes, std::map<int32_t,
             double probe_long = std::stod(currProbe->first_node("Longitude")->value());
 
             if (ASes.find(src_as_no) == ASes.end()) {
+                currProbe = currProbe->next_sibling("item");
                 continue;
             }
 
             ns3::Ptr<ns3::SCION_Node> src_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(ASes.at(src_as_no)));
 
-            //uint16_t last_br;
-            //double min_latency_to_dst_as = std::numeric_limits<double>::max();
+            uint16_t last_br;
+            double min_latency_to_dst_as = std::numeric_limits<double>::max();
 
-//            auto const & beacons_to_dns_root_as = src_node->beacon_store.at(dst_index);
-//            for (auto const & len_beacons_pair : beacons_to_dns_root_as) {
-//                auto const & same_len_beacons = len_beacons_pair.second;
-//                for (auto const & the_beacon : same_len_beacons) {
-//                    if (the_beacon->is_valid) {
-//                        assert(UPPER_16_BITS(the_beacon->the_path.at(0)) == dst_index);
-//
-//                        uint16_t first_br = LOWER_16_BITS(the_beacon->the_path.back());
-//                        std::pair<double, double> first_br_coordinates = src_node->interfaces_coordinates.at(first_br);
-//                        double latency_from_probe_to_first_hop = ns3::calculate_great_circle_latency(probe_lat, probe_long, first_br_coordinates.first, first_br_coordinates.second);
-//                        if (the_beacon->latency_stat + latency_from_probe_to_first_hop < min_latency_to_dst_as) {
-//                            min_latency_to_dst_as = the_beacon->latency_stat + latency_from_probe_to_first_hop;
-//                            last_br = SECOND_UPPER_16_BITS(the_beacon->the_path.at(0));
-//                        }
-//                    }
-//                }
-//            }
+            auto const & beacons_to_dns_root_as = src_node->beacon_store.at(dst_index);
+            for (auto const & len_beacons_pair : beacons_to_dns_root_as) {
+                auto const & same_len_beacons = len_beacons_pair.second;
+                for (auto const & the_beacon : same_len_beacons) {
+                    if (the_beacon->is_valid) {
+                        assert(UPPER_16_BITS(the_beacon->the_path.at(0)) == dst_index);
+
+                        uint16_t first_br = LOWER_16_BITS(the_beacon->the_path.back());
+                        std::pair<double, double> first_br_coordinates = src_node->interfaces_coordinates.at(first_br);
+                        double latency_from_probe_to_first_hop = ns3::calculate_great_circle_latency(probe_lat, probe_long, first_br_coordinates.first, first_br_coordinates.second);
+                        if (the_beacon->latency_stat + latency_from_probe_to_first_hop < min_latency_to_dst_as) {
+                            min_latency_to_dst_as = the_beacon->latency_stat + latency_from_probe_to_first_hop;
+                            last_br = SECOND_UPPER_16_BITS(the_beacon->the_path.at(0));
+                        }
+                    }
+                }
+            }
 
             double min_overall_latency = std::numeric_limits<double>::max();
             std::pair<double, double> selected_instance_coordinates;
@@ -511,12 +510,12 @@ void FindMinLatencyToDNSRootServers(ns3::NodeContainer& nodes, std::map<int32_t,
                 double instance_lat = std::stod(currSite->first_node("Latitude")->value());
                 double instance_long = std::stod(currSite->first_node("Longitude")->value());
                 std::cout << instance_lat << "\t" << instance_long << std::endl;
-//                std::pair<double, double> last_br_coordinates = dst_node->interfaces_coordinates.at(last_br);
-//                double overall_latency = min_latency_to_dst_as + ns3::calculate_great_circle_latency(instance_lat, instance_long, last_br_coordinates.first, last_br_coordinates.second);
-//                if (overall_latency < min_overall_latency) {
-//                    min_overall_latency = overall_latency;
-//                    selected_instance_coordinates = std::pair<double, double> (instance_lat, instance_long);
-//                }
+                std::pair<double, double> last_br_coordinates = dst_node->interfaces_coordinates.at(last_br);
+                double overall_latency = min_latency_to_dst_as + ns3::calculate_great_circle_latency(instance_lat, instance_long, last_br_coordinates.first, last_br_coordinates.second);
+                if (overall_latency < min_overall_latency) {
+                    min_overall_latency = overall_latency;
+                    selected_instance_coordinates = std::pair<double, double> (instance_lat, instance_long);
+                }
                 currSite = currSite->next_sibling("item");
             }
 
@@ -527,6 +526,7 @@ void FindMinLatencyToDNSRootServers(ns3::NodeContainer& nodes, std::map<int32_t,
             << std::endl;
 
             currProbe = currProbe->next_sibling("item");
+
         }
 
     }
