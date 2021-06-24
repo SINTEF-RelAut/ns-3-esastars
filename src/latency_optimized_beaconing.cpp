@@ -13,10 +13,14 @@
 
 namespace ns3 {
     void LatencyOptimized::DoInitializations(uint32_t all_nodes) {
-        beacons_per_dst_sorted_by_latency.resize(all_nodes);
+        beacons_per_dst_per_ing_if_sorted_by_latency.resize(all_nodes);
 
         for (uint32_t i = 0;i < all_nodes; ++i ) {
-            beacons_per_dst_sorted_by_latency.at(i) = std::map<ld, std::set<beacon*>>();
+            beacons_per_dst_per_ing_if_sorted_by_latency.at(i) = std::vector<std::multimap<ld, beacon*>>();
+            beacons_per_dst_per_ing_if_sorted_by_latency.at(i).resize(node->GetNDevices());
+            for (int j = 0; j < node->GetNDevices(); ++j) {
+                beacons_per_dst_per_ing_if_sorted_by_latency.at(i).at(j) = std::multimap<ld, beacon*>();
+            }
         }
     }
 
@@ -38,23 +42,16 @@ namespace ns3 {
             return std::tuple<bool, bool, bool, beacon*>(true, false, false, NULL);
         }
 
-        if (node->next_round_valid_beacons_count_per_dst_as.find(dst_as) == node->next_round_valid_beacons_count_per_dst_as.end()) {
+        if (beacons_per_dst_per_ing_if_sorted_by_latency.at(dst_as).at(self_ingress_if_no).size() < MAX_BEACONS_TO_STORE_PER_IFACE) {
             return std::tuple<bool, bool, bool, beacon*>(true, false, false, NULL);
         }
 
-        if (node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < MAX_BEACONS_TO_STORE) {
-            return std::tuple<bool, bool, bool, beacon*>(true, false, false, NULL);
-        }
-
-        assert(beacons_per_dst_sorted_by_latency.size() > dst_as);
-        assert(!beacons_per_dst_sorted_by_latency.at(dst_as).empty());
         ld latency = the_beacon.latency_stat;
 
-        std::map<ld, std::set<beacon*>>::reverse_iterator highest_previous_latency_iterator = beacons_per_dst_sorted_by_latency.at(dst_as).rbegin();
+        std::multimap<ld, beacon*>::reverse_iterator highest_previous_latency_iterator = beacons_per_dst_per_ing_if_sorted_by_latency.at(dst_as).at(self_ingress_if_no).rbegin();
         ld highest_previous_latency = highest_previous_latency_iterator->first;
         if (highest_previous_latency > latency) {
-            assert(!highest_previous_latency_iterator->second.empty());
-            beacon* to_be_removed_beacon = *highest_previous_latency_iterator->second.begin();
+            beacon* to_be_removed_beacon = highest_previous_latency_iterator->second;
             return std::tuple<bool, bool, bool, beacon*> (true, false, false, to_be_removed_beacon);
         }
         return std::tuple<bool, bool, bool, beacon*> (false, false, false, NULL);
@@ -120,8 +117,9 @@ namespace ns3 {
     LatencyOptimized::select_beacons_to_disseminate_per_dst_per_nbr(uint16_t remote_as_no, uint16_t dst_as_no,
                                                                   const beacons_with_same_dst_as &beacons_to_the_dst_as) {
         std::multimap<ld, std::tuple<beacon *, uint16_t, uint16_t, Ptr<SCION_Node>, ld, ld> > latency_map_to_beacon_and_metadata;
-        std::multimap<ld, std::pair<beacon *, uint16_t> > valid_candidates;
+        std::map<uint16_t, std::multimap<ld, beacon*> > valid_candidates;
 
+        int beacon_cnt = 0;
         for (auto const &len_beacons_pair : beacons_to_the_dst_as) {
             auto const &beacons = len_beacons_pair.second;
             for (auto const &the_beacon : beacons) {
@@ -146,32 +144,45 @@ namespace ns3 {
                     ld  latency = the_beacon->latency_stat +
                                   node->intra_as_latencies.at(LOWER_16_BITS(the_beacon->the_path.back())).at(self_egress_if_no);
 
-                    valid_candidates.insert(std::make_pair(latency, std::make_pair(the_beacon, self_egress_if_no)));
+                    if (beacon_cnt == 0) {
+                        valid_candidates.insert(std::make_pair(self_egress_if_no, std::multimap<ld, beacon*>()));
+                    }
+
+                    valid_candidates.at(self_egress_if_no).insert(std::make_pair(latency, the_beacon));
+
                 }
+
+                beacon_cnt++;
             }
         }
 
-        int no_beacons = 0;
-        for (auto const & latency_beacon_pair : valid_candidates) {
-            if (no_beacons >= MAX_BEACONS_TO_SEND) {
-                break;
+
+        for (auto const & iface_to_latency_beacon_pair : valid_candidates) {
+            uint16_t self_egress_if_no = iface_to_latency_beacon_pair.first;
+
+            int no_beacons_per_iface = 0;
+            for (auto const &latency_beacon_pair : iface_to_latency_beacon_pair.second) {
+                if (no_beacons_per_iface >= MAX_BEACONS_TO_SEND_PER_IFACE) {
+                    break;
+                }
+                no_beacons_per_iface++;
+
+                ld latency = latency_beacon_pair.first;
+                beacon *the_beacon = latency_beacon_pair.second;
+
+                uint16_t remote_ingress_if_no = node->GetRemoteAsInfo(self_egress_if_no).first;
+                Ptr<SCION_Node> remote_as = node->GetRemoteAsInfo(self_egress_if_no).second;
+
+                ld bwd = the_beacon->bwd_stat > (ld) node->inter_as_bwds.at(self_egress_if_no)
+                         ? (ld) node->inter_as_bwds.at(self_egress_if_no)
+                         : the_beacon->bwd_stat;
+
+                latency_map_to_beacon_and_metadata.insert(
+                        std::make_pair(latency, std::tuple<beacon *, uint16_t, uint16_t, Ptr<SCION_Node>, ld, ld>
+                                (the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as,
+                                 latency, bwd)));
+
             }
-            no_beacons++;
-
-            ld  latency = latency_beacon_pair.first;
-            beacon* the_beacon = latency_beacon_pair.second.first;
-            uint16_t self_egress_if_no = latency_beacon_pair.second.second;
-            uint16_t remote_ingress_if_no = node->GetRemoteAsInfo(self_egress_if_no).first;
-            Ptr<SCION_Node> remote_as = node->GetRemoteAsInfo(self_egress_if_no).second;
-
-            ld bwd = the_beacon->bwd_stat > (ld) node->inter_as_bwds.at(self_egress_if_no)
-                     ? (ld) node->inter_as_bwds.at(self_egress_if_no)
-                     : the_beacon->bwd_stat;
-
-            latency_map_to_beacon_and_metadata.insert(std::make_pair(latency, std::tuple<beacon *, uint16_t, uint16_t, Ptr<SCION_Node>, ld, ld>
-                    (the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as,
-                     latency, bwd)));
-
         }
 
         return latency_map_to_beacon_and_metadata;
@@ -179,24 +190,22 @@ namespace ns3 {
 
     void LatencyOptimized::insert_to_beacons_per_dst_sorted_by_latency(uint16_t dst_as,  beacon* the_beacon) {
         ld  latency = the_beacon->latency_stat;
-        assert(beacons_per_dst_sorted_by_latency.size() > dst_as);
-        if (beacons_per_dst_sorted_by_latency.at(dst_as).find(latency) == beacons_per_dst_sorted_by_latency.at(dst_as).end())
-        {
-            beacons_per_dst_sorted_by_latency.at(dst_as).insert(std::make_pair(latency, std::set<beacon*>()));
-        }
-        beacons_per_dst_sorted_by_latency.at(dst_as).at(latency).insert(the_beacon);
+        uint16_t self_ingress_if = LOWER_16_BITS(the_beacon->the_path.back());
+
+        beacons_per_dst_per_ing_if_sorted_by_latency.at(dst_as).at(self_ingress_if).insert(std::make_pair(latency, the_beacon));
+
     }
 
     void LatencyOptimized::delete_from_beacons_per_dst_sorted_by_latency(uint16_t dst_as, beacon* the_beacon) {
         ld  latency = the_beacon->latency_stat;
-        assert(beacons_per_dst_sorted_by_latency.size() > dst_as);
-        assert(beacons_per_dst_sorted_by_latency.at(dst_as).find(latency) != beacons_per_dst_sorted_by_latency.at(dst_as).end());
-        assert(beacons_per_dst_sorted_by_latency.at(dst_as).at(latency).find(the_beacon) != beacons_per_dst_sorted_by_latency.at(dst_as).at(latency).end());
+        uint16_t self_ingress_if = LOWER_16_BITS(the_beacon->the_path.back());
 
-        beacons_per_dst_sorted_by_latency.at(dst_as).at(latency).erase(the_beacon);
-        if (beacons_per_dst_sorted_by_latency.at(dst_as).at(latency).empty())
-        {
-            beacons_per_dst_sorted_by_latency.at(dst_as).erase(latency);
+        std::multimap<ld, beacon*>::iterator iterator = beacons_per_dst_per_ing_if_sorted_by_latency.at(dst_as).at(self_ingress_if).begin();
+
+        for (; iterator != beacons_per_dst_per_ing_if_sorted_by_latency.at(dst_as).at(self_ingress_if).end(); ++iterator){
+            if (iterator->first == latency && iterator->second == the_beacon) {
+                beacons_per_dst_per_ing_if_sorted_by_latency.at(dst_as).at(self_ingress_if).erase(iterator);
+            }
         }
     }
 

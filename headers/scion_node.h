@@ -19,6 +19,7 @@
 
 namespace ns3 {
 
+#define MAX_BEACONS_TO_SEND_PER_IFACE 1
 /**
  * @brief Steers how many beacons are maximally disseminated to each neighbour per fixed destination AS.
  */

@@ -14,10 +14,14 @@ namespace ns3 {
 #define MAX_BEACON_NUMBERS_TO_STORE 60
 #endif
 
+#ifndef MAX_BEACONS_TO_STORE_PER_IFACE
+#define MAX_BEACONS_TO_STORE_PER_IFACE 1
+#endif
+
     class LatencyOptimized : public BeaconingStrategy
     {
     public:
-        std::vector<std::map<ld, std::set<beacon*> > > beacons_per_dst_sorted_by_latency;
+        std::vector<std::vector<std::multimap<ld, beacon*> > > beacons_per_dst_per_ing_if_sorted_by_latency;
 
         void DoInitializations(uint32_t all_nodes) override;
         /**

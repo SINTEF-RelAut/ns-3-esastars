@@ -567,11 +567,16 @@ void FindMinLatencyToDNSRootServers(ns3::NodeContainer& nodes, std::map<int32_t,
 
         for (auto const & src_as_no : set_of_src_ases) {
             ns3::Ptr<ns3::SCION_Node> src_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(ASes.at(src_as_no)));
-            ns3::LatencyOptimized* strategy = (ns3::LatencyOptimized*) src_node->strategy;
-            for (auto const & latency_to_beacons : strategy->beacons_per_dst_sorted_by_latency.at(dst_index)) {
-                for (auto const & beacon : latency_to_beacons.second) {
+            auto const & beacons_to_dns_root_as = src_node->beacon_store.at(dst_index);
+            for (auto const & len_beacons_pair : beacons_to_dns_root_as) {
+                auto const & same_len_beacons = len_beacons_pair.second;
+                for (auto const & the_beacon : same_len_beacons) {
+                    if (!the_beacon->is_valid) {
+                        continue;
+                    }
+
                     std::cout << src_as_no << "|" << dst_as_no << "|";
-                    ns3::path* the_path = &beacon->the_path;
+                    ns3::path* the_path = &the_beacon->the_path;
 
                     int hop_cnt = 0;
                     std::vector<ns3::link_information>::reverse_iterator hop = the_path->rbegin();
