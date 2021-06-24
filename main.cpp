@@ -452,7 +452,7 @@ void FindMinLatencyToDNSRootServers(ns3::NodeContainer& nodes, std::map<int32_t,
         dns_root_sstr.flush();
         fin_dns_root.close();
 
-        std::set<uint16_t> set_of_src_ases;
+        std::set<int32_t> set_of_src_ases;
 
         std::string xmlDNSRootData = dns_root_sstr.str();
         rapidxml::xml_document<> dns_root_doc;
