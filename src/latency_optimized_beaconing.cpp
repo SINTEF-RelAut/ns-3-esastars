@@ -18,7 +18,7 @@ namespace ns3 {
         for (uint32_t i = 0;i < all_nodes; ++i ) {
             beacons_per_dst_per_ing_if_sorted_by_latency.at(i) = std::vector<std::multimap<ld, beacon*>>();
             beacons_per_dst_per_ing_if_sorted_by_latency.at(i).resize(node->GetNDevices());
-            for (int j = 0; j < node->GetNDevices(); ++j) {
+            for (uint32_t j = 0; j < node->GetNDevices(); ++j) {
                 beacons_per_dst_per_ing_if_sorted_by_latency.at(i).at(j) = std::multimap<ld, beacon*>();
             }
         }
