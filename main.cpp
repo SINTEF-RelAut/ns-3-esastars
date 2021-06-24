@@ -28,6 +28,7 @@
 #include <istream>
 #include <omp.h>
 #include <random>
+#include <set>
 
 
 //rapidxml::xml_node<>* SetupTopologyFile (std::string topology_name);
@@ -451,6 +452,8 @@ void FindMinLatencyToDNSRootServers(ns3::NodeContainer& nodes, std::map<int32_t,
         dns_root_sstr.flush();
         fin_dns_root.close();
 
+        std::set<uint16_t> set_of_src_ases;
+
         std::string xmlDNSRootData = dns_root_sstr.str();
         rapidxml::xml_document<> dns_root_doc;
         dns_root_doc.parse<0>(&xmlDNSRootData[0]);
@@ -462,7 +465,7 @@ void FindMinLatencyToDNSRootServers(ns3::NodeContainer& nodes, std::map<int32_t,
             std::cout << root_server_name << ": " << dst_as_no << " The root DNS server's AS is not among the top 2000 ASes" << std::endl;
             continue;
         }
-        std::cout << "Probe|ASN|Instance Coordinates|Latency|Distance|Path Coordinates|ASes on Path" << std::endl;
+        std::cout << "Probe|ASN|Latency|Distance|Probe coordinates|Path Coordinates|Instance Coordinates|ASes on Path" << std::endl;
 
         uint16_t dst_index = ASes.at(dst_as_no);
         ns3::Ptr<ns3::SCION_Node> dst_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(dst_index));
@@ -477,6 +480,8 @@ void FindMinLatencyToDNSRootServers(ns3::NodeContainer& nodes, std::map<int32_t,
                 currProbe = currProbe->next_sibling("item");
                 continue;
             }
+
+            set_of_src_ases.insert(src_as_no);
 
             ns3::Ptr<ns3::SCION_Node> src_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(ASes.at(src_as_no)));
 
@@ -511,7 +516,6 @@ void FindMinLatencyToDNSRootServers(ns3::NodeContainer& nodes, std::map<int32_t,
             while(currSite) {
                 double instance_lat = std::stod(currSite->first_node("Latitude")->value());
                 double instance_long = std::stod(currSite->first_node("Longitude")->value());
-                std::cout << instance_lat << "\t" << instance_long << std::endl;
                 std::pair<double, double> last_br_coordinates = dst_node->interfaces_coordinates.at(last_br);
                 double overall_latency = min_latency_to_dst_as + ns3::calculate_great_circle_latency(instance_lat, instance_long, last_br_coordinates.first, last_br_coordinates.second);
                 if (overall_latency < min_overall_latency) {
@@ -522,30 +526,84 @@ void FindMinLatencyToDNSRootServers(ns3::NodeContainer& nodes, std::map<int32_t,
             }
 
             std::cout << currProbe->first_node("ID")->value() << "|" << src_as_no << "|"
-            << "(" << selected_instance_coordinates.first << ", " << selected_instance_coordinates.second << ")" << "|"
+           // << "(" << selected_instance_coordinates.first << ", " << selected_instance_coordinates.second << ")" << "|"
             << min_overall_latency << "|"
             << ns3::calculate_great_circle_distance(probe_lat, probe_long, selected_instance_coordinates.first, selected_instance_coordinates.second) << "|"
-            << "(" << probe_lat << ", " << probe_long << ")" << " ";
+            << "(" << probe_lat << ", " << probe_long << ")" << "|";
 
-            for (auto const & hop : *selected_path) {
-                ns3::Ptr<ns3::SCION_Node> AS =  ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(UPPER_16_BITS(hop)));
-                std::pair<double, double> br_coordinates = AS->interfaces_coordinates.at(SECOND_UPPER_16_BITS(hop));
-                std::cout << "(" << br_coordinates.first << ", " << br_coordinates.second << ")" << " ";
+            int hop_cnt = 0;
+            std::vector<ns3::link_information>::reverse_iterator hop = selected_path->rbegin();
+            for (; hop!= selected_path->rend(); ++hop) {
+                if (hop_cnt != 0) {
+                    std::cout << " ";
+                }
+
+                ns3::Ptr<ns3::SCION_Node> AS = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(UPPER_16_BITS(*hop)));
+                std::pair<double, double> br_coordinates = AS->interfaces_coordinates.at(SECOND_UPPER_16_BITS(*hop));
+                std::cout << "(" << br_coordinates.first << ", " << br_coordinates.second << ")";
+                hop_cnt++;
             }
 
-            std::cout << "(" << selected_instance_coordinates.first << ", " << selected_instance_coordinates.second << ")" << "|";
+            std::cout << "|" << "(" << selected_instance_coordinates.first << ", " << selected_instance_coordinates.second << ")" << "|";
 
-            for (auto const & hop : *selected_path) {
-                int32_t ASN = index_to_AS_no.at(SECOND_LOWER_16_BITS(hop));
-
-                std::cout << ASN << " ";
+            hop_cnt = 0;
+            hop = selected_path->rbegin();
+            for (; hop!= selected_path->rend(); ++hop) {
+                if (hop_cnt != 0) {
+                    std::cout << " ";
+                }
+                std::cout << index_to_AS_no.at(SECOND_LOWER_16_BITS(*hop));
+                hop_cnt++;
             }
+
+            std::cout << " " << index_to_AS_no.at(UPPER_16_BITS(selected_path->at(0)));
 
             std::cout << std::endl;
 
 
             currProbe = currProbe->next_sibling("item");
 
+        }
+
+        for (auto const & src_as_no : set_of_src_ases) {
+            ns3::Ptr<ns3::SCION_Node> src_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(ASes.at(src_as_no)));
+            ns3::LatencyOptimized* strategy = (ns3::LatencyOptimized*) src_node->strategy;
+            for (auto const & latency_to_beacons : strategy->beacons_per_dst_sorted_by_latency.at(dst_index)) {
+                for (auto const & beacon : latency_to_beacons.second) {
+                    std::cout << src_as_no << "|" << dst_as_no << "|";
+                    ns3::path* the_path = &beacon->the_path;
+
+                    int hop_cnt = 0;
+                    std::vector<ns3::link_information>::reverse_iterator hop = the_path->rbegin();
+                    for (; hop!= the_path->rend(); ++hop) {
+                        if (hop_cnt != 0) {
+                            std::cout << " ";
+                        }
+
+                        ns3::Ptr<ns3::SCION_Node> AS = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(UPPER_16_BITS(*hop)));
+                        std::pair<double, double> br_coordinates = AS->interfaces_coordinates.at(SECOND_UPPER_16_BITS(*hop));
+                        std::cout << "(" << br_coordinates.first << ", " << br_coordinates.second << ")";
+                        hop_cnt++;
+                    }
+
+                    std::cout << "|";
+
+                    hop_cnt = 0;
+                    hop = the_path->rbegin();
+                    for (; hop!= the_path->rend(); ++hop) {
+                        if (hop_cnt != 0) {
+                            std::cout << " ";
+                        }
+                        std::cout << index_to_AS_no.at(SECOND_LOWER_16_BITS(*hop));
+                        hop_cnt++;
+                    }
+
+                    std::cout << " " << index_to_AS_no.at(UPPER_16_BITS(the_path->at(0)));
+
+                    std::cout << std::endl;
+
+                }
+            }
         }
 
     }
