@@ -29,6 +29,7 @@
 #include <omp.h>
 #include <random>
 #include <set>
+#include <src/SCION/headers/scionlab_algo.h>
 
 
 //rapidxml::xml_node<>* SetupTopologyFile (std::string topology_name);
@@ -187,6 +188,11 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* rootNode, std::string beaconi
         int32_t as_number = std::stoi(ns3::getAttribute(curNode, "id"));
         ns3::PropertyContainer p = ns3::parseProperties(curNode);
 
+        uint16_t isd_number = 0;
+        if (p.hasProperty("isd")) {
+            isd_number = std::stoi(p.getProperty("isd"));
+        }
+
         ns3::ld latency_coef = 0.0; //std::stod(p.getProperty("latency_coef"));
         ns3::ld bandwidth_coef = 0.0; //std::stod(p.getProperty("bandwidth_coef"));
         ns3::ld AS_level_diversity_coef = 0.0; // std::stod(p.getProperty("AS_level_diversity_coef"));
@@ -204,15 +210,17 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* rootNode, std::string beaconi
             beaconing_policy = (ns3::BeaconingStrategy *) new ns3::CriteriaMatching();
         } else if (beaconing_policy_str == "latency_optimized") {
             beaconing_policy = (ns3::BeaconingStrategy *) new ns3::LatencyOptimized();
+        } else if (beaconing_policy_str == "scionlab") {
+            beaconing_policy = (ns3::BeaconingStrategy *) new ns3::SCIONLAB();
         } else {
             beaconing_policy = (ns3::BeaconingStrategy*) new ns3::Baseline();
         }
 
         ns3::Ptr<ns3::SCION_Node> node;
         if(type == "core"){
-            node = ns3::CreateObject<ns3::SCION_Core_As>(node_counter, 0, coefs, params, beaconing_policy);
+            node = ns3::CreateObject<ns3::SCION_Core_As>(isd_number, node_counter, 0, coefs, params, beaconing_policy);
         } else if(type =="non-core"){
-            node = ns3::CreateObject<ns3::SCION_As>(node_counter, 0, coefs, params, beaconing_policy);
+            node = ns3::CreateObject<ns3::SCION_As>(isd_number, node_counter, 0, coefs, params, beaconing_policy);
         } else{
             std::cerr << "Incompatible node type!" << std::endl;
             exit(1);
@@ -341,6 +349,8 @@ void InitializeNodesAttributes(ns3::NodeContainer& nodes, std::string beaconing_
         } else if (beaconing_policy_str == "criteria_matching") {
             ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(i))->DoInitializations(nodes.GetN());
         } else if (beaconing_policy_str == "latency_optimized") {
+            ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(i))->DoInitializations(nodes.GetN());
+        } else if (beaconing_policy_str == "scionlab") {
             ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(i))->DoInitializations(nodes.GetN());
         }
     }
@@ -666,7 +676,7 @@ void PrintConsumedBWAtEachPeriod(ns3::NodeContainer& nodes, ns3::Time beaconing_
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             ns3::Ptr<ns3::SCION_Node> the_node = ns3::DynamicCast<ns3::SCION_Node>(nodes.Get(i));
             for (uint32_t if_index = 0; if_index < the_node->GetNDevices(); ++if_index) {
-                uint32_t consumed_bwd = the_node->bytes_sent_per_interface_per_period.at(t.ToInteger(ns3::Time::NS)).at(if_index);
+                uint32_t consumed_bwd = the_node->bytes_sent_per_interface_per_period.at(t.ToInteger(ns3::Time::MIN)).at(if_index);
 
                 if (frequencies_of_consumed_bwd.find(consumed_bwd) != frequencies_of_consumed_bwd.end()) {
                     frequencies_of_consumed_bwd.at(consumed_bwd)++;

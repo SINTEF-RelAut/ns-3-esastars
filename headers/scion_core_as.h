@@ -16,9 +16,9 @@ namespace ns3 {
 class SCION_Core_As : public SCION_Node
 {
   public:
-    SCION_Core_As (uint16_t as_number, uint32_t system_id, coefficients coefs,
+    SCION_Core_As (uint16_t isd_number, uint16_t as_number, uint32_t system_id, coefficients coefs,
                    const beaconing_timing_params &periods, BeaconingStrategy *strategy)
-        : SCION_Node (as_number, system_id, coefs, periods, strategy)
+        : SCION_Node (isd_number, as_number, system_id, coefs, periods, strategy)
     {
     }
 

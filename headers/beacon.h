@@ -38,6 +38,8 @@ typedef uint64_t link_information;
  */
 typedef std::vector<link_information> path;
 
+typedef std::vector<uint16_t> isd_path;
+
 /**
  * @brief Beacons travel from AS to AS, and are appended with the information of the links they
  * traverse. This is how paths get discovered by the ASes in SCION.
@@ -72,13 +74,16 @@ struct beacon
     bool is_valid;
     /** @see path */
     path the_path;
+
     /** @brief For performant search and traversal in the beacon store of the nodes
      *
      * @see SCION_Node.path_map_to_beacon.*/
     std::string key;
 
+    isd_path the_isd_path;
+
     beacon (float l, float b, uint16_t i, uint16_t e, uint16_t nxt_i, uint16_t nxt_e, bool n,
-            bool v, path p, std::string k)
+            bool v, path p, std::string k, isd_path isdp)
         : latency_stat (l),
           bwd_stat (b),
           initiation_time (i),
@@ -88,7 +93,8 @@ struct beacon
           is_new (n),
           is_valid (v),
           the_path (p),
-          key (k)
+          key (k),
+          the_isd_path(isdp)
     {
     }
 
@@ -102,7 +108,8 @@ struct beacon
         is_new (the_beacon.is_new),
         is_valid(the_beacon.is_valid),
         the_path(the_beacon.the_path),
-        key(the_beacon.key)
+        key(the_beacon.key),
+        the_isd_path(the_beacon.the_isd_path)
     {
     }
 };

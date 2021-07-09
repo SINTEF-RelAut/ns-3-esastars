@@ -87,6 +87,8 @@ class SCION_Node : public Node
     //AS properties
     // TODO: Some cache optimisation might be achieved by reordering the members and grouping
     // the ones who are used together often (also in beacon.h file).
+
+    uint16_t isd_number;
     /** @brief The autonomous system number of this node. */
     uint16_t as_number;
     /** @brief The current simulator time in minutes. */
@@ -173,9 +175,10 @@ class SCION_Node : public Node
      * */
     std::unordered_map<uint16_t, std::vector<uint32_t>> bytes_sent_per_interface_per_period;
 
-    SCION_Node (uint16_t as_number, uint32_t system_id, coefficients coefs,
+    SCION_Node (uint16_t isd_number, uint16_t as_number, uint32_t system_id, coefficients coefs,
                 const beaconing_timing_params &periods, BeaconingStrategy *strategy)
         : Node (system_id),
+          isd_number (isd_number),
           as_number (as_number),
           beaconing_period (periods.first),
           expiration_period (periods.second),

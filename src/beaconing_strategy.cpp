@@ -94,6 +94,7 @@ namespace ns3 {
         uint16_t remote_as_no = remote_as->as_number;
 
         path new_path;
+        isd_path new_isd_path;
         uint16_t next_initiation_time;
         uint16_t next_expiration_time;
 
@@ -109,14 +110,19 @@ namespace ns3 {
             next_expiration_time = selected_beacon->expiration_time;
             new_path = selected_beacon->the_path;
             key = selected_beacon->key;
+            new_isd_path = selected_beacon->the_isd_path;
         }
 
         key = key + std::string((char *) &node->as_number, 2) +
               std::string((char *) &self_egress_if_no, 2);
         new_path.push_back(link_info);
 
+        if (new_isd_path.size() == 0 || new_isd_path.back() != node->isd_number) {
+            new_isd_path.push_back(node->isd_number);
+        }
+
         beacon to_disseminate_beacon((float) latency, (float) bwd, 0, 0, next_initiation_time,
-                                           next_expiration_time, true, false, new_path, key);
+                                           next_expiration_time, true, false, new_path, key, new_isd_path);
 
         node->IncrementControlPlaneBytesSent(to_disseminate_beacon, self_egress_if_no);
         remote_as->ReceiveBeacon(to_disseminate_beacon, node->as_number, self_egress_if_no, remote_ingress_if_no);

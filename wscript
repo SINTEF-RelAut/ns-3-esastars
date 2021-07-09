@@ -14,7 +14,8 @@ def build(bld):
                    'src/scion_as.cpp',
                    'src/scion_core_as.cpp',
                    'src/scion_node.cpp',
-                   'src/utils.cpp']
+                   'src/utils.cpp',
+                   'src/scionlab_algo.cpp']
 
     headers = bld(features='ns3header')
     headers.module = 'SCION'
@@ -27,7 +28,8 @@ def build(bld):
                      'headers/scion_as.h',
                      'headers/scion_core_as.h',
                      'headers/scion_node.h',
-                     'headers/utils.h']
+                     'headers/utils.h',
+                     'header/scionlab_algo.h']
 
     obj = bld.create_ns3_program('main',
                                 ['SCION', 'point-to-point'])
