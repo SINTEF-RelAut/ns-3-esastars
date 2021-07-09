@@ -8,7 +8,7 @@
 #include "ns3/point-to-point-channel.h"
 
 namespace ns3 {
-
+#define MAX_SET_SIZE 100
     void SCIONLAB::DoInitializations(uint32_t all_nodes) {
 
     }
@@ -34,15 +34,17 @@ namespace ns3 {
         for (auto const &dst_as_beacons_pair : node->beacon_store) {
             const beacons_with_same_dst_as& equal_dst_as_beacons = dst_as_beacons_pair.second;
 
+            std::vector<beacon*> rest_of_beacons;
             std::vector<beacon*> selected_beacons_per_dst;
+
             for (auto const &len_beacons_pair : equal_dst_as_beacons) { // for each length
-                if (selected_beacons_per_dst.size() >= MAX_BEACONS_TO_SEND - 1) {
+                if (rest_of_beacons.size() + selected_beacons_per_dst.size() >= MAX_SET_SIZE) {
                     break;
                 }
 
                 auto const &beacons = len_beacons_pair.second;
                 for (auto const &the_beacon : beacons) {
-                    if (selected_beacons_per_dst.size() >= MAX_BEACONS_TO_SEND - 1) {
+                    if (rest_of_beacons.size() + selected_beacons_per_dst.size() >= MAX_SET_SIZE) {
                         break;
                     }
 
@@ -50,12 +52,35 @@ namespace ns3 {
                         continue;
                     }
 
-                    valid_candidates.push_back(the_beacon);
-                    selected_beacons_per_dst.push_back(the_beacon);
+                    if (selected_beacons_per_dst.size() < MAX_BEACONS_TO_SEND - 1) {
+                        valid_candidates.push_back(the_beacon);
+                        selected_beacons_per_dst.push_back(the_beacon);
+                    } else {
+                        rest_of_beacons.push_back(the_beacon);
+                    }
                 }
             }
 
-            //TODO
+
+
+            if (rest_of_beacons.size() + selected_beacons_per_dst.size() == MAX_BEACONS_TO_SEND) {
+                valid_candidates.push_back(rest_of_beacons.at(0));
+                continue;
+            }
+
+            if (rest_of_beacons.size() + selected_beacons_per_dst.size() < MAX_BEACONS_TO_SEND) {
+                continue;
+            }
+
+            std::pair<beacon*, int32_t> diversity_wr_to_selected = SelectMostDiverse(selected_beacons_per_dst, selected_beacons_per_dst.at(0));
+
+            std::pair<beacon*, int32_t> diversity_wr_to_rest = SelectMostDiverse(rest_of_beacons, selected_beacons_per_dst.at(0));
+
+            if (diversity_wr_to_rest.second > diversity_wr_to_selected.second) {
+                valid_candidates.push_back(diversity_wr_to_rest.first);
+            } else {
+                valid_candidates.push_back(rest_of_beacons.at(0));
+            }
 
         }
 
@@ -191,6 +216,50 @@ namespace ns3 {
     void
     SCIONLAB::MetaDataUpdatePeriodic (beacon* the_beacon, bool invalidated)
     {
+    }
+
+
+    std::pair<beacon*, int32_t>
+    SCIONLAB::SelectMostDiverse (std::vector<beacon*>& beacons, beacon* the_beacon) {
+        if (beacons.size() == 0) {
+            return std::make_pair(the_beacon, -1);
+        }
+        beacon* diverse;
+        int32_t max_diversity = -1;
+        uint32_t min_len = std::numeric_limits<uint32_t>::max();
+
+        for (auto const & other_beacon : beacons) {
+            int32_t diversity = Diversity(the_beacon, other_beacon);
+            uint32_t l = other_beacon->the_path.size();
+
+            if (diversity > max_diversity || (diversity == max_diversity && min_len > l)) {
+                diverse = other_beacon;
+                min_len = l;
+                max_diversity = diversity;
+            }
+        }
+
+        return std::make_pair(diverse, max_diversity);
+    }
+
+    int32_t
+    SCIONLAB::Diversity (beacon* beacon1, beacon* beacon2) {
+        int32_t diff = 0;
+
+        for (uint64_t link_info : beacon1->the_path) {
+            bool found = false;
+            for (uint64_t other_link_info : beacon2->the_path) {
+                if (link_info == other_link_info) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                diff++;
+            }
+        }
+
+        return diff;
     }
 
 } // namespace ns3

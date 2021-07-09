@@ -37,6 +37,11 @@ namespace ns3 {
         void MetaDataUpdateAfterImmediateSend (beacon *the_beacon, uint16_t local_iface, Ptr<SCION_Node> remote_as,
                                                uint16_t dst_as_no) override;
         void MetaDataUpdatePeriodic (beacon* the_beacon, bool invalidated) override;
+
+        std::pair<beacon*, int32_t> SelectMostDiverse (std::vector<beacon*>& beacons, beacon* the_beacon);
+
+        int32_t Diversity (beacon* beacon1, beacon* beacon2);
+
     };
 }
 #endif //NS_3_BEACONING_SIMULATOR_SCIONLAB_ALGO_H

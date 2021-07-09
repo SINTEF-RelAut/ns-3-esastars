@@ -289,6 +289,7 @@ namespace ns3 {
         if (path_exists) {
             beacon_to_replace->next_initiation_time = received_beacon.next_initiation_time;
             beacon_to_replace->next_expiration_time = received_beacon.next_expiration_time;
+            beacon_to_replace->is_new = true;
 
             if (!existing_path_valid) {
                 node->next_round_valid_beacons_count_per_dst_as.at(dst_as)++;
