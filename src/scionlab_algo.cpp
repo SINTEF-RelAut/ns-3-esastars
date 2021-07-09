@@ -32,7 +32,6 @@ namespace ns3 {
         std::vector<beacon*> valid_candidates;
 
         for (auto const &dst_as_beacons_pair : node->beacon_store) {
-            const uint16_t& dst_as_no  = dst_as_beacons_pair.first;
             const beacons_with_same_dst_as& equal_dst_as_beacons = dst_as_beacons_pair.second;
 
             std::vector<beacon*> selected_beacons_per_dst;
