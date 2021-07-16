@@ -225,14 +225,14 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* rootNode, std::string beaconi
         ns3::Ptr<ns3::SCION_AS> node;
         if(type == "core"){
             node = ns3::CreateObject<ns3::SCION_Core_AS>(isd_number, node_counter, 0, ns3::Time(0));
-            node->SetBeaconServer(beaconing_policy);
         } else if(type =="non-core"){
             node = ns3::CreateObject<ns3::SCION_AS>(isd_number, node_counter, 0, ns3::Time(0));
-            node->SetBeaconServer(beaconing_policy);
         } else{
             std::cerr << "Incompatible node type!" << std::endl;
             exit(1);
         }
+        node->SetBeaconServer(beaconing_policy);
+
         nodes.Add(node);
         beaconing_policy->SetNode(node);
 
