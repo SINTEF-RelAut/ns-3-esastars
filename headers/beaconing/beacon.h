@@ -13,12 +13,12 @@ namespace ns3 {
 /**
  * @brief in bytes
  */
-#define BEACON_HEADER_SIZE 70
+#define BEACON_HEADER_SIZE 86
 
 /**
  * @brief in bytes
  */
-#define BEACON_HOP_SIZE 330
+#define BEACON_HOP_SIZE 100
 
 typedef long double ld;
 

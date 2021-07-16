@@ -9,8 +9,8 @@
 #ifndef SCION_BEACONING_SIMMULATOR_UTILS_H
 #define SCION_BEACONING_SIMMULATOR_UTILS_H
 
-#include "beacon.h"
-#include "scion_node.h"
+#include "src/SCION/headers/beaconing/beacon.h"
+#include "scion_as.h"
 #include "ns3/rapidxml.hpp"
 #include <map>
 
@@ -93,30 +93,28 @@ class PropertyContainer
   */
 PropertyContainer parseProperties (rapidxml::xml_node<> *node);
 
-// Debugg Helpers
 
-// TODO: Change things from std::cerr to std::cout after main scripts were altered to not remap cout.
 /**
- * @brief Prettyprints bytes_sent_per_interface_per_period on the passed SCION_Node. Currently works over std::cerr and prints only for time == 0.
+ * @brief Prettyprints bytes_sent_per_interface_per_period on the passed SCION_AS. Currently works over std::cerr and prints only for time == 0.
  */
-void print_consumed_bw_structure (Ptr<SCION_Node> node, const std::map<uint16_t, int32_t>& index_to_AS_no);
+void print_consumed_bw_structure (Ptr<SCION_AS> node, const std::map<uint16_t, int32_t>& index_to_AS_no);
 
 
 /**
  * @brief Prettyprints the beacon store of the passed node.
  */
-void print_beacon_store (Ptr<SCION_Node> the_node, const std::map<uint16_t, int32_t>& index_to_AS_no);
+void print_beacon_store (Ptr<SCION_AS> the_node, const std::map<uint16_t, int32_t>& index_to_AS_no);
 
 /**
  * @brief Prettyprints a valid beacon counter structure. Currently works with std::cerr.
  */
-void print_valid_beacon_counter (Ptr<SCION_Node> node, const std::map<uint16_t, int32_t>& index_to_AS_no, std::unordered_map<uint16_t, uint64_t> counter);
+void print_valid_beacon_counter (Ptr<SCION_AS> node, const std::map<uint16_t, int32_t>& index_to_AS_no, std::unordered_map<uint16_t, uint64_t> counter);
 
 /**
  * @brief Iterates over the nodes beacon store and prints how many valid entries for each AS are present. Currently works with std::cerr.
  */
 void
-print_number_of_valid_beacon_entries_in_beacon_store (Ptr<SCION_Node> node, const std::map<uint16_t, int32_t>& index_to_AS_no);
+print_number_of_valid_beacon_entries_in_beacon_store (Ptr<SCION_AS> node, const std::map<uint16_t, int32_t>& index_to_AS_no);
 
 }
 #endif //SCION_BEACONING_SIMMULATOR_UTILS_H

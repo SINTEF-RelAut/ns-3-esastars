@@ -3,17 +3,17 @@
  * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
  * @date 2020
  * @see beaconing_strategy.h
- * @brief Implements the member functions of the BeaconingStrategy.
+ * @brief Implements the member functions of the BeaconServer.
  */
 
 #include "ns3/point-to-point-net-device.h"
-#include "../headers/beaconing_strategy.h"
-#include "../headers/utils.h"
+#include "src/SCION/headers/beaconing/beacon_server.h"
+#include "src/SCION/headers/utils.h"
 #include "ns3/ptr.h"
 #include <omp.h>
 
 namespace ns3 {
-    void BeaconingStrategy::SetNode(Ptr<SCION_Node> the_node) {
+    void BeaconServer::SetNode(Ptr<SCION_AS> the_node) {
         this->node = the_node;
     }
 
@@ -23,7 +23,7 @@ namespace ns3 {
  * @param node The node from where to initiate the beacons
  */
     void
-    BeaconingStrategy::InitiateBeacons(SCION_Node::neighbour_relation relation) {
+    BeaconServer::InitiateBeacons(neighbour_relation relation) {
         uint32_t neighbors_cnt = node->neighbors.size();
         omp_set_num_threads(NUM_CORE);
 
@@ -36,11 +36,11 @@ namespace ns3 {
             uint16_t remote_as_no = node->neighbors.at(i).first;
             const auto &interfaces = node->interfaces_per_neighbor_as.at(remote_as_no);
             for (auto const &self_egress_if_no : interfaces) {
-                std::pair<uint16_t, Ptr<SCION_Node>>
+                std::pair<uint16_t, Ptr<SCION_AS>>
                         remote_as_if_pair = node->GetRemoteAsInfo(self_egress_if_no);
 
                 uint16_t remote_ingress_if_no = remote_as_if_pair.first;
-                Ptr<SCION_Node> remote_as = remote_as_if_pair.second;
+                Ptr<SCION_AS> remote_as = remote_as_if_pair.second;
 
                 GenerateBeaconAndSend(
                         NULL, self_egress_if_no, remote_ingress_if_no, remote_as, 0,
@@ -65,7 +65,7 @@ namespace ns3 {
  *
  * - Generates the new beacon by appending the nodes AS information and sets the initiation and expiration times.
  * The beacon gets written directly into the remote ASes beacon store and the path_map. It also triggers
- * the update of any additional beacon store structure a specialized strategy might need.
+ * the update of any additional beacon store structure a specialized beaconServer might need.
  * - Finally, it schedules the processing of the received beacons in case they need to be disseminated immediately.
  *
  * @see HandleFullBeaconStore
@@ -84,11 +84,11 @@ namespace ns3 {
  * @param latency_for_immediate The intra AS latency the beacon traversed, used for the proper scheduling timing.
  */
 
-   void BeaconingStrategy::GenerateBeaconAndSend(beacon *selected_beacon, uint16_t self_egress_if_no,
-                                                 uint16_t remote_ingress_if_no, Ptr<SCION_Node> remote_as,
-                                                 ld latency, ld bwd,
-                                                 ld  score,
-                                                 bool immediate = false, ld latency_for_immediate = 0)
+   void BeaconServer::GenerateBeaconAndSend(beacon *selected_beacon, uint16_t self_egress_if_no,
+                                            uint16_t remote_ingress_if_no, Ptr<SCION_AS> remote_as,
+                                            ld latency, ld bwd,
+                                            ld  score,
+                                            bool immediate = false, ld latency_for_immediate = 0)
     {
         std::string key;
         uint16_t remote_as_no = remote_as->as_number;
@@ -103,8 +103,8 @@ namespace ns3 {
                     (((uint64_t) remote_as_no) << 16) | ((uint64_t) remote_ingress_if_no);
 
         if (selected_beacon == NULL) {
-            next_initiation_time = node->now;
-            next_expiration_time = node->now + node->expiration_period;
+            next_initiation_time = now;
+            next_expiration_time = now + expiration_period;
         } else {
             next_initiation_time = selected_beacon->initiation_time;
             next_expiration_time = selected_beacon->expiration_time;
@@ -124,73 +124,11 @@ namespace ns3 {
         beacon to_disseminate_beacon((float) latency, (float) bwd, 0, 0, next_initiation_time,
                                            next_expiration_time, true, false, new_path, key, new_isd_path);
 
-        node->IncrementControlPlaneBytesSent(to_disseminate_beacon, self_egress_if_no);
+        IncrementControlPlaneBytesSent(to_disseminate_beacon, self_egress_if_no);
         remote_as->ReceiveBeacon(to_disseminate_beacon, node->as_number, self_egress_if_no, remote_ingress_if_no);
     }
 
-/**
- * This function only executes if the source AS number at the origin of the beacon-path is unknown to the node.
- * Updates the nodes local time, adjusts the beacon validity, updates the beacons latency and bandwidth stat,
- * and sends the beacon to each neighbour over the interface with the smallest latency,
- * except the one it received the beacon from.
- *
- * @see AdjustBeaconValidity
- * @see GenerateBeaconAndSend
- *
- * @param dst_as The AS number of the AS that originated the beacon.
- * @param ingress_if The ingress interface over which the beacon was received.
- * @param the_beacon The received beacon.
- * @param valid_interfaces The valid interfaces over which the beacon can be disseminated.
- * @param node The node processing the beacon.
- */
-    void
-    BeaconingStrategy::processImmediateReceive(uint16_t dst_as, uint16_t ingress_if,
-                                               beacon *the_beacon,
-                                               SCION_Node::neighbour_relation relation) {
-        if (node->valid_beacons_count_per_dst_as.find(dst_as) !=
-            node->valid_beacons_count_per_dst_as.end()) {
-            return; // only process unknown beacons immediately
-        }
 
-        UpdateBeaconState(the_beacon);
-
-        for (auto const &remote_as_no_relation_pair : node->neighbors) {
-            if (remote_as_no_relation_pair.second != relation) {
-                continue;
-            }
-            uint16_t remote_as_no = remote_as_no_relation_pair.first;
-            // Since the immediately disseminated beacons only propagate if the node does not yet have an entry
-            // for AS at the beacon origin, loops are already prevented. Therefore this check is sufficient.
-            if (remote_as_no == dst_as) {
-                continue;
-            }
-
-            uint16_t min_egress_if = 0;
-            ld min_latency = std::numeric_limits<double>::max();
-
-            for (auto const &egress_if : node->interfaces_per_neighbor_as.at(remote_as_no)) {
-                if (node->intra_as_latencies.at(ingress_if).at(egress_if) < min_latency) {
-                    min_latency = node->intra_as_latencies.at(ingress_if).at(egress_if);
-                    min_egress_if = egress_if;
-                }
-            }
-
-            std::pair<uint16_t, Ptr<SCION_Node>>
-                    remote_as_if_pair = node->GetRemoteAsInfo(min_egress_if);
-
-            uint16_t remote_ingress_if_no = remote_as_if_pair.first;
-            Ptr<SCION_Node> remote_as = remote_as_if_pair.second;
-
-            ld latency = the_beacon->latency_stat +
-                         node->intra_as_latencies.at(ingress_if).at(min_egress_if);
-            ld bwd = the_beacon->bwd_stat > (ld) node->inter_as_bwds.at(min_egress_if)
-                     ? (ld) node->inter_as_bwds.at(min_egress_if)
-                     : the_beacon->bwd_stat;
-
-            GenerateBeaconAndSend(the_beacon, min_egress_if, remote_ingress_if_no, remote_as,
-                                  latency, bwd, 1, true, min_latency);
-        }
-    }
 
 /**
  * For reasons of scalability, we do not use ns3s native scheduler functions (e.g. send). Instead the beacons that have
@@ -203,8 +141,8 @@ namespace ns3 {
  * @param node The node on which to update the beacon store.
  */
     void
-    BeaconingStrategy::UpdateStatePeriodic() {
-        auto const &beacons = node->path_map_to_beacon;
+    BeaconServer::UpdateStatePeriodic() {
+        auto const &beacons = path_map_to_beacon;
         for (auto const &the_beacon_pair : beacons) {
             beacon *the_beacon = the_beacon_pair.second;
 
@@ -230,17 +168,17 @@ namespace ns3 {
  * @param node The node holding the beacon.
  */
     void
-    BeaconingStrategy::UpdateBeaconState(beacon *the_beacon) {
+    BeaconServer::UpdateBeaconState(beacon *the_beacon) {
         uint16_t dst_as = UPPER_16_BITS (the_beacon->the_path.at(0));
         if (the_beacon->is_new) {
             the_beacon->is_new = false;
-            if (the_beacon->next_expiration_time > node->now) {
+            if (the_beacon->next_expiration_time > now) {
                 if (!the_beacon->is_valid) {
                     the_beacon->is_valid = true;
                     try {
-                        node->valid_beacons_count_per_dst_as.at(dst_as)++;
+                        valid_beacons_count_per_dst_as.at(dst_as)++;
                     } catch (const std::out_of_range &) {
-                        node->valid_beacons_count_per_dst_as.insert(
+                        valid_beacons_count_per_dst_as.insert(
                                 std::make_pair(dst_as, 1));
                     }
                 }
@@ -249,41 +187,28 @@ namespace ns3 {
             }
         }
 
-        if (the_beacon->expiration_time <= node->next_period && the_beacon->is_valid) {
+        if (the_beacon->expiration_time <= next_period && the_beacon->is_valid) {
             the_beacon->is_valid = false;
 
-            if (node->valid_beacons_count_per_dst_as.find(dst_as) !=
-                node->valid_beacons_count_per_dst_as.end()) {
-                node->valid_beacons_count_per_dst_as.at(dst_as)--;
+            if (valid_beacons_count_per_dst_as.find(dst_as) !=
+                valid_beacons_count_per_dst_as.end()) {
+                valid_beacons_count_per_dst_as.at(dst_as)--;
             }
 
-            if (node->next_round_valid_beacons_count_per_dst_as.find(dst_as) !=
-                node->next_round_valid_beacons_count_per_dst_as.end()) {
-                node->next_round_valid_beacons_count_per_dst_as.at(dst_as)--;
+            if (next_round_valid_beacons_count_per_dst_as.find(dst_as) !=
+                next_round_valid_beacons_count_per_dst_as.end()) {
+                next_round_valid_beacons_count_per_dst_as.at(dst_as)--;
             }
         }
     }
 
-/**
- * @param the_beacon The beacon to be checked.
- * @param remote_as_no The remote as number against which to check for loops.
- * @return True if a loop is detected, false otherwise.
- */
-    bool
-    BeaconingStrategy::GeneratesLoop(beacon const *the_beacon, uint16_t remote_as_no) {
-        for (auto const &link_info : the_beacon->the_path) { // remove loops
-            if (UPPER_16_BITS (link_info) == remote_as_no) {
-                return true;
-            }
-        }
-        return false;
-    }
 
-    void BeaconingStrategy::InsertBeacon (beacon& received_beacon, uint16_t dst_as, uint16_t sender_as, uint16_t remote_egress_if, uint16_t local_ingress_if, bool path_exists, bool existing_path_valid, beacon* beacon_to_replace)
+
+    void BeaconServer::InsertBeacon (beacon& received_beacon, uint16_t dst_as, uint16_t sender_as, uint16_t remote_egress_if, uint16_t local_ingress_if, bool path_exists, bool existing_path_valid, beacon* beacon_to_replace)
     {
 
-        if (node->next_round_valid_beacons_count_per_dst_as.find(dst_as) == node->next_round_valid_beacons_count_per_dst_as.end()) {
-            node->next_round_valid_beacons_count_per_dst_as.insert(std::make_pair(dst_as, 0));
+        if (next_round_valid_beacons_count_per_dst_as.find(dst_as) == next_round_valid_beacons_count_per_dst_as.end()) {
+            next_round_valid_beacons_count_per_dst_as.insert(std::make_pair(dst_as, 0));
         }
 
         if (path_exists) {
@@ -292,7 +217,7 @@ namespace ns3 {
             beacon_to_replace->is_new = true;
 
             if (!existing_path_valid) {
-                node->next_round_valid_beacons_count_per_dst_as.at(dst_as)++;
+                next_round_valid_beacons_count_per_dst_as.at(dst_as)++;
                 InsertToStrategyMetaData(beacon_to_replace, sender_as, remote_egress_if, local_ingress_if);
             }
             return;
@@ -306,55 +231,102 @@ namespace ns3 {
                 *to_insert_beacon = received_beacon;
             }
 
-            node->next_round_valid_beacons_count_per_dst_as.at(dst_as)++;
+            next_round_valid_beacons_count_per_dst_as.at(dst_as)++;
 
-            node->path_map_to_beacon.insert(std::make_pair(to_insert_beacon->key, to_insert_beacon));
+            path_map_to_beacon.insert(std::make_pair(to_insert_beacon->key, to_insert_beacon));
             uint16_t path_len = (uint16_t) to_insert_beacon->the_path.size();
 
-            if (node->beacon_store.find(dst_as) != node->beacon_store.end() &&
-                node->beacon_store.at(dst_as).find(path_len) != node->beacon_store.at(dst_as).end()) {
-                node->beacon_store.at(dst_as).at(path_len).insert(to_insert_beacon);
-            } else if (node->beacon_store.find(dst_as) != node->beacon_store.end() &&
-                       node->beacon_store.at(dst_as).find(path_len) == node->beacon_store.at(dst_as).end()) {
-                node->beacon_store.at(dst_as).insert(std::make_pair(path_len, beacons_with_equal_length()));
-                node->beacon_store.at(dst_as).at(path_len).insert(to_insert_beacon);
+            if (beacon_store.find(dst_as) != beacon_store.end() &&
+                beacon_store.at(dst_as).find(path_len) != beacon_store.at(dst_as).end()) {
+                beacon_store.at(dst_as).at(path_len).insert(to_insert_beacon);
+            } else if (beacon_store.find(dst_as) != beacon_store.end() &&
+                       beacon_store.at(dst_as).find(path_len) == beacon_store.at(dst_as).end()) {
+                beacon_store.at(dst_as).insert(std::make_pair(path_len, beacons_with_equal_length()));
+                beacon_store.at(dst_as).at(path_len).insert(to_insert_beacon);
             } else {
-                node->beacon_store.insert(std::make_pair(dst_as, beacons_with_same_dst_as()));
-                node->beacon_store.at(dst_as).insert(
+                beacon_store.insert(std::make_pair(dst_as, beacons_with_same_dst_as()));
+                beacon_store.at(dst_as).insert(
                         std::make_pair(path_len, beacons_with_equal_length()));
-                node->beacon_store.at(dst_as).at(path_len).insert(to_insert_beacon);
+                beacon_store.at(dst_as).at(path_len).insert(to_insert_beacon);
             }
 
             InsertToStrategyMetaData(to_insert_beacon, sender_as, remote_egress_if, local_ingress_if);
         }
     }
 
-    void BeaconingStrategy::DeleteBeacon (beacon* to_be_removed_beacon, uint16_t dst_as) {
-        assert(node->beacon_store.find(dst_as) != node->beacon_store.end());
-        assert(node->beacon_store.at(dst_as).find(to_be_removed_beacon->the_path.size()) != node->beacon_store.at(dst_as).end());
-        assert(node->beacon_store.at(dst_as).at(to_be_removed_beacon->the_path.size()).find(to_be_removed_beacon) != node->beacon_store.at(dst_as).at(to_be_removed_beacon->the_path.size()).end());
+    void BeaconServer::DeleteBeacon (beacon* to_be_removed_beacon, uint16_t dst_as) {
+        assert(beacon_store.find(dst_as) != beacon_store.end());
+        assert(beacon_store.at(dst_as).find(to_be_removed_beacon->the_path.size()) != beacon_store.at(dst_as).end());
+        assert(beacon_store.at(dst_as).at(to_be_removed_beacon->the_path.size()).find(to_be_removed_beacon) != beacon_store.at(dst_as).at(to_be_removed_beacon->the_path.size()).end());
 
-        node->beacon_store.at(dst_as).at(to_be_removed_beacon->the_path.size()).erase(to_be_removed_beacon);
-        if (node->beacon_store.at(dst_as).at(to_be_removed_beacon->the_path.size()).empty()) {
-            node->beacon_store.at(dst_as).erase(to_be_removed_beacon->the_path.size());
+        beacon_store.at(dst_as).at(to_be_removed_beacon->the_path.size()).erase(to_be_removed_beacon);
+        if (beacon_store.at(dst_as).at(to_be_removed_beacon->the_path.size()).empty()) {
+            beacon_store.at(dst_as).erase(to_be_removed_beacon->the_path.size());
         }
-        if (node->beacon_store.at(dst_as).empty()) {
-            node->beacon_store.erase(dst_as);
+        if (beacon_store.at(dst_as).empty()) {
+            beacon_store.erase(dst_as);
         }
 
-        node->path_map_to_beacon.erase(to_be_removed_beacon->key);
+        path_map_to_beacon.erase(to_be_removed_beacon->key);
 
         if (to_be_removed_beacon->is_valid && !to_be_removed_beacon->is_new){
-            node->valid_beacons_count_per_dst_as.at(dst_as)--;
+            valid_beacons_count_per_dst_as.at(dst_as)--;
         }
 
         if (to_be_removed_beacon->is_new) {
-            node->next_round_valid_beacons_count_per_dst_as.at(dst_as)--;
+            next_round_valid_beacons_count_per_dst_as.at(dst_as)--;
         }
 
         DeleteFromStrategyMetaData(to_be_removed_beacon);
 
     }
 
+    void
+    BeaconServer::IncrementControlPlaneBytesSent(beacon &the_beacon, uint16_t interface) {
+        bytes_sent_per_interface_per_period.at(now).at(interface) +=
+                (BEACON_HEADER_SIZE + BEACON_HOP_SIZE * the_beacon.the_path.size());
+    }
 
+    void
+    BeaconServer::ReceiveBeacon (beacon &received_beacon, uint16_t sender_as, uint16_t remote_if, uint16_t local_if) {
+        uint16_t dst_as = UPPER_16_BITS(received_beacon.the_path.at(0));
+
+        bool to_import;
+        bool path_exists;
+        bool existing_path_valid;
+        beacon* beacon_to_replace;
+
+        std::tie(to_import, path_exists, existing_path_valid, beacon_to_replace)
+                = ImportPolicy(received_beacon, sender_as, remote_if, local_if, now);
+
+        if (!to_import){
+            return;
+        }
+
+        if (!path_exists && beacon_to_replace != NULL) {
+            DeleteBeacon(beacon_to_replace, dst_as);
+        }
+
+        InsertBeacon(received_beacon, dst_as, sender_as, remote_if, local_if, path_exists, existing_path_valid, beacon_to_replace);
+    }
+
+    void
+    BeaconServer::UpdateTimeAndStats ()
+    {
+        // Print statistics until now to see some sense of progress
+        //    std::cout << as_number << "\t" << valid_beacons_count_per_dst_as.size ()
+        //              << std::endl; // Print number of source ASes
+        // Update node-> now for the regular beaconing execution flow
+        now = (uint16_t) Simulator::Now ().ToInteger (Time::MIN);
+        next_period = now + (uint16_t) beaconing_period.ToInteger (Time::MIN);
+
+
+        bytes_sent_per_interface_per_period.insert (
+                std::make_pair (now, std::vector<uint32_t> (node->GetNDevices (), 0)));
+    }
+
+    const uint16_t
+    BeaconServer::GetCurrentTime() const {
+        return now;
+    }
 } // namespace ns3

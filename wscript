@@ -6,30 +6,28 @@ def build(bld):
     env = bld.env
     sim = bld.create_ns3_module('SCION', ['core', 'network'])
 
-    sim.source = [ 'src/baseline.cpp',
-                   'src/beacon.cpp',
-                   'src/beaconing_strategy.cpp',
-                   'src/criteria_matching.cpp',
-                   'src/latency_optimized_beaconing.cpp',
+    sim.source = [ 'src/beaconing/baseline.cpp',
+                   'src/beaconing/beacon.cpp',
+                   'src/beaconing/beacon_server.cpp',
+                   'src/beaconing/criteria_matching.cpp',
+                   'src/beaconing/latency_optimized_beaconing.cpp',
                    'src/scion_as.cpp',
                    'src/scion_core_as.cpp',
-                   'src/scion_node.cpp',
                    'src/utils.cpp',
-                   'src/scionlab_algo.cpp']
+                   'src/beaconing/scionlab_algo.cpp']
 
     headers = bld(features='ns3header')
     headers.module = 'SCION'
 
-    headers.source = ['headers/baseline.h',
-                     'headers/beacon.h',
-                     'headers/beaconing_strategy.h',
-                     'headers/criteria_matching.h',
-                     'headers/latency_optimized_beaconing.h',
+    headers.source = ['headers/beaconing/baseline.h',
+                     'headers/beaconing/beacon.h',
+                     'headers/beaconing/beacon_server.h',
+                     'headers/beaconing/criteria_matching.h',
+                     'headers/beaconing/latency_optimized_beaconing.h',
                      'headers/scion_as.h',
                      'headers/scion_core_as.h',
-                     'headers/scion_node.h',
                      'headers/utils.h',
-                     'headers/scionlab_algo.h']
+                     'headers/beaconing/scionlab_algo.h']
 
     obj = bld.create_ns3_program('main',
                                 ['SCION', 'point-to-point'])

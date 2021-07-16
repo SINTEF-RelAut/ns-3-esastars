@@ -3,9 +3,9 @@ digraph "headers/baseline.h"
  // LATEX_PDF_SIZE
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
-  Node1 [label="headers/baseline.h",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Defines specialized functions for the baseline beaconing strategy."];
+  Node1 [label="headers/baseline.h",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Defines specialized functions for the baseline beaconing beaconServer."];
   Node1 -> Node2 [color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
-  Node2 [label="beaconing_strategy.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$beaconing__strategy_8h.html",tooltip="Defines the base class and behaviours of a strategy for beaconing & its associated constants."];
+  Node2 [label="beaconing_strategy.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$beaconing__strategy_8h.html",tooltip="Defines the base class and behaviours of a beaconServer for beaconing & its associated constants."];
   Node2 -> Node3 [color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
   Node3 [label="unordered_map",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
   Node2 -> Node4 [color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];

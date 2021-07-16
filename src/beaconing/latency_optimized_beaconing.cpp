@@ -3,13 +3,13 @@
  * @authors Seyedali Tabaeiaghdaei
  * @date 2021
  * @see latency_optimized_beaconing.h
- * @brief Implements the specialized functions for the latency optimized beaconing strategy.
+ * @brief Implements the specialized functions for the latency optimized beaconing beaconServer.
  */
 
 #include <cassert>
 #include <omp.h>
-#include "../headers/latency_optimized_beaconing.h"
-#include "../headers/utils.h"
+#include "src/SCION/headers/beaconing/latency_optimized_beaconing.h"
+#include "src/SCION/headers/utils.h"
 
 namespace ns3 {
     void LatencyOptimized::DoInitializations(uint32_t all_nodes) {
@@ -30,8 +30,8 @@ namespace ns3 {
     {
         uint16_t dst_as = UPPER_16_BITS(the_beacon.the_path.at(0));
 
-        if (node->path_map_to_beacon.find(the_beacon.key) != node->path_map_to_beacon.end()) {
-            beacon* existing_beacon = node->path_map_to_beacon.at(the_beacon.key);
+        if (path_map_to_beacon.find(the_beacon.key) != path_map_to_beacon.end()) {
+            beacon* existing_beacon = path_map_to_beacon.at(the_beacon.key);
             if (!existing_beacon->is_valid){
                 return std::tuple<bool, bool, bool, beacon*>(true, true, false, existing_beacon);
             }
@@ -72,7 +72,7 @@ namespace ns3 {
     }
 
     void
-    LatencyOptimized::DisseminateBeacons(SCION_Node::neighbour_relation relation) {
+    LatencyOptimized::DisseminateBeacons(neighbour_relation relation) {
         uint32_t neighbors_cnt = node->neighbors.size();
         omp_set_num_threads(NUM_CORE);
 #pragma omp parallel for
@@ -83,7 +83,7 @@ namespace ns3 {
             }
 
             uint16_t remote_as_no = node->neighbors.at(i).first;
-            for (auto const &dst_as_beacons_pair : node->beacon_store) { // Per destination AS
+            for (auto const &dst_as_beacons_pair : beacon_store) { // Per destination AS
                 uint16_t dst_as_no = dst_as_beacons_pair.first;
                 const beacons_with_same_dst_as &beacons_to_the_dst_as = dst_as_beacons_pair.second;
 
@@ -91,14 +91,14 @@ namespace ns3 {
                     continue;
                 }
 
-                std::multimap<ld, std::tuple<beacon *, uint16_t, uint16_t, Ptr<SCION_Node>, ld, ld> > selected_beacons =
+                std::multimap<ld, std::tuple<beacon *, uint16_t, uint16_t, Ptr<SCION_AS>, ld, ld> > selected_beacons =
                         select_beacons_to_disseminate_per_dst_per_nbr(remote_as_no, dst_as_no, beacons_to_the_dst_as);
 
                 for (auto const &the_tuple_pair : selected_beacons) {
                     beacon *the_beacon;
                     uint16_t remote_ingress_if_no;
                     uint16_t self_egress_if_no;
-                    Ptr<SCION_Node> remote_as;
+                    Ptr<SCION_AS> remote_as;
                     ld latency;
                     ld bwd;
 
@@ -113,10 +113,10 @@ namespace ns3 {
         }
     }
 
-    std::multimap<ld, std::tuple<beacon *, uint16_t, uint16_t, Ptr<SCION_Node>, ld, ld> >
+    std::multimap<ld, std::tuple<beacon *, uint16_t, uint16_t, Ptr<SCION_AS>, ld, ld> >
     LatencyOptimized::select_beacons_to_disseminate_per_dst_per_nbr(uint16_t remote_as_no, uint16_t dst_as_no,
                                                                   const beacons_with_same_dst_as &beacons_to_the_dst_as) {
-        std::multimap<ld, std::tuple<beacon *, uint16_t, uint16_t, Ptr<SCION_Node>, ld, ld> > latency_map_to_beacon_and_metadata;
+        std::multimap<ld, std::tuple<beacon *, uint16_t, uint16_t, Ptr<SCION_AS>, ld, ld> > latency_map_to_beacon_and_metadata;
         std::map<uint16_t, std::multimap<ld, beacon*> > valid_candidates;
 
         int beacon_cnt = 0;
@@ -171,14 +171,14 @@ namespace ns3 {
                 beacon *the_beacon = latency_beacon_pair.second;
 
                 uint16_t remote_ingress_if_no = node->GetRemoteAsInfo(self_egress_if_no).first;
-                Ptr<SCION_Node> remote_as = node->GetRemoteAsInfo(self_egress_if_no).second;
+                Ptr<SCION_AS> remote_as = node->GetRemoteAsInfo(self_egress_if_no).second;
 
                 ld bwd = the_beacon->bwd_stat > (ld) node->inter_as_bwds.at(self_egress_if_no)
                          ? (ld) node->inter_as_bwds.at(self_egress_if_no)
                          : the_beacon->bwd_stat;
 
                 latency_map_to_beacon_and_metadata.insert(
-                        std::make_pair(latency, std::tuple<beacon *, uint16_t, uint16_t, Ptr<SCION_Node>, ld, ld>
+                        std::make_pair(latency, std::tuple<beacon *, uint16_t, uint16_t, Ptr<SCION_AS>, ld, ld>
                                 (the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as,
                                  latency, bwd)));
 
@@ -216,8 +216,4 @@ namespace ns3 {
         }
     }
 
-    void LatencyOptimized::MetaDataUpdateAfterImmediateSend(beacon *the_beacon, uint16_t self_egress_if_no, Ptr<SCION_Node> remote_as,
-    uint16_t dst_as_no) {
-
-    }
 }

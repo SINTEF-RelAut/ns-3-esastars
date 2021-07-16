@@ -9,35 +9,28 @@
 
 #ifndef SCION_BEACONING_SIMMULATOR_SCION_CORE_AS_H
 #define SCION_BEACONING_SIMMULATOR_SCION_CORE_AS_H
-#include "scion_node.h"
+#include "scion_as.h"
 
 namespace ns3 {
 
-class SCION_Core_As : public SCION_Node
+class SCION_Core_AS : public SCION_AS
 {
   public:
-    SCION_Core_As (uint16_t isd_number, uint16_t as_number, uint32_t system_id, coefficients coefs,
-                   const beaconing_timing_params &periods, BeaconingStrategy *strategy)
-        : SCION_Node (isd_number, as_number, system_id, coefs, periods, strategy)
+    SCION_Core_AS (uint16_t isd_number, uint16_t as_number, uint32_t system_id, BeaconServer *beaconServer)
+        : SCION_AS (isd_number, as_number, system_id, beaconServer)
     {
     }
 
     /**
      * @brief Starts the core beaconing process at the beginning of the beaconing period.
      */
-    void CoreBeaconing () override;
+    void CoreBeaconing () ;
 
     /**
      * @brief Starts the intra ISD beaconing process at the beginning of the beaconing period.
      */
-    void IntraISDBeaconing () override;
+    void IntraISDBeaconing () ;
 
-    /**
-     * @brief Starts the processing of beacons for source ASes that had previously not been seen. Gets
-     * scheduled right after receiving such a beacon.
-     */
-    void ProcessReceivedBeacons (uint16_t beacon_origin_as_no, uint16_t ingress_if,
-                                 beacon *the_beacon) override;
 };
 }
 #endif //SCION_BEACONING_SIMMULATOR_SCION_CORE_AS_H

@@ -3,11 +3,11 @@
  * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
  * @date 2020
  * @see criteria_matching.h
- * @brief Implements the specialized functions for the criteria matching strategy.
+ * @brief Implements the specialized functions for the criteria matching beaconServer.
  */
 #include<omp.h>
-#include "../headers/criteria_matching.h"
-#include "../headers/utils.h"
+#include "src/SCION/headers/beaconing/criteria_matching.h"
+#include "src/SCION/headers/utils.h"
 #include "ns3/point-to-point-channel.h"
 
 /**
@@ -55,7 +55,7 @@ namespace ns3 {
     }
 
     void
-    CriteriaMatching::DisseminateBeacons(SCION_Node::neighbour_relation relation) {
+    CriteriaMatching::DisseminateBeacons(neighbour_relation relation) {
         uint32_t neighbors_cnt = node->neighbors.size();
         omp_set_num_threads(NUM_CORE);
 #pragma omp parallel for
@@ -66,7 +66,7 @@ namespace ns3 {
             }
 
             uint16_t remote_as_no = node->neighbors.at(i).first;
-            for (auto const &dst_as_beacons_pair : node->beacon_store) { // Per destination AS
+            for (auto const &dst_as_beacons_pair : beacon_store) { // Per destination AS
                 uint16_t dst_as_no = dst_as_beacons_pair.first;
                 const beacons_with_same_dst_as &beacons_to_the_dst_as = dst_as_beacons_pair.second;
 
@@ -74,14 +74,14 @@ namespace ns3 {
                     continue;
                 }
 
-                std::multimap<ld, std::tuple<beacon *, uint16_t, uint16_t, Ptr<SCION_Node>, ld, ld> > selected_beacons =
+                std::multimap<ld, std::tuple<beacon *, uint16_t, uint16_t, Ptr<SCION_AS>, ld, ld> > selected_beacons =
                         select_beacons_to_disseminate_per_dst_per_nbr(remote_as_no, dst_as_no, beacons_to_the_dst_as);
 
                 for (auto const &the_tuple_pair : selected_beacons) {
                     beacon *the_beacon;
                     uint16_t remote_ingress_if_no;
                     uint16_t self_egress_if_no;
-                    Ptr<SCION_Node> remote_as;
+                    Ptr<SCION_AS> remote_as;
                     ld latency;
                     ld bwd;
 
@@ -105,8 +105,8 @@ namespace ns3 {
 
         uint16_t dst_as = UPPER_16_BITS(the_beacon.the_path.at(0));
 
-        if (node->path_map_to_beacon.find(the_beacon.key) != node->path_map_to_beacon.end()) {
-            beacon* existing_beacon = node->path_map_to_beacon.at(the_beacon.key);
+        if (path_map_to_beacon.find(the_beacon.key) != path_map_to_beacon.end()) {
+            beacon* existing_beacon = path_map_to_beacon.at(the_beacon.key);
             if (!existing_beacon->is_valid){
                 return std::tuple<bool, bool, bool, beacon*>(true, true, false, existing_beacon);
             }
@@ -117,11 +117,11 @@ namespace ns3 {
             return std::tuple<bool, bool, bool, beacon*>(true, false, false, NULL);
         }
 
-        if (node->next_round_valid_beacons_count_per_dst_as.find(dst_as) == node->next_round_valid_beacons_count_per_dst_as.end()) {
+        if (next_round_valid_beacons_count_per_dst_as.find(dst_as) == next_round_valid_beacons_count_per_dst_as.end()) {
             return std::tuple<bool, bool, bool, beacon*>(true, false, false, NULL);
         }
 
-        if (node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < MAX_BEACONS_TO_STORE) {
+        if (next_round_valid_beacons_count_per_dst_as.at(dst_as) < MAX_BEACONS_TO_STORE) {
             return std::tuple<bool, bool, bool, beacon*>(true, false, false, NULL);
         }
 
@@ -130,7 +130,7 @@ namespace ns3 {
         ld beacon_exp_period = (ld) (the_beacon.next_expiration_time - the_beacon.next_initiation_time);
         ld score = std::pow(raw_score, ALPHA * (beacon_age / beacon_exp_period));
 
-        if (node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < MAX_BEACONS_TO_STORE && score > 0.9) {
+        if (next_round_valid_beacons_count_per_dst_as.at(dst_as) < MAX_BEACONS_TO_STORE && score > 0.9) {
             return std::tuple<bool, bool, bool, beacon*>(true, false, false, NULL);
         }
 
@@ -147,17 +147,7 @@ namespace ns3 {
     }
 
 
-    void
-    CriteriaMatching::MetaDataUpdateAfterImmediateSend(beacon *the_beacon, uint16_t self_egress_if_no, Ptr<SCION_Node> remote_as,
-                                              uint16_t dst_as_no) {
-        if (path_not_sent_before(remote_as->as_number, self_egress_if_no, the_beacon)) {
-            ld  raw_score = calculate_raw_score(the_beacon, dst_as_no, self_egress_if_no, remote_as);
-            add_to_sent_beacons(dst_as_no, remote_as->as_number, self_egress_if_no, the_beacon, (float) raw_score);
-            inc_links_jointness_on_sent_paths(dst_as_no, remote_as->as_number, self_egress_if_no, the_beacon);
-        } else {
-            update_sent_beacon_timer(remote_as->as_number, self_egress_if_no, the_beacon);
-        }
-    }
+
 
     void
     CriteriaMatching::MetaDataUpdatePeriodic (beacon* the_beacon, bool invalidated) {
@@ -170,10 +160,10 @@ namespace ns3 {
     }
 
 
-    std::multimap<ld, std::tuple<beacon *, uint16_t, uint16_t, Ptr<SCION_Node>, ld, ld> >
+    std::multimap<ld, std::tuple<beacon *, uint16_t, uint16_t, Ptr<SCION_AS>, ld, ld> >
     CriteriaMatching::select_beacons_to_disseminate_per_dst_per_nbr(uint16_t remote_as_no, uint16_t dst_as_no,
                                                                     const beacons_with_same_dst_as &beacons_to_the_dst_as) {
-        std::multimap<ld, std::tuple<beacon *, uint16_t, uint16_t, Ptr<SCION_Node>, ld, ld> > score_map_to_beacon_and_metadata;
+        std::multimap<ld, std::tuple<beacon *, uint16_t, uint16_t, Ptr<SCION_AS>, ld, ld> > score_map_to_beacon_and_metadata;
         std::map<std::pair<beacon *, uint16_t>, std::pair<ld, ld> > valid_candidates;
 
         ld max_score = 0.0;
@@ -182,7 +172,7 @@ namespace ns3 {
         uint16_t max_score_iface = 0;
 
         uint16_t remote_ingress_if_no;
-        Ptr<SCION_Node> remote_as = node->GetRemoteAsInfo(
+        Ptr<SCION_AS> remote_as = node->GetRemoteAsInfo(
                 node->interfaces_per_neighbor_as.at(remote_as_no).at(0)).second;
 
         uint32_t min_no_paths_to_send = (20 * node->interfaces_per_neighbor_as.at(remote_as_no).size()) / remote_as->interfaces_coordinates.size();
@@ -213,7 +203,7 @@ namespace ns3 {
                     bool must_be_added = false;
                     if (path_not_sent_before(remote_as_no, self_egress_if_no, the_beacon)) {
                         raw_score = calculate_raw_score(the_beacon, dst_as_no, self_egress_if_no, remote_as);
-                        ld beacon_age = (ld) (node->now - the_beacon->initiation_time);
+                        ld beacon_age = (ld) (now - the_beacon->initiation_time);
                         ld beacon_exp_period = (ld) (the_beacon->expiration_time - the_beacon->initiation_time);
                         score = std::pow(raw_score, ALPHA * (beacon_age / beacon_exp_period));
 
@@ -224,8 +214,8 @@ namespace ns3 {
                     } else {
                         raw_score = sent_beacons.at(self_egress_if_no)->at(the_beacon).first;
                         ld sent_beacon_time_to_expiration = (ld) (
-                                sent_beacons.at(self_egress_if_no)->at(the_beacon).second - node->now);
-                        ld current_beacon_time_to_expiration = (ld) (the_beacon->expiration_time - node->now);
+                                sent_beacons.at(self_egress_if_no)->at(the_beacon).second - now);
+                        ld current_beacon_time_to_expiration = (ld) (the_beacon->expiration_time - now);
                         score = std::pow(raw_score,
                                          std::pow(BETA *
                                                   (sent_beacon_time_to_expiration / current_beacon_time_to_expiration),
@@ -268,7 +258,7 @@ namespace ns3 {
 
                 score_map_to_beacon_and_metadata.insert(
                         std::make_pair(max_score,
-                                       std::tuple<beacon *, uint16_t, uint16_t, Ptr<SCION_Node>, ld, ld>
+                                       std::tuple<beacon *, uint16_t, uint16_t, Ptr<SCION_AS>, ld, ld>
                                                (max_score_beacon, max_score_iface, remote_ingress_if_no, remote_as,
                                                 latency, bwd)));
 
@@ -301,7 +291,7 @@ namespace ns3 {
                     score = candidate.second.second;
                 } else {
                     raw_score = calculate_raw_score(the_beacon, dst_as_no, self_egress_if_no, remote_as);
-                    ld beacon_age = (ld) (node->now - the_beacon->initiation_time);
+                    ld beacon_age = (ld) (now - the_beacon->initiation_time);
                     ld beacon_exp_period = (ld) (the_beacon->expiration_time - the_beacon->initiation_time);
                     score = std::pow(raw_score, ALPHA * (beacon_age / beacon_exp_period));
                     valid_candidates.at(std::make_pair(the_beacon, self_egress_if_no)) = std::make_pair(raw_score,
@@ -325,7 +315,7 @@ namespace ns3 {
     }
 
     inline ld
-    CriteriaMatching::calculate_raw_score (beacon* the_beacon, uint16_t dst_as_no, uint16_t self_egress_if_no, Ptr<SCION_Node> remote_as) {
+    CriteriaMatching::calculate_raw_score (beacon* the_beacon, uint16_t dst_as_no, uint16_t self_egress_if_no, Ptr<SCION_AS> remote_as) {
         ld latency = the_beacon->latency_stat +
                      node->intra_as_latencies.at(LOWER_16_BITS(the_beacon->the_path.back())).at(self_egress_if_no);
         ld bwd = the_beacon->bwd_stat > (ld) node->inter_as_bwds.at(self_egress_if_no)
@@ -338,15 +328,15 @@ namespace ns3 {
 
         ld  raw_score =
                     (
-                        (1 - latency / MAX_LAT) * remote_as->latency_coef +
-                        (bwd / MAX_BWD) * remote_as->bandwidth_coef +
-                        link_diversity_score * remote_as->link_level_diversity_coef
+                        (1 - latency / MAX_LAT) * ((ns3::CriteriaMatching*) remote_as->GetBeaconServer())->latency_coef +
+                        (bwd / MAX_BWD) * ((ns3::CriteriaMatching*) remote_as->GetBeaconServer())->bandwidth_coef +
+                        link_diversity_score * ((ns3::CriteriaMatching*) remote_as->GetBeaconServer())->link_level_diversity_coef
                     )
                     /
                     (
-                        remote_as->latency_coef +
-                        remote_as->bandwidth_coef +
-                        remote_as->link_level_diversity_coef
+                            ((ns3::CriteriaMatching*) remote_as->GetBeaconServer())->latency_coef +
+                            ((ns3::CriteriaMatching*) remote_as->GetBeaconServer())->bandwidth_coef +
+                            ((ns3::CriteriaMatching*) remote_as->GetBeaconServer())->link_level_diversity_coef
                     );
 
         raw_score = SCALING_FACTOR * raw_score;
@@ -365,15 +355,15 @@ namespace ns3 {
 
         ld  raw_score =
                 (
-                        (1 - latency / MAX_LAT) * this->node->latency_coef +
-                        (bwd / MAX_BWD) * this->node->bandwidth_coef +
-                        link_diversity_score * this->node->link_level_diversity_coef
+                        (1 - latency / MAX_LAT) * this->latency_coef +
+                        (bwd / MAX_BWD) * this->bandwidth_coef +
+                        link_diversity_score * this->link_level_diversity_coef
                 )
                 /
                 (
-                        this->node->latency_coef +
-                        this->node->bandwidth_coef +
-                        this->node->link_level_diversity_coef
+                        this->latency_coef +
+                        this->bandwidth_coef +
+                        this->link_level_diversity_coef
                 );
 
         raw_score = SCALING_FACTOR * raw_score;
@@ -509,7 +499,7 @@ namespace ns3 {
                 continue;
             }
 
-            if (sent_beacons.at(i)->at(the_beacon).second <= node->next_period) {
+            if (sent_beacons.at(i)->at(the_beacon).second <= next_period) {
                 sent_beacons.at(i)->erase(the_beacon);
                 sent_beacons_cnt.at(dst_as)->at(node->interface_to_neighbor_map.at(i))--;
                 dec_links_jointnesses_on_sent_paths(the_beacon, dst_as, remote_as_no, i);

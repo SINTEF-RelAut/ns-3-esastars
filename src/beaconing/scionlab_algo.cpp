@@ -3,16 +3,14 @@
 //
 
 #include <omp.h>
-#include "../headers/utils.h"
-#include "../headers/scionlab_algo.h"
+#include "src/SCION/headers/utils.h"
+#include "src/SCION/headers/beaconing/scionlab_algo.h"
 #include "ns3/point-to-point-channel.h"
 
 namespace ns3 {
-#define MAX_SET_SIZE 100
     void SCIONLAB::DoInitializations(uint32_t all_nodes) {
 
     }
-
 
 
 /**
@@ -26,13 +24,13 @@ namespace ns3 {
  * @param node The node which is disseminating beacons.
  */
     void
-    SCIONLAB::DisseminateBeacons (SCION_Node::neighbour_relation relation)
+    SCIONLAB::DisseminateBeacons (neighbour_relation relation)
     {
         uint32_t neighbors_cnt = node->neighbors.size ();
         std::vector<beacon*> valid_candidates;
 
-        for (auto const &dst_as_beacons_pair : node->beacon_store) {
-            const beacons_with_same_dst_as& equal_dst_as_beacons = dst_as_beacons_pair.second;
+        for (auto const &dst_as_beacons_pair : beacon_store) {
+            auto const & equal_dst_as_beacons = dst_as_beacons_pair.second;
 
             std::vector<beacon*> rest_of_beacons;
             std::vector<beacon*> selected_beacons_per_dst;
@@ -133,11 +131,11 @@ namespace ns3 {
                 for (auto const &egress_interface_no : interfaces) {
 
 
-                    std::pair<uint16_t, Ptr<SCION_Node>>
+                    std::pair<uint16_t, Ptr<SCION_AS>>
                             remote_as_if_pair = node->GetRemoteAsInfo(egress_interface_no);
 
                     uint16_t remote_ingress_if_no = remote_as_if_pair.first;
-                    Ptr<SCION_Node> remote_as = remote_as_if_pair.second;
+                    Ptr<SCION_AS> remote_as = remote_as_if_pair.second;
 
                     ld latency = the_beacon->latency_stat +
                                  node->intra_as_latencies
@@ -178,8 +176,8 @@ namespace ns3 {
     {
         uint16_t dst_as = UPPER_16_BITS(the_beacon.the_path.at(0));
 
-        if (node->path_map_to_beacon.find(the_beacon.key) != node->path_map_to_beacon.end()) {
-            beacon* existing_beacon = node->path_map_to_beacon.at(the_beacon.key);
+        if (path_map_to_beacon.find(the_beacon.key) != path_map_to_beacon.end()) {
+            beacon* existing_beacon = path_map_to_beacon.at(the_beacon.key);
             if (!existing_beacon->is_valid){
                 return std::tuple<bool, bool, bool, beacon*>(true, true, false, existing_beacon);
             }
@@ -190,11 +188,11 @@ namespace ns3 {
             return std::tuple<bool, bool, bool, beacon*>(true, false, false, NULL);
         }
 
-        if (node->next_round_valid_beacons_count_per_dst_as.find(dst_as) == node->next_round_valid_beacons_count_per_dst_as.end()) {
+        if (next_round_valid_beacons_count_per_dst_as.find(dst_as) == next_round_valid_beacons_count_per_dst_as.end()) {
             return std::tuple<bool, bool, bool, beacon*>(true, false, false, NULL);
         }
 
-        if (this->node->next_round_valid_beacons_count_per_dst_as.at(dst_as) < MAX_BEACONS_TO_STORE) {
+        if (this->next_round_valid_beacons_count_per_dst_as.at(dst_as) < MAX_BEACONS_TO_STORE) {
             return std::tuple<bool, bool, bool, beacon*>(true, false, false, NULL);
         }
 
@@ -208,11 +206,6 @@ namespace ns3 {
     SCIONLAB::DeleteFromStrategyMetaData (beacon* the_beacon) {}
 
 
-    void
-    SCIONLAB::MetaDataUpdateAfterImmediateSend (beacon *the_beacon, uint16_t local_iface, Ptr<SCION_Node> remote_as,
-                                                uint16_t dst_as_no)
-    {
-    }
     void
     SCIONLAB::MetaDataUpdatePeriodic (beacon* the_beacon, bool invalidated)
     {

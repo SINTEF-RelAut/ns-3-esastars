@@ -5,5 +5,5 @@
  * @brief Defines member functions on the beacon structure.
  */
 
-#include "../headers/beacon.h"
+#include "src/SCION/headers/beaconing/beacon.h"
 // TODO: Could implement key member function here to save some space if scalability necessitates it
