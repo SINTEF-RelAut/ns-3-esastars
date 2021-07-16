@@ -14,7 +14,6 @@
 #include <map>
 #include "ns3/nstime.h"
 #include "ns3/ptr.h"
-#include "src/SCION/headers/as_info.h"
 #include "src/SCION/headers/beaconing/beacon.h"
 #include "src/SCION/headers/scion_as.h"
 

@@ -9,7 +9,6 @@
 #ifndef SCION_BEACONING_SIMMULATOR_SCION_AS_H
 #define SCION_BEACONING_SIMMULATOR_SCION_AS_H
 
-#include "src/SCION/headers/as_info.h"
 #include "src/SCION/headers/beaconing/beacon.h"
 
 #include "ns3/network-module.h"
@@ -22,6 +21,9 @@
 #include <vector>
 
 namespace ns3 {
+    enum neighbour_relation {
+        CORE = 0, PEER = 1, CUSTOMER = 2, PROVIDER = 3
+    };
 
     class BeaconServer;
 
