@@ -7,9 +7,7 @@
 #include "src/SCION/headers/beaconing/beacon_server.h"
 
 namespace ns3 {
-#define MAX_BEACONS_TO_STORE 10000
-#define MAX_BEACONS_TO_SEND 20
-#define MAX_SET_SIZE 100
+    #define MAX_SET_SIZE 100
 
     class SCIONLAB : public BeaconServer
     {

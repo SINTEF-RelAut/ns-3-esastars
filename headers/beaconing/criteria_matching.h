@@ -23,8 +23,7 @@ namespace ns3 {
 #define SCALING_FACTOR 0.95
 #define SCORE_THRESHOLD 0.9
 
-#define MAX_BEACONS_TO_STORE 60
-#define MAX_BEACONS_TO_SEND 5
+
 /**
  * @brief Holds 0:latency_coef, 1:bandwidth_coef, 2:AS_level_diversity_coef, 3:link_level_diversity_coef
  *

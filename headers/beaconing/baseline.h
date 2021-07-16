@@ -12,8 +12,6 @@
 #include "src/SCION/headers/beaconing/beacon_server.h"
 
 namespace ns3 {
-#define MAX_BEACONS_TO_STORE 60
-#define MAX_BEACONS_TO_SEND 5
 
     class Baseline : public BeaconServer {
     public:

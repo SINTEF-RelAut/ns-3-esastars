@@ -21,7 +21,8 @@
 
 namespace ns3 {
 #define NUM_CORE 128
-
+#define MAX_BEACONS_TO_STORE 60
+#define MAX_BEACONS_TO_SEND 5
     class SCION_AS;
 
 /** @brief Holds a set of beacons with constant length.*/
