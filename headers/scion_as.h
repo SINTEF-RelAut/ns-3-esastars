@@ -11,6 +11,7 @@
 
 #include "src/SCION/headers/beaconing/beacon_server.h"
 #include "src/SCION/headers/beaconing/beacon.h"
+
 #include "ns3/network-module.h"
 #include "ns3/node.h"
 #include "ns3/point-to-point-helper.h"
@@ -20,13 +21,8 @@
 //#include <unordered_map>
 
 namespace ns3 {
-    enum neighbour_relation {
-        CORE = 0, PEER = 1, CUSTOMER = 2, PROVIDER = 3
-    };
 
     class BeaconServer;
-
-
 
     class SCION_AS : public Node {
     public:
@@ -36,7 +32,11 @@ namespace ns3 {
                   isd_number(isd_number),
                   as_number(as_number),
                   beaconServer(beaconServer),
-                  local_time (local_time) {}
+                  local_time (local_time)
+        {
+
+
+        }
 
 
         Time local_time;

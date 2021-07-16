@@ -14,13 +14,15 @@
 #include <map>
 #include "ns3/nstime.h"
 #include "ns3/ptr.h"
-
+#include "src/SCION/headers/as_info.h"
 #include "src/SCION/headers/beaconing/beacon.h"
 #include "src/SCION/headers/scion_as.h"
 
 
 namespace ns3 {
 #define NUM_CORE 128
+
+    class SCION_AS;
 
 /** @brief Holds a set of beacons with constant length.*/
     typedef std::unordered_set<beacon *> beacons_with_equal_length;
@@ -41,7 +43,7 @@ namespace ns3 {
  */
     typedef std::pair<Time, uint16_t> beaconing_timing_params;
 
-    class SCION_AS;
+
 
     class BeaconServer {
     public:
