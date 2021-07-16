@@ -33,18 +33,13 @@ namespace ns3 {
                   isd_number(isd_number),
                   as_number(as_number),
                   local_time (local_time)
-        {
-
-
-        }
-
-
-        Time local_time;
+        {}
 
         uint16_t isd_number;
         /** @brief The autonomous system number of this node. */
         uint16_t as_number;
 
+        Time local_time;
         /** @brief Largest amount of bandwidth found on any border router link. */
         int32_t AS_max_bwd;
 
