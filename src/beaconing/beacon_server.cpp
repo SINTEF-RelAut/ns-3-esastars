@@ -44,7 +44,7 @@ namespace ns3 {
 
                 GenerateBeaconAndSend(
                         NULL, self_egress_if_no, remote_ingress_if_no, remote_as, 0,
-                        node->inter_as_bwds.at(self_egress_if_no), 1, false, 0);
+                        node->inter_as_bwds.at(self_egress_if_no));
             }
         }
     }
@@ -86,9 +86,7 @@ namespace ns3 {
 
    void BeaconServer::GenerateBeaconAndSend(beacon *selected_beacon, uint16_t self_egress_if_no,
                                             uint16_t remote_ingress_if_no, Ptr<SCION_AS> remote_as,
-                                            ld latency, ld bwd,
-                                            ld  score,
-                                            bool immediate = false, ld latency_for_immediate = 0)
+                                            ld latency, ld bwd)
     {
         std::string key;
         uint16_t remote_as_no = remote_as->as_number;

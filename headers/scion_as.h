@@ -31,13 +31,15 @@ namespace ns3 {
     class SCION_AS : public Node {
     public:
 
-        SCION_AS(uint16_t isd_number, uint16_t as_number, uint32_t system_id, BeaconServer *beaconServer)
+        SCION_AS(uint16_t isd_number, uint16_t as_number, uint32_t system_id, BeaconServer *beaconServer, Time local_time)
                 : Node(system_id),
                   isd_number(isd_number),
                   as_number(as_number),
-                  beaconServer(beaconServer) {
-        }
+                  beaconServer(beaconServer),
+                  local_time (local_time) {}
 
+
+        Time local_time;
 
         uint16_t isd_number;
         /** @brief The autonomous system number of this node. */
@@ -86,28 +88,17 @@ namespace ns3 {
 
         void DoInitializations(uint32_t all_nodes);
 
-
         std::pair<uint16_t, Ptr<SCION_AS>>
         GetRemoteAsInfo(uint16_t egress_interface_no);
 
-
         void ReceiveBeacon(beacon &the_beacon, uint16_t sender_as, uint16_t remote_if, uint16_t local_if);
-
-        void UpdateStatePeriodic();
 
         void SetBeaconServer(BeaconServer *beaconServer);
 
-         BeaconServer* GetBeaconServer();
+        const BeaconServer* GetBeaconServer();
 
-        /**
-         * @brief Does nothing. Leaf ASes do not participate in core-beaconing.
-         */
-        void CoreBeaconing();
 
-        /**
-        * @brief Starts the intra ISD beaconing process at the beginning of the beaconing period.
-        */
-        void IntraISDBeaconing();
+        void ScheduleBeaconing (ns3::Time beaconing_period, ns3::Time last_beaconing_event_time);
 
     protected:
         BeaconServer *beaconServer;

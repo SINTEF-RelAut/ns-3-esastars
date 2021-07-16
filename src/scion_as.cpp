@@ -8,10 +8,8 @@
  */
 
 #include "src/SCION/headers/utils.h"
-#include "src/SCION/headers/beaconing/beacon_server.h"
-#include "ns3/core-module.h"
 #include "src/SCION/headers/scion_as.h"
-
+#include "ns3/core-module.h"
 
 namespace ns3 {
 
@@ -115,37 +113,17 @@ namespace ns3 {
         this->beaconServer = the_beaconServer;
     }
 
-    BeaconServer *
+    const BeaconServer *
     SCION_AS::GetBeaconServer() {
         return this->beaconServer;
     }
 
-
     void
-    SCION_AS::UpdateStatePeriodic() {
-        beaconServer->UpdateStatePeriodic();
+    SCION_AS::ScheduleBeaconing (ns3::Time beaconing_period, ns3::Time last_beaconing_event_time) {
+        for (Time t = Seconds(0); t < last_beaconing_event_time; t += beaconing_period) {
+            Simulator::Schedule(t, &BeaconServer::UpdateTimeAndStats, this->beaconServer);
+            Simulator::Schedule(t, &BeaconServer::DisseminateBeacons, this->beaconServer, neighbour_relation::CUSTOMER);
+            Simulator::Schedule(t + MilliSeconds(100), &BeaconServer::UpdateStatePeriodic, this->beaconServer);
+        }
     }
-
-    void
-    SCION_AS::CoreBeaconing() {
-        // Leaf ASes do not do any core beaconing
-    }
-
-/**
- * Updates the simulator time & allocates memory for the statistics of this beaconing period,
- * fetches the interfaces traversed for intra ISD beaconing (only customer links)
- * and dissiminates the beacons through the beaconing beaconServer.
- *
- * @see UpdateTimeAndStats
- * @see DissiminateBeacons
- */
-    void
-    SCION_AS::IntraISDBeaconing() {
-        beaconServer->UpdateTimeAndStats();
-        // Select the valid interfaces
-        beaconServer->DisseminateBeacons(neighbour_relation::CUSTOMER);
-        // A leaf AS never initiates beacons
-    }
-
-
 }

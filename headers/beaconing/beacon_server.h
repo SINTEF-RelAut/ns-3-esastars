@@ -161,9 +161,7 @@ namespace ns3 {
          * and schedules a processing event on the simulator if the beacon needs to continue being disseminated right away.
          */
         void GenerateBeaconAndSend(beacon *selected_beacon, uint16_t self_egress_if_no,
-                                   uint16_t remote_ingress_if_no, Ptr<SCION_AS> remote_as, ld latency, ld bwd, ld score,
-                                   bool immediate,
-                                   ld latency_for_immediate);
+                                   uint16_t remote_ingress_if_no, Ptr<SCION_AS> remote_as, ld latency, ld bwd);
 
 
         virtual void MetaDataUpdatePeriodic(beacon *the_beacon, bool invalidated) = 0;

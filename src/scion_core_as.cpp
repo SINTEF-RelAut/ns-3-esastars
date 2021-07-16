@@ -7,43 +7,24 @@
  * @brief Implements the specialized functions on the scion core ASes.
  */
 
-#include "../headers/utils.h"
-#include "../headers/scion_core_as.h"
+#include "src/SCION/headers/scion_core_as.h"
 #include "src/SCION/headers/beaconing/beacon_server.h"
 
 namespace ns3 {
 
-/**
- * Updates the simulator time & allocates memory for the statistics of this beaconing period,
- * queries which interfaces are valid for core beaconing (only core links) and initiates beacon dissemination
- * and initiation through the beaconing beaconServer.
- *
- * @see UpdateTimeAndStats
- * @see DisseminateBeacons
- * @see InitiateBeacons
- */
-void
-SCION_Core_AS::CoreBeaconing ()
-{
-    beaconServer->UpdateTimeAndStats ();
-    beaconServer->DisseminateBeacons (neighbour_relation::CORE);
-    beaconServer->InitiateBeacons (neighbour_relation::CORE);
-}
+    void
+    SCION_AS::ScheduleBeaconing (ns3::Time beaconing_period, ns3::Time last_beaconing_event_time) {
+        for (Time t = Seconds(0); t < last_beaconing_event_time; t += beaconing_period) {
+            Simulator::Schedule(t, &BeaconServer::UpdateTimeAndStats, this->beaconServer);
 
-/**
- * Updates the simulator time & allocates memory for the statistics of this period, queries the interfaces traversed for
- * intra ISD beaconing (only customer links) and initiates the beacons through the beaconing beaconServer.
- *
- * @see UpdateTimeAndStats
- * @see InitiateBeacons
- */
-void
-SCION_Core_AS::IntraISDBeaconing ()
-{
-    beaconServer->UpdateTimeAndStats ();
-    beaconServer->InitiateBeacons (neighbour_relation::CUSTOMER);
-    // Core ASes never dissiminate intra_ISD beacons
-}
+            Simulator::Schedule(t, &BeaconServer::DisseminateBeacons, this->beaconServer, neighbour_relation::CORE);
+
+            Simulator::Schedule(t, &BeaconServer::InitiateBeacons, this->beaconServer, neighbour_relation::CORE);
+            Simulator::Schedule(t, &BeaconServer::InitiateBeacons, this->beaconServer, neighbour_relation::CUSTOMER);
+
+            Simulator::Schedule(t + MilliSeconds(100), &BeaconServer::UpdateStatePeriodic, this->beaconServer);
+        }
+    }
 
 
 }

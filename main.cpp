@@ -42,7 +42,7 @@ void InstantiateLinksFromTopo (rapidxml::xml_node<>* rootNode, ns3::NodeContaine
 
 void InitializeNodesAttributes(ns3::NodeContainer& nodes, std::string beaconing_policy_str);
 
-void ScheduleBeaconingEvents(ns3::NodeContainer& nodes, ns3::Time beaconing_period, ns3::Time last_beaconing_event_time);
+void ScheduleEvents(ns3::NodeContainer& nodes, ns3::Time beaconing_period, ns3::Time last_beaconing_event_time);
 
 /**
  * @brief Called to process the beacons received in this beaconing period.
@@ -54,7 +54,7 @@ void ScheduleBeaconingEvents(ns3::NodeContainer& nodes, ns3::Time beaconing_peri
  *
  * @see UpdateBeaconStoreAndCountersBeforeBeaconing
  */
-void ActionsBetweenBeaconingIntervals(ns3::NodeContainer nodes);
+void PeriodicPrints(ns3::NodeContainer nodes);
 
 void DoFinalEvaluations(ns3::NodeContainer& nodes, std::map<int32_t, uint16_t>& ASes, std::map<uint16_t, int32_t>& index_to_AS_no,
                         uint16_t expiration_period, ns3::Time beaconing_period, ns3::Time last_beaconing_event_time);
@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
     std::ofstream out(out_path);
     std::cout.rdbuf(out.rdbuf());
 
-    ScheduleBeaconingEvents(nodes, beaconing_period, last_beaconing_event_time);
+    ScheduleEvents(nodes, beaconing_period, last_beaconing_event_time);
     ns3::Simulator::Stop(simulation_end_time);
     ns3::Simulator::Run();
 
@@ -219,9 +219,9 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* rootNode, std::string beaconi
 
         ns3::Ptr<ns3::SCION_AS> node;
         if(type == "core"){
-            node = ns3::CreateObject<ns3::SCION_Core_AS>(isd_number, node_counter, 0,  beaconing_policy);
+            node = ns3::CreateObject<ns3::SCION_Core_AS>(isd_number, node_counter, 0,  beaconing_policy, ns3::Time(0));
         } else if(type =="non-core"){
-            node = ns3::CreateObject<ns3::SCION_AS>(isd_number, node_counter, 0,  beaconing_policy);
+            node = ns3::CreateObject<ns3::SCION_AS>(isd_number, node_counter, 0,  beaconing_policy, ns3::Time(0));
         } else{
             std::cerr << "Incompatible node type!" << std::endl;
             exit(1);
@@ -357,26 +357,20 @@ void InitializeNodesAttributes(ns3::NodeContainer& nodes, std::string beaconing_
     }
 }
 
-void ScheduleBeaconingEvents(ns3::NodeContainer& nodes, ns3::Time beaconing_period, ns3::Time last_beaconing_event_time) {
+void ScheduleEvents(ns3::NodeContainer& nodes, ns3::Time beaconing_period, ns3::Time last_beaconing_event_time) {
     for (ns3::Time t = ns3::Seconds(0.0); t < last_beaconing_event_time; t += beaconing_period) {
-        ns3::Simulator::Schedule(t + ns3::Seconds(1.0), &ActionsBetweenBeaconingIntervals, nodes);
+        ns3::Simulator::Schedule(t + ns3::Seconds(1.0), &PeriodicPrints, nodes);
+    }
 
-        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-            ns3::Ptr<ns3::SCION_AS> the_node = ns3::DynamicCast<ns3::SCION_AS>(nodes.Get(i));
-            ns3::Simulator::Schedule(t, &ns3::SCION_AS::CoreBeaconing, the_node);
-            //ns3::Simulator::Schedule(t, &ns3::SCION_AS::IntraISDBeaconing, the_node);
-        }
+    for (uint32_t i = 0; i < nodes.GetN(); ++i) {
+        ns3::Ptr<ns3::SCION_AS> node = ns3::DynamicCast<ns3::SCION_AS>(nodes.Get(i));
+        node->ScheduleBeaconing(beaconing_period, last_beaconing_event_time);
     }
 }
 
-void ActionsBetweenBeaconingIntervals(ns3::NodeContainer nodes) {
+void PeriodicPrints(ns3::NodeContainer nodes) {
     std::cout << "################################## " << ns3::DynamicCast<ns3::SCION_AS>(nodes.Get(0))->GetBeaconServer()->GetCurrentTime() << " #########################################" << std::endl;
     uint32_t node_number = nodes.GetN();
-#pragma omp parallel for
-    for (uint32_t i = 0; i < node_number; ++i) {
-        ns3::Ptr<ns3::SCION_AS> node = ns3::DynamicCast<ns3::SCION_AS>(nodes.Get(i));
-        node->UpdateStatePeriodic();
-    }
 
     // print number of connected pairs after each beaconing round
     uint32_t all_connected_pairs = 0;
@@ -385,9 +379,6 @@ void ActionsBetweenBeaconingIntervals(ns3::NodeContainer nodes) {
     }
     std::cout << all_connected_pairs << std::endl;
 
-    if (ns3::DynamicCast<ns3::SCION_AS>(nodes.Get(0))->GetBeaconServer()->GetCurrentTime() == 180) {
-        PrintPathNoDistribution (nodes);
-    }
 }
 
 void DoFinalEvaluations(ns3::NodeContainer& nodes, std::map<int32_t, uint16_t>& ASes, std::map<uint16_t, int32_t>& index_to_AS_no,
