@@ -9,7 +9,7 @@
 #ifndef SCION_BEACONING_SIMMULATOR_SCION_AS_H
 #define SCION_BEACONING_SIMMULATOR_SCION_AS_H
 
-#include "src/SCION/headers/beaconing/beacon_server.h"
+#include "src/SCION/headers/as_info.h"
 #include "src/SCION/headers/beaconing/beacon.h"
 
 #include "ns3/network-module.h"
@@ -17,8 +17,9 @@
 #include "ns3/point-to-point-helper.h"
 #include "ns3/point-to-point-net-device.h"
 #include "ns3/point-to-point-channel.h"
-//#include <unordered_set>
-//#include <unordered_map>
+#include <unordered_set>
+#include <unordered_map>
+#include <vector>
 
 namespace ns3 {
 

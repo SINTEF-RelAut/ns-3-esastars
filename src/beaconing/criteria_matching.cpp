@@ -6,6 +6,7 @@
  * @brief Implements the specialized functions for the criteria matching beaconServer.
  */
 #include<omp.h>
+#include "src/SCION/headers/scion_as.h"
 #include "src/SCION/headers/beaconing/criteria_matching.h"
 #include "src/SCION/headers/utils.h"
 #include "ns3/point-to-point-channel.h"

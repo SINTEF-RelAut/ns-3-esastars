@@ -7,6 +7,7 @@
  */
 
 #include "ns3/point-to-point-net-device.h"
+#include "src/SCION/headers/scion_as.h"
 #include "src/SCION/headers/beaconing/beacon_server.h"
 #include "src/SCION/headers/utils.h"
 #include "ns3/ptr.h"

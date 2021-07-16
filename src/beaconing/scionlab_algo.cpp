@@ -5,6 +5,7 @@
 #include <omp.h>
 #include "src/SCION/headers/utils.h"
 #include "src/SCION/headers/beaconing/scionlab_algo.h"
+#include "src/SCION/headers/scion_as.h"
 #include "ns3/point-to-point-channel.h"
 
 namespace ns3 {

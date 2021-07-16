@@ -6,7 +6,7 @@
  *
  * @brief Implements the specialized functions on the scion leaf ASes.
  */
-
+#include "src/SCION/headers/beaconing/beacon_server.h"
 #include "src/SCION/headers/utils.h"
 #include "src/SCION/headers/scion_as.h"
 #include "ns3/core-module.h"
