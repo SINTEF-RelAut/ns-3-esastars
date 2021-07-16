@@ -16,8 +16,8 @@ namespace ns3 {
 class SCION_Core_AS : public SCION_AS
 {
   public:
-    SCION_Core_AS (uint16_t isd_number, uint16_t as_number, uint32_t system_id, BeaconServer *beaconServer, Time local_time)
-        : SCION_AS (isd_number, as_number, system_id, beaconServer, local_time){}
+    SCION_Core_AS (uint16_t isd_number, uint16_t as_number, uint32_t system_id,  Time local_time)
+        : SCION_AS (isd_number, as_number, system_id, local_time){}
 
     void ScheduleBeaconing (ns3::Time beaconing_period, ns3::Time last_beaconing_event_time);
 

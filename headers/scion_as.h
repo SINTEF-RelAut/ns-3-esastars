@@ -28,11 +28,10 @@ namespace ns3 {
     class SCION_AS : public Node {
     public:
 
-        SCION_AS(uint16_t isd_number, uint16_t as_number, uint32_t system_id, BeaconServer *beaconServer, Time local_time)
+        SCION_AS(uint16_t isd_number, uint16_t as_number, uint32_t system_id, Time local_time)
                 : Node(system_id),
                   isd_number(isd_number),
                   as_number(as_number),
-                  beaconServer(beaconServer),
                   local_time (local_time)
         {
 
