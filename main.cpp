@@ -140,10 +140,14 @@ int main(int argc, char *argv[]) {
 
     InitializeNodesAttributes(nodes, beaconing_policy_str);
 
-    // TODO: Think about how to automatically set an appropriate name, maybe in conjunction with simulator configs?
-    std::string out_path =
-            "/cluster/scratch/tabaeias/" + beaconing_policy_str + "_" + topology_name + "_" +
+//    std::string out_path =
+//            "/cluster/scratch/tabaeias/" + beaconing_policy_str + "_" + topology_name + "_" +
+//            beaconing_period_str + "_" + expiration_period_str + "_" + last_beaconing_event_time_str + ".txt";
+
+        std::string out_path =
+            "/home/tabaeias/ns-3_beaconing_simulator/results/" + beaconing_policy_str + "_" + topology_name + "_" +
             beaconing_period_str + "_" + expiration_period_str + "_" + last_beaconing_event_time_str + ".txt";
+
     std::ofstream out(out_path);
     std::cout.rdbuf(out.rdbuf());
 
