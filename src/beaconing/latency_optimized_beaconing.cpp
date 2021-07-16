@@ -9,7 +9,6 @@
 #include <cassert>
 #include <omp.h>
 #include "src/SCION/headers/beaconing/latency_optimized_beaconing.h"
-#include "src/SCION/headers/scion_as.h"
 #include "src/SCION/headers/utils.h"
 
 namespace ns3 {
