@@ -13,7 +13,7 @@
 namespace ns3 {
 
     void
-    SCION_AS::ScheduleBeaconing (ns3::Time beaconing_period, ns3::Time last_beaconing_event_time) {
+    SCION_Core_AS::ScheduleBeaconing (ns3::Time beaconing_period, ns3::Time last_beaconing_event_time) {
         for (Time t = Seconds(0); t < last_beaconing_event_time; t += beaconing_period) {
             Simulator::Schedule(t + local_time, &BeaconServer::UpdateTimeAndStats, this->beaconServer);
 
