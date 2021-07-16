@@ -95,7 +95,7 @@ namespace ns3 {
         const BeaconServer* GetBeaconServer();
 
 
-        void ScheduleBeaconing (ns3::Time beaconing_period, ns3::Time last_beaconing_event_time);
+        virtual void ScheduleBeaconing (ns3::Time beaconing_period, ns3::Time last_beaconing_event_time);
 
     protected:
         BeaconServer *beaconServer;
