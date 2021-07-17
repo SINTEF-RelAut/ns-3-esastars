@@ -17,7 +17,7 @@
 #include "ns3/point-to-point-net-device.h"
 #include "ns3/point-to-point-channel.h"
 #include "ns3/map-scheduler.h"
-#include "local_scheduler.h"
+#include "src/SCION/headers/local_scheduler.h"
 #include <unordered_set>
 #include <unordered_map>
 #include <vector>
