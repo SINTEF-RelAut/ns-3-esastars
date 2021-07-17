@@ -312,10 +312,6 @@ namespace ns3 {
     void
     BeaconServer::UpdateTimeAndStats ()
     {
-        // Print statistics until now to see some sense of progress
-        //    std::cout << as_number << "\t" << valid_beacons_count_per_dst_as.size ()
-        //              << std::endl; // Print number of source ASes
-        // Update node-> now for the regular beaconing execution flow
         now = (uint16_t) Simulator::Now ().ToInteger (Time::MIN);
         next_period = now + (uint16_t) beaconing_period.ToInteger (Time::MIN);
 

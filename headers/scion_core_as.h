@@ -2,7 +2,7 @@
  * @file scion_core_as.h
  * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
  * @date 2020
- * @see scion_node.h
+ * @see scion_as.h
  * @brief Defines the SCION Core AS.
  *
  */

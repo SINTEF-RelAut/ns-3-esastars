@@ -2,7 +2,7 @@
  * @file scion_as.h
  * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
  * @date 2020
- * @see scion_node.h
+ * @see scion_as.h
  * @brief Defines the SCION ASes which are not part of the core.
  *
  */
@@ -16,9 +16,12 @@
 #include "ns3/point-to-point-helper.h"
 #include "ns3/point-to-point-net-device.h"
 #include "ns3/point-to-point-channel.h"
+#include "ns3/map-scheduler.h"
+#include "local_scheduler.h"
 #include <unordered_set>
 #include <unordered_map>
 #include <vector>
+
 
 namespace ns3 {
     enum neighbour_relation {
@@ -44,6 +47,10 @@ namespace ns3 {
         Time local_time;
         /** @brief Largest amount of bandwidth found on any border router link. */
         int32_t AS_max_bwd;
+
+        std::vector<LocalScheduler*> events_per_interface;
+
+
 
         // Interfaces Properties *****************************************************************************************************
         /**
@@ -93,6 +100,10 @@ namespace ns3 {
         void SetBeaconServer(BeaconServer *beaconServer);
 
         const BeaconServer* GetBeaconServer();
+
+        void AdvanceTime (ns3::Time advance);
+
+        void ExecuteNonPeriodicEvents();
 
 
         virtual void ScheduleBeaconing (ns3::Time beaconing_period, ns3::Time last_beaconing_event_time);

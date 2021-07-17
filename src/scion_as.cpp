@@ -16,8 +16,11 @@ namespace ns3 {
     void
     SCION_AS::DoInitializations() {
         intra_as_latencies.resize(GetNDevices());
+        events_per_interface.resize(GetNDevices());
+
         for (uint64_t i = 0; i < GetNDevices(); ++i) {
             intra_as_latencies.at(i).resize(GetNDevices());
+            events_per_interface.at(i) = new LocalScheduler(&local_time);
         }
 
         for (uint32_t i = 0; i < GetNDevices(); ++i) {
@@ -111,6 +114,16 @@ namespace ns3 {
     void
     SCION_AS::SetBeaconServer(BeaconServer *the_beaconServer) {
         this->beaconServer = the_beaconServer;
+    }
+
+    void SCION_AS::AdvanceTime (ns3::Time advance) {
+        local_time += advance;
+    }
+
+    void SCION_AS::ExecuteNonPeriodicEvents() {
+        for (auto const & scheduler : events_per_interface) {
+            scheduler->ProcessEvents();
+        }
     }
 
     const BeaconServer *
