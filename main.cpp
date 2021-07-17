@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
     ns3::Simulator::Stop(simulation_end_time);
     ns3::Simulator::Run();
 
-    DoFinalEvaluations(nodes, ASes, index_to_AS_no, expiration_period, beaconing_period, last_beaconing_event_time);
+    ns3::DoFinalEvaluations(nodes, ASes, index_to_AS_no, expiration_period, beaconing_period, last_beaconing_event_time);
 
     ns3::Simulator::Destroy();
 
