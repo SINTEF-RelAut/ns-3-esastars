@@ -13,29 +13,48 @@
 #include <omp.h>
 
 namespace ns3 {
-    void ExecuteNonPeriodicEvents (NodeContainer nodes, Time advance){
+    void ExecuteNonPeriodicEvents (NodeContainer nodes){
 #pragma omp parallel for
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             Ptr<SCION_AS> node = DynamicCast<SCION_AS>(nodes.Get(i));
-            node->AdvanceTime(advance);
             node->ExecuteNonPeriodicEvents();
         }
+
+        uint64_t min_event_time = (uint64_t) Simulator::GetMaximumSimulationTime().GetTimeStep();
+        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
+            Ptr<SCION_AS> node = DynamicCast<SCION_AS>(nodes.Get(i));
+            uint64_t event_time = node->GetFirstEventTime();
+            if (event_time < min_event_time) {
+                min_event_time = event_time;
+            }
+        }
+
+        Time advance = TimeStep(min_event_time) -  Simulator::Now();
+        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
+            Ptr<SCION_AS> node = DynamicCast<SCION_AS>(nodes.Get(i));
+            node->AdvanceTime(advance);
+        }
+
+        Simulator::Schedule(advance, &ExecuteNonPeriodicEvents, nodes);
     }
 
     void SchedulePeriodicEvents(NodeContainer& nodes, Time beaconing_period, Time last_beaconing_event_time, Time simulation_end) {
+
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             Ptr<SCION_AS> node = DynamicCast<SCION_AS>(nodes.Get(i));
             node->ScheduleBeaconing(beaconing_period, last_beaconing_event_time);
         }
 
         for (Time t = ns3::Seconds(0.0); t < last_beaconing_event_time; t += beaconing_period) {
-            ns3::Simulator::Schedule(t + ns3::Seconds(1.0), &PeriodicCheckPoint, nodes);
+            Simulator::Schedule(t, &ExecuteNonPeriodicEvents, nodes);
         }
 
-        Time advance_step = ns3::MicroSeconds(100);
-        for (Time t = ns3::Seconds(0.0); t < simulation_end; t += advance_step) {
-            ns3::Simulator::Schedule(t, &ExecuteNonPeriodicEvents, nodes, advance_step);
+        for (Time t = ns3::Seconds(0.0); t < last_beaconing_event_time; t += beaconing_period) {
+            Simulator::Schedule(t + ns3::Seconds(1.0), &PeriodicCheckPoint, nodes);
         }
+
+
+
 
     }
 

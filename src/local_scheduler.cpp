@@ -88,4 +88,8 @@ namespace ns3 {
         }
     }
 
+    uint64_t LocalScheduler::GetFirstEventTime () {
+        return m_events->PeekNext().key.m_ts;
+    }
+
 }

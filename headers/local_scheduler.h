@@ -56,6 +56,8 @@ namespace ns3 {
         void
         ProcessEvents ();
 
+        uint64_t GetFirstEventTime ();
+
     private:
         Ptr<Scheduler> m_events;
 

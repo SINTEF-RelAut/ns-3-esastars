@@ -108,6 +108,8 @@ namespace ns3 {
 
         virtual void ScheduleBeaconing (ns3::Time beaconing_period, ns3::Time last_beaconing_event_time);
 
+        uint64_t GetFirstEventTime ();
+
     protected:
         BeaconServer *beaconServer;
     private:

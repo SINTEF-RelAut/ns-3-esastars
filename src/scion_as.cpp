@@ -127,6 +127,19 @@ namespace ns3 {
         }
     }
 
+    uint64_t SCION_AS::GetFirstEventTime () {
+        uint64_t min_time = std::numeric_limits<uint64_t>::max();
+
+        for (auto const & scheduler : events_per_interface) {
+            uint64_t event_time = scheduler->GetFirstEventTime();
+            if (event_time < min_time) {
+                min_time = event_time;
+            }
+        }
+
+        return min_time;
+    }
+
     const BeaconServer *
     SCION_AS::GetBeaconServer() {
         return this->beaconServer;
