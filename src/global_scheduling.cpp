@@ -20,13 +20,17 @@ namespace ns3 {
             node->ExecuteNonPeriodicEvents();
         }
 
-        uint64_t min_event_time = (uint64_t) Simulator::GetMaximumSimulationTime().GetTimeStep();
+        uint64_t min_event_time = (uint64_t) std::numeric_limits<uint64_t>::max();
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             Ptr<SCION_AS> node = DynamicCast<SCION_AS>(nodes.Get(i));
             uint64_t event_time = node->GetFirstEventTime();
             if (event_time < min_event_time) {
                 min_event_time = event_time;
             }
+        }
+
+        if (min_event_time == std::numeric_limits<uint64_t>::max()) {
+            return;
         }
 
         Time advance = TimeStep(min_event_time) -  Simulator::Now();

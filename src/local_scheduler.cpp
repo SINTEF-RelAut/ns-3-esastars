@@ -75,7 +75,7 @@ namespace ns3 {
     void
     LocalScheduler::ProcessEvents ()
     {
-        while (m_events->PeekNext().key.m_ts <= (uint64_t) local_time->GetTimeStep()) {
+        while (!m_events->IsEmpty() && m_events->PeekNext().key.m_ts <= (uint64_t) local_time->GetTimeStep()) {
             Scheduler::Event next = m_events->RemoveNext ();
 
 //            m_unscheduledEvents--;
@@ -89,6 +89,10 @@ namespace ns3 {
     }
 
     uint64_t LocalScheduler::GetFirstEventTime () {
+        if (m_events->IsEmpty()) {
+            return std::numeric_limits<uint64_t>::max();
+        }
+
         return m_events->PeekNext().key.m_ts;
     }
 
