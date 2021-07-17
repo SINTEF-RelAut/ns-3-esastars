@@ -67,8 +67,8 @@ int main(int argc, char *argv[]) {
         beaconing_period_str = std::string(argv[2]);
         expiration_period_str = std::string(argv[3]);
         last_beaconing_event_time_str = std::string(argv[4]);
-        simulation_end_time_str = std::string(argv[6]);
-        topology_name = std::string(argv[5]);
+        simulation_end_time_str = std::string(argv[5]);
+        topology_name = std::string(argv[6]);
     } else {
         std::cerr << "Less arguments than expected!" << std::endl;
         return 1;
