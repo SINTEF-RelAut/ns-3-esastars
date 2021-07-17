@@ -119,9 +119,6 @@ int main(int argc, char *argv[]) {
     std::ofstream out(out_path);
     std::cout.rdbuf(out.rdbuf());
 
-    ns3::DefaultSimulatorImpl* local_simulator = new ns3::DefaultSimulatorImpl();
-
-    local_simulator.S
 
     SchedulePeriodicEvents(nodes, beaconing_period, last_beaconing_event_time, simulation_end_time);
     ns3::Simulator::Stop(simulation_end_time);
