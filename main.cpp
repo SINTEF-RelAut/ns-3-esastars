@@ -22,7 +22,7 @@
 #include "ns3/point-to-point-helper.h"
 #include "ns3/point-to-point-channel.h"
 #include <ns3/nstime.h>
-#include <src/SCION/headers/post_simulation_evaluations.h>
+#include "src/SCION/headers/post_simulation_evaluations.h"
 
 #include "src/SCION/headers/utils.h"
 #include "src/SCION/headers/beaconing/beacon_server.h"
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
     std::cout.rdbuf(out.rdbuf());
 
 
-    SchedulePeriodicEvents(nodes, beaconing_period, last_beaconing_event_time, simulation_end_time);
+    ns3::SchedulePeriodicEvents(nodes, beaconing_period, last_beaconing_event_time, simulation_end_time);
     ns3::Simulator::Stop(simulation_end_time);
     ns3::Simulator::Run();
 
