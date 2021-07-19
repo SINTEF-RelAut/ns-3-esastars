@@ -106,7 +106,7 @@ namespace ns3 {
 
         void AdvanceTime (ns3::Time advance);
 
-        void ExecuteNonPeriodicEvents();
+        void ExecuteLocalScheduler();
 
 
         uint64_t GetFirstEventTime ();

@@ -125,8 +125,8 @@ namespace ns3 {
         local_time += advance;
     }
 
-    void SCION_AS::ExecuteNonPeriodicEvents() {
-        for (auto const & scheduler : events_per_interface) {
+    void SCION_AS::ExecuteLocalScheduler() {
+        for (auto const & scheduler : events) {
             scheduler->ProcessEvents();
         }
     }
@@ -134,7 +134,7 @@ namespace ns3 {
     uint64_t SCION_AS::GetFirstEventTime () {
         uint64_t min_time = std::numeric_limits<uint64_t>::max();
 
-        for (auto const & scheduler : events_per_interface) {
+        for (auto const & scheduler : events) {
             uint64_t event_time = scheduler->GetFirstEventTime();
             if (event_time < min_time) {
                 min_time = event_time;

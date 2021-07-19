@@ -13,11 +13,11 @@
 #include <omp.h>
 
 namespace ns3 {
-    void ExecuteNonPeriodicEvents (NodeContainer nodes){
+    void ExecuteLocallyScheduledEvents (NodeContainer nodes){
 #pragma omp parallel for
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             Ptr<SCION_AS> node = DynamicCast<SCION_AS>(nodes.Get(i));
-            node->ExecuteNonPeriodicEvents();
+            node->ExecuteLocalScheduler();
         }
 
         uint64_t min_event_time = (uint64_t) std::numeric_limits<uint64_t>::max();
@@ -39,7 +39,7 @@ namespace ns3 {
             node->AdvanceTime(advance);
         }
 
-        Simulator::Schedule(advance, &ExecuteNonPeriodicEvents, nodes);
+        Simulator::Schedule(advance, &ExecuteLocallyScheduledEvents, nodes);
     }
 
     void SchedulePeriodicEvents(NodeContainer& nodes, Time beaconing_period, Time last_beaconing_event_time, Time simulation_end) {
@@ -50,7 +50,7 @@ namespace ns3 {
         }
 
         for (Time t = ns3::Seconds(0.0); t < last_beaconing_event_time; t += beaconing_period) {
-            Simulator::Schedule(t, &ExecuteNonPeriodicEvents, nodes);
+            Simulator::Schedule(t, &ExecuteLocallyScheduledEvents, nodes);
         }
 
         for (Time t = ns3::Seconds(0.0); t < last_beaconing_event_time; t += beaconing_period) {
