@@ -204,7 +204,7 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* rootNode, std::string beaconi
             exit(1);
         }
         node->SetBeaconServer(beaconing_policy);
-        node.
+        node->SetPathServer(pathServer);
 
         nodes.Add(node);
         beaconing_policy->SetNode(node);
