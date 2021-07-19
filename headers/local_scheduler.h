@@ -54,7 +54,7 @@ namespace ns3 {
                                  T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6);
 
 
-        EventId Schedule (const Time &delay, EventImpl *event);
+
 
         void
         ProcessEvents ();
@@ -62,6 +62,9 @@ namespace ns3 {
         uint64_t GetFirstEventTime ();
 
     private:
+
+        EventId Schedule (const Time &delay, EventImpl *event);
+
         Ptr<Scheduler> m_events;
 
         Time* local_time;
