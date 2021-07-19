@@ -330,7 +330,7 @@ namespace ns3 {
         for (Time t = Seconds(0); t < last_beaconing_event_time; t += beaconing_period) {
             Simulator::Schedule(t - node->local_time, &BeaconServer::UpdateTimeAndStats, this);
 
-            if (typeid(node) == typeid(SCION_Core_AS)) {
+            if (DynamicCast<SCION_Core_AS>(node) != NULL) {
                 Simulator::Schedule(t - node->local_time, &BeaconServer::DisseminateBeacons, this, neighbour_relation::CORE);
 
                 Simulator::Schedule(t - node->local_time, &BeaconServer::InitiateBeacons, this, neighbour_relation::CORE);
@@ -353,7 +353,7 @@ namespace ns3 {
                 PathSegment pathSegment;
                 the_beacon->ExtractPathSegment(pathSegment);
 
-                if (typeid(node) == typeid(SCION_Core_AS)) {
+                if (DynamicCast<SCION_Core_AS>(node) != NULL) {
                     node->GetPathServer()->RegisterCorePathSegment(pathSegment, key);
                 } else {
                     node->GetPathServer()->RegisterUpPathSegment(pathSegment, key);

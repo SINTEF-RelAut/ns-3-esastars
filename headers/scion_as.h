@@ -98,7 +98,9 @@ namespace ns3 {
 
         void ReceiveBeacon(beacon &the_beacon, uint16_t sender_as, uint16_t remote_if, uint16_t local_if);
 
-        void SetBeaconServer(BeaconServer *beaconServer);
+        void SetBeaconServer(BeaconServer* beaconServer);
+
+        void SetPathServer(PathServer* pathServer);
 
         BeaconServer* GetBeaconServer();
 

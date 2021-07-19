@@ -33,6 +33,7 @@
 #include "src/SCION/headers/beaconing/criteria_matching.h"
 #include "src/SCION/headers/beaconing/latency_optimized_beaconing.h"
 #include "src/SCION/headers/global_scheduling.h"
+#include "src/SCION/headers/path_server.h"
 
 //rapidxml::xml_node<>* SetupTopologyFile (std::string topology_name);
 
@@ -191,6 +192,8 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* rootNode, std::string beaconi
             beaconing_policy = (ns3::BeaconServer*) new ns3::Baseline(params);
         }
 
+        ns3::PathServer* pathServer = new ns3::PathServer();
+
         ns3::Ptr<ns3::SCION_AS> node;
         if(type == "core"){
             node = ns3::CreateObject<ns3::SCION_Core_AS>(isd_number, node_counter, 0, ns3::Time(0));
@@ -201,6 +204,7 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* rootNode, std::string beaconi
             exit(1);
         }
         node->SetBeaconServer(beaconing_policy);
+        node.
 
         nodes.Add(node);
         beaconing_policy->SetNode(node);

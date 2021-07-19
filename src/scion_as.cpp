@@ -153,4 +153,8 @@ namespace ns3 {
     SCION_AS::GetPathServer() {
         return this->pathServer;
     }
+
+    void SCION_AS::SetPathServer(PathServer* the_pathServer) {
+        this->pathServer = the_pathServer;
+    }
 }
