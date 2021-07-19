@@ -14,7 +14,7 @@ def build(bld):
                    'src/post_simulation_evaluations.cpp',
                    'src/local_scheduler.cpp',
                    'src/global_scheduling.cpp',
-                   'src/path_server.cpp'
+                   'src/path_server.cpp',
                    'src/scion_as.cpp',
                    'src/scion_core_as.cpp',
                    'src/utils.cpp',
