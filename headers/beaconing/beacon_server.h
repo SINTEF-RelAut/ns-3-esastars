@@ -16,6 +16,7 @@
 #include "ns3/ptr.h"
 #include "src/SCION/headers/beaconing/beacon.h"
 #include "src/SCION/headers/scion_as.h"
+#include "src/SCION/headers/local_scheduler.h"
 
 
 namespace ns3 {
