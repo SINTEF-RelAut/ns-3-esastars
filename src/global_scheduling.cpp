@@ -13,13 +13,17 @@
 #include <omp.h>
 
 namespace ns3 {
-    void ExecuteLocallyScheduledEvents (NodeContainer nodes){
+    void ExecuteLocallyScheduledEvents (NodeContainer nodes) {
 #pragma omp parallel for
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             Ptr<SCION_AS> node = DynamicCast<SCION_AS>(nodes.Get(i));
             node->ExecuteLocalScheduler();
         }
 
+        ScheduleNextEvent (nodes);
+    }
+
+    void ScheduleNextEvent (NodeContainer nodes) {
         uint64_t min_event_time = (uint64_t) std::numeric_limits<uint64_t>::max();
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             Ptr<SCION_AS> node = DynamicCast<SCION_AS>(nodes.Get(i));
