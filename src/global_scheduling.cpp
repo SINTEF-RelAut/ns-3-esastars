@@ -46,7 +46,7 @@ namespace ns3 {
 
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             Ptr<SCION_AS> node = DynamicCast<SCION_AS>(nodes.Get(i));
-            node->ScheduleBeaconing(beaconing_period, last_beaconing_event_time);
+            node->GetBeaconServer()->ScheduleBeaconing(last_beaconing_event_time);
         }
 
         for (Time t = ns3::Seconds(0.0); t < last_beaconing_event_time; t += beaconing_period) {

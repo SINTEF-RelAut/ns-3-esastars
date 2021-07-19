@@ -17,12 +17,16 @@ namespace ns3 {
     void
     SCION_AS::DoInitializations() {
         intra_as_latencies.resize(GetNDevices());
-        events_per_interface.resize(GetNDevices());
+        events.resize(GetNDevices() + 3); // 3 = path server + beacon server + 1 host
 
         for (uint64_t i = 0; i < GetNDevices(); ++i) {
             intra_as_latencies.at(i).resize(GetNDevices());
-            events_per_interface.at(i) = new LocalScheduler(&local_time);
         }
+
+        for (uint64_t i = 0; i < GetNDevices() + 3; ++i) {
+            events.at(i) = new LocalScheduler(&local_time);
+        }
+
 
         for (uint32_t i = 0; i < GetNDevices(); ++i) {
             for (uint32_t j = i + 1; j < GetNDevices(); ++j) {
@@ -140,17 +144,13 @@ namespace ns3 {
         return min_time;
     }
 
-    const BeaconServer *
+    BeaconServer *
     SCION_AS::GetBeaconServer() {
         return this->beaconServer;
     }
 
-    void
-    SCION_AS::ScheduleBeaconing (ns3::Time beaconing_period, ns3::Time last_beaconing_event_time) {
-        for (Time t = Seconds(0); t < last_beaconing_event_time; t += beaconing_period) {
-            Simulator::Schedule(t + local_time, &BeaconServer::UpdateTimeAndStats, this->beaconServer);
-            Simulator::Schedule(t + local_time, &BeaconServer::DisseminateBeacons, this->beaconServer, neighbour_relation::CUSTOMER);
-            Simulator::Schedule(t + local_time + MilliSeconds(100), &BeaconServer::UpdateStatePeriodic, this->beaconServer);
-        }
+    PathServer*
+    SCION_AS::GetPathServer() {
+        return this->pathServer;
     }
 }

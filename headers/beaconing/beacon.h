@@ -9,6 +9,7 @@
 #define SCION_BEACONING_SIMMULATOR_BEACON_H
 #include <string>
 #include <vector>
+#include "src/SCION/headers/path_server.h"
 namespace ns3 {
 /**
  * @brief in bytes
@@ -112,6 +113,8 @@ struct beacon
         the_isd_path(the_beacon.the_isd_path)
     {
     }
+
+    void ExtractPathSegment(PathSegment &pathSegment);
 };
 }
 #endif //SCION_BEACONING_SIMMULATOR_BEACON_H

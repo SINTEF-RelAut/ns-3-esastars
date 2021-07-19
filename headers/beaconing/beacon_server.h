@@ -128,6 +128,7 @@ namespace ns3 {
         const uint16_t
         GetCurrentTime() const;
 
+        void ScheduleBeaconing(Time last_beaconing_event_time);
     protected:
         Ptr<SCION_AS> node;
 
@@ -167,6 +168,10 @@ namespace ns3 {
          */
         void GenerateBeaconAndSend(beacon *selected_beacon, uint16_t self_egress_if_no,
                                    uint16_t remote_ingress_if_no, Ptr<SCION_AS> remote_as, ld latency, ld bwd);
+
+        void RegisterToLocalPathServer();
+
+
 
 
         virtual void MetaDataUpdatePeriodic(beacon *the_beacon, bool invalidated) = 0;

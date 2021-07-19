@@ -1,7 +1,7 @@
 //
 // Created by seyedali on 17.07.21.
 //
-
+#include "ns3/core-module.h"
 #include "src/SCION/headers/local_scheduler.h"
 #include "ns3/make-event.h"
 
@@ -60,7 +60,7 @@ namespace ns3 {
     EventId
     LocalScheduler::Schedule (Time const &delay, EventImpl *event)
     {
-        Time tAbsolute = delay + *local_time;
+        Time tAbsolute = delay + Simulator::Now();
 
         Scheduler::Event ev;
         ev.impl = event;
@@ -75,7 +75,7 @@ namespace ns3 {
     void
     LocalScheduler::ProcessEvents ()
     {
-        while (!m_events->IsEmpty() && m_events->PeekNext().key.m_ts <= (uint64_t) local_time->GetTimeStep()) {
+        while (!m_events->IsEmpty() && m_events->PeekNext().key.m_ts <= (uint64_t) Simulator::Now().GetTimeStep()) {
             Scheduler::Event next = m_events->RemoveNext ();
 
 //            m_unscheduledEvents--;

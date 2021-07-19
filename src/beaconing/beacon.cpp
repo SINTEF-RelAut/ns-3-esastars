@@ -6,4 +6,42 @@
  */
 
 #include "src/SCION/headers/beaconing/beacon.h"
-// TODO: Could implement key member function here to save some space if scalability necessitates it
+#include "src/SCION/headers/utils.h"
+
+namespace ns3 {
+    void beacon::ExtractPathSegment(PathSegment &pathSegment) {
+        pathSegment.initiation_time = next_initiation_time;
+        pathSegment.expiration_time = next_expiration_time;
+
+        pathSegment.originator = (((uint32_t) 0) << 16) | (((uint32_t) UPPER_16_BITS(the_path.at(0))));
+
+        uint64_t previous_hop = 0;
+        for(std::vector<uint64_t>::reverse_iterator hop = the_path.rbegin(); hop != the_path.rend(); ++hop) {
+            uint16_t ingress = 0;
+            uint16_t egress = 0;
+            uint16_t isd = 0;
+            uint16_t as = 0;
+
+            if (previous_hop == 0) {
+                as = SECOND_LOWER_16_BITS(*hop);
+                egress = LOWER_16_BITS(*hop);
+            } else {
+                as = UPPER_16_BITS(previous_hop);
+                ingress = SECOND_UPPER_16_BITS(previous_hop);
+                egress = LOWER_16_BITS(*hop);
+            }
+
+            previous_hop = *hop;
+            uint64_t hop_field = (((uint64_t) isd) << 48) | (((uint64_t) as) << 32) | (((uint64_t) ingress) << 16) | ((uint64_t) egress);
+            pathSegment.hops.push_back(hop_field);
+        }
+
+        uint16_t ingress = SECOND_UPPER_16_BITS(previous_hop);
+        uint16_t egress = 0;
+        uint16_t isd = 0;
+        uint16_t as = UPPER_16_BITS(previous_hop);
+
+        uint64_t hop_field = (((uint64_t) isd) << 48) | (((uint64_t) as) << 32) | (((uint64_t) ingress) << 16) | ((uint64_t) egress);
+        pathSegment.hops.push_back(hop_field);
+    }
+}

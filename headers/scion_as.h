@@ -18,6 +18,7 @@
 #include "ns3/point-to-point-channel.h"
 #include "ns3/map-scheduler.h"
 #include "src/SCION/headers/local_scheduler.h"
+#include "path_server.h"
 #include <unordered_set>
 #include <unordered_map>
 #include <vector>
@@ -48,7 +49,7 @@ namespace ns3 {
         /** @brief Largest amount of bandwidth found on any border router link. */
         int32_t AS_max_bwd;
 
-        std::vector<LocalScheduler*> events_per_interface;
+        std::vector<LocalScheduler*> events; // a vector of (#interfaces + #hosts + #services) schedulers
 
 
 
@@ -99,19 +100,21 @@ namespace ns3 {
 
         void SetBeaconServer(BeaconServer *beaconServer);
 
-        const BeaconServer* GetBeaconServer();
+        BeaconServer* GetBeaconServer();
+
+        PathServer* GetPathServer();
 
         void AdvanceTime (ns3::Time advance);
 
         void ExecuteNonPeriodicEvents();
 
 
-        virtual void ScheduleBeaconing (ns3::Time beaconing_period, ns3::Time last_beaconing_event_time);
-
         uint64_t GetFirstEventTime ();
 
     protected:
         BeaconServer *beaconServer;
+        PathServer *pathServer;
+
     private:
         /**
          *  @brief Returns the average as-level diversity and link-level diversity scores of the passed beacon compared to all other beacons the node has which

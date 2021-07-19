@@ -10,6 +10,7 @@
 
 #include "src/SCION/headers/beaconing/beacon_server.h"
 #include "src/SCION/headers/utils.h"
+#include "src/SCION/headers/scion_core_as.h"
 #include "ns3/ptr.h"
 #include <omp.h>
 
@@ -149,7 +150,6 @@ namespace ns3 {
             UpdateBeaconState(the_beacon);
             bool is_valid = the_beacon->is_valid;
             bool invalidated = was_valid && (!is_valid);
-
 
             MetaDataUpdatePeriodic(the_beacon, invalidated);
         }
@@ -312,7 +312,7 @@ namespace ns3 {
     void
     BeaconServer::UpdateTimeAndStats ()
     {
-        now = (uint16_t) Simulator::Now ().ToInteger (Time::MIN);
+        now = (uint16_t) node->local_time.ToInteger(Time::MIN);
         next_period = now + (uint16_t) beaconing_period.ToInteger (Time::MIN);
 
 
@@ -323,5 +323,43 @@ namespace ns3 {
     const uint16_t
     BeaconServer::GetCurrentTime() const {
         return now;
+    }
+
+    void BeaconServer::ScheduleBeaconing(Time last_beaconing_event_time) {
+        for (Time t = Seconds(0); t < last_beaconing_event_time; t += beaconing_period) {
+            Simulator::Schedule(t - node->local_time, &BeaconServer::UpdateTimeAndStats, this);
+
+            if (typeid(node) == typeid(SCION_Core_AS)) {
+                Simulator::Schedule(t - node->local_time, &BeaconServer::DisseminateBeacons, this, neighbour_relation::CORE);
+
+                Simulator::Schedule(t - node->local_time, &BeaconServer::InitiateBeacons, this, neighbour_relation::CORE);
+                Simulator::Schedule(t - node->local_time, &BeaconServer::InitiateBeacons, this, neighbour_relation::CUSTOMER);
+            } else {
+                Simulator::Schedule(t - node->local_time, &BeaconServer::DisseminateBeacons, this, neighbour_relation::CUSTOMER);
+            }
+
+            if (node->GetPathServer() != NULL) {
+                node->events.at(node->GetNDevices() + 1)->Schedule(t - node->local_time + MilliSeconds(100), &BeaconServer::RegisterToLocalPathServer, this);
+            }
+
+            node->events.at(node->GetNDevices() + 1)->Schedule(t - node->local_time + MilliSeconds(150), &BeaconServer::UpdateStatePeriodic, this);
+        }
+    }
+
+    void BeaconServer::RegisterToLocalPathServer() {
+        for (auto const & [key, the_beacon] : path_map_to_beacon) {
+            if (the_beacon->is_new) {
+                PathSegment pathSegment;
+                the_beacon->ExtractPathSegment(pathSegment);
+
+                if (typeid(node) == typeid(SCION_Core_AS)) {
+                    node->GetPathServer()->RegisterCorePathSegment(pathSegment, key);
+                } else {
+                    node->GetPathServer()->RegisterUpPathSegment(pathSegment, key);
+                }
+            }
+        }
+
+
     }
 } // namespace ns3
