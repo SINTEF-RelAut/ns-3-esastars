@@ -4,7 +4,6 @@
 #include "ns3/core-module.h"
 #include "src/SCION/headers/local_scheduler.h"
 #include "ns3/make-event.h"
-#include "src/SCION/headers/beaconing/beacon_server.h"
 
 namespace ns3 {
 

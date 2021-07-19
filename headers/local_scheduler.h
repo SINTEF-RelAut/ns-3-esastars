@@ -15,7 +15,6 @@
 
 
 namespace ns3 {
-    class BeaconServer;
     class LocalScheduler {
     public:
         LocalScheduler (Time* local_time) : local_time(local_time) {
