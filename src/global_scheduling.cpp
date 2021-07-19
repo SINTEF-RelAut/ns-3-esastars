@@ -53,9 +53,7 @@ namespace ns3 {
             node->GetBeaconServer()->ScheduleBeaconing(last_beaconing_event_time);
         }
 
-        for (Time t = ns3::Seconds(0.0); t < last_beaconing_event_time; t += beaconing_period) {
-            Simulator::Schedule(t, &ExecuteLocallyScheduledEvents, nodes);
-        }
+        ScheduleNextEvent(nodes);
 
         for (Time t = ns3::Seconds(0.0); t < last_beaconing_event_time; t += beaconing_period) {
             Simulator::Schedule(t + ns3::Seconds(1.0), &PeriodicCheckPoint, nodes);
