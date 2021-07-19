@@ -11,6 +11,7 @@
 #include "src/SCION/headers/beaconing/beacon_server.h"
 #include "src/SCION/headers/utils.h"
 #include "src/SCION/headers/scion_core_as.h"
+#include "src/SCION/headers/local_scheduler.h"
 #include "ns3/ptr.h"
 #include <omp.h>
 
