@@ -12,6 +12,8 @@
 #include "ns3/map-scheduler.h"
 #include "ns3/scheduler.h"
 
+#include "src/SCION/headers/beaconing/beacon_server.h"
+
 namespace ns3 {
     class BeaconServer;
     class LocalScheduler {
