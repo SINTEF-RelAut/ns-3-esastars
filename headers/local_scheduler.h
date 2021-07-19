@@ -23,35 +23,55 @@ namespace ns3 {
         }
 
         template <typename MEM, typename OBJ>
-        static EventId Schedule (Time const &delay, MEM mem_ptr, OBJ obj);
+        EventId Schedule (Time const &delay, MEM mem_ptr, OBJ obj)
+        {
+            return Schedule (delay, MakeEvent (mem_ptr, obj));
+        }
+
 
         template <typename MEM, typename OBJ,
                 typename T1>
-        static EventId Schedule (Time const &delay, MEM mem_ptr, OBJ obj, T1 a1);
+        EventId Schedule (Time const &delay, MEM mem_ptr, OBJ obj, T1 a1)
+        {
+            return Schedule (delay, MakeEvent (mem_ptr, obj, a1));
+        }
 
         template <typename MEM, typename OBJ,
                 typename T1, typename T2>
-        static EventId Schedule (Time const &delay, MEM mem_ptr, OBJ obj, T1 a1, T2 a2);
-
+        EventId Schedule (Time const &delay, MEM mem_ptr, OBJ obj, T1 a1, T2 a2)
+        {
+            return Schedule (delay, MakeEvent (mem_ptr, obj, a1, a2));
+        }
 
         template <typename MEM, typename OBJ,
                 typename T1, typename T2, typename T3>
-        static EventId Schedule (Time const &delay, MEM mem_ptr, OBJ obj, T1 a1, T2 a2, T3 a3);
+        EventId Schedule (Time const &delay, MEM mem_ptr, OBJ obj, T1 a1, T2 a2, T3 a3)
+        {
+            return Schedule (delay, MakeEvent (mem_ptr, obj, a1, a2, a3));
+        }
 
         template <typename MEM, typename OBJ,
                 typename T1, typename T2, typename T3, typename T4>
-        static EventId Schedule (Time const &delay, MEM mem_ptr, OBJ obj, T1 a1, T2 a2, T3 a3, T4 a4);
+        EventId Schedule (Time const &delay, MEM mem_ptr, OBJ obj, T1 a1, T2 a2, T3 a3, T4 a4)
+        {
+            return Schedule (delay, MakeEvent (mem_ptr, obj, a1, a2, a3, a4));
+        }
 
         template <typename MEM, typename OBJ,
                 typename T1, typename T2, typename T3, typename T4, typename T5>
-        static EventId Schedule (Time const &delay, MEM mem_ptr, OBJ obj,
-                                 T1 a1, T2 a2, T3 a3, T4 a4, T5 a5);
-
+        EventId Schedule (Time const &delay, MEM mem_ptr, OBJ obj,
+                                          T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
+        {
+            return Schedule (delay, MakeEvent (mem_ptr, obj, a1, a2, a3, a4, a5));
+        }
 
         template <typename MEM, typename OBJ,
                 typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>
-        static EventId Schedule (Time const &time, MEM mem_ptr, OBJ obj,
-                                 T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6);
+        EventId Schedule (Time const &time, MEM mem_ptr, OBJ obj,
+                                          T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6)
+        {
+            return Schedule (time, MakeEvent (mem_ptr, obj, a1, a2, a3, a4, a5, a6));
+        }
 
 
 
