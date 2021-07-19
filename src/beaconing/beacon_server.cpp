@@ -313,7 +313,7 @@ namespace ns3 {
     void
     BeaconServer::UpdateTimeAndStats ()
     {
-        now = (uint16_t) node->local_time.ToInteger(Time::MIN);
+        now = (uint16_t) Simulator::Now().ToInteger(Time::MIN);
         next_period = now + (uint16_t) beaconing_period.ToInteger (Time::MIN);
 
 
