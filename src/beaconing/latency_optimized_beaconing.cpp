@@ -142,7 +142,7 @@ namespace ns3 {
                 auto const &interfaces = node->interfaces_per_neighbor_as.at(remote_as_no);
                 for (auto const &self_egress_if_no : interfaces) {
                     ld  latency = the_beacon->latency_stat +
-                                  node->intra_as_latencies.at(LOWER_16_BITS(the_beacon->the_path.back())).at(self_egress_if_no);
+                                  node->latencies_between_interfaces.at(LOWER_16_BITS(the_beacon->the_path.back())).at(self_egress_if_no);
 
                     if (beacon_cnt == 0) {
                         valid_candidates.insert(std::make_pair(self_egress_if_no, std::multimap<ld, beacon*>()));

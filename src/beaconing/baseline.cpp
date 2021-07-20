@@ -91,7 +91,7 @@ namespace ns3 {
                             Ptr<SCION_AS> remote_as = remote_as_if_pair.second;
 
                             ld latency = the_beacon->latency_stat +
-                                         node->intra_as_latencies
+                                         node->latencies_between_interfaces
                                                  .at(LOWER_16_BITS(the_beacon->the_path.back()))
                                                  .at(egress_interface_no);
                             ld bwd =

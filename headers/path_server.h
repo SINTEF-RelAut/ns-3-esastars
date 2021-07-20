@@ -7,18 +7,36 @@
 
 #include <unordered_map>
 #include <vector>
-
+#include <map>
+#include "ns3/nstime.h"
 namespace ns3 {
 
+    typedef uint32_t ia_t;
+    typedef uint64_t src_dst_ia_t;
+
+#define MAKE_IA(isd, as) ((((uint32_t) isd) << 16) | ((uint32_t) as))
 #define GET_ISDN(input) ((uint16_t) ((input) >> 16))
 #define GET_ASN(input)  ((uint16_t) ((input) & 0x0000ffff))
 
-    typedef uint32_t ISD_AS_pair;
+#define MAKE_IA_PAIR(src_ia, dst_ia) ((((uint64_t) src_ia) << 32)| ((uint64_t) dst_ia))
+#define MAKE_SRC_DST_PAIR(src_isd, src_as, dst_isd, dst_as) ((((uint64_t) src_isd) << 48)| (((uint64_t) src_as) << 32) | (((uint64_t) dst_isd) << 16) | ((uint64_t) dst_as))
+#define GET_SRC_ISD(input) ((uint16_t) ((input) >> 48))
+#define GET_SRC_AS(input) ((uint16_t) (((input) & 0x0000ffff00000000) >> 32))
+#define GET_DST_ISD(input) ((uint16_t) (((input) & 0x00000000ffff0000) >> 16))
+#define GET_DST_AS(input) ((uint16_t) ((input) & 0x000000000000ffff))
+
+
+    enum path_segment_type  {
+        CORE_SEG = 0, UP_SEG = 1, DOWN_SEG = 2
+    };
+    class SCION_AS;
 
     struct PathSegment {
-        ISD_AS_pair originator;
+        ia_t originator;
         uint16_t initiation_time;
         uint16_t expiration_time;
+
+        bool reverse;
 
         std::vector<uint64_t> hops;
 
@@ -31,7 +49,13 @@ namespace ns3 {
         hops(pathSegment.hops) {}
     };
 
-    typedef std::unordered_map<std::string, PathSegment*> path_segments_to_one_as;
+    typedef std::unordered_map<std::string, PathSegment*> reg_path_segs_to_one_as_t;
+    typedef std::multimap<uint16_t, const PathSegment*> cached_path_segs_per_src_dst_t;
+
+    typedef std::unordered_map<ia_t, cached_path_segs_per_src_dst_t*> cached_path_segs_per_dst_t;
+
+    typedef std::unordered_map<ia_t, reg_path_segs_to_one_as_t*> registered_path_segs_dataset_t;
+    typedef std::unordered_map<ia_t, cached_path_segs_per_dst_t*> cached_path_segs_dataset_t;
 
     class PathServer {
     public:
@@ -39,15 +63,18 @@ namespace ns3 {
         void RegisterUpPathSegment (PathSegment& pathSegment, std::string key);
         void RegisterDownPathSegment (PathSegment& pathSegment, std::string key);
 
-        void ReceiveRequestForPathSegment (PathSegment& pathSegment, std::string key);
+        void ReceiveRequestForPathSegmentFromHost (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, uint32_t host_addr, uint32_t req_id);
     private:
-        std::unordered_map<ISD_AS_pair, path_segments_to_one_as> registered_core_segments;
-        std::unordered_map<ISD_AS_pair, path_segments_to_one_as> registered_up_segments;
-        std::unordered_map<ISD_AS_pair, path_segments_to_one_as> registered_down_segments;
+        Ptr<SCION_AS> node;
+        Time request_processing_delay;
 
-        std::unordered_map<ISD_AS_pair, path_segments_to_one_as> cached_core_segments;
-        std::unordered_map<ISD_AS_pair, path_segments_to_one_as> cached_up_segments;
-        std::unordered_map<ISD_AS_pair, path_segments_to_one_as> cached_down_segments;
+        registered_path_segs_dataset_t registered_core_segments;
+        registered_path_segs_dataset_t registered_up_segments;
+        registered_path_segs_dataset_t registered_down_segments;
+
+        cached_path_segs_dataset_t cached_core_segments;
+        cached_path_segs_dataset_t cached_up_segments;
+        cached_path_segs_dataset_t cached_down_segments;
     };
 }
 

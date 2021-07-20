@@ -340,10 +340,16 @@ namespace ns3 {
             }
 
             if (node->GetPathServer() != NULL) {
-                node->events.at(node->GetNDevices())->Schedule(t - node->local_time + MilliSeconds(100), &BeaconServer::RegisterToLocalPathServer, this);
+                node->events.at(node->GetBeaconServerSchedulerIdx())
+                ->Schedule(t - node->local_time + node->latency_between_path_server_and_beacon_server,
+                           &BeaconServer::RegisterToLocalPathServer,
+                           this);
             }
 
-            node->events.at(node->GetNDevices())->Schedule(t - node->local_time + MilliSeconds(150), &BeaconServer::UpdateStatePeriodic, this);
+            node->events.at(node->GetBeaconServerSchedulerIdx())
+            ->Schedule(t - node->local_time + MilliSeconds(150),
+                       &BeaconServer::UpdateStatePeriodic,
+                       this);
         }
     }
 

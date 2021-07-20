@@ -25,11 +25,13 @@
 
 
 namespace ns3 {
+
     enum neighbour_relation {
         CORE = 0, PEER = 1, CUSTOMER = 2, PROVIDER = 3
     };
 
     class BeaconServer;
+    class Host;
 
     class SCION_AS : public Node {
     public:
@@ -39,17 +41,26 @@ namespace ns3 {
                   isd_number(isd_number),
                   as_number(as_number),
                   local_time (local_time)
-        {}
+        {
+            ia_addr = (((uint32_t) isd_number) << 16) | ((uint32_t) as_number);
+        }
 
         uint16_t isd_number;
         /** @brief The autonomous system number of this node. */
         uint16_t as_number;
 
+        ia_t ia_addr;
+
         Time local_time;
         /** @brief Largest amount of bandwidth found on any border router link. */
         int32_t AS_max_bwd;
 
-        std::vector<LocalScheduler*> events; // a vector of (#interfaces + #hosts + #services) schedulers
+        std::vector<LocalScheduler*> events; // a vector of (#interfaces +  #services + #hosts) schedulers
+
+        std::vector<Time> latencies_between_hosts_and_path_server;
+        std::vector<Time> latencies_between_interfaces_and_beacon_server;
+        Time latency_between_path_server_and_beacon_server;
+
 
 
 
@@ -78,7 +89,7 @@ namespace ns3 {
         std::vector<std::pair<ld, ld>> interfaces_coordinates;
 
         /** @brief Holds the estimated latencies between the border routers inside this AS.*/
-        std::vector<std::vector<ld>> intra_as_latencies;
+        std::vector<std::vector<ld>> latencies_between_interfaces;
         /** @brief Holds the bandwidths of the links between border routers of ASes. */
         std::vector<int32_t> inter_as_bwds;
 
@@ -86,7 +97,7 @@ namespace ns3 {
         }
 
         /**
-         * @brief Initializes the intra_as_latencies and the as_max_bw fields.
+         * @brief Initializes the latencies_between_interfaces and the as_max_bw fields.
          */
 
         void DoInitializations();
@@ -106,6 +117,14 @@ namespace ns3 {
 
         PathServer* GetPathServer();
 
+        Host* GetHost(uint32_t host_addr);
+
+        uint32_t GetPathServerSchedulerIdx();
+
+        uint32_t GetBeaconServerSchedulerIdx();
+
+        uint32_t GetHostSchedulerIdx(uint32_t host_addr);
+
         void AdvanceTime (ns3::Time advance);
 
         void ExecuteLocalScheduler();
@@ -116,7 +135,7 @@ namespace ns3 {
     protected:
         BeaconServer *beaconServer;
         PathServer *pathServer;
-
+        std::vector<Host*> hosts;
     private:
         /**
          *  @brief Returns the average as-level diversity and link-level diversity scores of the passed beacon compared to all other beacons the node has which

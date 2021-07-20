@@ -16,11 +16,11 @@ namespace ns3 {
 
     void
     SCION_AS::DoInitializations() {
-        intra_as_latencies.resize(GetNDevices());
+        latencies_between_interfaces.resize(GetNDevices());
         events.resize(GetNDevices() + 3); // 3 = path server + beacon server + 1 host
 
         for (uint64_t i = 0; i < GetNDevices(); ++i) {
-            intra_as_latencies.at(i).resize(GetNDevices());
+            latencies_between_interfaces.at(i).resize(GetNDevices());
         }
 
         for (uint64_t i = 0; i < GetNDevices() + 3; ++i) {
@@ -30,10 +30,10 @@ namespace ns3 {
 
         for (uint32_t i = 0; i < GetNDevices(); ++i) {
             for (uint32_t j = i + 1; j < GetNDevices(); ++j) {
-                intra_as_latencies.at(i).at(j) = calculate_great_circle_latency(
+                latencies_between_interfaces.at(i).at(j) = calculate_great_circle_latency(
                         interfaces_coordinates.at(i).first, interfaces_coordinates.at(i).second,
                         interfaces_coordinates.at(j).first, interfaces_coordinates.at(j).second);
-                intra_as_latencies.at(j).at(i) = intra_as_latencies.at(i).at(j);
+                latencies_between_interfaces.at(j).at(i) = latencies_between_interfaces.at(i).at(j);
             }
         }
 
@@ -154,7 +154,28 @@ namespace ns3 {
         return this->pathServer;
     }
 
-    void SCION_AS::SetPathServer(PathServer* the_pathServer) {
+    void
+    SCION_AS::SetPathServer(PathServer* the_pathServer) {
         this->pathServer = the_pathServer;
+    }
+
+    uint32_t
+    SCION_AS::GetPathServerSchedulerIdx() {
+        return GetNDevices() + 1;
+    }
+
+    uint32_t
+    SCION_AS::GetBeaconServerSchedulerIdx() {
+        return GetNDevices();
+    }
+
+    uint32_t
+    SCION_AS::GetHostSchedulerIdx(uint32_t host_addr) {
+        return GetNDevices() + 2 + host_addr;
+    }
+
+    Host*
+    SCION_AS::GetHost(uint32_t host_addr) {
+        return hosts.at(host_addr);
     }
 }

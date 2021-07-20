@@ -106,7 +106,7 @@ Public Member Functions</h2></td></tr>
 &#160;</td><td class="memItemRight" valign="bottom"><b>SCION_Node</b> (uint16_t <a class="el" href="classSCION__Node.html#a6068624a3f08615a041d56a6be78ade8">as_number</a>, uint32_t system_id, <a class="el" href="scion__node_8h.html#abb2a32a4be747ed1f0e8ac5748c1ede0">coefficients</a> coefs, const <a class="el" href="scion__node_8h.html#a71ee331b047c80d210be2505943896e5">simulator_params</a> &amp;periods, <a class="el" href="classBeaconingStrategy.html">BeaconServer</a> *<a class="el" href="classSCION__Node.html#aff86d68fe418111d16d6ba50593da733">beaconServer</a>)</td></tr>
 <tr class="separator:a382b8549450fda9d3a7ad353cada3158"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac6dcd0f594482d2999d2bbcc946fd4c8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSCION__Node.html#ac6dcd0f594482d2999d2bbcc946fd4c8">DoInitializations</a> ()</td></tr>
-<tr class="memdesc:ac6dcd0f594482d2999d2bbcc946fd4c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializes the intra_as_latencies and the as_max_bw fields.  <a href="classSCION__Node.html#ac6dcd0f594482d2999d2bbcc946fd4c8">More...</a><br /></td></tr>
+<tr class="memdesc:ac6dcd0f594482d2999d2bbcc946fd4c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializes the latencies_between_interfaces and the as_max_bw fields.  <a href="classSCION__Node.html#ac6dcd0f594482d2999d2bbcc946fd4c8">More...</a><br /></td></tr>
 <tr class="separator:ac6dcd0f594482d2999d2bbcc946fd4c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a21e1a4f302fe97d0fe8d4768c4148802"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSCION__Node.html#a21e1a4f302fe97d0fe8d4768c4148802">CoreBeaconing</a> ()=0</td></tr>
 <tr class="memdesc:a21e1a4f302fe97d0fe8d4768c4148802"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called to initiate CoreBeaconing.  <a href="classSCION__Node.html#a21e1a4f302fe97d0fe8d4768c4148802">More...</a><br /></td></tr>
@@ -171,7 +171,7 @@ std::unordered_map&lt; uint16_t, std::vector&lt; std::pair&lt; uint16_t, <a clas
 <tr class="memdesc:aed234a4d76a6cf559e074163850d15b7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Holds the coordinates of the border router locations between ASes.  <a href="classSCION__Node.html#aed234a4d76a6cf559e074163850d15b7">More...</a><br /></td></tr>
 <tr class="separator:aed234a4d76a6cf559e074163850d15b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0a2374811b86841d7a412f88ad920866"><td class="memItemLeft" align="right" valign="top"><a id="a0a2374811b86841d7a412f88ad920866"></a>
-std::vector&lt; std::vector&lt; ld &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSCION__Node.html#a0a2374811b86841d7a412f88ad920866">intra_as_latencies</a></td></tr>
+std::vector&lt; std::vector&lt; ld &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSCION__Node.html#a0a2374811b86841d7a412f88ad920866">latencies_between_interfaces</a></td></tr>
 <tr class="memdesc:a0a2374811b86841d7a412f88ad920866"><td class="mdescLeft">&#160;</td><td class="mdescRight">Holds the estimated latencies between the border routers inside this AS. <br /></td></tr>
 <tr class="separator:a0a2374811b86841d7a412f88ad920866"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6ad0a50bcbeb50b5118bcda85d3d9b22"><td class="memItemLeft" align="right" valign="top"><a id="a6ad0a50bcbeb50b5118bcda85d3d9b22"></a>
@@ -275,7 +275,7 @@ Protected Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Initializes the intra_as_latencies and the as_max_bw fields. </p>
+<p>Initializes the latencies_between_interfaces and the as_max_bw fields. </p>
 <p>The intra as latencies are estimated by calculating the great circle latencies based on the interface coordinates. Also initializes AS_max_bwd with the highest bandwith found at any border router of this AS.</p>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="utils_8h.html#a493f44880aa41ff5b881d58618f54d3e" title="Estimates the latency [milliseconds] between two routers given their coordinates using the great circ...">calculate_great_circle_latency</a> </dd></dl>
 

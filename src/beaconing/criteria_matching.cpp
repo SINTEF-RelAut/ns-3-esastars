@@ -251,7 +251,7 @@ namespace ns3 {
                 remote_ingress_if_no = node->GetRemoteAsInfo(max_score_iface).first;
 
                 ld latency = max_score_beacon->latency_stat +
-                             node->intra_as_latencies.at(LOWER_16_BITS(max_score_beacon->the_path.back())).at(
+                             node->latencies_between_interfaces.at(LOWER_16_BITS(max_score_beacon->the_path.back())).at(
                                      max_score_iface);
                 ld bwd = max_score_beacon->bwd_stat > (ld) node->inter_as_bwds.at(max_score_iface)
                          ? (ld) node->inter_as_bwds.at(max_score_iface)
@@ -318,7 +318,7 @@ namespace ns3 {
     inline ld
     CriteriaMatching::calculate_raw_score (beacon* the_beacon, uint16_t dst_as_no, uint16_t self_egress_if_no, Ptr<SCION_AS> remote_as) {
         ld latency = the_beacon->latency_stat +
-                     node->intra_as_latencies.at(LOWER_16_BITS(the_beacon->the_path.back())).at(self_egress_if_no);
+                     node->latencies_between_interfaces.at(LOWER_16_BITS(the_beacon->the_path.back())).at(self_egress_if_no);
         ld bwd = the_beacon->bwd_stat > (ld) node->inter_as_bwds.at(self_egress_if_no)
                  ? (ld) node->inter_as_bwds.at(self_egress_if_no)
                  : the_beacon->bwd_stat;

@@ -86,8 +86,6 @@ namespace ns3 {
 
         Ptr<Scheduler> m_events;
 
-        Time* local_time;
-
         /** Next event unique id. */
         uint32_t m_uid;
 //        /** Unique id of the current event. */
