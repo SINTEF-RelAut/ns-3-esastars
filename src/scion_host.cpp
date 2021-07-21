@@ -114,8 +114,6 @@ namespace ns3 {
         packet.path_reversed = false;
 
         try_sending(packet, 0);
-
-
     }
 
     void SCIONHost::try_sending(SCIONPacket packet, uint16_t count) {
@@ -139,7 +137,7 @@ namespace ns3 {
     }
 
     void SCIONHost::send_packet(SCIONPacket packet) {
-        NS_LOG_LOGIC("packet sent");
+        NS_LOG_DEBUG("packet sent");
     }
 
     void SCIONHost::request_for_path_segments(ia_t dst_ia) {
