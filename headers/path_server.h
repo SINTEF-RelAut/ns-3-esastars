@@ -15,11 +15,8 @@
 #include "src/SCION/headers/scion_host.h"
 
 namespace ns3 {
-
-
     class SCION_AS;
     class SCIONHost;
-
 
     class PathServer {
     public:
