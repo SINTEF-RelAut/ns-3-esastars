@@ -12,12 +12,13 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <map>
+
 #include "ns3/nstime.h"
 #include "ns3/ptr.h"
+
 #include "src/SCION/headers/beaconing/beacon.h"
 #include "src/SCION/headers/scion_as.h"
 #include "src/SCION/headers/local_scheduler.h"
-
 
 namespace ns3 {
 #define NUM_CORE 128

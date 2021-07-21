@@ -12,11 +12,9 @@
 #include "ns3/nstime.h"
 
 #include "src/SCION/headers/path_segment.h"
-#include "src/SCION/headers/scion_host.h"
 
 namespace ns3 {
     class SCION_AS;
-    class SCIONHost;
 
     class PathServer {
     public:

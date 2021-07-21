@@ -6,6 +6,7 @@
 
 #include "src/SCION/headers/path_server.h"
 #include "src/SCION/headers/scion_core_as.h"
+#include "src/SCION/headers/scion_host.h"
 
 namespace ns3 {
     void PathServer::RegisterCorePathSegment (PathSegment& pathSegment, std::string key) {
