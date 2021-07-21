@@ -13,7 +13,7 @@ namespace ns3 {
         pathSegment.initiation_time = next_initiation_time;
         pathSegment.expiration_time = next_expiration_time;
 
-        pathSegment.originator = (((uint32_t) 0) << 16) | (((uint32_t) UPPER_16_BITS(the_path.at(0))));
+        pathSegment.originator = (((uint32_t) the_isd_path.at(0)) << 16) | (((uint32_t) UPPER_16_BITS(the_path.at(0))));
 
         uint64_t previous_hop = 0;
         for(std::vector<uint64_t>::reverse_iterator hop = the_path.rbegin(); hop != the_path.rend(); ++hop) {
