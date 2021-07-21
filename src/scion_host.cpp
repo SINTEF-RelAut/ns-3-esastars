@@ -11,7 +11,8 @@
 namespace ns3 {
 
     void SCIONHost::ReceiveRegisteredPathSegments (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, reg_path_segs_to_one_as_t* path_segments) {
-        for (auto const & [key, path_segment] : *path_segments) {
+        for (auto const & key_path_segment_pair : *path_segments) {
+            PathSegment* path_segment = key_path_segment_pair.second;
             if (path_segment->expiration_time > node->local_time.GetMinutes()) {
                 cache_path_segment ( path_type,  src_ia, dst_ia,  path_segment);
             }
@@ -138,7 +139,6 @@ namespace ns3 {
     }
 
     void SCIONHost::request_for_path_segments(ia_t dst_ia) {
-        uint16_t dst_as = GET_ASN(dst_ia);
         uint16_t dst_isd = GET_ISDN(dst_ia);
 
         send_request_for_path_segments(path_segment_type::UP_SEG, node->ia_addr, 0);
