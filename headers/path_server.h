@@ -9,6 +9,8 @@
 #include <vector>
 #include <map>
 #include "ns3/nstime.h"
+#include "src/SCION/headers/host.h"
+
 namespace ns3 {
 
     typedef uint32_t ia_t;

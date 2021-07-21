@@ -5,7 +5,7 @@
 #include "src/SCION/headers/path_server.h"
 #include "src/SCION/headers/scion_as.h"
 #include "src/SCION/headers/scion_core_as.h"
-#include "src/SCION/headers/host.h"
+
 #include <iostream>
 
 namespace ns3 {
