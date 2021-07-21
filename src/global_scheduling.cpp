@@ -61,7 +61,7 @@ namespace ns3 {
                         ->Schedule(Minutes(180),
                                    &SCIONHost::SendArbitraryPacket,
                                    node->GetHost(0),
-                                   DynamicCast<SCION_AS>(nodes.Get(0))->ia_addr, 1);
+                                   DynamicCast<SCION_AS>(nodes.Get(1))->ia_addr, 1);
             }
         }
 
