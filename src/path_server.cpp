@@ -64,21 +64,21 @@ namespace ns3 {
             if (dst_ia == 0) {
                 for (auto const & [registered_dst_ia, paths_to_dst_ia] : registered_core_segments) {
                     if (GET_ISDN(registered_dst_ia) == node->isd_number) {
-                        node->events.at(node->GetHostSchedulerIdx(host_addr))
-                        ->Schedule(request_processing_delay + node->latencies_between_hosts_and_path_server.at(host_addr),
-                                   &Host::ReceiveRegisteredPathSegments,
-                                   node->GetHost(host_addr),
-                                   path_segment_type::CORE_SEG, node->ia_addr, dst_ia, paths_to_dst_ia);
+//                        node->events.at(node->GetHostSchedulerIdx(host_addr))
+//                        ->Schedule(request_processing_delay + node->latencies_between_hosts_and_path_server.at(host_addr),
+//                                   &Host::ReceiveRegisteredPathSegments,
+//                                   node->GetHost(host_addr),
+//                                   path_segment_type::CORE_SEG, node->ia_addr, dst_ia, paths_to_dst_ia);
                     }
                 }
             } else {
                 for (auto const & [registered_dst_ia, paths_to_dst_ia] : registered_core_segments) {
                     if (GET_ISDN(registered_dst_ia) == dst_ia) {
-                        node->events.at(node->GetHostSchedulerIdx(host_addr))
-                                ->Schedule(request_processing_delay + node->latencies_between_hosts_and_path_server.at(host_addr),
-                                           &Host::ReceiveRegisteredPathSegments,
-                                           node->GetHost(host_addr),
-                                           path_segment_type::CORE_SEG, node->ia_addr, dst_ia, paths_to_dst_ia);
+//                        node->events.at(node->GetHostSchedulerIdx(host_addr))
+//                                ->Schedule(request_processing_delay + node->latencies_between_hosts_and_path_server.at(host_addr),
+//                                           &Host::ReceiveRegisteredPathSegments,
+//                                           node->GetHost(host_addr),
+//                                           path_segment_type::CORE_SEG, node->ia_addr, dst_ia, paths_to_dst_ia);
                     }
                 }
             }
