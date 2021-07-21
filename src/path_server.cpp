@@ -67,24 +67,24 @@ namespace ns3 {
         if (seg_type == path_segment_type::CORE_SEG && DynamicCast<SCION_Core_AS>(node) != NULL) {
             if (dst_ia == 0) {
                 for (auto const & [registered_dst_ia, paths_to_dst_ia] : registered_core_segments) {
-                    NS_LOG_DEBUG(GET_ISDN(registered_dst_ia) << " " <<  node->isd_number);
+                    NS_LOG_DEBUG(GET_ISDN(registered_dst_ia) << ":" << GET_ASN(registered_dst_ia) << " " <<  GET_ISDN(node->isd_number) << ":" << GET_ASN(node->isd_number));
                     if (GET_ISDN(registered_dst_ia) == node->isd_number) {
                         node->events.at(node->GetHostSchedulerIdx(host_addr))
                         ->Schedule(request_processing_delay + node->latencies_between_hosts_and_path_server.at(host_addr),
                                    &SCIONHost::ReceiveRegisteredPathSegments,
                                    node->GetHost(host_addr),
-                                   path_segment_type::CORE_SEG, node->ia_addr, dst_ia, paths_to_dst_ia);
+                                   path_segment_type::CORE_SEG, node->ia_addr, registered_dst_ia, paths_to_dst_ia);
                     }
                 }
             } else {
                 for (auto const & [registered_dst_ia, paths_to_dst_ia] : registered_core_segments) {
-                    NS_LOG_DEBUG(GET_ISDN(registered_dst_ia) << " " <<  GET_ISDN(dst_ia));
+                    NS_LOG_DEBUG(GET_ISDN(registered_dst_ia) << ":" << GET_ASN(registered_dst_ia) << " " <<  GET_ISDN(dst_ia) << ":" << GET_ASN(dst_ia));
                     if (GET_ISDN(registered_dst_ia) == GET_ISDN(dst_ia)) {
                         node->events.at(node->GetHostSchedulerIdx(host_addr))
                                 ->Schedule(request_processing_delay + node->latencies_between_hosts_and_path_server.at(host_addr),
                                            &SCIONHost::ReceiveRegisteredPathSegments,
                                            node->GetHost(host_addr),
-                                           path_segment_type::CORE_SEG, node->ia_addr, dst_ia, paths_to_dst_ia);
+                                           path_segment_type::CORE_SEG, node->ia_addr, registered_dst_ia, paths_to_dst_ia);
                     }
                 }
             }
