@@ -6,7 +6,7 @@
 #include <cassert>
 #include "src/SCION/headers/host.h"
 #include "src/SCION/headers/path_server.h"
-
+#include "src/SCION/headers/path_segment.h"
 namespace ns3 {
 
     void Host::remove_expired_segments() {
