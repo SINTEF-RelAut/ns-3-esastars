@@ -9,7 +9,7 @@
 #define SCION_BEACONING_SIMMULATOR_BEACON_H
 #include <string>
 #include <vector>
-#include "src/SCION/headers/path_server.h"
+#include "src/SCION/headers/path_segment.h"
 namespace ns3 {
 /**
  * @brief in bytes

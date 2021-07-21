@@ -4,7 +4,7 @@
 
 #ifndef NS_3_BEACONING_SIMULATOR_SCION_PACKET_H
 #define NS_3_BEACONING_SIMULATOR_SCION_PACKET_H
-#include "src/SCION/headers/path_server.h"
+#include "src/SCION/headers/path_segment.h"
 #include "ns3/nstime.h"
 namespace ns3 {
     typedef uint32_t host_addr;
