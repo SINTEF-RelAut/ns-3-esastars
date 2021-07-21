@@ -56,12 +56,12 @@ namespace ns3 {
             Ptr<SCION_AS> node = DynamicCast<SCION_AS>(nodes.Get(i));
             node->GetBeaconServer()->ScheduleBeaconing(last_beaconing_event_time);
 
-            if (i != 0) {
+            if (i == 0) {
                 node->events.at(node->GetHostSchedulerIdx(0))
                         ->Schedule(Minutes(180),
                                    &SCIONHost::SendArbitraryPacket,
                                    node->GetHost(0),
-                                   DynamicCast<SCION_AS>(nodes.Get(0))->ia_addr, 0);
+                                   DynamicCast<SCION_AS>(nodes.Get(0))->ia_addr, 1);
             }
         }
 
