@@ -24,7 +24,7 @@ namespace ns3 {
         }
 
         for (uint64_t i = 0; i < GetNDevices() + 3; ++i) {
-            events.at(i) = new LocalScheduler(&local_time);
+            events.at(i) = new LocalScheduler();
         }
 
 

@@ -17,7 +17,7 @@
 namespace ns3 {
     class LocalScheduler {
     public:
-        LocalScheduler (Time* local_time) : local_time(local_time) {
+        LocalScheduler () {
             m_events = new MapScheduler();
         }
 
