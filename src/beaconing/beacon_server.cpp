@@ -6,14 +6,16 @@
  * @brief Implements the member functions of the BeaconServer.
  */
 
+#include <omp.h>
+
 #include "ns3/point-to-point-net-device.h"
+#include "ns3/ptr.h"
 
 #include "src/SCION/headers/beaconing/beacon_server.h"
 #include "src/SCION/headers/utils.h"
 #include "src/SCION/headers/scion_core_as.h"
 #include "src/SCION/headers/local_scheduler.h"
-#include "ns3/ptr.h"
-#include <omp.h>
+#include "src/SCION/headers/path_server.h"
 
 namespace ns3 {
     void BeaconServer::SetNode(Ptr<SCION_AS> the_node) {
