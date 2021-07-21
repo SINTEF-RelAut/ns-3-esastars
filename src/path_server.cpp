@@ -43,7 +43,7 @@ namespace ns3 {
         pathSegment.reverse = false;
     }
 
-    void PathServer::ReceiveRequestForPathSegmentFromHost (path_segment_type seg_type, ia_t src_ia, ia_t dst_ia, uint32_t host_addr, uint32_t req_id) {
+    void PathServer::ReceiveRequestForPathSegmentFromHost (path_segment_type seg_type, ia_t src_ia, ia_t dst_ia, uint32_t host_addr) {
         if (seg_type == path_segment_type::UP_SEG) {
             return; // TODO
         }
@@ -69,7 +69,7 @@ namespace ns3 {
                         ->Schedule(request_processing_delay + node->latencies_between_hosts_and_path_server.at(host_addr),
                                    &Host::ReceiveRegisteredPathSegments,
                                    node->GetHost(host_addr),
-                                   path_segment_type::CORE_SEG, node->ia_addr, dst_ia, req_id, registered_core_segments.at(dst_ia));
+                                   path_segment_type::CORE_SEG, node->ia_addr, dst_ia, registered_core_segments.at(dst_ia));
                     }
                 }
             } else {
@@ -80,7 +80,7 @@ namespace ns3 {
                                 ->Schedule(request_processing_delay + node->latencies_between_hosts_and_path_server.at(host_addr),
                                            &Host::ReceiveRegisteredPathSegments,
                                            node->GetHost(host_addr),
-                                           path_segment_type::CORE_SEG, node->ia_addr, dst_ia, req_id, registered_core_segments.at(dst_ia));
+                                           path_segment_type::CORE_SEG, node->ia_addr, dst_ia, registered_core_segments.at(dst_ia));
                     }
                 }
             }

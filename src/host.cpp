@@ -164,7 +164,7 @@ namespace ns3 {
         }
     }
 
-    void Host::ReceiveRegisteredPathSegments (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, uint32_t req_id,  reg_path_segs_to_one_as_t* path_segments) {
+    void Host::ReceiveRegisteredPathSegments (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, reg_path_segs_to_one_as_t* path_segments) {
         for (auto const & [key, path_segment] : *path_segments) {
             if (path_segment->expiration_time > node->local_time.GetMinutes()) {
                 cache_path_segment ( path_type,  src_ia, dst_ia,  path_segment);
@@ -173,7 +173,7 @@ namespace ns3 {
     }
 
 
-    void Host::ReceiveCachedPathSegments (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, uint32_t req_id,  cached_path_segs_per_dst_t* path_seg) {
+    void Host::ReceiveCachedPathSegments (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, cached_path_segs_per_dst_t* path_seg) {
 
     }
 
@@ -184,6 +184,6 @@ namespace ns3 {
         ->Schedule(node->latencies_between_hosts_and_path_server.at(local_address),
                    &ns3::PathServer::ReceiveRequestForPathSegmentFromHost,
                    node->GetPathServer(),
-                   path_type, src_ia, dst_ia, local_address, unique_path_req_id);
+                   path_type, src_ia, dst_ia, local_address);
     }
 }
