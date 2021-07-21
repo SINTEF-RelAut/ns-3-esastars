@@ -26,16 +26,12 @@ namespace ns3 {
         void ReceiveCachedPathSegments (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, cached_path_segs_per_dst_t* path_seg);
         void SendArbitraryPacket(ia_t dst_ia, uint32_t host_address);
     private:
-
+        Ptr<SCION_AS> node;
+        uint32_t local_address;
         double  latitude;
         double  longitude;
 
-        Ptr<SCION_AS> node;
-
-        uint32_t local_address;
-
         uint32_t unique_path_req_id;
-
 
         cached_path_segs_dataset_t cached_up_path_segments;
         cached_path_segs_dataset_t cached_core_path_segments;
