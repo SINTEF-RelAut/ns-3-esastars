@@ -1,16 +1,19 @@
 //
 // Created by seyedali on 17.07.21.
 //
-#include <ns3/simulator.h>
+
+#include <omp.h>
+
+#include "ns3/simulator.h"
+#include "ns3/nstime.h"
 #include "ns3/ptr.h"
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
 #include "ns3/point-to-point-helper.h"
-#include <ns3/nstime.h>
+
 #include "src/SCION/headers/scion_as.h"
 #include "src/SCION/headers/beaconing/beacon_server.h"
 #include "src/SCION/headers/global_scheduling.h"
-#include <omp.h>
 
 namespace ns3 {
     void ExecuteLocallyScheduledEvents (NodeContainer nodes) {

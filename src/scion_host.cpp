@@ -2,13 +2,15 @@
 // Created by seyedali on 19.07.21.
 //
 #include <vector>
-#include "src/SCION/headers/scion_core_as.h"
 #include <cassert>
-#include "src/SCION/headers/host.h"
+
+#include "src/SCION/headers/scion_core_as.h"
+#include "src/SCION/headers/scion_host.h"
 #include "src/SCION/headers/path_segment.h"
+
 namespace ns3 {
 
-    void Host::ReceiveRegisteredPathSegments (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, reg_path_segs_to_one_as_t* path_segments) {
+    void SCIONHost::ReceiveRegisteredPathSegments (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, reg_path_segs_to_one_as_t* path_segments) {
         for (auto const & [key, path_segment] : *path_segments) {
             if (path_segment->expiration_time > node->local_time.GetMinutes()) {
                 cache_path_segment ( path_type,  src_ia, dst_ia,  path_segment);
@@ -16,15 +18,15 @@ namespace ns3 {
         }
     }
 
-    void Host::ReceiveCachedPathSegments (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, cached_path_segs_per_dst_t* path_seg) {
+    void SCIONHost::ReceiveCachedPathSegments (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, cached_path_segs_per_dst_t* path_seg) {
 
     }
 
-    void Host::remove_expired_segments() {
+    void SCIONHost::remove_expired_segments() {
 
     }
 
-    void Host::search_in_cached_segments(ia_t dst_ia, std::vector<PathSegment*>& the_path) {
+    void SCIONHost::search_in_cached_segments(ia_t dst_ia, std::vector<PathSegment*>& the_path) {
         int16_t dst_in_which_cache = -1;
 
         if (cached_core_path_segments.find(dst_ia) != cached_core_path_segments.end()) {
@@ -99,7 +101,7 @@ namespace ns3 {
         return;
     }
 
-    void Host::SendArbitraryPacket(ia_t dst_ia, uint32_t host_address) {
+    void SCIONHost::SendArbitraryPacket(ia_t dst_ia, uint32_t host_address) {
         SCIONPacket packet;
         packet.payload = NULL;
         packet.src_ia = node->ia_addr;
@@ -113,7 +115,7 @@ namespace ns3 {
 
     }
 
-    void Host::try_sending(SCIONPacket packet, uint16_t count) {
+    void SCIONHost::try_sending(SCIONPacket packet, uint16_t count) {
         std::vector<PathSegment*> path;
         search_in_cached_segments(packet.dst_ia, path);
 
@@ -127,15 +129,15 @@ namespace ns3 {
             request_for_path_segments(packet.dst_ia);
         } else if (path.size() == 0 && count < 3)  {
             node->events.at(node->GetHostSchedulerIdx(local_address))->
-            Schedule(MilliSeconds(300), &Host::try_sending, this, packet, (count + 1));
+            Schedule(MilliSeconds(300), &SCIONHost::try_sending, this, packet, (count + 1));
         }
     }
 
-    void Host::send_packet(SCIONPacket packet) {
+    void SCIONHost::send_packet(SCIONPacket packet) {
 
     }
 
-    void Host::request_for_path_segments(ia_t dst_ia) {
+    void SCIONHost::request_for_path_segments(ia_t dst_ia) {
         uint16_t dst_as = GET_ASN(dst_ia);
         uint16_t dst_isd = GET_ISDN(dst_ia);
 
@@ -151,7 +153,7 @@ namespace ns3 {
     }
 
 
-    void Host::cache_path_segment (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, PathSegment* path_seg){
+    void SCIONHost::cache_path_segment (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, PathSegment* path_seg){
         cached_path_segs_dataset_t* cached_path_segs_data_set;
 
         if (path_type == path_segment_type::CORE_SEG) {
@@ -176,7 +178,7 @@ namespace ns3 {
     }
 
 
-    void Host::send_request_for_path_segments(path_segment_type path_type, ia_t src_ia, ia_t dst_ia) {
+    void SCIONHost::send_request_for_path_segments(path_segment_type path_type, ia_t src_ia, ia_t dst_ia) {
         unique_path_req_id++;
 
         node->events.at(node->GetPathServerSchedulerIdx())

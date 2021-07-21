@@ -8,15 +8,17 @@
 #include <unordered_map>
 #include <vector>
 #include <map>
+
 #include "ns3/nstime.h"
+
 #include "src/SCION/headers/path_segment.h"
-#include "src/SCION/headers/host.h"
+#include "src/SCION/headers/scion_host.h"
 
 namespace ns3 {
 
 
     class SCION_AS;
-    class Host;
+    class SCIONHost;
 
 
     class PathServer {

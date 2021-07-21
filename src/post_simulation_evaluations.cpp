@@ -12,7 +12,7 @@
 #include "ns3/network-module.h"
 #include "ns3/point-to-point-helper.h"
 #include "ns3/point-to-point-channel.h"
-#include <ns3/nstime.h>
+#include "ns3/nstime.h"
 
 #include "src/SCION/headers/utils.h"
 #include "src/SCION/headers/beaconing/beacon_server.h"

@@ -9,7 +9,9 @@
 #ifndef SCION_BEACONING_SIMMULATOR_SCION_AS_H
 #define SCION_BEACONING_SIMMULATOR_SCION_AS_H
 
-#include "src/SCION/headers/beaconing/beacon.h"
+#include <unordered_set>
+#include <unordered_map>
+#include <vector>
 
 #include "ns3/network-module.h"
 #include "ns3/node.h"
@@ -17,12 +19,10 @@
 #include "ns3/point-to-point-net-device.h"
 #include "ns3/point-to-point-channel.h"
 #include "ns3/map-scheduler.h"
-#include "src/SCION/headers/local_scheduler.h"
-#include "path_server.h"
-#include <unordered_set>
-#include <unordered_map>
-#include <vector>
 
+#include "src/SCION/headers/beaconing/beacon.h"
+#include "src/SCION/headers/local_scheduler.h"
+#include "src/SCION/headers/scion_packet.h"
 
 namespace ns3 {
 
@@ -31,7 +31,8 @@ namespace ns3 {
     };
 
     class BeaconServer;
-    class Host;
+    class SCIONHost;
+    class PathServer;
 
     class SCION_AS : public Node {
     public:
@@ -43,6 +44,9 @@ namespace ns3 {
                   local_time (local_time)
         {
             ia_addr = (((uint32_t) isd_number) << 16) | ((uint32_t) as_number);
+        }
+
+        virtual ~SCION_AS() {
         }
 
         uint16_t isd_number;
@@ -93,8 +97,7 @@ namespace ns3 {
         /** @brief Holds the bandwidths of the links between border routers of ASes. */
         std::vector<int32_t> inter_as_bwds;
 
-        virtual ~SCION_AS() {
-        }
+
 
         /**
          * @brief Initializes the latencies_between_interfaces and the as_max_bw fields.
@@ -117,7 +120,7 @@ namespace ns3 {
 
         PathServer* GetPathServer();
 
-        Host* GetHost(uint32_t host_addr);
+        SCIONHost* GetHost(uint32_t host_addr);
 
         uint32_t GetPathServerSchedulerIdx();
 
@@ -135,7 +138,7 @@ namespace ns3 {
     protected:
         BeaconServer *beaconServer;
         PathServer *pathServer;
-        std::vector<Host*> hosts;
+        std::vector<SCIONHost*> hosts;
     private:
         /**
          *  @brief Returns the average as-level diversity and link-level diversity scores of the passed beacon compared to all other beacons the node has which

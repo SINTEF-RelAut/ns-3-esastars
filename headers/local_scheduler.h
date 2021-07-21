@@ -8,11 +8,8 @@
 #include "ns3/event-impl.h"
 #include "ns3/event-id.h"
 #include "ns3/nstime.h"
-
 #include "ns3/map-scheduler.h"
 #include "ns3/scheduler.h"
-
-
 
 namespace ns3 {
     class LocalScheduler {

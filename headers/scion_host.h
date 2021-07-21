@@ -2,28 +2,33 @@
 // Created by seyedali on 19.07.21.
 //
 
-#ifndef NS_3_BEACONING_SIMULATOR_HOST_H
-#define NS_3_BEACONING_SIMULATOR_HOST_H
+#ifndef NS_3_BEACONING_SIMULATOR_SCION_HOST_H
+#define NS_3_BEACONING_SIMULATOR_SCION_HOST_H
 
 #include <unordered_map>
+#include "ns3/nstime.h"
+
 #include "src/SCION/headers/path_segment.h"
 #include "src/SCION/headers/path_server.h"
-#include "ns3/nstime.h"
-#include "scion_packet.h"
+#include "src/SCION/headers/scion_packet.h"
 
 namespace ns3 {
 
     class SCION_AS;
     class PathServer;
 
-    class Host {
+    class SCIONHost {
 
     public:
+        SCIONHost(Ptr<SCION_AS> node, uint32_t local_address, ld latitude, ld longitude) : node(node), local_address(local_address),  latitude (latitude), longitude (longitude) {}
+
         void ReceiveRegisteredPathSegments (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, reg_path_segs_to_one_as_t* path_segments);
         void ReceiveCachedPathSegments (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, cached_path_segs_per_dst_t* path_seg);
         void SendArbitraryPacket(ia_t dst_ia, uint32_t host_address);
     private:
 
+        ld  latitude;
+        ld  longitude;
 
         Ptr<SCION_AS> node;
 
@@ -51,4 +56,4 @@ namespace ns3 {
     };
 }
 
-#endif //NS_3_BEACONING_SIMULATOR_HOST_H
+#endif //NS_3_BEACONING_SIMULATOR_SCION_HOST_H

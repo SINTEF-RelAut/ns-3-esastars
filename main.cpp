@@ -21,19 +21,20 @@
 #include "ns3/network-module.h"
 #include "ns3/point-to-point-helper.h"
 #include "ns3/point-to-point-channel.h"
-#include <ns3/nstime.h>
-#include "src/SCION/headers/post_simulation_evaluations.h"
+#include "ns3/nstime.h"
 
+#include "src/SCION/headers/post_simulation_evaluations.h"
 #include "src/SCION/headers/utils.h"
 #include "src/SCION/headers/beaconing/beacon_server.h"
 #include "src/SCION/headers/beaconing/baseline.h"
 #include "src/SCION/headers/beaconing/scionlab_algo.h"
-#include "src/SCION/headers/scion_as.h"
-#include "src/SCION/headers/scion_core_as.h"
 #include "src/SCION/headers/beaconing/criteria_matching.h"
 #include "src/SCION/headers/beaconing/latency_optimized_beaconing.h"
+#include "src/SCION/headers/scion_as.h"
+#include "src/SCION/headers/scion_core_as.h"
 #include "src/SCION/headers/global_scheduling.h"
 #include "src/SCION/headers/path_server.h"
+#include "src/SCION/headers/scion_host.h"
 
 //rapidxml::xml_node<>* SetupTopologyFile (std::string topology_name);
 
@@ -199,12 +200,14 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* rootNode, std::string beaconi
             node = ns3::CreateObject<ns3::SCION_Core_AS>(isd_number, node_counter, 0, ns3::Time(0));
         } else if(type =="non-core"){
             node = ns3::CreateObject<ns3::SCION_AS>(isd_number, node_counter, 0, ns3::Time(0));
-        } else{
+        } else {
             std::cerr << "Incompatible node type!" << std::endl;
             exit(1);
         }
         node->SetBeaconServer(beaconing_policy);
         node->SetPathServer(pathServer);
+
+
 
         nodes.Add(node);
         beaconing_policy->SetNode(node);

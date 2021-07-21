@@ -6,11 +6,14 @@
  *
  * @brief Implements the specialized functions on the scion leaf ASes.
  */
-#include "src/SCION/headers/beaconing/beacon_server.h"
-#include "src/SCION/headers/utils.h"
-#include "src/SCION/headers/scion_as.h"
+
 #include "ns3/core-module.h"
 
+#include "src/SCION/headers/beaconing/beacon_server.h"
+#include "src/SCION/headers/path_server.h"
+#include "src/SCION/headers/scion_host.h"
+#include "src/SCION/headers/utils.h"
+#include "src/SCION/headers/scion_as.h"
 
 namespace ns3 {
 
@@ -174,7 +177,7 @@ namespace ns3 {
         return GetNDevices() + 2 + host_addr;
     }
 
-    Host*
+    SCIONHost*
     SCION_AS::GetHost(uint32_t host_addr) {
         return hosts.at(host_addr);
     }
