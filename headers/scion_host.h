@@ -20,15 +20,15 @@ namespace ns3 {
     class SCIONHost {
 
     public:
-        SCIONHost(Ptr<SCION_AS> node, uint32_t local_address, ld latitude, ld longitude) : node(node), local_address(local_address),  latitude (latitude), longitude (longitude) {}
+        SCIONHost(Ptr<SCION_AS> node, uint32_t local_address, double latitude, double longitude) : node(node), local_address(local_address),  latitude (latitude), longitude (longitude) {}
 
         void ReceiveRegisteredPathSegments (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, reg_path_segs_to_one_as_t* path_segments);
         void ReceiveCachedPathSegments (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, cached_path_segs_per_dst_t* path_seg);
         void SendArbitraryPacket(ia_t dst_ia, uint32_t host_address);
     private:
 
-        ld  latitude;
-        ld  longitude;
+        double  latitude;
+        double  longitude;
 
         Ptr<SCION_AS> node;
 
