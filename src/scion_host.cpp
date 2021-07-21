@@ -10,7 +10,7 @@
 #include "src/SCION/headers/path_server.h"
 
 namespace ns3 {
-
+    NS_LOG_COMPONENT_DEFINE("SCIONHost");
     void SCIONHost::ReceiveRegisteredPathSegments (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, reg_path_segs_to_one_as_t* path_segments) {
         for (auto const & key_path_segment_pair : *path_segments) {
             PathSegment* path_segment = key_path_segment_pair.second;
@@ -136,7 +136,7 @@ namespace ns3 {
     }
 
     void SCIONHost::send_packet(SCIONPacket packet) {
-
+        NS_LOG_LOGIC("packet sent");
     }
 
     void SCIONHost::request_for_path_segments(ia_t dst_ia) {
