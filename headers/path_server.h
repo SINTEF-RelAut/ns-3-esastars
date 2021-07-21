@@ -10,6 +10,7 @@
 #include <map>
 #include "ns3/nstime.h"
 #include "src/SCION/headers/path_segment.h"
+#include "src/SCION/headers/host.h"
 
 namespace ns3 {
 
