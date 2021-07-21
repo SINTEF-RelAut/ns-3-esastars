@@ -7,6 +7,7 @@
 
 #include <unordered_map>
 #include <map>
+#include <vector>
 
 namespace ns3 {
     typedef uint32_t ia_t;
