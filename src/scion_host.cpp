@@ -12,7 +12,7 @@
 namespace ns3 {
     NS_LOG_COMPONENT_DEFINE("SCIONHost");
     void SCIONHost::ReceiveRegisteredPathSegments (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, reg_path_segs_to_one_as_t* path_segments) {
-        NS_LOG_DEBUG(src_ia << " " << dst_ia << " number of segments: " << path_segments->size());
+        NS_LOG_DEBUG(src_ia << " " << GET_ISDN(src_ia) << ":" << GET_ASN(src_ia) << " " << GET_ISDN(dst_ia) << ":" << GET_ASN(dst_ia) << " number of segments: " << path_segments->size());
         for (auto const & key_path_segment_pair : *path_segments) {
             PathSegment* path_segment = key_path_segment_pair.second;
             if (path_segment->expiration_time > node->local_time.GetMinutes()) {
