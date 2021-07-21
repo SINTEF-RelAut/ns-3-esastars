@@ -68,21 +68,21 @@ typedef std::tuple<ld, ld, ld, ld> coefficients;
         * than the lowest scored matching beacon found in the remote ASes beacon store.
         */
 
-        std::tuple<bool, bool, bool, beacon*>
-        ImportPolicy (beacon& the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
+        std::tuple<bool, bool, bool, Beacon*>
+        ImportPolicy (Beacon& the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
                       uint16_t now) override;
 
         void
-        InsertToStrategyMetaData (beacon* the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no) override;
+        InsertToStrategyMetaData (Beacon* the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no) override;
 
         void
-        DeleteFromStrategyMetaData (beacon* the_beacon) override;
+        DeleteFromStrategyMetaData (Beacon* the_beacon) override;
 
     protected:
 
 
         void
-        MetaDataUpdatePeriodic (beacon* the_beacon, bool invalidated) override;
+        MetaDataUpdatePeriodic (Beacon* the_beacon, bool invalidated) override;
 
     private:
 
@@ -91,7 +91,7 @@ typedef std::tuple<ld, ld, ld, ld> coefficients;
          * holds a history of sent beacons;
          * For each interface we keep a map from disseminated beacons pointers in self beacon store to the disseminated beacon's raw score and expiration time
          * */
-        std::vector<std::unordered_map<beacon *, std::pair<float, uint16_t>> *> sent_beacons;
+        std::vector<std::unordered_map<Beacon *, std::pair<float, uint16_t>> *> sent_beacons;
 
         std::vector<std::unordered_map<uint16_t, uint16_t>* > sent_beacons_cnt;
         /** @brief
@@ -102,37 +102,37 @@ typedef std::tuple<ld, ld, ld, ld> coefficients;
 
         std::vector<std::unordered_map<uint32_t, uint32_t> *> links_jointnesses_on_received_paths;
 
-        void update_sent_beacon_timer(uint16_t remote_as, uint16_t self_egress_if_no, beacon *the_beacon);
+        void update_sent_beacon_timer(uint16_t remote_as, uint16_t self_egress_if_no, Beacon *the_beacon);
 
         void inc_links_jointness_on_sent_paths(uint16_t dst_as_no, uint16_t remote_as_no, uint16_t self_egress_if_no,
-                                               beacon *the_beacon);
+                                               Beacon *the_beacon);
 
         void
-        inc_links_jointness_on_received_paths(uint16_t dst_as_no, beacon *the_beacon);
+        inc_links_jointness_on_received_paths(uint16_t dst_as_no, Beacon *the_beacon);
 
-        void add_to_sent_beacons(uint16_t dst_as_no, uint16_t remote_as, uint16_t self_egress_if_no, beacon *the_beacon, float raw_score);
+        void add_to_sent_beacons(uint16_t dst_as_no, uint16_t remote_as, uint16_t self_egress_if_no, Beacon *the_beacon, float raw_score);
 
         ld calculate_link_diversity_score_for_dissemination(uint16_t remote_as, uint16_t dst_as, uint16_t egress_if_no,
-                                                            beacon *the_beacon);
+                                                            Beacon *the_beacon);
 
-        ld  calculate_link_diversity_score_for_import(uint16_t dst_as, beacon& the_beacon);
+        ld  calculate_link_diversity_score_for_import(uint16_t dst_as, Beacon& the_beacon);
 
-        bool path_not_sent_before(uint16_t remote_as, uint16_t self_egress_if_no, beacon *the_beacon);
+        bool path_not_sent_before(uint16_t remote_as, uint16_t self_egress_if_no, Beacon *the_beacon);
 
-        std::multimap<ld, std::tuple<beacon *, uint16_t, uint16_t, Ptr<SCION_AS>, ld, ld> >
+        std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, Ptr<SCION_AS>, ld, ld> >
         select_beacons_to_disseminate_per_dst_per_nbr(uint16_t remote_as_no, uint16_t dst_as_no,
                                                       const beacons_with_same_dst_as &beacons_to_the_dst_as);
 
-        void remove_invalid_sent_beacons(beacon* the_beacon, uint16_t dst_as);
+        void remove_invalid_sent_beacons(Beacon* the_beacon, uint16_t dst_as);
 
-        void dec_links_jointnesses_on_sent_paths(beacon* the_beacon, uint16_t  dst_as, uint16_t remote_as_no, uint16_t self_egress_if);
+        void dec_links_jointnesses_on_sent_paths(Beacon* the_beacon, uint16_t  dst_as, uint16_t remote_as_no, uint16_t self_egress_if);
 
-        void dec_links_jointnesses_on_received_paths(beacon* the_beacon, uint16_t  dst_as);
+        void dec_links_jointnesses_on_received_paths(Beacon* the_beacon, uint16_t  dst_as);
 
-        inline ld calculate_raw_score (beacon* the_beacon, uint16_t dst_as_no, uint16_t self_egress_if_no, Ptr<SCION_AS> remote_as);
+        inline ld calculate_raw_score (Beacon* the_beacon, uint16_t dst_as_no, uint16_t self_egress_if_no, Ptr<SCION_AS> remote_as);
 
         inline ld
-        calculate_import_raw_score (beacon& the_beacon);
+        calculate_import_raw_score (Beacon& the_beacon);
 
     };
 }

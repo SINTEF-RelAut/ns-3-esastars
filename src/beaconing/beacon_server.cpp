@@ -89,7 +89,7 @@ namespace ns3 {
  * @param latency_for_immediate The intra AS latency the beacon traversed, used for the proper scheduling timing.
  */
 
-   void BeaconServer::GenerateBeaconAndSend(beacon *selected_beacon, uint16_t self_egress_if_no,
+   void BeaconServer::GenerateBeaconAndSend(Beacon *selected_beacon, uint16_t self_egress_if_no,
                                             uint16_t remote_ingress_if_no, Ptr<SCION_AS> remote_as,
                                             ld latency, ld bwd)
     {
@@ -124,8 +124,8 @@ namespace ns3 {
             new_isd_path.push_back(node->isd_number);
         }
 
-        beacon to_disseminate_beacon((float) latency, (float) bwd, 0, 0, next_initiation_time,
-                                           next_expiration_time, true, false, new_path, key, new_isd_path);
+        Beacon to_disseminate_beacon((float) latency, (float) bwd, 0, 0, next_initiation_time,
+                                     next_expiration_time, true, false, new_path, key, new_isd_path);
 
         IncrementControlPlaneBytesSent(to_disseminate_beacon, self_egress_if_no);
         remote_as->ReceiveBeacon(to_disseminate_beacon, node->as_number, self_egress_if_no, remote_ingress_if_no);
@@ -147,7 +147,7 @@ namespace ns3 {
     BeaconServer::UpdateStatePeriodic() {
         auto const &beacons = path_map_to_beacon;
         for (auto const &the_beacon_pair : beacons) {
-            beacon *the_beacon = the_beacon_pair.second;
+            Beacon *the_beacon = the_beacon_pair.second;
 
             bool was_valid = the_beacon->is_valid;
             UpdateBeaconState(the_beacon);
@@ -170,7 +170,7 @@ namespace ns3 {
  * @param node The node holding the beacon.
  */
     void
-    BeaconServer::UpdateBeaconState(beacon *the_beacon) {
+    BeaconServer::UpdateBeaconState(Beacon *the_beacon) {
         uint16_t dst_as = UPPER_16_BITS (the_beacon->the_path.at(0));
         if (the_beacon->is_new) {
             the_beacon->is_new = false;
@@ -206,7 +206,7 @@ namespace ns3 {
 
 
 
-    void BeaconServer::InsertBeacon (beacon& received_beacon, uint16_t dst_as, uint16_t sender_as, uint16_t remote_egress_if, uint16_t local_ingress_if, bool path_exists, bool existing_path_valid, beacon* beacon_to_replace)
+    void BeaconServer::InsertBeacon (Beacon& received_beacon, uint16_t dst_as, uint16_t sender_as, uint16_t remote_egress_if, uint16_t local_ingress_if, bool path_exists, bool existing_path_valid, Beacon* beacon_to_replace)
     {
 
         if (next_round_valid_beacons_count_per_dst_as.find(dst_as) == next_round_valid_beacons_count_per_dst_as.end()) {
@@ -224,10 +224,10 @@ namespace ns3 {
             }
             return;
         } else {
-            beacon* to_insert_beacon;
+            Beacon* to_insert_beacon;
 
             if (beacon_to_replace == NULL) {
-                to_insert_beacon = new beacon(received_beacon);
+                to_insert_beacon = new Beacon(received_beacon);
             } else {
                 to_insert_beacon = beacon_to_replace;
                 *to_insert_beacon = received_beacon;
@@ -256,7 +256,7 @@ namespace ns3 {
         }
     }
 
-    void BeaconServer::DeleteBeacon (beacon* to_be_removed_beacon, uint16_t dst_as) {
+    void BeaconServer::DeleteBeacon (Beacon* to_be_removed_beacon, uint16_t dst_as) {
         assert(beacon_store.find(dst_as) != beacon_store.end());
         assert(beacon_store.at(dst_as).find(to_be_removed_beacon->the_path.size()) != beacon_store.at(dst_as).end());
         assert(beacon_store.at(dst_as).at(to_be_removed_beacon->the_path.size()).find(to_be_removed_beacon) != beacon_store.at(dst_as).at(to_be_removed_beacon->the_path.size()).end());
@@ -284,19 +284,19 @@ namespace ns3 {
     }
 
     void
-    BeaconServer::IncrementControlPlaneBytesSent(beacon &the_beacon, uint16_t interface) {
+    BeaconServer::IncrementControlPlaneBytesSent(Beacon &the_beacon, uint16_t interface) {
         bytes_sent_per_interface_per_period.at(now).at(interface) +=
                 (BEACON_HEADER_SIZE + BEACON_HOP_SIZE * the_beacon.the_path.size());
     }
 
     void
-    BeaconServer::ReceiveBeacon (beacon &received_beacon, uint16_t sender_as, uint16_t remote_if, uint16_t local_if) {
+    BeaconServer::ReceiveBeacon (Beacon &received_beacon, uint16_t sender_as, uint16_t remote_if, uint16_t local_if) {
         uint16_t dst_as = UPPER_16_BITS(received_beacon.the_path.at(0));
 
         bool to_import;
         bool path_exists;
         bool existing_path_valid;
-        beacon* beacon_to_replace;
+        Beacon* beacon_to_replace;
 
         std::tie(to_import, path_exists, existing_path_valid, beacon_to_replace)
                 = ImportPolicy(received_beacon, sender_as, remote_if, local_if, now);

@@ -50,7 +50,7 @@ typedef std::vector<uint16_t> isd_path;
  *
  * Beacons are propagated periodically and do expire.
  */
-struct beacon
+struct Beacon
 {
     /** @brief Aggregator holding information about the path latency. */
     float latency_stat;
@@ -86,7 +86,7 @@ struct beacon
 
     isd_path the_isd_path;
 
-    beacon (float l, float b, uint16_t i, uint16_t e, uint16_t nxt_i, uint16_t nxt_e, bool n,
+    Beacon (float l, float b, uint16_t i, uint16_t e, uint16_t nxt_i, uint16_t nxt_e, bool n,
             bool v, path p, std::string k, isd_path isdp)
         : latency_stat (l),
           bwd_stat (b),
@@ -102,7 +102,7 @@ struct beacon
     {
     }
 
-    beacon (beacon& the_beacon) :
+    Beacon (Beacon& the_beacon) :
         latency_stat(the_beacon.latency_stat),
         bwd_stat(the_beacon.bwd_stat),
         initiation_time(the_beacon.initiation_time),

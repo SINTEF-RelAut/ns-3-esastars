@@ -23,7 +23,7 @@
  * @return The link-level jaccard distance between the two paths.
  */
 namespace ns3 {
-    ld link_level_jaccard_distance_between_two_paths(beacon *beacon1, beacon *beacon2) {
+    ld link_level_jaccard_distance_between_two_paths(Beacon *beacon1, Beacon *beacon2) {
         std::set<uint32_t> set_of_links_on_path1;
         int32_t intersection = 0;
 
@@ -53,7 +53,7 @@ namespace ns3 {
  * @param beacon2 A beacon containing a path.
  * @return The AS-level jaccard distance between the two paths.
  */
-    ld AS_level_jaccard_distance_between_two_paths(beacon *beacon1, beacon *beacon2) {
+    ld AS_level_jaccard_distance_between_two_paths(Beacon *beacon1, Beacon *beacon2) {
         std::set<uint16_t> set_of_ASes_on_path1;
         int32_t intersection = 0;
 

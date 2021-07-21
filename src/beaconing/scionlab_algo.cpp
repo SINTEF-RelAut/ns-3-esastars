@@ -27,13 +27,13 @@ namespace ns3 {
     SCIONLAB::DisseminateBeacons (neighbour_relation relation)
     {
         uint32_t neighbors_cnt = node->neighbors.size ();
-        std::vector<beacon*> valid_candidates;
+        std::vector<Beacon*> valid_candidates;
 
         for (auto const &dst_as_beacons_pair : beacon_store) {
             auto const & equal_dst_as_beacons = dst_as_beacons_pair.second;
 
-            std::vector<beacon*> rest_of_beacons;
-            std::vector<beacon*> selected_beacons_per_dst;
+            std::vector<Beacon*> rest_of_beacons;
+            std::vector<Beacon*> selected_beacons_per_dst;
 
             for (auto const &len_beacons_pair : equal_dst_as_beacons) { // for each length
                 if (rest_of_beacons.size() + selected_beacons_per_dst.size() >= MAX_SET_SIZE) {
@@ -70,9 +70,9 @@ namespace ns3 {
                 continue;
             }
 
-            std::pair<beacon*, int32_t> diversity_wr_to_selected = SelectMostDiverse(selected_beacons_per_dst, selected_beacons_per_dst.at(0));
+            std::pair<Beacon*, int32_t> diversity_wr_to_selected = SelectMostDiverse(selected_beacons_per_dst, selected_beacons_per_dst.at(0));
 
-            std::pair<beacon*, int32_t> diversity_wr_to_rest = SelectMostDiverse(rest_of_beacons, selected_beacons_per_dst.at(0));
+            std::pair<Beacon*, int32_t> diversity_wr_to_rest = SelectMostDiverse(rest_of_beacons, selected_beacons_per_dst.at(0));
 
             if (diversity_wr_to_rest.second > diversity_wr_to_selected.second) {
                 valid_candidates.push_back(diversity_wr_to_rest.first);
@@ -169,54 +169,54 @@ namespace ns3 {
  * @param latency The new beacon latency.
  * @param bwd The new beacon bandwidth stat.
  */
-    std::tuple<bool, bool, bool, beacon*>
-    SCIONLAB::ImportPolicy(beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
+    std::tuple<bool, bool, bool, Beacon*>
+    SCIONLAB::ImportPolicy(Beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
                            uint16_t self_ingress_if_no, uint16_t now)
     {
         uint16_t dst_as = UPPER_16_BITS(the_beacon.the_path.at(0));
 
         if (path_map_to_beacon.find(the_beacon.key) != path_map_to_beacon.end()) {
-            beacon* existing_beacon = path_map_to_beacon.at(the_beacon.key);
+            Beacon* existing_beacon = path_map_to_beacon.at(the_beacon.key);
             if (!existing_beacon->is_valid){
-                return std::tuple<bool, bool, bool, beacon*>(true, true, false, existing_beacon);
+                return std::tuple<bool, bool, bool, Beacon*>(true, true, false, existing_beacon);
             }
-            return std::tuple<bool, bool, bool, beacon*>(true, true, true, existing_beacon);
+            return std::tuple<bool, bool, bool, Beacon*>(true, true, true, existing_beacon);
         }
 
         if (the_beacon.the_path.size() == 1) {
-            return std::tuple<bool, bool, bool, beacon*>(true, false, false, NULL);
+            return std::tuple<bool, bool, bool, Beacon*>(true, false, false, NULL);
         }
 
         if (next_round_valid_beacons_count_per_dst_as.find(dst_as) == next_round_valid_beacons_count_per_dst_as.end()) {
-            return std::tuple<bool, bool, bool, beacon*>(true, false, false, NULL);
+            return std::tuple<bool, bool, bool, Beacon*>(true, false, false, NULL);
         }
 
         if (this->next_round_valid_beacons_count_per_dst_as.at(dst_as) < MAX_BEACONS_TO_STORE) {
-            return std::tuple<bool, bool, bool, beacon*>(true, false, false, NULL);
+            return std::tuple<bool, bool, bool, Beacon*>(true, false, false, NULL);
         }
 
-        return std::tuple<bool, bool, bool, beacon*>(false, false, false, NULL);
+        return std::tuple<bool, bool, bool, Beacon*>(false, false, false, NULL);
     }
 
     void
-    SCIONLAB::InsertToStrategyMetaData (beacon* the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no){}
+    SCIONLAB::InsertToStrategyMetaData (Beacon* the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no){}
 
     void
-    SCIONLAB::DeleteFromStrategyMetaData (beacon* the_beacon) {}
+    SCIONLAB::DeleteFromStrategyMetaData (Beacon* the_beacon) {}
 
 
     void
-    SCIONLAB::MetaDataUpdatePeriodic (beacon* the_beacon, bool invalidated)
+    SCIONLAB::MetaDataUpdatePeriodic (Beacon* the_beacon, bool invalidated)
     {
     }
 
 
-    std::pair<beacon*, int32_t>
-    SCIONLAB::SelectMostDiverse (std::vector<beacon*>& beacons, beacon* the_beacon) {
+    std::pair<Beacon*, int32_t>
+    SCIONLAB::SelectMostDiverse (std::vector<Beacon*>& beacons, Beacon* the_beacon) {
         if (beacons.size() == 0) {
             return std::make_pair(the_beacon, -1);
         }
-        beacon* diverse;
+        Beacon* diverse;
         int32_t max_diversity = -1;
         uint32_t min_len = std::numeric_limits<uint32_t>::max();
 
@@ -235,7 +235,7 @@ namespace ns3 {
     }
 
     int32_t
-    SCIONLAB::Diversity (beacon* beacon1, beacon* beacon2) {
+    SCIONLAB::Diversity (Beacon* beacon1, Beacon* beacon2) {
         int32_t diff = 0;
 
         for (uint64_t link_info : beacon1->the_path) {

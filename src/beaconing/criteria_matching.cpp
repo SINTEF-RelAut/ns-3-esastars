@@ -28,7 +28,7 @@ namespace ns3 {
 
         for (uint32_t i = 0; i < node->GetNDevices (); ++i)
         {
-            sent_beacons.at (i) = new std::unordered_map<beacon *, std::pair<float, uint16_t>> ();
+            sent_beacons.at (i) = new std::unordered_map<Beacon *, std::pair<float, uint16_t>> ();
         }
 
         for (uint16_t i = 0; i < (uint16_t) all_nodes; ++i) {
@@ -75,11 +75,11 @@ namespace ns3 {
                     continue;
                 }
 
-                std::multimap<ld, std::tuple<beacon *, uint16_t, uint16_t, Ptr<SCION_AS>, ld, ld> > selected_beacons =
+                std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, Ptr<SCION_AS>, ld, ld> > selected_beacons =
                         select_beacons_to_disseminate_per_dst_per_nbr(remote_as_no, dst_as_no, beacons_to_the_dst_as);
 
                 for (auto const &the_tuple_pair : selected_beacons) {
-                    beacon *the_beacon;
+                    Beacon *the_beacon;
                     uint16_t remote_ingress_if_no;
                     uint16_t self_egress_if_no;
                     Ptr<SCION_AS> remote_as;
@@ -99,31 +99,31 @@ namespace ns3 {
     }
 
 
-    std::tuple<bool, bool, bool, beacon*> CriteriaMatching::ImportPolicy (beacon& the_beacon,
-                                         uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
-                                         uint16_t now)
+    std::tuple<bool, bool, bool, Beacon*> CriteriaMatching::ImportPolicy (Beacon& the_beacon,
+                                                                          uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
+                                                                          uint16_t now)
     {
 
         uint16_t dst_as = UPPER_16_BITS(the_beacon.the_path.at(0));
 
         if (path_map_to_beacon.find(the_beacon.key) != path_map_to_beacon.end()) {
-            beacon* existing_beacon = path_map_to_beacon.at(the_beacon.key);
+            Beacon* existing_beacon = path_map_to_beacon.at(the_beacon.key);
             if (!existing_beacon->is_valid){
-                return std::tuple<bool, bool, bool, beacon*>(true, true, false, existing_beacon);
+                return std::tuple<bool, bool, bool, Beacon*>(true, true, false, existing_beacon);
             }
-            return std::tuple<bool, bool, bool, beacon*>(true, true, true, existing_beacon);
+            return std::tuple<bool, bool, bool, Beacon*>(true, true, true, existing_beacon);
         }
 
         if (the_beacon.the_path.size() == 1) {
-            return std::tuple<bool, bool, bool, beacon*>(true, false, false, NULL);
+            return std::tuple<bool, bool, bool, Beacon*>(true, false, false, NULL);
         }
 
         if (next_round_valid_beacons_count_per_dst_as.find(dst_as) == next_round_valid_beacons_count_per_dst_as.end()) {
-            return std::tuple<bool, bool, bool, beacon*>(true, false, false, NULL);
+            return std::tuple<bool, bool, bool, Beacon*>(true, false, false, NULL);
         }
 
         if (next_round_valid_beacons_count_per_dst_as.at(dst_as) < MAX_BEACONS_TO_STORE) {
-            return std::tuple<bool, bool, bool, beacon*>(true, false, false, NULL);
+            return std::tuple<bool, bool, bool, Beacon*>(true, false, false, NULL);
         }
 
         ld raw_score = calculate_import_raw_score (the_beacon);
@@ -132,18 +132,18 @@ namespace ns3 {
         ld score = std::pow(raw_score, ALPHA * (beacon_age / beacon_exp_period));
 
         if (next_round_valid_beacons_count_per_dst_as.at(dst_as) < MAX_BEACONS_TO_STORE && score > 0.9) {
-            return std::tuple<bool, bool, bool, beacon*>(true, false, false, NULL);
+            return std::tuple<bool, bool, bool, Beacon*>(true, false, false, NULL);
         }
 
-        return std::tuple<bool, bool, bool, beacon*>(false, false, false, NULL);
+        return std::tuple<bool, bool, bool, Beacon*>(false, false, false, NULL);
     }
 
     void
-    CriteriaMatching::DeleteFromStrategyMetaData (beacon* the_beacon) {
+    CriteriaMatching::DeleteFromStrategyMetaData (Beacon* the_beacon) {
         dec_links_jointnesses_on_received_paths(the_beacon, UPPER_16_BITS(the_beacon->the_path.at(0)));
     }
 
-    void CriteriaMatching::InsertToStrategyMetaData (beacon* the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no) {
+    void CriteriaMatching::InsertToStrategyMetaData (Beacon* the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no) {
         inc_links_jointness_on_received_paths(UPPER_16_BITS(the_beacon->the_path.at(0)), the_beacon);
     }
 
@@ -151,7 +151,7 @@ namespace ns3 {
 
 
     void
-    CriteriaMatching::MetaDataUpdatePeriodic (beacon* the_beacon, bool invalidated) {
+    CriteriaMatching::MetaDataUpdatePeriodic (Beacon* the_beacon, bool invalidated) {
         uint16_t dst_as = UPPER_16_BITS(the_beacon->the_path.at(0));
         remove_invalid_sent_beacons(the_beacon, dst_as);
 
@@ -161,15 +161,15 @@ namespace ns3 {
     }
 
 
-    std::multimap<ld, std::tuple<beacon *, uint16_t, uint16_t, Ptr<SCION_AS>, ld, ld> >
+    std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, Ptr<SCION_AS>, ld, ld> >
     CriteriaMatching::select_beacons_to_disseminate_per_dst_per_nbr(uint16_t remote_as_no, uint16_t dst_as_no,
                                                                     const beacons_with_same_dst_as &beacons_to_the_dst_as) {
-        std::multimap<ld, std::tuple<beacon *, uint16_t, uint16_t, Ptr<SCION_AS>, ld, ld> > score_map_to_beacon_and_metadata;
-        std::map<std::pair<beacon *, uint16_t>, std::pair<ld, ld> > valid_candidates;
+        std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, Ptr<SCION_AS>, ld, ld> > score_map_to_beacon_and_metadata;
+        std::map<std::pair<Beacon *, uint16_t>, std::pair<ld, ld> > valid_candidates;
 
         ld max_score = 0.0;
         ld max_score_raw_score = 0.0;
-        beacon *max_score_beacon = NULL;
+        Beacon *max_score_beacon = NULL;
         uint16_t max_score_iface = 0;
 
         uint16_t remote_ingress_if_no;
@@ -259,7 +259,7 @@ namespace ns3 {
 
                 score_map_to_beacon_and_metadata.insert(
                         std::make_pair(max_score,
-                                       std::tuple<beacon *, uint16_t, uint16_t, Ptr<SCION_AS>, ld, ld>
+                                       std::tuple<Beacon *, uint16_t, uint16_t, Ptr<SCION_AS>, ld, ld>
                                                (max_score_beacon, max_score_iface, remote_ingress_if_no, remote_as,
                                                 latency, bwd)));
 
@@ -279,7 +279,7 @@ namespace ns3 {
             max_score_iface = 0;
 
             for (auto const &candidate : valid_candidates) {
-                beacon *the_beacon = candidate.first.first;
+                Beacon *the_beacon = candidate.first.first;
                 uint16_t self_egress_if_no = candidate.first.second;
                 ld score = 0.0;
                 ld raw_score = 0.0;
@@ -316,7 +316,7 @@ namespace ns3 {
     }
 
     inline ld
-    CriteriaMatching::calculate_raw_score (beacon* the_beacon, uint16_t dst_as_no, uint16_t self_egress_if_no, Ptr<SCION_AS> remote_as) {
+    CriteriaMatching::calculate_raw_score (Beacon* the_beacon, uint16_t dst_as_no, uint16_t self_egress_if_no, Ptr<SCION_AS> remote_as) {
         ld latency = the_beacon->latency_stat +
                      node->latencies_between_interfaces.at(LOWER_16_BITS(the_beacon->the_path.back())).at(self_egress_if_no);
         ld bwd = the_beacon->bwd_stat > (ld) node->inter_as_bwds.at(self_egress_if_no)
@@ -347,7 +347,7 @@ namespace ns3 {
 
 
     inline ld
-    CriteriaMatching::calculate_import_raw_score (beacon& the_beacon) {
+    CriteriaMatching::calculate_import_raw_score (Beacon& the_beacon) {
         uint16_t dst_as_no = UPPER_16_BITS (the_beacon.the_path.at(0));
         ld  latency = the_beacon.latency_stat;
         ld  bwd = the_beacon.bwd_stat;
@@ -373,7 +373,7 @@ namespace ns3 {
     }
 
     void
-    CriteriaMatching::update_sent_beacon_timer(uint16_t remote_as, uint16_t self_egress_if_no, beacon *the_beacon) {
+    CriteriaMatching::update_sent_beacon_timer(uint16_t remote_as, uint16_t self_egress_if_no, Beacon *the_beacon) {
         uint16_t new_exp_time = the_beacon->expiration_time;
         float raw_score = sent_beacons.at(self_egress_if_no)->at(the_beacon).first;
         sent_beacons.at(self_egress_if_no)->at(the_beacon) = std::make_pair(raw_score, new_exp_time);
@@ -381,7 +381,7 @@ namespace ns3 {
 
     void
     CriteriaMatching::inc_links_jointness_on_sent_paths(uint16_t dst_as_no, uint16_t remote_as_no,
-                                                        uint16_t self_egress_if_no, beacon *the_beacon) {
+                                                        uint16_t self_egress_if_no, Beacon *the_beacon) {
         if (the_beacon != NULL) {
             auto const & the_path = the_beacon->the_path;
             for (auto const &seg : the_path) {
@@ -406,7 +406,7 @@ namespace ns3 {
     }
 
     void
-    CriteriaMatching::inc_links_jointness_on_received_paths(uint16_t dst_as_no, beacon *the_beacon) {
+    CriteriaMatching::inc_links_jointness_on_received_paths(uint16_t dst_as_no, Beacon *the_beacon) {
 
         auto const & the_path = the_beacon->the_path;
         for (auto const &seg : the_path) {
@@ -420,7 +420,7 @@ namespace ns3 {
     }
 
     void
-    CriteriaMatching::add_to_sent_beacons(uint16_t dst_as_no, uint16_t remote_as, uint16_t self_egress_if_no, beacon *the_beacon,
+    CriteriaMatching::add_to_sent_beacons(uint16_t dst_as_no, uint16_t remote_as, uint16_t self_egress_if_no, Beacon *the_beacon,
                                           float raw_score) {
         sent_beacons.at(self_egress_if_no)->insert(
                 std::make_pair(the_beacon, std::make_pair(raw_score, the_beacon->expiration_time)));
@@ -429,7 +429,7 @@ namespace ns3 {
 
     ld
     CriteriaMatching::calculate_link_diversity_score_for_dissemination(uint16_t remote_as, uint16_t dst_as,
-                                                                       uint16_t egress_if_no, beacon *the_beacon) {
+                                                                       uint16_t egress_if_no, Beacon *the_beacon) {
         if (links_jointnesses_on_sent_paths.at(remote_as).at(dst_as)->empty()) {
             return 1.0;
         }
@@ -461,7 +461,7 @@ namespace ns3 {
     }
 
     ld
-    CriteriaMatching::calculate_link_diversity_score_for_import(uint16_t dst_as, beacon& the_beacon) {
+    CriteriaMatching::calculate_link_diversity_score_for_import(uint16_t dst_as, Beacon& the_beacon) {
         if (links_jointnesses_on_received_paths.at(dst_as)->empty()) {
             return 1.0;
         }
@@ -484,7 +484,7 @@ namespace ns3 {
         return (MAX_ACCEPTABLE_JOINTNESS - jointness) / (MAX_ACCEPTABLE_JOINTNESS - 1.0);
     }
     bool
-    CriteriaMatching::path_not_sent_before(uint16_t remote_as, uint16_t self_egress_if_no, beacon *the_beacon) {
+    CriteriaMatching::path_not_sent_before(uint16_t remote_as, uint16_t self_egress_if_no, Beacon *the_beacon) {
         if (sent_beacons.at(self_egress_if_no)->find(the_beacon) == sent_beacons.at(self_egress_if_no)->end()) {
             return true;
         }
@@ -493,7 +493,7 @@ namespace ns3 {
 
 
     void
-    CriteriaMatching::remove_invalid_sent_beacons(beacon* the_beacon, uint16_t dst_as) {
+    CriteriaMatching::remove_invalid_sent_beacons(Beacon* the_beacon, uint16_t dst_as) {
         for (uint32_t i = 0; i < node->GetNDevices(); ++i) {
             uint16_t remote_as_no = node->interface_to_neighbor_map.at(i);
             if (sent_beacons.at(i)->find(the_beacon) == sent_beacons.at(i)->end()) {
@@ -511,7 +511,7 @@ namespace ns3 {
     }
 
     void
-    CriteriaMatching::dec_links_jointnesses_on_sent_paths(beacon* the_beacon, uint16_t  dst_as, uint16_t remote_as_no, uint16_t self_egress_if) {
+    CriteriaMatching::dec_links_jointnesses_on_sent_paths(Beacon* the_beacon, uint16_t  dst_as, uint16_t remote_as_no, uint16_t self_egress_if) {
         auto const & the_path = the_beacon->the_path;
         for (auto const & seg : the_path) {
             uint32_t link = UPPER_32_BITS(seg);
@@ -530,7 +530,7 @@ namespace ns3 {
     }
 
     void
-    CriteriaMatching::dec_links_jointnesses_on_received_paths(beacon* the_beacon, uint16_t  dst_as) {
+    CriteriaMatching::dec_links_jointnesses_on_received_paths(Beacon* the_beacon, uint16_t  dst_as) {
         auto const & the_path = the_beacon->the_path;
         for (auto const & seg : the_path) {
             uint32_t link = UPPER_32_BITS(seg);

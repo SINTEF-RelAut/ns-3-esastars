@@ -38,12 +38,12 @@ namespace ns3 {
 /**
  * @brief Measures and returns the dissimilarity between the two paths in the passed beacons on the link-lvl.
  */
-ld link_level_jaccard_distance_between_two_paths (beacon *beacon1, beacon *beacon2);
+ld link_level_jaccard_distance_between_two_paths (Beacon *beacon1, Beacon *beacon2);
 
 /**
  * @brief Measures and returns the dissimilarity between the two paths in the passed beacons on the AS-path-lvl.
  */
-ld AS_level_jaccard_distance_between_two_paths (beacon *beacon1, beacon *beacon2);
+ld AS_level_jaccard_distance_between_two_paths (Beacon *beacon1, Beacon *beacon2);
 
 /**
  * @brief Estimates the latency [milliseconds] between two routers given their coordinates using the great circle distance.

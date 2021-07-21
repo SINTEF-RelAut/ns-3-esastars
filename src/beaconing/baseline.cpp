@@ -122,43 +122,43 @@ namespace ns3 {
  * @param latency The new beacon latency.
  * @param bwd The new beacon bandwidth stat.
  */
-    std::tuple<bool, bool, bool, beacon *>
-    Baseline::ImportPolicy(beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
+    std::tuple<bool, bool, bool, Beacon *>
+    Baseline::ImportPolicy(Beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
                            uint16_t self_ingress_if_no, uint16_t now) {
         uint16_t dst_as = UPPER_16_BITS(the_beacon.the_path.at(0));
 
         if (path_map_to_beacon.find(the_beacon.key) != path_map_to_beacon.end()) {
-            beacon *existing_beacon = path_map_to_beacon.at(the_beacon.key);
+            Beacon *existing_beacon = path_map_to_beacon.at(the_beacon.key);
             if (!existing_beacon->is_valid) {
-                return std::tuple<bool, bool, bool, beacon *>(true, true, false, existing_beacon);
+                return std::tuple<bool, bool, bool, Beacon *>(true, true, false, existing_beacon);
             }
-            return std::tuple<bool, bool, bool, beacon *>(true, true, true, existing_beacon);
+            return std::tuple<bool, bool, bool, Beacon *>(true, true, true, existing_beacon);
         }
 
         if (the_beacon.the_path.size() == 1) {
-            return std::tuple<bool, bool, bool, beacon *>(true, false, false, NULL);
+            return std::tuple<bool, bool, bool, Beacon *>(true, false, false, NULL);
         }
 
         if (next_round_valid_beacons_count_per_dst_as.find(dst_as) == next_round_valid_beacons_count_per_dst_as.end()) {
-            return std::tuple<bool, bool, bool, beacon *>(true, false, false, NULL);
+            return std::tuple<bool, bool, bool, Beacon *>(true, false, false, NULL);
         }
 
         if (this->next_round_valid_beacons_count_per_dst_as.at(dst_as) < MAX_BEACONS_TO_STORE) {
-            return std::tuple<bool, bool, bool, beacon *>(true, false, false, NULL);
+            return std::tuple<bool, bool, bool, Beacon *>(true, false, false, NULL);
         }
 
-        return std::tuple<bool, bool, bool, beacon *>(false, false, false, NULL);
+        return std::tuple<bool, bool, bool, Beacon *>(false, false, false, NULL);
     }
 
     void
-    Baseline::InsertToStrategyMetaData(beacon *the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
+    Baseline::InsertToStrategyMetaData(Beacon *the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
                                        uint16_t self_ingress_if_no) {}
 
     void
-    Baseline::DeleteFromStrategyMetaData(beacon *the_beacon) {}
+    Baseline::DeleteFromStrategyMetaData(Beacon *the_beacon) {}
 
     void
-    Baseline::MetaDataUpdatePeriodic(beacon *the_beacon, bool invalidated) {
+    Baseline::MetaDataUpdatePeriodic(Beacon *the_beacon, bool invalidated) {
     }
 
 } // namespace ns3

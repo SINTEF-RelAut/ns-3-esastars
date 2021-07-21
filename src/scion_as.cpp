@@ -88,7 +88,7 @@ namespace ns3 {
  * @return Pair(Average AS-lvl diversity, Average link-lvl diversity) of the passed beacon.
  */
     std::pair<ld, ld>
-    SCION_AS::calculate_final_diversity_scores(beacon *the_beacon) {
+    SCION_AS::calculate_final_diversity_scores(Beacon *the_beacon) {
         ld AS_level_diversity_score = 0;
         ld link_level_diversity_score = 0;
         int32_t counter = 0;
@@ -114,7 +114,7 @@ namespace ns3 {
     }
 
     void
-    SCION_AS::ReceiveBeacon(beacon &received_beacon, uint16_t sender_as, uint16_t remote_if, uint16_t local_if) {
+    SCION_AS::ReceiveBeacon(Beacon &received_beacon, uint16_t sender_as, uint16_t remote_if, uint16_t local_if) {
         beaconServer->ReceiveBeacon(received_beacon, sender_as, remote_if, local_if);
     }
 

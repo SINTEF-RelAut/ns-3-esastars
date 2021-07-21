@@ -9,7 +9,7 @@
 #include "src/SCION/headers/utils.h"
 
 namespace ns3 {
-    void beacon::ExtractPathSegment(PathSegment &pathSegment) {
+    void Beacon::ExtractPathSegment(PathSegment &pathSegment) {
         pathSegment.initiation_time = next_initiation_time;
         pathSegment.expiration_time = next_expiration_time;
 

@@ -27,7 +27,7 @@ namespace ns3 {
     class SCION_AS;
 
 /** @brief Holds a set of beacons with constant length.*/
-    typedef std::unordered_set<beacon *> beacons_with_equal_length;
+    typedef std::unordered_set<Beacon *> beacons_with_equal_length;
 
 /**
  * @brief Holds beacons originating at a fixed destination AS indexable by their hop count.
@@ -60,7 +60,7 @@ namespace ns3 {
          * This is done to allow efficient traversal & search of all the beacons.
          * @see key
          * */
-        std::unordered_map<std::string, beacon *> path_map_to_beacon;
+        std::unordered_map<std::string, Beacon *> path_map_to_beacon;
         // statistics ***************************************************************************************************************
         /** @brief Holds the number of beacons that are valid for each destination AS in the current beaconing period.*/
         std::unordered_map<uint16_t, uint16_t> valid_beacons_count_per_dst_as;
@@ -102,27 +102,27 @@ namespace ns3 {
      *
      * Must be overwritten by descendants of BeaconServer.
      */
-        virtual std::tuple<bool, bool, bool, beacon *> ImportPolicy(beacon &the_beacon,
+        virtual std::tuple<bool, bool, bool, Beacon *> ImportPolicy(Beacon &the_beacon,
                                                                     uint16_t sender_as, uint16_t remote_egress_if_no,
                                                                     uint16_t self_ingress_if_no,
                                                                     uint16_t now) = 0;
 
-        virtual void InsertToStrategyMetaData(beacon *the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
+        virtual void InsertToStrategyMetaData(Beacon *the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
                                               uint16_t self_ingress_if_no) = 0;
 
-        virtual void DeleteFromStrategyMetaData(beacon *the_beacon) = 0;
+        virtual void DeleteFromStrategyMetaData(Beacon *the_beacon) = 0;
 
-        virtual void InsertBeacon(beacon &the_beacon, uint16_t dst_as, uint16_t sender_as, uint16_t remote_egress_if,
+        virtual void InsertBeacon(Beacon &the_beacon, uint16_t dst_as, uint16_t sender_as, uint16_t remote_egress_if,
                                   uint16_t local_ingress_if, bool path_exists, bool existing_path_valid,
-                                  beacon *beacon_to_replace);
+                                  Beacon *beacon_to_replace);
 
-        virtual void DeleteBeacon(beacon *to_be_removed_beacon, uint16_t dst_as);
-
-        void
-        IncrementControlPlaneBytesSent(beacon &the_beacon, uint16_t interface);
+        virtual void DeleteBeacon(Beacon *to_be_removed_beacon, uint16_t dst_as);
 
         void
-        ReceiveBeacon(beacon &received_beacon, uint16_t sender_as, uint16_t remote_if, uint16_t local_if);
+        IncrementControlPlaneBytesSent(Beacon &the_beacon, uint16_t interface);
+
+        void
+        ReceiveBeacon(Beacon &received_beacon, uint16_t sender_as, uint16_t remote_if, uint16_t local_if);
 
         void
         UpdateTimeAndStats();
@@ -161,14 +161,14 @@ namespace ns3 {
          * @brief Updates the node time with the current simulator time, updates beacon attributes and
          * the nodes valid beacon counters depending on the beacon state.
          */
-        void UpdateBeaconState(beacon *the_beacon);
+        void UpdateBeaconState(Beacon *the_beacon);
 
         /**
          * @brief Creates the new beacon if necessary, updates the structures recording how many bytes were sent per interface,
          * writes the new beacon into the remote ASes beacon store structures if the remote ASes import policy does not discard it,
          * and schedules a processing event on the simulator if the beacon needs to continue being disseminated right away.
          */
-        void GenerateBeaconAndSend(beacon *selected_beacon, uint16_t self_egress_if_no,
+        void GenerateBeaconAndSend(Beacon *selected_beacon, uint16_t self_egress_if_no,
                                    uint16_t remote_ingress_if_no, Ptr<SCION_AS> remote_as, ld latency, ld bwd);
 
         void RegisterToLocalPathServer();
@@ -176,7 +176,7 @@ namespace ns3 {
 
 
 
-        virtual void MetaDataUpdatePeriodic(beacon *the_beacon, bool invalidated) = 0;
+        virtual void MetaDataUpdatePeriodic(Beacon *the_beacon, bool invalidated) = 0;
     };
 }
 #endif //SCION_BEACONING_SIMMULATOR_BEACON_SERVER_H

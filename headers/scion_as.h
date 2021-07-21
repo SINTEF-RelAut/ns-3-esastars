@@ -110,7 +110,7 @@ namespace ns3 {
         std::pair<uint16_t, Ptr<SCION_AS>>
         GetRemoteAsInfo(uint16_t egress_interface_no);
 
-        void ReceiveBeacon(beacon &the_beacon, uint16_t sender_as, uint16_t remote_if, uint16_t local_if);
+        void ReceiveBeacon(Beacon &the_beacon, uint16_t sender_as, uint16_t remote_if, uint16_t local_if);
 
         void SetBeaconServer(BeaconServer* beaconServer);
 
@@ -144,7 +144,7 @@ namespace ns3 {
          *  @brief Returns the average as-level diversity and link-level diversity scores of the passed beacon compared to all other beacons the node has which
          *  originated at the same destination as number.
          */
-        std::pair<ld, ld> calculate_final_diversity_scores(beacon *the_beacon);
+        std::pair<ld, ld> calculate_final_diversity_scores(Beacon *the_beacon);
 
     };
 }

@@ -20,7 +20,7 @@ namespace ns3 {
     public:
         LatencyOptimized (beaconing_timing_params params) : BeaconServer(params) {}
 
-        std::vector<std::vector<std::multimap<ld, beacon*> > > beacons_per_dst_per_ing_if_sorted_by_latency;
+        std::vector<std::vector<std::multimap<ld, Beacon*> > > beacons_per_dst_per_ing_if_sorted_by_latency;
 
         void DoInitializations(uint32_t all_nodes) override;
         /**
@@ -35,27 +35,27 @@ namespace ns3 {
         * than the lowest scored matching beacon found in the remote ASes beacon store.
         */
 
-        std::tuple<bool, bool, bool, beacon*>
-        ImportPolicy(beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
-                               uint16_t self_ingress_if_no, uint16_t now) override;
+        std::tuple<bool, bool, bool, Beacon*>
+        ImportPolicy(Beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
+                     uint16_t self_ingress_if_no, uint16_t now) override;
 
         void
-        InsertToStrategyMetaData (beacon* the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no) override;
+        InsertToStrategyMetaData (Beacon* the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no) override;
 
         void
-        DeleteFromStrategyMetaData (beacon* the_beacon) override;
+        DeleteFromStrategyMetaData (Beacon* the_beacon) override;
 
     protected:
 
         void
-        MetaDataUpdatePeriodic (beacon* the_beacon, bool invalidated) override;
+        MetaDataUpdatePeriodic (Beacon* the_beacon, bool invalidated) override;
 
     private:
-        void insert_to_beacons_per_dst_sorted_by_latency(uint16_t dst_as, beacon* beacon);
+        void insert_to_beacons_per_dst_sorted_by_latency(uint16_t dst_as, Beacon* beacon);
 
-        void delete_from_beacons_per_dst_sorted_by_latency(uint16_t dst_as, beacon* beacon);
+        void delete_from_beacons_per_dst_sorted_by_latency(uint16_t dst_as, Beacon* beacon);
 
-        std::multimap<ld, std::tuple<beacon *, uint16_t, uint16_t, Ptr<SCION_AS>, ld, ld> >
+        std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, Ptr<SCION_AS>, ld, ld> >
         select_beacons_to_disseminate_per_dst_per_nbr(uint16_t remote_as_no, uint16_t dst_as_no,
                                                       const beacons_with_same_dst_as &beacons_to_the_dst_as);
     };
