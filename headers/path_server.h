@@ -15,7 +15,7 @@ namespace ns3 {
 
 
     class SCION_AS;
-
+    class Host;
 
 
     class PathServer {

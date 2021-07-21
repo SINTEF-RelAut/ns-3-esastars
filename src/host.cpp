@@ -182,7 +182,7 @@ namespace ns3 {
 
         node->events.at(node->GetPathServerSchedulerIdx())
         ->Schedule(node->latencies_between_hosts_and_path_server.at(local_address),
-                   &ns3::PathServer::ReceiveRequestForPathSegmentFromHost,
+                   &PathServer::ReceiveRequestForPathSegmentFromHost,
                    node->GetPathServer(),
                    path_type, src_ia, dst_ia, local_address);
     }

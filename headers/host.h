@@ -13,6 +13,8 @@
 namespace ns3 {
 
     class SCION_AS;
+    class PathServer;
+
     class Host {
 
     public:
