@@ -46,6 +46,12 @@ namespace ns3 {
                 AS_max_bwd = curr_bwd;
             }
         }
+
+        latency_between_path_server_and_beacon_server = MilliSeconds(100);
+
+        for (uint32_t i = 0; i < hosts.size(); ++i) {
+            latencies_between_hosts_and_path_server.push_back(MilliSeconds(20));
+        }
     }
 
     void
