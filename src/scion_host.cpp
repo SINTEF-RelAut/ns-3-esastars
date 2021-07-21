@@ -129,7 +129,9 @@ namespace ns3 {
 
         if (path.size() == 0 && count == 0) {
             request_for_path_segments(packet.dst_ia);
-        } else if (path.size() == 0 && count < 3)  {
+        }
+
+        if (path.size() == 0 && count < 3)  {
             node->events.at(node->GetHostSchedulerIdx(local_address))->
             Schedule(MilliSeconds(300), &SCIONHost::try_sending, this, packet, (count + 1));
         }
