@@ -14,7 +14,6 @@ namespace ns3 {
     NS_LOG_COMPONENT_DEFINE("PathServer");
 
     void PathServer::RegisterCorePathSegment (PathSegment& pathSegment, std::string key) {
-        NS_LOG_LOGIC("core path registered");
         pathSegment.reverse = true;
         if (registered_core_segments.find(pathSegment.originator) == registered_core_segments.end()) {
             registered_core_segments.insert(std::make_pair(pathSegment.originator, new reg_path_segs_to_one_as_t ()));
@@ -30,7 +29,6 @@ namespace ns3 {
     }
 
     void PathServer::RegisterUpPathSegment (PathSegment& pathSegment, std::string key) {
-        NS_LOG_LOGIC("core path registered");
         pathSegment.reverse = true;
         if (registered_up_segments.find(pathSegment.originator) == registered_up_segments.end()) {
             registered_up_segments.insert(std::make_pair(pathSegment.originator, new reg_path_segs_to_one_as_t ()));
