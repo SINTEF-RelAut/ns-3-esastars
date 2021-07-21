@@ -2,11 +2,9 @@
 // Created by seyedali on 19.07.21.
 //
 #include <vector>
-#include <src/SCION/headers/scion_core_as.h>
+#include "src/SCION/headers/scion_core_as.h"
 #include <cassert>
 #include "src/SCION/headers/host.h"
-#include "src/SCION/headers/scion_as.h"
-#include "src/SCION/headers/path_server.h"
 
 
 namespace ns3 {
