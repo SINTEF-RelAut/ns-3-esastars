@@ -89,8 +89,8 @@ namespace ns3 {
                     for (auto const & [core_seg_src_ia, core_path_segs] : *cached_core_path_segments.at(down_seg_src_ia)){
                         if (cached_up_path_segments.find(core_seg_src_ia) != cached_up_path_segments.end()) {
                             the_path.push_back(cached_up_path_segments.at(core_seg_src_ia)->at(node->ia_addr)->begin()->second);
-                            the_path.push_back(cached_core_path_segments.at(down_seg_src_ia)->at(core_seg_src_ia)->begin()->second);
-                            the_path.push_back(cached_down_path_segments.at(dst_ia)->at(down_seg_src_ia)->begin()->second);
+                            the_path.push_back(core_path_segs->begin()->second);
+                            the_path.push_back(down_path_segs->begin()->second);
                             return;
                         }
                     }
