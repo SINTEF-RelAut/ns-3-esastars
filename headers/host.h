@@ -16,8 +16,8 @@ namespace ns3 {
     class Host {
 
     public:
-        void ReceiveRegisteredPathSegments (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, uint32_t req_id, const reg_path_segs_to_one_as_t* path_segments);
-        void ReceiveCachedPathSegments (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, uint32_t req_id, const cached_path_segs_per_dst_t* path_seg);
+        void ReceiveRegisteredPathSegments (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, uint32_t req_id,  reg_path_segs_to_one_as_t* path_segments);
+        void ReceiveCachedPathSegments (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, uint32_t req_id, cached_path_segs_per_dst_t* path_seg);
         void SendArbitraryPacket(ia_t dst_ia, uint32_t host_address);
     private:
 
