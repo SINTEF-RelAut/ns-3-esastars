@@ -132,6 +132,8 @@ namespace ns3 {
 
         void ExecuteLocalScheduler();
 
+        void AddHost(SCIONHost* host);
+
 
         uint64_t GetFirstEventTime ();
 

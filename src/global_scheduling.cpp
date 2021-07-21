@@ -14,6 +14,7 @@
 #include "src/SCION/headers/scion_as.h"
 #include "src/SCION/headers/beaconing/beacon_server.h"
 #include "src/SCION/headers/global_scheduling.h"
+#include "src/SCION/headers/scion_host.h"
 
 namespace ns3 {
     void ExecuteLocallyScheduledEvents (NodeContainer nodes) {
@@ -54,6 +55,14 @@ namespace ns3 {
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             Ptr<SCION_AS> node = DynamicCast<SCION_AS>(nodes.Get(i));
             node->GetBeaconServer()->ScheduleBeaconing(last_beaconing_event_time);
+
+            if (i != 0) {
+                node->events.at(node->GetHostSchedulerIdx(0))
+                        ->Schedule(Minutes(180),
+                                   &SCIONHost::SendArbitraryPacket,
+                                   node->GetHost(0),
+                                   DynamicCast<SCION_AS>(nodes.Get(0))->ia_addr, 0);
+            }
         }
 
         ScheduleNextEvent(nodes);

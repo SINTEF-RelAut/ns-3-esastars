@@ -20,13 +20,13 @@ namespace ns3 {
     void
     SCION_AS::DoInitializations() {
         latencies_between_interfaces.resize(GetNDevices());
-        events.resize(GetNDevices() + 3); // 3 = path server + beacon server + 1 host
+        events.resize(GetNDevices() + 2 + hosts.size()); // 3 = path server + beacon server +  hosts
 
         for (uint64_t i = 0; i < GetNDevices(); ++i) {
             latencies_between_interfaces.at(i).resize(GetNDevices());
         }
 
-        for (uint64_t i = 0; i < GetNDevices() + 3; ++i) {
+        for (uint64_t i = 0; i < GetNDevices() + 2 + hosts.size(); ++i) {
             events.at(i) = new LocalScheduler();
         }
 
@@ -180,5 +180,10 @@ namespace ns3 {
     SCIONHost*
     SCION_AS::GetHost(uint32_t host_addr) {
         return hosts.at(host_addr);
+    }
+
+    void
+    SCION_AS::AddHost(SCIONHost* host) {
+        hosts.push_back(host);
     }
 }
