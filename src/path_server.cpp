@@ -67,6 +67,7 @@ namespace ns3 {
         if (seg_type == path_segment_type::CORE_SEG && DynamicCast<SCION_Core_AS>(node) != NULL) {
             if (dst_ia == 0) {
                 for (auto const & [registered_dst_ia, paths_to_dst_ia] : registered_core_segments) {
+                    NS_LOG_DEBUG(GET_ISDN(registered_dst_ia) << " " <<  node->isd_number);
                     if (GET_ISDN(registered_dst_ia) == node->isd_number) {
                         node->events.at(node->GetHostSchedulerIdx(host_addr))
                         ->Schedule(request_processing_delay + node->latencies_between_hosts_and_path_server.at(host_addr),
@@ -77,6 +78,7 @@ namespace ns3 {
                 }
             } else {
                 for (auto const & [registered_dst_ia, paths_to_dst_ia] : registered_core_segments) {
+                    NS_LOG_DEBUG(GET_ISDN(registered_dst_ia) << " " <<  GET_ISDN(dst_ia));
                     if (GET_ISDN(registered_dst_ia) == GET_ISDN(dst_ia)) {
                         node->events.at(node->GetHostSchedulerIdx(host_addr))
                                 ->Schedule(request_processing_delay + node->latencies_between_hosts_and_path_server.at(host_addr),
