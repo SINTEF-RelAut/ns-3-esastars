@@ -193,7 +193,7 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* rootNode, std::string beaconi
             beaconing_policy = (ns3::BeaconServer*) new ns3::Baseline(params);
         }
 
-        ns3::PathServer* pathServer = new ns3::PathServer();
+
 
         ns3::Ptr<ns3::SCION_AS> node;
         if(type == "core"){
@@ -205,13 +205,15 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* rootNode, std::string beaconi
             exit(1);
         }
         node->SetBeaconServer(beaconing_policy);
+        beaconing_policy->SetNode(node);
+
+        ns3::PathServer* pathServer = new ns3::PathServer(node, ns3::MilliSeconds(5));
         node->SetPathServer(pathServer);
 
         ns3::SCIONHost* scionHost = new ns3::SCIONHost(node, 0, 0, 0);
         node->AddHost(scionHost);
 
         nodes.Add(node);
-        beaconing_policy->SetNode(node);
 
         ASes.insert(std::make_pair(as_number, node_counter));
         index_to_AS_no.insert(std::make_pair(node_counter, as_number));

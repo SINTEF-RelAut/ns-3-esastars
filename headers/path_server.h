@@ -18,6 +18,7 @@ namespace ns3 {
 
     class PathServer {
     public:
+        PathServer(Ptr<SCION_AS> node, Time request_processing_delay) : node(node), request_processing_delay(request_processing_delay) {}
         void RegisterCorePathSegment (PathSegment& pathSegment, std::string key);
         void RegisterUpPathSegment (PathSegment& pathSegment, std::string key);
         void RegisterDownPathSegment (PathSegment& pathSegment, std::string key);
