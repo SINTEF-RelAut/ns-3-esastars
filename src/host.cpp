@@ -15,7 +15,7 @@ namespace ns3 {
 
     }
 
-    void Host::search_in_cached_segments(ia_t dst_ia, std::vector<const PathSegment*>& the_path) {
+    void Host::search_in_cached_segments(ia_t dst_ia, std::vector<PathSegment*>& the_path) {
         int16_t dst_in_which_cache = -1;
 
         if (cached_core_path_segments.find(dst_ia) != cached_core_path_segments.end()) {
@@ -105,7 +105,7 @@ namespace ns3 {
     }
 
     void Host::try_sending(SCIONPacket packet, uint16_t count) {
-        std::vector<const PathSegment*> path;
+        std::vector<PathSegment*> path;
         search_in_cached_segments(packet.dst_ia, path);
 
         if (path.size() != 0) {
@@ -142,7 +142,7 @@ namespace ns3 {
     }
 
 
-    void Host::cache_path_segment (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, const PathSegment* path_seg){
+    void Host::cache_path_segment (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, PathSegment* path_seg){
         cached_path_segs_dataset_t* cached_path_segs_data_set;
 
         if (path_type == path_segment_type::CORE_SEG) {

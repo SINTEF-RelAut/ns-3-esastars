@@ -34,11 +34,11 @@ namespace ns3 {
         cached_path_segs_dataset_t cached_down_path_segments;
 
         void remove_expired_segments();
-        void search_in_cached_segments(ia_t dst_ia, std::vector<const PathSegment*>& path);
+        void search_in_cached_segments(ia_t dst_ia, std::vector<PathSegment*>& path);
         void request_for_path_segments(ia_t dst_ia);
         void send_request_for_path_segments (path_segment_type path_type, ia_t src_ia, ia_t dst_ia);
 
-        void cache_path_segment (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, const PathSegment* path_seg);
+        void cache_path_segment (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, PathSegment* path_seg);
 
         void try_sending(SCIONPacket packet, uint16_t count);
 

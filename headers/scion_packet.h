@@ -10,7 +10,7 @@ namespace ns3 {
     typedef uint32_t host_addr;
 
     struct SCIONPacket {
-        std::vector<const PathSegment*> path;
+        std::vector<PathSegment*> path;
 
         bool path_reversed;
 
