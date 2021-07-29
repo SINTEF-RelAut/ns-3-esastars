@@ -46,7 +46,7 @@ namespace ns3 {
         pathSegment.reverse = false;
     }
 
-    void PathServer::ReceiveRequestForPathSegmentFromHost (path_segment_type seg_type, ia_t src_ia, ia_t dst_ia, uint32_t host_addr) {
+    void PathServer::ReceiveRequestForPathSegmentFromHost (path_segment_type seg_type, ia_t src_ia, ia_t dst_ia, host_addr_t host_addr) {
 
         if (seg_type == path_segment_type::UP_SEG) {
             NS_LOG_DEBUG("received up path segment request from " << node->isd_number << ":" << node->as_number  << ":" << host_addr << " between " << GET_ISDN(src_ia) << ":" << GET_ASN(src_ia) << " and " << GET_ISDN(dst_ia) << ":" << GET_ASN(dst_ia));

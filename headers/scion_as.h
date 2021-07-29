@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "ns3/ptr.h"
 #include "ns3/network-module.h"
 #include "ns3/node.h"
 #include "ns3/point-to-point-helper.h"
@@ -23,6 +24,7 @@
 #include "src/SCION/headers/beaconing/beacon.h"
 #include "src/SCION/headers/local_scheduler.h"
 #include "src/SCION/headers/scion_packet.h"
+#include "border_router.h"
 
 namespace ns3 {
 
@@ -120,19 +122,19 @@ namespace ns3 {
 
         PathServer* GetPathServer();
 
-        SCIONHost* GetHost(uint32_t host_addr);
+        Ptr<SCIONHost> GetHost(host_addr_t host_addr);
 
         uint32_t GetPathServerSchedulerIdx();
 
         uint32_t GetBeaconServerSchedulerIdx();
 
-        uint32_t GetHostSchedulerIdx(uint32_t host_addr);
+        uint32_t GetHostSchedulerIdx(host_addr_t host_addr);
 
         void AdvanceTime (ns3::Time advance);
 
         void ExecuteLocalScheduler();
 
-        void AddHost(SCIONHost* host);
+        void AddHost(Ptr<SCIONHost> host);
 
 
         uint64_t GetFirstEventTime ();
@@ -140,7 +142,8 @@ namespace ns3 {
     protected:
         BeaconServer *beaconServer;
         PathServer *pathServer;
-        std::vector<SCIONHost*> hosts;
+        std::vector<Ptr<SCIONHost>> hosts;
+        std::unordered_map<uint16_t, Ptr<BorderRouter>> border_routers;
     private:
         /**
          *  @brief Returns the average as-level diversity and link-level diversity scores of the passed beacon compared to all other beacons the node has which

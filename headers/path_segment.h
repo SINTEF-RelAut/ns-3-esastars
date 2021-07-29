@@ -19,11 +19,17 @@ namespace ns3 {
 
 #define MAKE_IA_PAIR(src_ia, dst_ia) ((((uint64_t) src_ia) << 32)| ((uint64_t) dst_ia))
 #define MAKE_SRC_DST_PAIR(src_isd, src_as, dst_isd, dst_as) ((((uint64_t) src_isd) << 48)| (((uint64_t) src_as) << 32) | (((uint64_t) dst_isd) << 16) | ((uint64_t) dst_as))
+
 #define GET_SRC_ISD(input) ((uint16_t) ((input) >> 48))
 #define GET_SRC_AS(input) ((uint16_t) (((input) & 0x0000ffff00000000) >> 32))
 #define GET_DST_ISD(input) ((uint16_t) (((input) & 0x00000000ffff0000) >> 16))
 #define GET_DST_AS(input) ((uint16_t) ((input) & 0x000000000000ffff))
 
+
+#define GET_HOP_ISD(input) ((uint16_t) ((input) >> 48))
+#define GET_HOP_AS(input) ((uint16_t) ((input) & 0x000000000000ffff))
+#define GET_HOP_ING_IF(input) ((uint16_t) (((input) & 0x0000ffff00000000) >> 32))
+#define GET_HOP_EG_IF(input) ((uint16_t) (((input) & 0x00000000ffff0000) >> 16))
 
     enum path_segment_type  {
         CORE_SEG = 0, UP_SEG = 1, DOWN_SEG = 2

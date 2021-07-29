@@ -4,6 +4,8 @@
 #include <vector>
 #include <cassert>
 
+#include "ns3/ptr.h"
+
 #include "src/SCION/headers/scion_core_as.h"
 #include "src/SCION/headers/scion_host.h"
 #include "src/SCION/headers/path_segment.h"
@@ -21,6 +23,23 @@ namespace ns3 {
         }
     }
 
+    void SCIONHost::process_received_packet(uint16_t local_if, SCIONPacket& packet) {
+        NS_LOG_DEBUG("Message Received");
+
+
+
+
+        // last part
+        if (on_the_flight_packets.find(packet.id) != on_the_flight_packets.end()) {
+            auto existing_in_map = on_the_flight_packets.at(packet.id);
+            if (packet.src_ia == existing_in_map.src_ia && packet.dst_ia == existing_in_map.dst_ia
+                && packet.src_host == existing_in_map.src_host && packet.dst_host == existing_in_map.dst_host
+                && packet.path == existing_in_map.path && packet.curr_inf == existing_in_map.curr_inf && packet.cur_hopf == existing_in_map.cur_hopf) {
+                on_the_flight_packets.erase(packet.id);
+            }
+        }
+    }
+
     void SCIONHost::ReceiveCachedPathSegments (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, cached_path_segs_per_dst_t* path_seg) {
 
     }
@@ -29,7 +48,7 @@ namespace ns3 {
 
     }
 
-    void SCIONHost::search_in_cached_segments(ia_t dst_ia, std::vector<PathSegment*>& the_path) {
+    void SCIONHost::search_in_cached_segments(ia_t dst_ia, std::vector<const PathSegment*>& the_path, std::vector<uint8_t>& shortcuts) {
         int16_t dst_in_which_cache = -1;
 
         if (cached_core_path_segments.find(dst_ia) != cached_core_path_segments.end()) {
@@ -45,18 +64,19 @@ namespace ns3 {
         }
 
         if (dst_in_which_cache == 0 && DynamicCast<SCION_Core_AS>(node) != NULL
-            && cached_core_path_segments.at(dst_ia)->find(node->ia_addr) != cached_core_path_segments.at(dst_ia)->end()) {
-            the_path.push_back(cached_core_path_segments.at(dst_ia)->at(node->ia_addr)->begin()->second);
+            && cached_core_path_segments.at(dst_ia)->find(ia_addr) != cached_core_path_segments.at(dst_ia)->end()) {
+            the_path.push_back(cached_core_path_segments.at(dst_ia)->at(ia_addr)->begin()->second);
             return;
         }
 
         if (dst_in_which_cache == 0 && DynamicCast<SCION_Core_AS>(node) == NULL) {
             for (auto const & [core_seg_src_ia, core_path_segs] : *cached_core_path_segments.at(dst_ia)){
                 if (cached_up_path_segments.find(core_seg_src_ia) != cached_up_path_segments.end()) {
-                    assert(cached_up_path_segments.at(core_seg_src_ia)->find(node->ia_addr) != cached_up_path_segments.at(dst_ia)->end());
+                    assert(cached_up_path_segments.at(core_seg_src_ia)->find(ia_addr) != cached_up_path_segments.at(dst_ia)->end());
 
-                    the_path.push_back(cached_up_path_segments.at(core_seg_src_ia)->at(node->ia_addr)->begin()->second);
+                    the_path.push_back(cached_up_path_segments.at(core_seg_src_ia)->at(ia_addr)->begin()->second);
                     the_path.push_back(core_path_segs->begin()->second);
+
                     return;
                 }
             }
@@ -65,13 +85,13 @@ namespace ns3 {
 
 
         if (dst_in_which_cache == 1 && DynamicCast<SCION_Core_AS>(node) == NULL) {
-            assert(cached_up_path_segments.at(dst_ia)->find(node->ia_addr) != cached_up_path_segments.at(dst_ia)->end());
-            the_path.push_back(cached_up_path_segments.at(dst_ia)->at(node->ia_addr)->begin()->second);
+            assert(cached_up_path_segments.at(dst_ia)->find(ia_addr) != cached_up_path_segments.at(dst_ia)->end());
+            the_path.push_back(cached_up_path_segments.at(dst_ia)->at(ia_addr)->begin()->second);
             return;
         }
 
         if (dst_in_which_cache == 2 && DynamicCast<SCION_Core_AS>(node) != NULL){
-            if (cached_down_path_segments.at(dst_ia)->find(node->ia_addr) != cached_down_path_segments.at(dst_ia)->end()) {
+            if (cached_down_path_segments.at(dst_ia)->find(ia_addr) != cached_down_path_segments.at(dst_ia)->end()) {
                 the_path.push_back(cached_down_path_segments.find(dst_ia)->second->begin()->second->begin()->second);
                 return;
             }
@@ -80,6 +100,7 @@ namespace ns3 {
                 if (cached_core_path_segments.find(down_seg_src_ia) != cached_up_path_segments.end()) {
                     the_path.push_back(cached_core_path_segments.at(down_seg_src_ia)->begin()->second->begin()->second);
                     the_path.push_back(down_path_segs->begin()->second);
+
                     return;
                 }
             }
@@ -91,9 +112,10 @@ namespace ns3 {
                 if (cached_core_path_segments.find(down_seg_src_ia) != cached_core_path_segments.end()) {
                     for (auto const & [core_seg_src_ia, core_path_segs] : *cached_core_path_segments.at(down_seg_src_ia)){
                         if (cached_up_path_segments.find(core_seg_src_ia) != cached_up_path_segments.end()) {
-                            the_path.push_back(cached_up_path_segments.at(core_seg_src_ia)->at(node->ia_addr)->begin()->second);
+                            the_path.push_back(cached_up_path_segments.at(core_seg_src_ia)->at(ia_addr)->begin()->second);
                             the_path.push_back(core_path_segs->begin()->second);
                             the_path.push_back(down_path_segs->begin()->second);
+
                             return;
                         }
                     }
@@ -104,10 +126,10 @@ namespace ns3 {
         return;
     }
 
-    void SCIONHost::SendArbitraryPacket(ia_t dst_ia, uint32_t host_address) {
+    void SCIONHost::SendArbitraryPacket(ia_t dst_ia, host_addr_t host_address) {
         SCIONPacket packet;
         packet.payload = NULL;
-        packet.src_ia = node->ia_addr;
+        packet.src_ia = ia_addr;
         packet.dst_ia = dst_ia;
         packet.dst_host = host_address;
         packet.src_host = local_address;
@@ -117,13 +139,21 @@ namespace ns3 {
     }
 
     void SCIONHost::try_sending(SCIONPacket packet, uint16_t count) {
-        std::vector<PathSegment*> path;
-        search_in_cached_segments(packet.dst_ia, path);
+        std::vector<const PathSegment*> path;
+        std::vector<uint8_t> shortcuts;
+        search_in_cached_segments(packet.dst_ia, path, shortcuts);
 
         if (path.size() != 0) {
             packet.path = path;
+            packet.shortcut_hopfs = shortcuts;
+            packet.curr_inf = 0;
+            packet.cur_hopf = 0;
             packet.timestamp = node->local_time;
-            send_packet(packet);
+
+            on_the_flight_packets.insert(std::make_pair(next_packet_id, packet));
+            on_the_flight_packets.at(next_packet_id).id = next_packet_id;
+            send_packet(on_the_flight_packets.at(next_packet_id));
+            next_packet_id++;
         }
 
         if (path.size() == 0 && count == 0) {
@@ -136,15 +166,29 @@ namespace ns3 {
         }
     }
 
-    void SCIONHost::send_packet(SCIONPacket packet) {
+    void SCIONHost::send_packet(SCIONPacket& packet) {
         NS_LOG_DEBUG("packet sent");
+
+        uint64_t hopf = packet.path.at(packet.curr_inf)->hops.at(packet.cur_hopf);
+        assert(GET_HOP_ISD(hopf) == isd_number && GET_HOP_AS(hopf) == as_number);
+        bool reverse = packet.path_reversed ^ packet.path.at(packet.curr_inf)->reverse;
+
+        uint16_t as_if_to_send;
+        if (reverse) {
+            as_if_to_send = GET_HOP_ING_IF(hopf);
+        } else {
+            as_if_to_send = GET_HOP_EG_IF(hopf);
+        }
+
+        uint16_t local_if_to_send = forwarding_table_to_other_AS_ifaces.at(as_if_to_send);
+        schedule_for_send(local_if_to_send, packet);
     }
 
     void SCIONHost::request_for_path_segments(ia_t dst_ia) {
         uint16_t dst_isd = GET_ISDN(dst_ia);
 
-        send_request_for_path_segments(path_segment_type::UP_SEG, node->ia_addr, 0);
-        if (dst_isd == node->isd_number) {
+        send_request_for_path_segments(path_segment_type::UP_SEG, ia_addr, 0);
+        if (dst_isd == isd_number) {
             send_request_for_path_segments(path_segment_type::CORE_SEG, 0, 0);
             send_request_for_path_segments(path_segment_type::DOWN_SEG, 0, dst_ia);
         } else {
@@ -181,8 +225,6 @@ namespace ns3 {
 
 
     void SCIONHost::send_request_for_path_segments(path_segment_type path_type, ia_t src_ia, ia_t dst_ia) {
-        unique_path_req_id++;
-
         node->events.at(node->GetPathServerSchedulerIdx())
         ->Schedule(node->latencies_between_hosts_and_path_server.at(local_address),
                    &PathServer::ReceiveRequestForPathSegmentFromHost,

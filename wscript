@@ -21,6 +21,8 @@ def build(bld):
                    'src/scion_as.cpp',
                    'src/scion_core_as.cpp',
                    'src/utils.cpp',
+                   'src/scion_capable_node.cpp',
+                   'src/border_router.cpp',
                    'src/beaconing/scionlab_algo.cpp']
 
     headers = bld(features='ns3header')
@@ -40,6 +42,8 @@ def build(bld):
                      'headers/scion_host.h',
                      'headers/scion_as.h',
                      'headers/scion_core_as.h',
+                     'headers/scion_capable_node.h',
+                     'headers/border_router.h',
                      'headers/utils.h',
                      'headers/beaconing/scionlab_algo.h']
 

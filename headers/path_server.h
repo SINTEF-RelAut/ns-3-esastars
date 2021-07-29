@@ -12,6 +12,7 @@
 #include "ns3/nstime.h"
 
 #include "src/SCION/headers/path_segment.h"
+#include "src/SCION/headers/scion_packet.h"
 
 namespace ns3 {
     class SCION_AS;
@@ -23,7 +24,7 @@ namespace ns3 {
         void RegisterUpPathSegment (PathSegment& pathSegment, std::string key);
         void RegisterDownPathSegment (PathSegment& pathSegment, std::string key);
 
-        void ReceiveRequestForPathSegmentFromHost (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, uint32_t host_addr);
+        void ReceiveRequestForPathSegmentFromHost (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, host_addr_t host_addr);
     private:
         Ptr<SCION_AS> node;
         Time request_processing_delay;

@@ -179,17 +179,17 @@ namespace ns3 {
     }
 
     uint32_t
-    SCION_AS::GetHostSchedulerIdx(uint32_t host_addr) {
+    SCION_AS::GetHostSchedulerIdx(host_addr_t host_addr) {
         return GetNDevices() + 2 + host_addr;
     }
 
-    SCIONHost*
-    SCION_AS::GetHost(uint32_t host_addr) {
+    Ptr<SCIONHost>
+    SCION_AS::GetHost(host_addr_t host_addr) {
         return hosts.at(host_addr);
     }
 
     void
-    SCION_AS::AddHost(SCIONHost* host) {
+    SCION_AS::AddHost(Ptr<SCIONHost> host) {
         hosts.push_back(host);
     }
 }

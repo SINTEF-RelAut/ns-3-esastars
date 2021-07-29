@@ -77,6 +77,8 @@ namespace ns3 {
 
         uint64_t GetFirstEventTime ();
 
+        Time GetFirstAvailableSlotAssumingThroughput (Time const & delay);
+
     private:
 
         EventId Schedule (const Time &delay, EventImpl *event);
@@ -85,6 +87,8 @@ namespace ns3 {
 
         /** Next event unique id. */
         uint32_t m_uid;
+
+        uint64_t m_lastEventTime;
 //        /** Unique id of the current event. */
 //        uint32_t m_currentUid;
 //        /** Execution context of the current event. */

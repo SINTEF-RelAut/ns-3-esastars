@@ -1,0 +1,73 @@
+//
+// Created by seyedali on 28.07.21.
+//
+
+#ifndef NS_3_BEACONING_SIMULATOR_SCION_CAPABLE_NODE_H
+#define NS_3_BEACONING_SIMULATOR_SCION_CAPABLE_NODE_H
+
+#include "ns3/node.h"
+
+#include "src/SCION/headers/local_scheduler.h"
+#include "src/SCION/headers/scion_packet.h"
+
+namespace ns3 {
+
+
+
+    class SCIONCapableNode : public Node {
+    public:
+        SCIONCapableNode (uint32_t system_id, uint16_t isd_number, uint16_t as_number, host_addr_t local_address,
+                          double latitude, double longitude):
+          Node(system_id),
+          isd_number(isd_number),
+          as_number(as_number),
+          local_address(local_address),
+          latitude(latitude),
+          longitude(longitude)
+        {
+            ia_addr = (((uint32_t) isd_number) << 16) | ((uint32_t) as_number);
+            receive_scheduler = new LocalScheduler();
+            process_scheduler = new LocalScheduler();
+            send_scheduler = new LocalScheduler();
+            next_packet_id = 0;
+        }
+
+        void ScheduleReceive(uint16_t local_if, SCIONPacket& packet, Time propagation_delay);
+    protected:
+        uint16_t isd_number;
+        uint16_t as_number;
+
+        ia_t ia_addr;
+
+        host_addr_t local_address;
+
+        double latitude;
+        double longitude;
+
+        LocalScheduler* receive_scheduler;
+        LocalScheduler* process_scheduler;
+        LocalScheduler* send_scheduler;
+
+        std::vector<Time> propagation_delays;
+        std::vector<Time> transmission_delays;
+        Time queueing_delay;
+        Time processing_delay;
+
+        packet_id_t next_packet_id;
+
+        std::unordered_map<uint16_t, uint16_t> forwarding_table_to_other_AS_ifaces;
+        std::unordered_map<host_addr_t, uint16_t> forwarding_table_to_addresses_inside_as;
+
+        std::unordered_map<packet_id_t, SCIONPacket> on_the_flight_packets;
+
+        std::pair<uint16_t, Ptr<SCIONCapableNode>> get_remote_node(uint16_t local_if);
+
+        void receive (uint16_t local_if, SCIONPacket& packet);
+        void send (uint16_t local_if, SCIONPacket& packet);
+        virtual void process_received_packet(uint16_t local_if, SCIONPacket& packet) = 0;
+        void schedule_for_send(uint16_t local_if, SCIONPacket& packet);
+
+
+    };
+}
+#endif //NS_3_BEACONING_SIMULATOR_SCION_CAPABLE_NODE_H

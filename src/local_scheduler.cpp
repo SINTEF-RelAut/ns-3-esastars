@@ -1,6 +1,7 @@
 //
 // Created by seyedali on 17.07.21.
 //
+#include <cassert>
 #include "ns3/core-module.h"
 #include "src/SCION/headers/local_scheduler.h"
 #include "ns3/make-event.h"
@@ -16,6 +17,7 @@ namespace ns3 {
         Scheduler::Event ev;
         ev.impl = event;
         ev.key.m_ts = (uint64_t) tAbsolute.GetTimeStep ();
+        m_lastEventTime = ev.key.m_ts;
         ev.key.m_uid = m_uid;
         m_uid++;
 //        m_unscheduledEvents++;
@@ -26,7 +28,7 @@ namespace ns3 {
     void
     LocalScheduler::ProcessEvents ()
     {
-        while (!m_events->IsEmpty() && m_events->PeekNext().key.m_ts <= (uint64_t) Simulator::Now().GetTimeStep()) {
+        while (!m_events->IsEmpty() && m_events->PeekNext().key.m_ts == (uint64_t) Simulator::Now().GetTimeStep()) {
             Scheduler::Event next = m_events->RemoveNext ();
 
 //            m_unscheduledEvents--;
@@ -45,6 +47,19 @@ namespace ns3 {
         }
 
         return m_events->PeekNext().key.m_ts;
+    }
+
+    Time LocalScheduler::GetFirstAvailableSlotAssumingThroughput(Time const & delay) {
+        if (m_events->IsEmpty()) {
+            return delay;
+        }
+
+        assert(Time(m_lastEventTime) >= Simulator::Now());
+        assert(Time(m_events->PeekNext().key.m_ts) >= Simulator::Now());
+
+
+
+        return (Time(m_lastEventTime) - Simulator::Now() + delay);
     }
 
 }
