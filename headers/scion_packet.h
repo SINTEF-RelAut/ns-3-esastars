@@ -5,6 +5,8 @@
 #ifndef NS_3_BEACONING_SIMULATOR_SCION_PACKET_H
 #define NS_3_BEACONING_SIMULATOR_SCION_PACKET_H
 
+#include <unordered_set>
+
 #include "ns3/nstime.h"
 #include "ns3/object.h"
 
@@ -14,7 +16,8 @@ namespace ns3 {
     typedef uint16_t host_addr_t;
     typedef uint32_t packet_id_t;
 
-    struct SCIONPacket {
+    class SCIONPacket {
+    public:
         Time timestamp;
 
         std::vector<const PathSegment*> path;
@@ -31,11 +34,21 @@ namespace ns3 {
         uint16_t curr_inf;
         uint16_t cur_hopf;
 
+        uint16_t size; // size in bytes
+
         // The index of cross overs in each segment
         std::vector<uint8_t> shortcut_hopfs;
 
         bool path_reversed;
 
+
+        bool operator == (SCIONPacket const & other) const{
+            return (src_ia == other.src_ia && dst_ia == other.dst_ia &&
+                    src_host == other.src_host && dst_host == other.dst_host &&
+                    id == other.id && timestamp == other.timestamp && path == other.path);
+        }
     };
+
+
 }
 #endif //NS_3_BEACONING_SIMULATOR_SCION_PACKET_H

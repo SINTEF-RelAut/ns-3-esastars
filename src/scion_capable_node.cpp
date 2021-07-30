@@ -15,7 +15,7 @@
 
 namespace ns3 {
     void SCIONCapableNode::ScheduleReceive(uint16_t local_if, SCIONPacket& packet, Time propagation_delay) {
-        Time delay = propagation_delay + queueing_delay;
+        Time delay = propagation_delay;
         receive_scheduler->Schedule(delay, &SCIONCapableNode::receive, this, local_if, packet);
     }
 
@@ -25,7 +25,7 @@ namespace ns3 {
     }
 
     void SCIONCapableNode::schedule_for_send(uint16_t local_if, SCIONPacket& packet) {
-        Time delay = send_scheduler->GetFirstAvailableSlotAssumingThroughput(transmission_delays.at(local_if));
+        Time delay = send_scheduler->GetFirstAvailableSlotAssumingThroughput(transmission_delays.at(local_if) * packet.size * 8);
         send_scheduler->Schedule(delay, &SCIONCapableNode::send,this, local_if, packet);
     }
 
@@ -48,13 +48,27 @@ namespace ns3 {
         return std::make_pair(remote_if, remote_node);
     }
 
+    void SCIONCapableNode::AddToIFForwadingTable(uint16_t as_if, uint16_t local_if) {
+        forwarding_table_to_other_AS_ifaces.insert(std::make_pair(as_if, local_if));
+    }
 
+    void SCIONCapableNode::AddToAddressForwardingTable(host_addr_t addr, uint16_t local_if) {
+        forwarding_table_to_addresses_inside_as.insert(std::make_pair(addr, local_if));
+    }
 
+    host_addr_t SCIONCapableNode::GetLocalAddress () const {
+        return local_address;
+    }
 
+    LocalScheduler* SCIONCapableNode::GetReceiveScheduler() {return receive_scheduler;}
+    LocalScheduler* SCIONCapableNode::GetSendScheduler() {return send_scheduler;}
+    LocalScheduler* SCIONCapableNode::GetProcessScheduler() {return process_scheduler;}
 
+    double SCIONCapableNode::GetLatitude() const {return latitude;}
+    double SCIONCapableNode::GetLogitude() const {return longitude;}
 
-
-
-
+    void SCIONCapableNode::AddToPropagationDelays (Time delay) {propagation_delays.push_back(delay);}
+    void SCIONCapableNode::AddToTransmissionDelays (Time delay) {transmission_delays.push_back(delay);}
+    void SCIONCapableNode::SetProcessingDelay(Time delay) {processing_delay = delay;}
 
 }

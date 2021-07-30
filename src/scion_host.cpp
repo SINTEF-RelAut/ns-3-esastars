@@ -32,9 +32,7 @@ namespace ns3 {
         // last part
         if (on_the_flight_packets.find(packet.id) != on_the_flight_packets.end()) {
             auto existing_in_map = on_the_flight_packets.at(packet.id);
-            if (packet.src_ia == existing_in_map.src_ia && packet.dst_ia == existing_in_map.dst_ia
-                && packet.src_host == existing_in_map.src_host && packet.dst_host == existing_in_map.dst_host
-                && packet.path == existing_in_map.path && packet.curr_inf == existing_in_map.curr_inf && packet.cur_hopf == existing_in_map.cur_hopf) {
+            if (packet == existing_in_map) {
                 on_the_flight_packets.erase(packet.id);
             }
         }
@@ -149,6 +147,7 @@ namespace ns3 {
             packet.curr_inf = 0;
             packet.cur_hopf = 0;
             packet.timestamp = node->local_time;
+            packet.size = 114;
 
             on_the_flight_packets.insert(std::make_pair(next_packet_id, packet));
             on_the_flight_packets.at(next_packet_id).id = next_packet_id;

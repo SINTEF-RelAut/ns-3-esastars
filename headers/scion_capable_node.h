@@ -32,7 +32,22 @@ namespace ns3 {
             next_packet_id = 0;
         }
 
+        void AddToIFForwadingTable(uint16_t as_if, uint16_t local_if);
+        void AddToAddressForwardingTable(host_addr_t addr, uint16_t local_if);
         void ScheduleReceive(uint16_t local_if, SCIONPacket& packet, Time propagation_delay);
+
+        LocalScheduler* GetReceiveScheduler();
+        LocalScheduler* GetSendScheduler();
+        LocalScheduler* GetProcessScheduler();
+
+        host_addr_t GetLocalAddress () const;
+
+        double GetLatitude() const;
+        double GetLogitude() const;
+
+        void AddToPropagationDelays (Time delay);
+        void AddToTransmissionDelays (Time delay);
+        void SetProcessingDelay(Time delay);
     protected:
         uint16_t isd_number;
         uint16_t as_number;
@@ -48,9 +63,9 @@ namespace ns3 {
         LocalScheduler* process_scheduler;
         LocalScheduler* send_scheduler;
 
+        // Queueing delay is modeled by the processing and send scheduling queues, but no drop function is implemented yet
         std::vector<Time> propagation_delays;
         std::vector<Time> transmission_delays;
-        Time queueing_delay;
         Time processing_delay;
 
         packet_id_t next_packet_id;

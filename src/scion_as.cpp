@@ -19,26 +19,8 @@ namespace ns3 {
 
     void
     SCION_AS::DoInitializations() {
-        latencies_between_interfaces.resize(GetNDevices());
-        events.resize(GetNDevices() + 2 + hosts.size()); // 3 = path server + beacon server +  hosts
-
-        for (uint64_t i = 0; i < GetNDevices(); ++i) {
-            latencies_between_interfaces.at(i).resize(GetNDevices());
-        }
-
-        for (uint64_t i = 0; i < GetNDevices() + 2 + hosts.size(); ++i) {
-            events.at(i) = new LocalScheduler();
-        }
-
-
-        for (uint32_t i = 0; i < GetNDevices(); ++i) {
-            for (uint32_t j = i + 1; j < GetNDevices(); ++j) {
-                latencies_between_interfaces.at(i).at(j) = calculate_great_circle_latency(
-                        interfaces_coordinates.at(i).first, interfaces_coordinates.at(i).second,
-                        interfaces_coordinates.at(j).first, interfaces_coordinates.at(j).second);
-                latencies_between_interfaces.at(j).at(i) = latencies_between_interfaces.at(i).at(j);
-            }
-        }
+        connect_internal_nodes();
+        initialize_latencies();
 
         AS_max_bwd = 0;
         for (auto const curr_bwd : inter_as_bwds) {
@@ -47,11 +29,7 @@ namespace ns3 {
             }
         }
 
-        latency_between_path_server_and_beacon_server = MilliSeconds(100);
-
-        for (uint32_t i = 0; i < hosts.size(); ++i) {
-            latencies_between_hosts_and_path_server.push_back(MilliSeconds(20));
-        }
+        initialize_schedulers();
     }
 
     void
@@ -170,17 +148,17 @@ namespace ns3 {
 
     uint32_t
     SCION_AS::GetPathServerSchedulerIdx() {
-        return GetNDevices() + 1;
+        return GetNDevices() * 3 + 1;
     }
 
     uint32_t
     SCION_AS::GetBeaconServerSchedulerIdx() {
-        return GetNDevices();
+        return GetNDevices() * 3;
     }
 
     uint32_t
     SCION_AS::GetHostSchedulerIdx(host_addr_t host_addr) {
-        return GetNDevices() + 2 + host_addr;
+        return GetNDevices() * 3 + 2 + (host_addr - 2) * 4;
     }
 
     Ptr<SCIONHost>
@@ -191,5 +169,132 @@ namespace ns3 {
     void
     SCION_AS::AddHost(Ptr<SCIONHost> host) {
         hosts.push_back(host);
+    }
+
+    Ptr<BorderRouter> SCION_AS::AddBR(double latitude, double longitude, Time processing_delay) {
+        Ptr<BorderRouter> the_br = CreateObject<BorderRouter>(0,  isd_number,  as_number,  0,
+                                                               latitude,  longitude);
+
+        the_br->SetProcessingDelay(processing_delay);
+
+        border_routers.push_back(the_br);
+        interfaces_coordinates.push_back(std::pair<ld, ld>(latitude, longitude));
+
+        return the_br;
+    }
+
+    void SCION_AS::connect_internal_nodes() {
+        std::map<Ptr<BorderRouter>, std::set<uint16_t>> border_router_to_if;
+
+        for (uint16_t i = 0; i < GetNDevices(); ++i) {
+            Ptr<BorderRouter> br = border_routers.at(i);
+            if (border_router_to_if.find(br) == border_router_to_if.end()) {
+                border_router_to_if.insert(std::make_pair(br, std::set<uint16_t>()));
+            }
+            border_router_to_if.at(br).insert(i);
+        }
+
+        std::set<Ptr<BorderRouter>> border_routers_set (border_routers.begin(), border_routers.end());
+        std::vector<Ptr<BorderRouter>> border_routers_vec (border_routers_set.begin(), border_routers_set.end());
+
+        PointToPointHelper helper;
+
+        for (uint32_t i = 0; i < border_routers_vec.size() - 1; ++i) {
+            Ptr<BorderRouter> br1 = border_routers_vec.at(i);
+            for (uint32_t j = i + 1; j < border_routers_vec.size(); ++j) {
+                Ptr<BorderRouter> br2 = border_routers_vec.at(j);
+                helper.Install(br1, br2);
+
+                Time propagation_delay = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) br1->GetLatitude(), (ld) br1->GetLogitude(), (ld) br2->GetLogitude(), (ld) br2->GetLogitude())));
+
+                br1->AddToPropagationDelays(propagation_delay);
+                br2->AddToPropagationDelays(propagation_delay);
+
+                br1->AddToTransmissionDelays(FemtoSeconds(2500));
+                br2->AddToTransmissionDelays(FemtoSeconds(2500));
+
+                for (uint16_t as_if : border_router_to_if.at(br1)) {
+                    br2->AddToIFForwadingTable(as_if, br2->GetNDevices() - 1);
+                }
+
+                for (uint16_t as_if : border_router_to_if.at(br2)) {
+                    br1->AddToIFForwadingTable(as_if, br1->GetNDevices() - 1);
+                }
+            }
+        }
+
+        for (uint32_t i = 0; i < border_routers_vec.size(); ++i) {
+            Ptr<BorderRouter> br = border_routers_vec.at(i);
+            for (uint32_t j = 0; j < hosts.size(); ++j) {
+                Ptr<SCIONHost> host = hosts.at(j);
+                helper.Install(br, host);
+
+
+                Time propagation_delay = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) br->GetLatitude(), (ld) br->GetLogitude(), (ld) host->GetLogitude(), (ld) host->GetLogitude())));
+
+                br->AddToPropagationDelays(propagation_delay);
+                host->AddToPropagationDelays(propagation_delay);
+
+                br->AddToTransmissionDelays(FemtoSeconds(2500));
+                host->AddToTransmissionDelays(FemtoSeconds(2500));
+
+                for (uint16_t as_if : border_router_to_if.at(br)) {
+                    host->AddToIFForwadingTable(as_if, host->GetNDevices() - 1);
+                }
+
+                br->AddToAddressForwardingTable(host->GetLocalAddress(), br->GetNDevices() - 1);
+            }
+        }
+
+
+
+    }
+
+    void SCION_AS::initialize_schedulers() {
+        std::set<Ptr<BorderRouter>> border_routers_set (border_routers.begin(), border_routers.end());
+        events.resize(border_routers_set.size() * 3 + 2 + hosts.size() * 4);
+        int i = 0;
+        for (auto const & br : border_routers_set) {
+            events.at(i) = br->GetReceiveScheduler();
+            events.at(i + 1) = br->GetProcessScheduler();
+            events.at(i + 2) = br->GetSendScheduler();
+            i += 3;
+        }
+
+        events.at(i) = new LocalScheduler();
+        events.at(i + 1) = new LocalScheduler();
+        i += 2;
+
+        int k = 0;
+        for (uint64_t j = i; j < i + hosts.size() * 4; j += 4) {
+            events.at(j) = new LocalScheduler();
+            events.at(j + 1) = hosts.at(k)->GetReceiveScheduler();
+            events.at(j + 2) = hosts.at(k)->GetProcessScheduler();
+            events.at(j + 3) = hosts.at(k)->GetSendScheduler();
+            k++;
+        }
+    }
+
+    void SCION_AS::initialize_latencies() {
+        latencies_between_interfaces.resize(GetNDevices());
+
+        for (uint64_t i = 0; i < GetNDevices(); ++i) {
+            latencies_between_interfaces.at(i).resize(GetNDevices());
+        }
+
+        for (uint32_t i = 0; i < GetNDevices(); ++i) {
+            for (uint32_t j = i + 1; j < GetNDevices(); ++j) {
+                latencies_between_interfaces.at(i).at(j) = calculate_great_circle_latency(
+                        interfaces_coordinates.at(i).first, interfaces_coordinates.at(i).second,
+                        interfaces_coordinates.at(j).first, interfaces_coordinates.at(j).second);
+                latencies_between_interfaces.at(j).at(i) = latencies_between_interfaces.at(i).at(j);
+            }
+        }
+
+        latency_between_path_server_and_beacon_server = MilliSeconds(100);
+
+        for (uint32_t i = 0; i < hosts.size(); ++i) {
+            latencies_between_hosts_and_path_server.push_back(MilliSeconds(20));
+        }
     }
 }

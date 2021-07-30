@@ -38,17 +38,17 @@
 
 //rapidxml::xml_node<>* SetupTopologyFile (std::string topology_name);
 
-void InstantiateASesFromTopo(rapidxml::xml_node<>* rootNode, std::string beaconing_policy_str, std::map<int32_t, uint16_t>& ASes, std::map<uint16_t,
-                             int32_t>& index_to_AS_no, ns3::NodeContainer& nodes, uint16_t expiration_period, ns3::Time beaconing_period);
+void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::string beaconing_policy_str, std::map<int32_t, uint16_t>& AS_no_to_index, std::map<uint16_t,
+                             int32_t>& index_to_AS_no, ns3::NodeContainer& AS_nodes, uint16_t expiration_period, ns3::Time beaconing_period);
 
-void InstantiateLinksFromTopo (rapidxml::xml_node<>* rootNode, ns3::NodeContainer& nodes, std::map<int32_t, uint16_t>& ASes);
+void InstantiateLinksFromTopo (rapidxml::xml_node<>* xml_root, ns3::NodeContainer& AS_nodes, std::map<int32_t, uint16_t>& AS_no_to_index);
 
-void InitializeNodesAttributes(ns3::NodeContainer& nodes, std::string beaconing_policy_str);
+void InitializeNodesAttributes(ns3::NodeContainer& AS_nodes, std::string beaconing_policy_str);
 
 
 int main(int argc, char *argv[]) {
-    ns3::NodeContainer nodes;
-    std::map<int32_t, uint16_t> ASes;
+    ns3::NodeContainer AS_nodes;
+    std::map<int32_t, uint16_t> AS_no_to_index;
     std::map<uint16_t, int32_t> index_to_AS_no;
 
     std::string beaconing_policy_str;
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
     // simulation_end_time can be something other than last_beaconing_event_time if we want to simulate other stuff as well
     simulation_end_time = ns3::Time(simulation_end_time_str);
 
-    //rapidxml::xml_node<>* rootNode = SetupTopologyFile (topology_name);
+    //rapidxml::xml_node<>* xml_root = SetupTopologyFile (topology_name);
 
     //std::string file = "/cluster/home/tabaeias/ns-3_beaconing_simulator/topology/" + std::string(topology_name) + ".xml";
     std::string file = "/home/tabaeias/ns-3_beaconing_simulator/topology/" + std::string(topology_name) + ".xml";
@@ -94,21 +94,21 @@ int main(int argc, char *argv[]) {
     sstr.flush();
     fin.close();
 
-    std::string xmlData = sstr.str();
+    std::string xml_data = sstr.str();
     rapidxml::xml_document<> doc;
-    doc.parse<0>(&xmlData[0]);
+    doc.parse<0>(&xml_data[0]);
 
-    rapidxml::xml_node<> *rootNode = doc.first_node("topology");
+    rapidxml::xml_node<> *xml_root = doc.first_node("topology");
 
-    if (!rootNode) {
+    if (!xml_root) {
         std::cerr << "Empty topology!" << std::endl;
         exit(1);
     }
 
-    InstantiateASesFromTopo(rootNode, beaconing_policy_str, ASes, index_to_AS_no, nodes, expiration_period, beaconing_period);
-    InstantiateLinksFromTopo(rootNode, nodes, ASes);
+    InstantiateASesFromTopo(xml_root, beaconing_policy_str, AS_no_to_index, index_to_AS_no, AS_nodes, expiration_period, beaconing_period);
+    InstantiateLinksFromTopo(xml_root, AS_nodes, AS_no_to_index);
 
-    InitializeNodesAttributes(nodes, beaconing_policy_str);
+    InitializeNodesAttributes(AS_nodes, beaconing_policy_str);
 
 //    std::string out_path =
 //            "/cluster/scratch/tabaeias/" + beaconing_policy_str + "_" + topology_name + "_" +
@@ -122,11 +122,11 @@ int main(int argc, char *argv[]) {
     std::cout.rdbuf(out.rdbuf());
 
 
-    ns3::SchedulePeriodicEvents(nodes, beaconing_period, last_beaconing_event_time, simulation_end_time);
+    ns3::SchedulePeriodicEvents(AS_nodes, beaconing_period, last_beaconing_event_time, simulation_end_time);
     ns3::Simulator::Stop(simulation_end_time);
     ns3::Simulator::Run();
 
-    ns3::DoFinalEvaluations(nodes, ASes, index_to_AS_no, expiration_period, beaconing_period, last_beaconing_event_time);
+    ns3::DoFinalEvaluations(AS_nodes, AS_no_to_index, index_to_AS_no, expiration_period, beaconing_period, last_beaconing_event_time);
 
     ns3::Simulator::Destroy();
 
@@ -156,14 +156,14 @@ int main(int argc, char *argv[]) {
 //    return rootNode;
 //}
 
-void InstantiateASesFromTopo(rapidxml::xml_node<>* rootNode, std::string beaconing_policy_str, std::map<int32_t, uint16_t>& ASes, std::map<uint16_t,
-        int32_t>& index_to_AS_no, ns3::NodeContainer& nodes, uint16_t expiration_period, ns3::Time beaconing_period) {
+void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::string beaconing_policy_str, std::map<int32_t, uint16_t>& AS_no_to_index, std::map<uint16_t,
+        int32_t>& index_to_AS_no, ns3::NodeContainer& AS_nodes, uint16_t expiration_period, ns3::Time beaconing_period) {
     int16_t node_counter = 0;
 
-    rapidxml::xml_node<>* curNode = rootNode->first_node("node");
-    while (curNode) {
-        int32_t as_number = std::stoi(ns3::getAttribute(curNode, "id"));
-        ns3::PropertyContainer p = ns3::parseProperties(curNode);
+    rapidxml::xml_node<>* cur_xml_node = xml_root->first_node("node");
+    while (cur_xml_node) {
+        int32_t as_number = std::stoi(ns3::getAttribute(cur_xml_node, "id"));
+        ns3::PropertyContainer p = ns3::parseProperties(cur_xml_node);
 
         uint16_t isd_number = 0;
         if (p.hasProperty("isd")) {
@@ -193,47 +193,44 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* rootNode, std::string beaconi
             beaconing_policy = (ns3::BeaconServer*) new ns3::Baseline(params);
         }
 
-
-
-        ns3::Ptr<ns3::SCION_AS> node;
+        ns3::Ptr<ns3::SCION_AS> AS_node;
         if(type == "core"){
-            node = ns3::CreateObject<ns3::SCION_Core_AS>(isd_number, node_counter, 0, ns3::Time(0));
+            AS_node = ns3::CreateObject<ns3::SCION_Core_AS>(isd_number, node_counter, 0, ns3::Time(0));
         } else if(type =="non-core"){
-            node = ns3::CreateObject<ns3::SCION_AS>(isd_number, node_counter, 0, ns3::Time(0));
+            AS_node = ns3::CreateObject<ns3::SCION_AS>(isd_number, node_counter, 0, ns3::Time(0));
         } else {
-            std::cerr << "Incompatible node type!" << std::endl;
+            std::cerr << "Incompatible AS_node type!" << std::endl;
             exit(1);
         }
-        node->SetBeaconServer(beaconing_policy);
-        beaconing_policy->SetNode(node);
+        AS_node->SetBeaconServer(beaconing_policy);
+        beaconing_policy->SetNode(AS_node);
 
-        ns3::PathServer* pathServer = new ns3::PathServer(node, ns3::MilliSeconds(5));
-        node->SetPathServer(pathServer);
+        ns3::PathServer* path_server = new ns3::PathServer(AS_node, ns3::MilliSeconds(5));
+        AS_node->SetPathServer(path_server);
 
-        ns3::Ptr<ns3::SCIONHost> scionHost = ns3::CreateObject<ns3::SCIONHost>(0,  isd_number,  node_counter, 2,
-                                                                                0.0, 0.0, node);
+        ns3::Ptr<ns3::SCIONHost> scion_host = ns3::CreateObject<ns3::SCIONHost>(0, isd_number, node_counter, 2,
+                                                                                0.0, 0.0, AS_node);
 
+        AS_node->AddHost(scion_host);
 
-        node->AddHost(scionHost);
+        AS_nodes.Add(AS_node);
 
-        nodes.Add(node);
-
-        ASes.insert(std::make_pair(as_number, node_counter));
+        AS_no_to_index.insert(std::make_pair(as_number, node_counter));
         index_to_AS_no.insert(std::make_pair(node_counter, as_number));
 
         node_counter++;
 
-        curNode = curNode->next_sibling("node");
+        cur_xml_node = cur_xml_node->next_sibling("AS_node");
     }
 }
 
-void InstantiateLinksFromTopo (rapidxml::xml_node<>* rootNode, ns3::NodeContainer& nodes, std::map<int32_t, uint16_t>& ASes){
-    rapidxml::xml_node<> *curNode = rootNode->first_node("link");
-    while (curNode) {
-        int32_t to = std::stoi(curNode->first_node("to")->value());
-        int32_t from = std::stoi(curNode->first_node("from")->value());
+void InstantiateLinksFromTopo (rapidxml::xml_node<>* xml_root, ns3::NodeContainer& AS_nodes, std::map<int32_t, uint16_t>& AS_no_to_index){
+    rapidxml::xml_node<> *curr_xml_node = xml_root->first_node("link");
+    while (curr_xml_node) {
+        int32_t to = std::stoi(curr_xml_node->first_node("to")->value());
+        int32_t from = std::stoi(curr_xml_node->first_node("from")->value());
 
-        ns3::PropertyContainer p = ns3::parseProperties(curNode);
+        ns3::PropertyContainer p = ns3::parseProperties(curr_xml_node);
 
         ns3::ld latitude = std::stod(p.getProperty("latitude"));
         ns3::ld longitude = std::stod(p.getProperty("longitude"));
@@ -252,34 +249,45 @@ void InstantiateLinksFromTopo (rapidxml::xml_node<>* rootNode, ns3::NodeContaine
             relation = ns3::neighbour_relation::CORE;
         }
 
-        ns3::Ptr<ns3::SCION_AS> fromNode;
-        ns3::Ptr<ns3::SCION_AS> toNode;
+        ns3::Ptr<ns3::SCION_AS> from_AS;
+        ns3::Ptr<ns3::SCION_AS> to_AS;
 
-        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-            if ((ns3::DynamicCast<ns3::SCION_AS>(nodes.Get(i)))->as_number == ASes.at(to)) {
-                toNode = ns3::DynamicCast<ns3::SCION_AS>(nodes.Get(i));
+        for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+            if ((ns3::DynamicCast<ns3::SCION_AS>(AS_nodes.Get(i)))->as_number == AS_no_to_index.at(to)) {
+                to_AS = ns3::DynamicCast<ns3::SCION_AS>(AS_nodes.Get(i));
                 break;
             }
         }
 
-        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-            if ((ns3::DynamicCast<ns3::SCION_AS>(nodes.Get(i)))->as_number == ASes.at(from)) {
-                fromNode = ns3::DynamicCast<ns3::SCION_AS>(nodes.Get(i));
+        for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+            if ((ns3::DynamicCast<ns3::SCION_AS>(AS_nodes.Get(i)))->as_number == AS_no_to_index.at(from)) {
+                from_AS = ns3::DynamicCast<ns3::SCION_AS>(AS_nodes.Get(i));
                 break;
             }
         }
 
         ns3::PointToPointHelper helper;
-        helper.Install(fromNode, toNode);
+        helper.Install(from_AS, to_AS);
 
-        ns3::Ptr<ns3::SCION_AS> to_my_node = (ns3::DynamicCast<ns3::SCION_AS>(toNode));
-        ns3::Ptr<ns3::SCION_AS> from_my_node = (ns3::DynamicCast<ns3::SCION_AS>(fromNode));
+        ns3::Time to_processing_delay = ns3::NanoSeconds(2);
+        ns3::Time from_processing_delay = ns3::NanoSeconds(2);
 
-        to_my_node->interfaces_coordinates.push_back(std::pair<ns3::ld, ns3::ld>(latitude, longitude));
-        from_my_node->interfaces_coordinates.push_back(std::pair<ns3::ld, ns3::ld>(latitude, longitude));
+        ns3::Ptr<ns3::BorderRouter> to_br = to_AS->AddBR(latitude, longitude, to_processing_delay);
+        ns3::Ptr<ns3::BorderRouter> from_br = from_AS->AddBR(latitude, longitude, from_processing_delay);
 
-        to_my_node->inter_as_bwds.push_back(bwd);
-        from_my_node->inter_as_bwds.push_back(bwd);
+        helper.Install(from_br, to_br);
+
+        to_br->AddToPropagationDelays(ns3::NanoSeconds(5));
+        to_br->AddToTransmissionDelays(ns3::FemtoSeconds(2500)); //Per bit transmission delay assuming 400 Gbps link
+
+        from_br->AddToPropagationDelays(ns3::NanoSeconds(5));
+        from_br->AddToTransmissionDelays(ns3::FemtoSeconds(2500));
+
+        to_br->AddToIFForwadingTable(to_AS->GetNDevices() - 1, to_br->GetNDevices() - 1);
+        from_br->AddToIFForwadingTable(from_AS->GetNDevices() - 1, from_br->GetNDevices() - 1);
+
+        to_AS->inter_as_bwds.push_back(bwd);
+        from_AS->inter_as_bwds.push_back(bwd);
 
         ns3::neighbour_relation to_rel;
         ns3::neighbour_relation from_rel;
@@ -304,44 +312,44 @@ void InstantiateLinksFromTopo (rapidxml::xml_node<>* rootNode, ns3::NodeContaine
                 assert(false);
         }
 
-        to_my_node->interface_to_neighbor_map.insert(std::make_pair(to_my_node->GetNDevices() - 1, from_my_node->as_number));
-        if (to_my_node->interfaces_per_neighbor_as.find(from_my_node->as_number) !=
-            to_my_node->interfaces_per_neighbor_as.end()) {
-            to_my_node->interfaces_per_neighbor_as.at(from_my_node->as_number).push_back(
-                    (uint16_t) to_my_node->GetNDevices() - 1);
+        to_AS->interface_to_neighbor_map.insert(std::make_pair(to_AS->GetNDevices() - 1, from_AS->as_number));
+        if (to_AS->interfaces_per_neighbor_as.find(from_AS->as_number) !=
+            to_AS->interfaces_per_neighbor_as.end()) {
+            to_AS->interfaces_per_neighbor_as.at(from_AS->as_number).push_back(
+                    (uint16_t) to_AS->GetNDevices() - 1);
         } else {
             std::vector<uint16_t> tmp;
-            tmp.push_back((uint16_t) to_my_node->GetNDevices() - 1);
-            to_my_node->interfaces_per_neighbor_as.insert(std::make_pair(from_my_node->as_number, tmp));
-            to_my_node->neighbors.push_back(std::make_pair(from_my_node->as_number, to_rel));
+            tmp.push_back((uint16_t) to_AS->GetNDevices() - 1);
+            to_AS->interfaces_per_neighbor_as.insert(std::make_pair(from_AS->as_number, tmp));
+            to_AS->neighbors.push_back(std::make_pair(from_AS->as_number, to_rel));
         }
 
-        from_my_node->interface_to_neighbor_map.insert(std::make_pair(from_my_node->GetNDevices() - 1, to_my_node->as_number));
-        if (from_my_node->interfaces_per_neighbor_as.find(to_my_node->as_number) !=
-            from_my_node->interfaces_per_neighbor_as.end()) {
-            from_my_node->interfaces_per_neighbor_as.at(to_my_node->as_number).push_back(
-                    from_my_node->GetNDevices() - 1);
+        from_AS->interface_to_neighbor_map.insert(std::make_pair(from_AS->GetNDevices() - 1, to_AS->as_number));
+        if (from_AS->interfaces_per_neighbor_as.find(to_AS->as_number) !=
+            from_AS->interfaces_per_neighbor_as.end()) {
+            from_AS->interfaces_per_neighbor_as.at(to_AS->as_number).push_back(
+                    from_AS->GetNDevices() - 1);
         } else {
             std::vector<uint16_t> tmp;
-            tmp.push_back((uint16_t) from_my_node->GetNDevices() - 1);
-            from_my_node->interfaces_per_neighbor_as.insert(std::make_pair(to_my_node->as_number, tmp));
-            from_my_node->neighbors.push_back(std::make_pair(to_my_node->as_number, from_rel));
+            tmp.push_back((uint16_t) from_AS->GetNDevices() - 1);
+            from_AS->interfaces_per_neighbor_as.insert(std::make_pair(to_AS->as_number, tmp));
+            from_AS->neighbors.push_back(std::make_pair(to_AS->as_number, from_rel));
         }
 
-        curNode = curNode->next_sibling("link");
+        curr_xml_node = curr_xml_node->next_sibling("link");
     }
 }
 
-void InitializeNodesAttributes(ns3::NodeContainer& nodes, std::string beaconing_policy_str) {
-    for (uint64_t i = 0; i < nodes.GetN(); ++i) {
+void InitializeNodesAttributes(ns3::NodeContainer& AS_nodes, std::string beaconing_policy_str) {
+    for (uint64_t i = 0; i < AS_nodes.GetN(); ++i) {
         if (beaconing_policy_str == "baseline") {
-            ns3::DynamicCast<ns3::SCION_AS>(nodes.Get(i))->DoInitializations();
+            ns3::DynamicCast<ns3::SCION_AS>(AS_nodes.Get(i))->DoInitializations();
         } else if (beaconing_policy_str == "criteria_matching") {
-            ns3::DynamicCast<ns3::SCION_AS>(nodes.Get(i))->DoInitializations(nodes.GetN());
+            ns3::DynamicCast<ns3::SCION_AS>(AS_nodes.Get(i))->DoInitializations(AS_nodes.GetN());
         } else if (beaconing_policy_str == "latency_optimized") {
-            ns3::DynamicCast<ns3::SCION_AS>(nodes.Get(i))->DoInitializations(nodes.GetN());
+            ns3::DynamicCast<ns3::SCION_AS>(AS_nodes.Get(i))->DoInitializations(AS_nodes.GetN());
         } else if (beaconing_policy_str == "scionlab") {
-            ns3::DynamicCast<ns3::SCION_AS>(nodes.Get(i))->DoInitializations(nodes.GetN());
+            ns3::DynamicCast<ns3::SCION_AS>(AS_nodes.Get(i))->DoInitializations(AS_nodes.GetN());
         }
     }
 }
