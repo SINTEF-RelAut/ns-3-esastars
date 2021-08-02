@@ -24,18 +24,10 @@ namespace ns3 {
                      double latitude, double longitude) :
                      SCIONCapableNode(system_id, isd_number, as_number, local_address, latitude, longitude)
 
-        {
-            processing_delay = MicroSeconds(10);
-            queueing_delay = Time(0);
-        }
+        {}
 
     private:
         void process_received_packet(uint16_t local_if, SCIONPacket& packet) override;
-
-        std::unordered_set<uint16_t> interfaces_to_local_as;
-        std::unordered_set<uint16_t> interfaces_to_remote_as;
-
-
     };
 }
 #endif //NS_3_BEACONING_SIMULATOR_BORDER_ROUTER_H

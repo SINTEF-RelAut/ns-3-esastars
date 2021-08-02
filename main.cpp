@@ -269,22 +269,28 @@ void InstantiateLinksFromTopo (rapidxml::xml_node<>* xml_root, ns3::NodeContaine
         ns3::PointToPointHelper helper;
         helper.Install(from_AS, to_AS);
 
-        ns3::Time to_processing_delay = ns3::NanoSeconds(2);
-        ns3::Time from_processing_delay = ns3::NanoSeconds(2);
+        ns3::Time to_processing_delay = ns3::NanoSeconds(10);
+        ns3::Time from_processing_delay = ns3::NanoSeconds(10);
 
-        ns3::Ptr<ns3::BorderRouter> to_br = to_AS->AddBR(latitude, longitude, to_processing_delay);
-        ns3::Ptr<ns3::BorderRouter> from_br = from_AS->AddBR(latitude, longitude, from_processing_delay);
+        ns3::Time to_processing_throughput_delay = ns3::PicoSeconds(200); // 5 Giga packets per second
+        ns3::Time from_processing_throughput_delay = ns3::PicoSeconds(200);
+
+        ns3::Ptr<ns3::BorderRouter> to_br = to_AS->AddBR(latitude, longitude, to_processing_delay, to_processing_throughput_delay);
+        ns3::Ptr<ns3::BorderRouter> from_br = from_AS->AddBR(latitude, longitude, from_processing_delay, from_processing_throughput_delay);
 
         helper.Install(from_br, to_br);
 
-        to_br->AddToPropagationDelays(ns3::NanoSeconds(5));
-        to_br->AddToTransmissionDelays(ns3::FemtoSeconds(2500)); //Per bit transmission delay assuming 400 Gbps link
+        to_br->AddToPropagationDelays(ns3::NanoSeconds(5)); // Assuming 1m fiber optic between neighboring devices in the same location
+        to_br->AddToTransmissionDelays(ns3::PicoSeconds(20)); //Per byte transmission delay assuming 400 Gbps link
 
         from_br->AddToPropagationDelays(ns3::NanoSeconds(5));
-        from_br->AddToTransmissionDelays(ns3::FemtoSeconds(2500));
+        from_br->AddToTransmissionDelays(ns3::PicoSeconds(20));
 
         to_br->AddToIFForwadingTable(to_AS->GetNDevices() - 1, to_br->GetNDevices() - 1);
         from_br->AddToIFForwadingTable(from_AS->GetNDevices() - 1, from_br->GetNDevices() - 1);
+
+        to_br->AddToRemoteNodesInfo(from_br, from_br->GetNDevices() - 1, from_AS->isd_number, from_AS->as_number);
+        from_br->AddToRemoteNodesInfo(to_br, to_br->GetNDevices() - 1, to_AS->isd_number, to_AS->as_number);
 
         to_AS->inter_as_bwds.push_back(bwd);
         from_AS->inter_as_bwds.push_back(bwd);

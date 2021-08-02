@@ -21,6 +21,15 @@ namespace ns3 {
     SCION_AS::DoInitializations() {
         connect_internal_nodes();
         initialize_latencies();
+        initialize_schedulers();
+
+        for (auto const & br : border_routers) {
+            br->InitializeTransmissionQueues();
+        }
+
+        for (auto const & host : hosts) {
+            host->InitializeTransmissionQueues();
+        }
 
         AS_max_bwd = 0;
         for (auto const curr_bwd : inter_as_bwds) {
@@ -28,8 +37,6 @@ namespace ns3 {
                 AS_max_bwd = curr_bwd;
             }
         }
-
-        initialize_schedulers();
     }
 
     void
@@ -148,17 +155,17 @@ namespace ns3 {
 
     uint32_t
     SCION_AS::GetPathServerSchedulerIdx() {
-        return GetNDevices() * 3 + 1;
+        return GetNDevices() * 4 + 1;
     }
 
     uint32_t
     SCION_AS::GetBeaconServerSchedulerIdx() {
-        return GetNDevices() * 3;
+        return GetNDevices() * 4;
     }
 
     uint32_t
     SCION_AS::GetHostSchedulerIdx(host_addr_t host_addr) {
-        return GetNDevices() * 3 + 2 + (host_addr - 2) * 4;
+        return GetNDevices() * 4 + 2 + (host_addr - 2) * 5;
     }
 
     Ptr<SCIONHost>
@@ -171,11 +178,11 @@ namespace ns3 {
         hosts.push_back(host);
     }
 
-    Ptr<BorderRouter> SCION_AS::AddBR(double latitude, double longitude, Time processing_delay) {
+    Ptr<BorderRouter> SCION_AS::AddBR(double latitude, double longitude, Time processing_delay, Time processing_throughput_delay) {
         Ptr<BorderRouter> the_br = CreateObject<BorderRouter>(0,  isd_number,  as_number,  0,
                                                                latitude,  longitude);
 
-        the_br->SetProcessingDelay(processing_delay);
+        the_br->SetProcessingDelay(processing_delay, processing_throughput_delay);
 
         border_routers.push_back(the_br);
         interfaces_coordinates.push_back(std::pair<ld, ld>(latitude, longitude));
@@ -203,6 +210,7 @@ namespace ns3 {
             Ptr<BorderRouter> br1 = border_routers_vec.at(i);
             for (uint32_t j = i + 1; j < border_routers_vec.size(); ++j) {
                 Ptr<BorderRouter> br2 = border_routers_vec.at(j);
+
                 helper.Install(br1, br2);
 
                 Time propagation_delay = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) br1->GetLatitude(), (ld) br1->GetLogitude(), (ld) br2->GetLogitude(), (ld) br2->GetLogitude())));
@@ -210,8 +218,11 @@ namespace ns3 {
                 br1->AddToPropagationDelays(propagation_delay);
                 br2->AddToPropagationDelays(propagation_delay);
 
-                br1->AddToTransmissionDelays(FemtoSeconds(2500));
-                br2->AddToTransmissionDelays(FemtoSeconds(2500));
+                br1->AddToTransmissionDelays(PicoSeconds(20));
+                br2->AddToTransmissionDelays(PicoSeconds(20));// 400 Gbps link
+
+                br1->AddToRemoteNodesInfo(br2, br2->GetNDevices() - 1, isd_number, as_number);
+                br2->AddToRemoteNodesInfo(br1, br1->GetNDevices() - 1, isd_number, as_number);
 
                 for (uint16_t as_if : border_router_to_if.at(br1)) {
                     br2->AddToIFForwadingTable(as_if, br2->GetNDevices() - 1);
@@ -229,14 +240,16 @@ namespace ns3 {
                 Ptr<SCIONHost> host = hosts.at(j);
                 helper.Install(br, host);
 
-
                 Time propagation_delay = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) br->GetLatitude(), (ld) br->GetLogitude(), (ld) host->GetLogitude(), (ld) host->GetLogitude())));
 
                 br->AddToPropagationDelays(propagation_delay);
                 host->AddToPropagationDelays(propagation_delay);
 
-                br->AddToTransmissionDelays(FemtoSeconds(2500));
-                host->AddToTransmissionDelays(FemtoSeconds(2500));
+                br->AddToTransmissionDelays(PicoSeconds(20)); // 400 Gbps link
+                host->AddToTransmissionDelays(PicoSeconds(20));
+
+                br->AddToRemoteNodesInfo(host, host->GetNDevices() - 1, isd_number, as_number);
+                host->AddToRemoteNodesInfo(br, br->GetNDevices() - 1, isd_number, as_number);
 
                 for (uint16_t as_if : border_router_to_if.at(br)) {
                     host->AddToIFForwadingTable(as_if, host->GetNDevices() - 1);
@@ -252,13 +265,15 @@ namespace ns3 {
 
     void SCION_AS::initialize_schedulers() {
         std::set<Ptr<BorderRouter>> border_routers_set (border_routers.begin(), border_routers.end());
-        events.resize(border_routers_set.size() * 3 + 2 + hosts.size() * 4);
+        events.resize(border_routers_set.size() * 4 + 2 + hosts.size() * 5);
         int i = 0;
         for (auto const & br : border_routers_set) {
-            events.at(i) = br->GetReceiveScheduler();
-            events.at(i + 1) = br->GetProcessScheduler();
-            events.at(i + 2) = br->GetSendScheduler();
-            i += 3;
+            auto const & [receive_scheduler_local_as, receive_scheduler_remote_as] = br->GetReceiveSchedulers();
+            events.at(i) = receive_scheduler_local_as;
+            events.at(i + 1) = receive_scheduler_remote_as;
+            events.at(i + 2) = br->GetProcessScheduler();
+            events.at(i + 3) = br->GetSendScheduler();
+            i += 4;
         }
 
         events.at(i) = new LocalScheduler();
@@ -266,11 +281,14 @@ namespace ns3 {
         i += 2;
 
         int k = 0;
-        for (uint64_t j = i; j < i + hosts.size() * 4; j += 4) {
+        for (uint64_t j = i; j < i + hosts.size() * 5; j += 5) {
+            Ptr<SCIONHost> host = hosts.at(k);
+            auto const & [receive_scheduler_local_as, receive_scheduler_remote_as] = host->GetReceiveSchedulers();
             events.at(j) = new LocalScheduler();
-            events.at(j + 1) = hosts.at(k)->GetReceiveScheduler();
-            events.at(j + 2) = hosts.at(k)->GetProcessScheduler();
-            events.at(j + 3) = hosts.at(k)->GetSendScheduler();
+            events.at(j + 1) = receive_scheduler_local_as;
+            events.at(j + 2) = receive_scheduler_remote_as;
+            events.at(j + 3) = hosts.at(k)->GetProcessScheduler();
+            events.at(j + 4) = hosts.at(k)->GetSendScheduler();
             k++;
         }
     }

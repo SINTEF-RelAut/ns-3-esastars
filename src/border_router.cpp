@@ -10,6 +10,8 @@
 
 namespace ns3 {
     void BorderRouter::process_received_packet(uint16_t if_rcv, SCIONPacket& packet) {
+        SCIONCapableNode::process_received_packet(if_rcv, packet);
+
         if (packet.src_ia == packet.dst_ia) {
             return;
         }
@@ -28,9 +30,9 @@ namespace ns3 {
             return;
         }
 
-        assert(interfaces_to_local_as.find(if_rcv) != interfaces_to_local_as.end() || interfaces_to_remote_as.find(if_rcv) != interfaces_to_remote_as.end());
+        auto const & [remote_node, remote_if, received_from_local_as] = remote_nodes_info.at(if_rcv);
 
-        if (interfaces_to_remote_as.find(if_rcv) != interfaces_to_remote_as.end()) {
+        if (!received_from_local_as) {
             if (packet.path_reversed && packet.cur_hopf == 0) {
                 packet.curr_inf--;
                 packet.cur_hopf = packet.path.at(packet.curr_inf)->hops.size() - 1;
@@ -62,7 +64,7 @@ namespace ns3 {
             as_if_to_send = GET_HOP_EG_IF(hopf);
         }
 
-        if (interfaces_to_local_as.find(if_rcv) != interfaces_to_local_as.end()) {
+        if (received_from_local_as) {
             if (packet.path_reversed) {
                 packet.cur_hopf--;
             } else {

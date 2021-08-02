@@ -136,7 +136,7 @@ namespace ns3 {
 
         void AddHost(Ptr<SCIONHost> host);
 
-        Ptr<BorderRouter> AddBR (double latitude, double longitude, Time processing_delay);
+        Ptr<BorderRouter> AddBR (double latitude, double longitude, Time processing_delay, Time processing_throughput_delay);
 
         uint64_t GetFirstEventTime ();
 

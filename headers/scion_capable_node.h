@@ -26,17 +26,19 @@ namespace ns3 {
           longitude(longitude)
         {
             ia_addr = (((uint32_t) isd_number) << 16) | ((uint32_t) as_number);
-            receive_scheduler = new LocalScheduler();
+            receive_scheduler_local_as = new LocalScheduler();
+            receive_scheduler_remote_as = new LocalScheduler();
             process_scheduler = new LocalScheduler();
             send_scheduler = new LocalScheduler();
             next_packet_id = 0;
+            processing_queue_length = 0;
         }
 
         void AddToIFForwadingTable(uint16_t as_if, uint16_t local_if);
         void AddToAddressForwardingTable(host_addr_t addr, uint16_t local_if);
         void ScheduleReceive(uint16_t local_if, SCIONPacket& packet, Time propagation_delay);
 
-        LocalScheduler* GetReceiveScheduler();
+        std::pair<LocalScheduler*, LocalScheduler*> GetReceiveSchedulers();
         LocalScheduler* GetSendScheduler();
         LocalScheduler* GetProcessScheduler();
 
@@ -47,7 +49,9 @@ namespace ns3 {
 
         void AddToPropagationDelays (Time delay);
         void AddToTransmissionDelays (Time delay);
-        void SetProcessingDelay(Time delay);
+        void SetProcessingDelay(Time delay, Time throughput_delay);
+        void AddToRemoteNodesInfo (Ptr<SCIONCapableNode> remote_node, uint16_t remote_if, uint16_t remote_isd, uint16_t remote_as);
+        void InitializeTransmissionQueues();
     protected:
         uint16_t isd_number;
         uint16_t as_number;
@@ -59,14 +63,18 @@ namespace ns3 {
         double latitude;
         double longitude;
 
-        LocalScheduler* receive_scheduler;
+        LocalScheduler* receive_scheduler_local_as;
+        LocalScheduler* receive_scheduler_remote_as;
         LocalScheduler* process_scheduler;
         LocalScheduler* send_scheduler;
 
         // Queueing delay is modeled by the processing and send scheduling queues, but no drop function is implemented yet
         std::vector<Time> propagation_delays;
-        std::vector<Time> transmission_delays;
-        Time processing_delay;
+        std::vector<Time> transmission_delays; // In picoseconds/byte
+        Time processing_delay, processing_throughput_delay;
+
+        std::vector<uint32_t> transmission_queues_lengths; // In bytes
+        uint32_t processing_queue_length; // In packets
 
         packet_id_t next_packet_id;
 
@@ -75,11 +83,13 @@ namespace ns3 {
 
         std::unordered_map<packet_id_t, SCIONPacket> on_the_flight_packets;
 
+        std::vector<std::tuple<Ptr<SCIONCapableNode>, uint16_t, bool>> remote_nodes_info;
+
         std::pair<uint16_t, Ptr<SCIONCapableNode>> get_remote_node(uint16_t local_if);
 
         void receive (uint16_t local_if, SCIONPacket& packet);
         void send (uint16_t local_if, SCIONPacket& packet);
-        virtual void process_received_packet(uint16_t local_if, SCIONPacket& packet) = 0;
+        virtual void process_received_packet(uint16_t local_if, SCIONPacket& packet);
         void schedule_for_send(uint16_t local_if, SCIONPacket& packet);
 
 

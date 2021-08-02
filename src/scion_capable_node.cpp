@@ -15,23 +15,36 @@
 
 namespace ns3 {
     void SCIONCapableNode::ScheduleReceive(uint16_t local_if, SCIONPacket& packet, Time propagation_delay) {
-        Time delay = propagation_delay;
-        receive_scheduler->Schedule(delay, &SCIONCapableNode::receive, this, local_if, packet);
+        auto const & [remote_node, remote_if, in_the_same_as] = remote_nodes_info.at(local_if);
+        if (in_the_same_as) {
+            receive_scheduler_local_as->Schedule(propagation_delay, &SCIONCapableNode::receive, this, local_if, packet);
+        } else {
+            receive_scheduler_remote_as->Schedule(propagation_delay, &SCIONCapableNode::receive, this, local_if, packet);
+        }
     }
 
     void SCIONCapableNode::receive (uint16_t local_if, SCIONPacket& packet) {
-        Time delay = process_scheduler->GetFirstAvailableSlotAssumingThroughput(processing_delay);
+        processing_queue_length++;
+        Time delay = processing_throughput_delay * processing_queue_length + processing_delay;
         process_scheduler->Schedule(delay, &SCIONCapableNode::process_received_packet, this, local_if, packet);
     }
 
+    void SCIONCapableNode::process_received_packet(uint16_t local_if, SCIONPacket& packet) {
+        processing_queue_length--;
+        // Other tasks should be done in derived classes
+    }
+
     void SCIONCapableNode::schedule_for_send(uint16_t local_if, SCIONPacket& packet) {
-        Time delay = send_scheduler->GetFirstAvailableSlotAssumingThroughput(transmission_delays.at(local_if) * packet.size * 8);
+        transmission_queues_lengths.at(local_if) += packet.size;
+        Time delay = transmission_delays.at(local_if) * transmission_queues_lengths.at(local_if) ;
         send_scheduler->Schedule(delay, &SCIONCapableNode::send,this, local_if, packet);
+
     }
 
     void SCIONCapableNode::send (uint16_t local_if, SCIONPacket& packet) {
-        std::pair<uint16_t, Ptr<SCIONCapableNode>> remote_if_node_pair = get_remote_node(local_if);
-        remote_if_node_pair.second->ScheduleReceive(remote_if_node_pair.first, packet, propagation_delays.at(local_if));
+        transmission_queues_lengths.at(local_if) -= packet.size;
+        auto const & [remote_node, remote_if, in_the_same_as] = remote_nodes_info.at(local_if);
+        remote_node->ScheduleReceive(remote_if, packet, propagation_delays.at(local_if));
     }
 
     std::pair<uint16_t, Ptr<SCIONCapableNode>> SCIONCapableNode::get_remote_node(uint16_t local_if) {
@@ -60,7 +73,7 @@ namespace ns3 {
         return local_address;
     }
 
-    LocalScheduler* SCIONCapableNode::GetReceiveScheduler() {return receive_scheduler;}
+    std::pair<LocalScheduler*, LocalScheduler*> SCIONCapableNode::GetReceiveSchedulers() {return std::make_pair(receive_scheduler_local_as, receive_scheduler_remote_as);}
     LocalScheduler* SCIONCapableNode::GetSendScheduler() {return send_scheduler;}
     LocalScheduler* SCIONCapableNode::GetProcessScheduler() {return process_scheduler;}
 
@@ -69,6 +82,18 @@ namespace ns3 {
 
     void SCIONCapableNode::AddToPropagationDelays (Time delay) {propagation_delays.push_back(delay);}
     void SCIONCapableNode::AddToTransmissionDelays (Time delay) {transmission_delays.push_back(delay);}
-    void SCIONCapableNode::SetProcessingDelay(Time delay) {processing_delay = delay;}
+    void SCIONCapableNode::SetProcessingDelay(Time delay, Time throughput_delay) {processing_delay = delay; processing_throughput_delay = throughput_delay;}
+
+    void SCIONCapableNode::AddToRemoteNodesInfo (Ptr<SCIONCapableNode> remote_node, uint16_t remote_if, uint16_t remote_isd, uint16_t remote_as) {
+        if (remote_isd == isd_number && remote_as == as_number) {
+            remote_nodes_info.push_back(std::make_tuple(remote_node, remote_if, true));
+        } else {
+            remote_nodes_info.push_back(std::make_tuple(remote_node, remote_if, false));
+        }
+    }
+
+    void SCIONCapableNode::InitializeTransmissionQueues() {
+        transmission_queues_lengths.resize(GetNDevices());
+    }
 
 }
