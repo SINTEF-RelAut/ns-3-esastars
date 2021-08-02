@@ -14,6 +14,8 @@
 #include "ns3/rapidxml.hpp"
 #include <map>
 
+ns3::NodeContainer AS_nodes;
+
 namespace ns3 {
 
 #define UPPER_16_BITS(input) ((uint16_t) ((input) >> 48))

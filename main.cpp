@@ -36,6 +36,8 @@
 #include "src/SCION/headers/path_server.h"
 #include "src/SCION/headers/scion_host.h"
 
+
+
 //rapidxml::xml_node<>* SetupTopologyFile (std::string topology_name);
 
 void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::string beaconing_policy_str, std::map<int32_t, uint16_t>& AS_no_to_index, std::map<uint16_t,
@@ -47,7 +49,7 @@ void InitializeNodesAttributes(ns3::NodeContainer& AS_nodes, std::string beaconi
 
 
 int main(int argc, char *argv[]) {
-    ns3::NodeContainer AS_nodes;
+
     std::map<int32_t, uint16_t> AS_no_to_index;
     std::map<uint16_t, int32_t> index_to_AS_no;
 
