@@ -159,7 +159,7 @@ namespace ns3 {
     void SCIONHost::process_received_packet(uint16_t local_if, SCIONPacket& packet) {
         NS_LOG_DEBUG("Message Received");
         SCIONCapableNode::process_received_packet(local_if, packet);
-        if (on_the_flight_packets.find(packet.id) != on_the_flight_packets.end() && packet == on_the_flight_packets.at(packet.id)) {
+        if (on_the_flight_packets.find(packet.id) != on_the_flight_packets.end() && &packet == &on_the_flight_packets.at(packet.id)) {
             NS_LOG_DEBUG("Response Received");
             on_the_flight_packets.erase(packet.id);
             // The repose of a  previously-sent message has received; do whatever is necessary
@@ -218,7 +218,6 @@ namespace ns3 {
 
     void SCIONHost::send_packet(SCIONPacket& packet) {
         NS_LOG_DEBUG("packet sent");
-        assert(&packet == &on_the_flight_packets.at(packet.id));
 
         uint64_t hopf = packet.path.at(packet.curr_inf)->hops.at(packet.cur_hopf);
         assert(GET_HOP_ISD(hopf) == isd_number && GET_HOP_AS(hopf) == as_number);
