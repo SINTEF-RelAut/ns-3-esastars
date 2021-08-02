@@ -14,6 +14,7 @@
 #include "src/SCION/headers/scion_capable_node.h"
 
 namespace ns3 {
+    NS_LOG_COMPONENT_DEFINE("SCIONCapableDevice");
     void SCIONCapableNode::ScheduleReceive(uint16_t local_if, SCIONPacket& packet, Time propagation_delay) {
         bool in_the_same_as = std::get<2>(remote_nodes_info.at(local_if));
         if (in_the_same_as) {
@@ -35,6 +36,7 @@ namespace ns3 {
     }
 
     void SCIONCapableNode::schedule_for_send(uint16_t local_if, SCIONPacket& packet) {
+        NS_LOG_DEBUG(&packet);
         transmission_queues_lengths.at(local_if) += packet.size;
         Time delay = transmission_delays.at(local_if) * transmission_queues_lengths.at(local_if) ;
         send_scheduler->Schedule(delay, &SCIONCapableNode::send,this, local_if, packet);
@@ -42,6 +44,7 @@ namespace ns3 {
     }
 
     void SCIONCapableNode::send (uint16_t local_if, SCIONPacket& packet) {
+        NS_LOG_DEBUG(&packet);
         transmission_queues_lengths.at(local_if) -= packet.size;
         Ptr<SCIONCapableNode> remote_node = std::get<0>(remote_nodes_info.at(local_if));
         uint16_t remote_if = std::get<1>(remote_nodes_info.at(local_if));
