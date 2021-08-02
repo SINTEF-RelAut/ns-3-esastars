@@ -87,7 +87,7 @@ namespace ns3 {
         }
 
 
-        assert(packet.cur_hopf > 0);
+        assert(packet.cur_hopf >= 0);
         assert(packet.cur_hopf < packet.path.at(packet.curr_inf)->hops.size());
 
         uint16_t local_if_to_send = forwarding_table_to_other_AS_ifaces.at(as_if_to_send);
