@@ -50,6 +50,7 @@ namespace ns3 {
                 originator(pathSegment.originator),
                 initiation_time(pathSegment.initiation_time),
                 expiration_time(pathSegment.expiration_time),
+                reverse(pathSegment.reverse),
                 hops(pathSegment.hops) {}
     };
 
