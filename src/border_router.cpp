@@ -4,7 +4,6 @@
 
 #include <cassert>
 
-#include "src/SCION/headers/scion_as.h"
 #include "src/SCION/headers/border_router.h"
 #include "src/SCION/headers/scion_packet.h"
 
@@ -30,7 +29,7 @@ namespace ns3 {
             return;
         }
 
-        auto const & [remote_node, remote_if, received_from_local_as] = remote_nodes_info.at(if_rcv);
+        bool received_from_local_as = std::get<2>(remote_nodes_info.at(if_rcv));
 
         if (!received_from_local_as) {
             if (packet.path_reversed && packet.cur_hopf == 0) {

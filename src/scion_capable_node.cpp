@@ -15,7 +15,7 @@
 
 namespace ns3 {
     void SCIONCapableNode::ScheduleReceive(uint16_t local_if, SCIONPacket& packet, Time propagation_delay) {
-        auto const & [remote_node, remote_if, in_the_same_as] = remote_nodes_info.at(local_if);
+        bool in_the_same_as = std::get<2>(remote_nodes_info.at(local_if));
         if (in_the_same_as) {
             receive_scheduler_local_as->Schedule(propagation_delay, &SCIONCapableNode::receive, this, local_if, packet);
         } else {
@@ -43,7 +43,8 @@ namespace ns3 {
 
     void SCIONCapableNode::send (uint16_t local_if, SCIONPacket& packet) {
         transmission_queues_lengths.at(local_if) -= packet.size;
-        auto const & [remote_node, remote_if, in_the_same_as] = remote_nodes_info.at(local_if);
+        Ptr<SCIONCapableNode> remote_node = std::get<0>(remote_nodes_info.at(local_if));
+        uint16_t remote_if = std::get<1>(remote_nodes_info.at(local_if));
         remote_node->ScheduleReceive(remote_if, packet, propagation_delays.at(local_if));
     }
 
