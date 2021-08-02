@@ -172,6 +172,8 @@ namespace ns3 {
         assert(GET_HOP_ISD(hopf) == isd_number && GET_HOP_AS(hopf) == as_number);
         bool reverse = packet.path_reversed ^ packet.path.at(packet.curr_inf)->reverse;
 
+        NS_LOG_DEBUG( reverse << " " << packet.path_reversed << " " << packet.path.at(packet.curr_inf)->reverse);
+
         uint16_t as_if_to_send;
         if (reverse) {
             as_if_to_send = GET_HOP_ING_IF(hopf);
