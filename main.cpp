@@ -107,10 +107,10 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    InstantiateASesFromTopo(xml_root, beaconing_policy_str, AS_no_to_index, index_to_AS_no, AS_nodes, expiration_period, beaconing_period);
-    InstantiateLinksFromTopo(xml_root, AS_nodes, AS_no_to_index);
+    InstantiateASesFromTopo(xml_root, beaconing_policy_str, AS_no_to_index, index_to_AS_no, all_ases, expiration_period, beaconing_period);
+    InstantiateLinksFromTopo(xml_root, all_ases, AS_no_to_index);
 
-    InitializeNodesAttributes(AS_nodes, beaconing_policy_str);
+    InitializeNodesAttributes(all_ases, beaconing_policy_str);
 
 //    std::string out_path =
 //            "/cluster/scratch/tabaeias/" + beaconing_policy_str + "_" + topology_name + "_" +
@@ -124,11 +124,11 @@ int main(int argc, char *argv[]) {
     std::cout.rdbuf(out.rdbuf());
 
 
-    ns3::SchedulePeriodicEvents(AS_nodes, beaconing_period, last_beaconing_event_time, simulation_end_time);
+    ns3::SchedulePeriodicEvents(all_ases, beaconing_period, last_beaconing_event_time, simulation_end_time);
     ns3::Simulator::Stop(simulation_end_time);
     ns3::Simulator::Run();
 
-    ns3::DoFinalEvaluations(AS_nodes, AS_no_to_index, index_to_AS_no, expiration_period, beaconing_period, last_beaconing_event_time);
+    ns3::DoFinalEvaluations(all_ases, AS_no_to_index, index_to_AS_no, expiration_period, beaconing_period, last_beaconing_event_time);
 
     ns3::Simulator::Destroy();
 

@@ -14,7 +14,7 @@
 #include "ns3/rapidxml.hpp"
 #include <map>
 
-ns3::NodeContainer AS_nodes;
+ns3::NodeContainer all_ases;
 
 namespace ns3 {
 
