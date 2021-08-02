@@ -29,9 +29,10 @@ namespace ns3 {
         if (packet.dst_ia == ia_addr) {
             uint64_t hopf = packet.path.at(packet.curr_inf)->hops.at(packet.cur_hopf);
             assert(GET_HOP_ISD(hopf) == isd_number);
-            assert( GET_HOP_AS(hopf) == as_number);
+            assert(GET_HOP_AS(hopf) == as_number);
 
             if (forwarding_table_to_addresses_inside_as.find(packet.dst_host) == forwarding_table_to_addresses_inside_as.end()) {
+                NS_LOG_DEBUG("Address not in the forwarding table");
                 return;
             }
 
