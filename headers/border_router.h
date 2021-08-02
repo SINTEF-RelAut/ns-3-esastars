@@ -18,13 +18,14 @@ namespace ns3 {
     class BorderRouter : public SCIONCapableNode {
     public:
         BorderRouter(uint32_t system_id, uint16_t isd_number, uint16_t as_number, uint32_t local_address,
-                     double latitude, double longitude) :
-                     SCIONCapableNode(system_id, isd_number, as_number, local_address, latitude, longitude)
+                     double latitude, double longitude, uint32_t index) :
+                     SCIONCapableNode(system_id, isd_number, as_number, local_address, latitude, longitude), index(index)
 
         {}
 
     private:
         void process_received_packet(uint16_t local_if, SCIONPacket& packet) override;
+        uint32_t index;
     };
 }
 #endif //NS_3_BEACONING_SIMULATOR_BORDER_ROUTER_H

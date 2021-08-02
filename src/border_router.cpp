@@ -10,15 +10,15 @@
 namespace ns3 {
     NS_LOG_COMPONENT_DEFINE("BorderRouter");
     void BorderRouter::process_received_packet(uint16_t if_rcv, SCIONPacket& packet) {
-        NS_LOG_DEBUG(isd_number<< ":" << as_number
+        NS_LOG_DEBUG(isd_number<< ":" << as_number << ":" << index
                      << " packet from " <<  GET_ISDN(packet.src_ia) << ":" << GET_ASN(packet.src_ia)
-                     << " to" << GET_ISDN(packet.dst_ia) << ":" << GET_ASN(packet.dst_ia)
+                     << " to " << GET_ISDN(packet.dst_ia) << ":" << GET_ASN(packet.dst_ia)
                      << ", currIF: " << packet.curr_inf << ", currHopF: " << packet.cur_hopf
                      << ", path segments: " << packet.path.size()
-                     << ", curren hop field: " << GET_HOP_ISD(packet.path.at(packet.curr_inf)->hops.at(packet.cur_hopf))
-                     << ":" << GET_HOP_AS(packet.path.at(packet.curr_inf)->hops.at(packet.cur_hopf))
-                     << ":" << GET_HOP_ING_IF(packet.path.at(packet.curr_inf)->hops.at(packet.cur_hopf))
-                     << ":" << GET_HOP_EG_IF(packet.path.at(packet.curr_inf)->hops.at(packet.cur_hopf)));
+                     << ", curren hop field: isd: " << GET_HOP_ISD(packet.path.at(packet.curr_inf)->hops.at(packet.cur_hopf))
+                     << ", as:" << GET_HOP_AS(packet.path.at(packet.curr_inf)->hops.at(packet.cur_hopf))
+                     << ", ing:" << GET_HOP_ING_IF(packet.path.at(packet.curr_inf)->hops.at(packet.cur_hopf))
+                     << ", eg:" << GET_HOP_EG_IF(packet.path.at(packet.curr_inf)->hops.at(packet.cur_hopf)));
 
         SCIONCapableNode::process_received_packet(if_rcv, packet);
 
@@ -44,7 +44,7 @@ namespace ns3 {
         bool received_from_local_as = std::get<2>(remote_nodes_info.at(if_rcv));
 
         if (!received_from_local_as) {
-            NS_LOG_DEBUG("Received on" << std::get<1> (remote_nodes_info.at(if_rcv)));
+            NS_LOG_DEBUG("Received on " << std::get<1> (remote_nodes_info.at(if_rcv)));
             if (packet.path_reversed && packet.cur_hopf == 0) {
                 packet.curr_inf--;
                 packet.cur_hopf = packet.path.at(packet.curr_inf)->hops.size() - 1;
