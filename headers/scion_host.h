@@ -6,6 +6,7 @@
 #define NS_3_BEACONING_SIMULATOR_SCION_HOST_H
 
 #include <unordered_map>
+
 #include "ns3/nstime.h"
 
 #include "src/SCION/headers/path_segment.h"
