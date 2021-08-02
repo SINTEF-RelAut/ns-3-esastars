@@ -15,7 +15,7 @@
 
 namespace ns3 {
     NS_LOG_COMPONENT_DEFINE("SCIONCapableDevice");
-    void SCIONCapableNode::ScheduleReceive(uint16_t local_if, SCIONPacket& packet, Time propagation_delay) {
+    void SCIONCapableNode::ScheduleReceive(uint16_t local_if, SCIONPacket* packet, Time propagation_delay) {
         bool in_the_same_as = std::get<2>(remote_nodes_info.at(local_if));
         if (in_the_same_as) {
             receive_scheduler_local_as->Schedule(propagation_delay, &SCIONCapableNode::receive, this, local_if, packet);
@@ -24,28 +24,28 @@ namespace ns3 {
         }
     }
 
-    void SCIONCapableNode::receive (uint16_t local_if, SCIONPacket& packet) {
+    void SCIONCapableNode::receive (uint16_t local_if, SCIONPacket* packet) {
         processing_queue_length++;
         Time delay = processing_throughput_delay * processing_queue_length + processing_delay;
         process_scheduler->Schedule(delay, &SCIONCapableNode::process_received_packet, this, local_if, packet);
     }
 
-    void SCIONCapableNode::process_received_packet(uint16_t local_if, SCIONPacket& packet) {
+    void SCIONCapableNode::process_received_packet(uint16_t local_if, SCIONPacket* packet) {
         processing_queue_length--;
         // Other tasks should be done in derived classes
     }
 
-    void SCIONCapableNode::schedule_for_send(uint16_t local_if, SCIONPacket& packet) {
-        NS_LOG_DEBUG(&packet);
-        transmission_queues_lengths.at(local_if) += packet.size;
+    void SCIONCapableNode::schedule_for_send(uint16_t local_if, SCIONPacket* packet) {
+        NS_LOG_DEBUG(packet);
+        transmission_queues_lengths.at(local_if) += packet->size;
         Time delay = transmission_delays.at(local_if) * transmission_queues_lengths.at(local_if) ;
         send_scheduler->Schedule(delay, &SCIONCapableNode::send,this, local_if, packet);
 
     }
 
-    void SCIONCapableNode::send (uint16_t local_if, SCIONPacket& packet) {
-        NS_LOG_DEBUG(&packet);
-        transmission_queues_lengths.at(local_if) -= packet.size;
+    void SCIONCapableNode::send (uint16_t local_if, SCIONPacket* packet) {
+        NS_LOG_DEBUG(packet);
+        transmission_queues_lengths.at(local_if) -= packet->size;
         Ptr<SCIONCapableNode> remote_node = std::get<0>(remote_nodes_info.at(local_if));
         uint16_t remote_if = std::get<1>(remote_nodes_info.at(local_if));
         remote_node->ScheduleReceive(remote_if, packet, propagation_delays.at(local_if));

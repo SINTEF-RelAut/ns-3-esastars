@@ -9,35 +9,35 @@
 
 namespace ns3 {
     NS_LOG_COMPONENT_DEFINE("BorderRouter");
-    void BorderRouter::process_received_packet(uint16_t if_rcv, SCIONPacket& packet) {
-        NS_LOG_DEBUG("packet received " << &packet);
+    void BorderRouter::process_received_packet(uint16_t if_rcv, SCIONPacket* packet) {
+        NS_LOG_DEBUG("packet received " << packet);
         NS_LOG_DEBUG(isd_number<< ":" << as_number << ":" << index
-                     << " packet from " <<  GET_ISDN(packet.src_ia) << ":" << GET_ASN(packet.src_ia)
-                     << " to " << GET_ISDN(packet.dst_ia) << ":" << GET_ASN(packet.dst_ia)
-                     << ", currIF: " << packet.curr_inf << ", currHopF: " << packet.cur_hopf
-                     << ", path segments: " << packet.path.size()
-                     << ", current hop field: isd: " << GET_HOP_ISD(packet.path.at(packet.curr_inf)->hops.at(packet.cur_hopf))
-                     << ", as:" << GET_HOP_AS(packet.path.at(packet.curr_inf)->hops.at(packet.cur_hopf))
-                     << ", ing:" << GET_HOP_ING_IF(packet.path.at(packet.curr_inf)->hops.at(packet.cur_hopf))
-                     << ", eg:" << GET_HOP_EG_IF(packet.path.at(packet.curr_inf)->hops.at(packet.cur_hopf)));
+                     << " packet from " <<  GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia)
+                     << " to " << GET_ISDN(packet->dst_ia) << ":" << GET_ASN(packet->dst_ia)
+                     << ", currIF: " << packet->curr_inf << ", currHopF: " << packet->cur_hopf
+                     << ", path segments: " << packet->path.size()
+                     << ", current hop field: isd: " << GET_HOP_ISD(packet->path.at(packet->curr_inf)->hops.at(packet->cur_hopf))
+                     << ", as:" << GET_HOP_AS(packet->path.at(packet->curr_inf)->hops.at(packet->cur_hopf))
+                     << ", ing:" << GET_HOP_ING_IF(packet->path.at(packet->curr_inf)->hops.at(packet->cur_hopf))
+                     << ", eg:" << GET_HOP_EG_IF(packet->path.at(packet->curr_inf)->hops.at(packet->cur_hopf)));
 
         SCIONCapableNode::process_received_packet(if_rcv, packet);
 
-        if (packet.src_ia == packet.dst_ia) {
+        if (packet->src_ia == packet->dst_ia) {
             return;
         }
 
-        if (packet.dst_ia == ia_addr) {
-            uint64_t hopf = packet.path.at(packet.curr_inf)->hops.at(packet.cur_hopf);
+        if (packet->dst_ia == ia_addr) {
+            uint64_t hopf = packet->path.at(packet->curr_inf)->hops.at(packet->cur_hopf);
             assert(GET_HOP_ISD(hopf) == isd_number);
             assert(GET_HOP_AS(hopf) == as_number);
 
-            if (forwarding_table_to_addresses_inside_as.find(packet.dst_host) == forwarding_table_to_addresses_inside_as.end()) {
+            if (forwarding_table_to_addresses_inside_as.find(packet->dst_host) == forwarding_table_to_addresses_inside_as.end()) {
                 NS_LOG_DEBUG("Address not in the forwarding table");
                 return;
             }
 
-            uint16_t local_if_to_send = forwarding_table_to_addresses_inside_as.at(packet.dst_host);
+            uint16_t local_if_to_send = forwarding_table_to_addresses_inside_as.at(packet->dst_host);
             schedule_for_send(local_if_to_send, packet);
 
             return;
@@ -46,31 +46,31 @@ namespace ns3 {
         bool received_from_local_as = std::get<2>(remote_nodes_info.at(if_rcv));
 
         if (!received_from_local_as) {
-            if (packet.path_reversed && packet.cur_hopf == 0) {
-                packet.curr_inf--;
-                packet.cur_hopf = packet.path.at(packet.curr_inf)->hops.size() - 1;
-            } else if (!packet.path_reversed && packet.cur_hopf == packet.path.at(packet.curr_inf)->hops.size() - 1) {
-                packet.curr_inf++;
-                packet.cur_hopf = 0;
-            } else if (packet.shortcut_hopfs.size() == 2 && packet.path.size() == 2) {
-                if (packet.shortcut_hopfs.at(packet.curr_inf) == packet.cur_hopf) {
-                    if (packet.path_reversed) {
-                        packet.curr_inf--;
+            if (packet->path_reversed && packet->cur_hopf == 0) {
+                packet->curr_inf--;
+                packet->cur_hopf = packet->path.at(packet->curr_inf)->hops.size() - 1;
+            } else if (!packet->path_reversed && packet->cur_hopf == packet->path.at(packet->curr_inf)->hops.size() - 1) {
+                packet->curr_inf++;
+                packet->cur_hopf = 0;
+            } else if (packet->shortcut_hopfs.size() == 2 && packet->path.size() == 2) {
+                if (packet->shortcut_hopfs.at(packet->curr_inf) == packet->cur_hopf) {
+                    if (packet->path_reversed) {
+                        packet->curr_inf--;
                     } else {
-                        packet.curr_inf++;
+                        packet->curr_inf++;
                     }
                 }
-                packet.cur_hopf = packet.shortcut_hopfs.at(packet.curr_inf);
+                packet->cur_hopf = packet->shortcut_hopfs.at(packet->curr_inf);
             }
         }
 
-        assert(packet.curr_inf >= 0);
-        assert(packet.curr_inf < packet.path.size());
+        assert(packet->curr_inf >= 0);
+        assert(packet->curr_inf < packet->path.size());
 
-        uint64_t hopf = packet.path.at(packet.curr_inf)->hops.at(packet.cur_hopf);
+        uint64_t hopf = packet->path.at(packet->curr_inf)->hops.at(packet->cur_hopf);
         assert(GET_HOP_ISD(hopf) == isd_number);
         assert(GET_HOP_AS(hopf) == as_number);
-        bool reverse = packet.path_reversed ^ packet.path.at(packet.curr_inf)->reverse;
+        bool reverse = packet->path_reversed ^ packet->path.at(packet->curr_inf)->reverse;
 
         uint16_t as_if_to_send;
         if (reverse) {
@@ -80,16 +80,16 @@ namespace ns3 {
         }
 
         if (received_from_local_as) {
-            if (packet.path_reversed) {
-                packet.cur_hopf--;
+            if (packet->path_reversed) {
+                packet->cur_hopf--;
             } else {
-                packet.cur_hopf++;
+                packet->cur_hopf++;
             }
         }
 
 
-        assert(packet.cur_hopf >= 0);
-        assert(packet.cur_hopf < packet.path.at(packet.curr_inf)->hops.size());
+        assert(packet->cur_hopf >= 0);
+        assert(packet->cur_hopf < packet->path.at(packet->curr_inf)->hops.size());
 
         uint16_t local_if_to_send = forwarding_table_to_other_AS_ifaces.at(as_if_to_send);
         schedule_for_send(local_if_to_send, packet);

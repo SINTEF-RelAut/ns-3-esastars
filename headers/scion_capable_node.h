@@ -36,7 +36,7 @@ namespace ns3 {
 
         void AddToIFForwadingTable(uint16_t as_if, uint16_t local_if);
         void AddToAddressForwardingTable(host_addr_t addr, uint16_t local_if);
-        void ScheduleReceive(uint16_t local_if, SCIONPacket& packet, Time propagation_delay);
+        void ScheduleReceive(uint16_t local_if, SCIONPacket* packet, Time propagation_delay);
 
         std::pair<LocalScheduler*, LocalScheduler*> GetReceiveSchedulers();
         LocalScheduler* GetSendScheduler();
@@ -87,10 +87,10 @@ namespace ns3 {
 
         std::pair<uint16_t, Ptr<SCIONCapableNode>> get_remote_node(uint16_t local_if);
 
-        void receive (uint16_t local_if, SCIONPacket& packet);
-        void send (uint16_t local_if, SCIONPacket& packet);
-        virtual void process_received_packet(uint16_t local_if, SCIONPacket& packet);
-        void schedule_for_send(uint16_t local_if, SCIONPacket& packet);
+        void receive (uint16_t local_if, SCIONPacket* packet);
+        void send (uint16_t local_if, SCIONPacket* packet);
+        virtual void process_received_packet(uint16_t local_if, SCIONPacket* packet);
+        void schedule_for_send(uint16_t local_if, SCIONPacket* packet);
 
 
     };

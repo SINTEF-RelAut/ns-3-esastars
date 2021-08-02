@@ -38,14 +38,14 @@ namespace ns3 {
         void request_for_path_segments(ia_t dst_ia);
         void send_request_for_path_segments (path_segment_type path_type, ia_t src_ia, ia_t dst_ia);
 
-        void process_received_packet(uint16_t local_if, SCIONPacket& packet) override;
+        void process_received_packet(uint16_t local_if, SCIONPacket* packet) override;
 
         void cache_path_segment (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, PathSegment* path_seg);
 
         void try_sending(SCIONPacket packet, uint16_t count);
 
 
-        void send_packet(SCIONPacket& packet);
+        void send_packet(SCIONPacket* packet);
 
         void construct_path();
     };
