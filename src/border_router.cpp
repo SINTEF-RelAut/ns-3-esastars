@@ -8,7 +8,9 @@
 #include "src/SCION/headers/scion_packet.h"
 
 namespace ns3 {
+    NS_LOG_COMPONENT_DEFINE("BorderRouter");
     void BorderRouter::process_received_packet(uint16_t if_rcv, SCIONPacket& packet) {
+        NS_LOG_DEBUG(packet.src_ia << "->" << packet.dst_ia << ", currIF: " << packet.curr_inf << ", currHopF: " << packet.cur_hopf);
         SCIONCapableNode::process_received_packet(if_rcv, packet);
 
         if (packet.src_ia == packet.dst_ia) {
@@ -17,7 +19,8 @@ namespace ns3 {
 
         if (packet.dst_ia == ia_addr) {
             uint64_t hopf = packet.path.at(packet.curr_inf)->hops.at(packet.cur_hopf);
-            assert(GET_HOP_ISD(hopf) == isd_number && GET_HOP_AS(hopf) == as_number);
+            assert(GET_HOP_ISD(hopf) == isd_number);
+            assert( GET_HOP_AS(hopf) == as_number);
 
             if (forwarding_table_to_addresses_inside_as.find(packet.dst_host) == forwarding_table_to_addresses_inside_as.end()) {
                 return;
@@ -50,10 +53,12 @@ namespace ns3 {
             }
         }
 
-        assert(packet.curr_inf > 0 && packet.curr_inf < packet.path.size());
+        assert(packet.curr_inf > 0);
+        assert(packet.curr_inf < packet.path.size());
 
         uint64_t hopf = packet.path.at(packet.curr_inf)->hops.at(packet.cur_hopf);
-        assert(GET_HOP_ISD(hopf) == isd_number && GET_HOP_AS(hopf) == as_number);
+        assert(GET_HOP_ISD(hopf) == isd_number);
+        assert(GET_HOP_AS(hopf) == as_number);
         bool reverse = packet.path_reversed ^ packet.path.at(packet.curr_inf)->reverse;
 
         uint16_t as_if_to_send;
@@ -72,7 +77,8 @@ namespace ns3 {
         }
 
 
-        assert(packet.cur_hopf > 0 && packet.cur_hopf < packet.path.at(packet.curr_inf)->hops.size());
+        assert(packet.cur_hopf > 0);
+        assert(packet.cur_hopf < packet.path.at(packet.curr_inf)->hops.size());
 
         uint16_t local_if_to_send = forwarding_table_to_other_AS_ifaces.at(as_if_to_send);
         schedule_for_send(local_if_to_send, packet);
