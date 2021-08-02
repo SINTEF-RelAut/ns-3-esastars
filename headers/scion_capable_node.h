@@ -85,8 +85,6 @@ namespace ns3 {
 
         std::vector<std::tuple<Ptr<SCIONCapableNode>, uint16_t, bool>> remote_nodes_info;
 
-        std::pair<uint16_t, Ptr<SCIONCapableNode>> get_remote_node(uint16_t local_if);
-
         void receive (uint16_t local_if, SCIONPacket* packet);
         void send (uint16_t local_if, SCIONPacket* packet);
         virtual void process_received_packet(uint16_t local_if, SCIONPacket* packet);

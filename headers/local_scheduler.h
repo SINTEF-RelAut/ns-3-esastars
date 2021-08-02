@@ -77,7 +77,6 @@ namespace ns3 {
 
         uint64_t GetFirstEventTime ();
 
-        Time GetFirstAvailableSlotAssumingThroughput (Time const & delay);
 
     private:
 

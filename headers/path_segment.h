@@ -55,7 +55,7 @@ namespace ns3 {
     };
 
     typedef std::unordered_map<std::string, PathSegment*> reg_path_segs_to_one_as_t;
-    typedef std::multimap<uint16_t, PathSegment*> cached_path_segs_per_src_dst_t;
+    typedef std::multimap<uint16_t, const PathSegment*> cached_path_segs_per_src_dst_t;
 
     typedef std::unordered_map<ia_t, cached_path_segs_per_src_dst_t*> cached_path_segs_per_dst_t;
 

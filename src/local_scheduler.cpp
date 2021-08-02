@@ -49,17 +49,4 @@ namespace ns3 {
         return m_events->PeekNext().key.m_ts;
     }
 
-    Time LocalScheduler::GetFirstAvailableSlotAssumingThroughput(Time const & delay) {
-        if (m_events->IsEmpty()) {
-            return delay;
-        }
-
-        assert(Time(m_lastEventTime) >= Simulator::Now());
-        assert(Time(m_events->PeekNext().key.m_ts) >= Simulator::Now());
-
-
-
-        return (Time(m_lastEventTime) - Simulator::Now() + delay);
-    }
-
 }

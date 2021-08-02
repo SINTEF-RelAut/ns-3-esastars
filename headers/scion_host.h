@@ -44,10 +44,8 @@ namespace ns3 {
 
         void try_sending(SCIONPacket packet, uint16_t count);
 
-
         void send_packet(SCIONPacket* packet);
 
-        void construct_path();
     };
 }
 

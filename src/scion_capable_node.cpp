@@ -51,19 +51,7 @@ namespace ns3 {
         remote_node->ScheduleReceive(remote_if, packet, propagation_delays.at(local_if));
     }
 
-    std::pair<uint16_t, Ptr<SCIONCapableNode>> SCIONCapableNode::get_remote_node(uint16_t local_if) {
-        Ptr<PointToPointNetDevice> local_device = DynamicCast<PointToPointNetDevice>(GetDevice(local_if));
 
-        Ptr<PointToPointChannel> channel = DynamicCast<PointToPointChannel>(local_device->GetChannel());
-        uint32_t wire = local_device == channel->GetSource(0) ? 0 : 1;
-        Ptr<PointToPointNetDevice> remote_device = channel->GetDestination(wire);
-
-        uint16_t remote_if = (uint16_t) remote_device->GetIfIndex();
-
-        Ptr<SCIONCapableNode> remote_node = (DynamicCast<SCIONCapableNode>(remote_device->GetNode()));
-
-        return std::make_pair(remote_if, remote_node);
-    }
 
     void SCIONCapableNode::AddToIFForwadingTable(uint16_t as_if, uint16_t local_if) {
         forwarding_table_to_other_AS_ifaces.insert(std::make_pair(as_if, local_if));

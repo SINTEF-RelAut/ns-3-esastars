@@ -41,12 +41,6 @@ namespace ns3 {
 
         bool path_reversed;
 
-
-        bool operator == (SCIONPacket const & other) const{
-            return (src_ia == other.src_ia && dst_ia == other.dst_ia &&
-                    src_host == other.src_host && dst_host == other.dst_host &&
-                    id == other.id && timestamp == other.timestamp && path == other.path);
-        }
     };
 
 
