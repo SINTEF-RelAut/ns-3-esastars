@@ -49,7 +49,6 @@ void InitializeNodesAttributes(ns3::NodeContainer& AS_nodes, std::string beaconi
 
 
 int main(int argc, char *argv[]) {
-
     std::map<int32_t, uint16_t> AS_no_to_index;
     std::map<uint16_t, int32_t> index_to_AS_no;
 
