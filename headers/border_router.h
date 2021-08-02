@@ -23,6 +23,7 @@ namespace ns3 {
 
         {}
 
+        uint32_t GetIndex();
     private:
         void process_received_packet(uint16_t local_if, SCIONPacket& packet) override;
         uint32_t index;

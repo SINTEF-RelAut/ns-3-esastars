@@ -94,5 +94,6 @@ namespace ns3 {
         schedule_for_send(local_if_to_send, packet);
     }
 
+    uint32_t BorderRouter::GetIndex() {return index;}
 
 }

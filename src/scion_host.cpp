@@ -179,7 +179,16 @@ namespace ns3 {
             as_if_to_send = GET_HOP_EG_IF(hopf);
         }
 
+        NS_LOG_DEBUG(" first hop field: isd: " << GET_HOP_ISD(packet.path.at(packet.curr_inf)->hops.at(packet.cur_hopf))
+        << ", as:" << GET_HOP_AS(packet.path.at(packet.curr_inf)->hops.at(packet.cur_hopf))
+        << ", ing:" << GET_HOP_ING_IF(packet.path.at(packet.curr_inf)->hops.at(packet.cur_hopf))
+        << ", eg:" << GET_HOP_EG_IF(packet.path.at(packet.curr_inf)->hops.at(packet.cur_hopf)));
+
+        NS_LOG_DEBUG("as_if_to_send: " << as_if_to_send);
+
+
         uint16_t local_if_to_send = forwarding_table_to_other_AS_ifaces.at(as_if_to_send);
+        NS_LOG_DEBUG("border router index: " << DynamicCast<BorderRouter>(std::get<0>(remote_nodes_info.at(local_if_to_send)))->GetIndex());
         schedule_for_send(local_if_to_send, packet);
     }
 
