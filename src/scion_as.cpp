@@ -310,6 +310,9 @@ namespace ns3 {
         }
 
         latency_between_path_server_and_beacon_server = MilliSeconds(100);
+        // host_address == 0 ==> beacon server, host_address == 1 ==> path_server
+        latencies_between_hosts_and_path_server.push_back(MilliSeconds(100));
+        latencies_between_hosts_and_path_server.push_back(Time(0));
 
         for (uint32_t i = 0; i < hosts.size(); ++i) {
             latencies_between_hosts_and_path_server.push_back(MilliSeconds(20));
