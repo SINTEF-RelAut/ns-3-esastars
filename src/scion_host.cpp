@@ -169,7 +169,7 @@ namespace ns3 {
             packet.src_ia = ia_addr;
             packet.src_host = local_address;
 
-            packet.path_reversed = true;
+            packet.path_reversed = !packet.path_reversed;
             packet.timestamp = node->local_time;
             send_packet(packet);
         }
