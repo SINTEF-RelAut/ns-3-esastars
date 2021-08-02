@@ -220,7 +220,7 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::string beaconi
 
         node_counter++;
 
-        cur_xml_node = cur_xml_node->next_sibling("AS_node");
+        cur_xml_node = cur_xml_node->next_sibling("node");
     }
 }
 
