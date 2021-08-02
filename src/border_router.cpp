@@ -53,7 +53,7 @@ namespace ns3 {
             }
         }
 
-        assert(packet.curr_inf > 0);
+        assert(packet.curr_inf >= 0);
         assert(packet.curr_inf < packet.path.size());
 
         uint64_t hopf = packet.path.at(packet.curr_inf)->hops.at(packet.cur_hopf);
