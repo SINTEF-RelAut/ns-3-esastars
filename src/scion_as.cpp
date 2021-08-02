@@ -170,7 +170,7 @@ namespace ns3 {
 
     Ptr<SCIONHost>
     SCION_AS::GetHost(host_addr_t host_addr) {
-        return hosts.at(host_addr);
+        return hosts.at(host_addr - 2);
     }
 
     void
