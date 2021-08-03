@@ -17,7 +17,6 @@
 
 
 namespace ns3 {
-    class SCION_AS;
     class PathServer : public SCIONCapableNode {
     public:
         PathServer(uint32_t system_id, uint16_t isd_number, uint16_t as_number, host_addr_t local_address,

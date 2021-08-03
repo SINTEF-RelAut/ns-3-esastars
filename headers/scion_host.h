@@ -11,12 +11,9 @@
 
 #include "src/SCION/headers/path_segment.h"
 #include "src/SCION/headers/scion_packet.h"
-
+#include "src/SCION/headers/scion_capable_node.h"
 
 namespace ns3 {
-
-    class SCION_AS;
-
     class SCIONHost : public SCIONCapableNode{
 
     public:

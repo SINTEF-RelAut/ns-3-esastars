@@ -17,24 +17,8 @@ namespace ns3 {
 
     class SCIONCapableNode : public Node {
     public:
-        SCIONCapableNode (uint32_t system_id, uint16_t isd_number, uint16_t as_number, host_addr_t local_address,
-                          double latitude, double longitude, Ptr<SCION_AS> node):
-          Node(system_id),
-          isd_number(isd_number),
-          as_number(as_number),
-          local_address(local_address),
-          latitude(latitude),
-          longitude(longitude),
-          node(node)
-        {
-            ia_addr = (((uint32_t) isd_number) << 16) | ((uint32_t) as_number);
-            receive_scheduler_local_as = new LocalScheduler();
-            receive_scheduler_remote_as = new LocalScheduler();
-            process_scheduler = new LocalScheduler();
-            send_scheduler = new LocalScheduler();
-            next_packet_id = 0;
-            processing_queue_length = 0;
-        }
+        SCIONCapableNode(uint32_t system_id, uint16_t isd_number, uint16_t as_number, host_addr_t local_address,
+                         double latitude, double longitude, Ptr<SCION_AS> node);
 
         void AddToIFForwadingTable(uint16_t as_if, uint16_t local_if);
         void AddToAddressForwardingTable(host_addr_t addr, uint16_t local_if);

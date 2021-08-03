@@ -15,7 +15,6 @@
 #include "src/SCION/headers/scion_capable_node.h"
 
 namespace ns3 {
-    class SCION_AS;
     class BorderRouter : public SCIONCapableNode {
     public:
         BorderRouter(uint32_t system_id, uint16_t isd_number, uint16_t as_number, uint32_t local_address,

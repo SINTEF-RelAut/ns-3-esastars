@@ -11,11 +11,32 @@
 #include "ns3/point-to-point-channel.h"
 #include "ns3/network-module.h"
 
-#include "src/SCION/headers/scion_capable_node.h"
 #include "src/SCION/headers/scion_as.h"
+#include "src/SCION/headers/scion_capable_node.h"
+
 
 namespace ns3 {
     NS_LOG_COMPONENT_DEFINE("SCIONCapableDevice");
+    SCIONCapableNode::SCIONCapableNode (uint32_t system_id, uint16_t isd_number, uint16_t as_number, host_addr_t local_address,
+                      double latitude, double longitude, Ptr<SCION_AS> node):
+                      Node(system_id),
+                      isd_number(isd_number),
+                      as_number(as_number),
+                      local_address(local_address),
+                      latitude(latitude),
+                      longitude(longitude),
+                      node(node)
+                      {
+        ia_addr = (((uint32_t) isd_number) << 16) | ((uint32_t) as_number);
+        receive_scheduler_local_as = new LocalScheduler();
+        receive_scheduler_remote_as = new LocalScheduler();
+        process_scheduler = new LocalScheduler();
+        send_scheduler = new LocalScheduler();
+        next_packet_id = 0;
+        processing_queue_length = 0;
+                      }
+
+
     void SCIONCapableNode::ScheduleReceive(uint16_t local_if, SCIONPacket* packet, Time propagation_delay) {
         bool in_the_same_as = std::get<2>(remote_nodes_info.at(local_if));
         if (in_the_same_as) {
