@@ -144,7 +144,7 @@ namespace ns3 {
         packet->payload_type = payload_type;
         packet->payload = payload;
 
-        packet->timestamp = Simulator::Now() + time_shift_relative_to_simulator;
+        packet->timestamp = DynamicCast<SCION_AS>(AS)->local_time;
         packet->size = 114;
 
         return packet;

@@ -15,14 +15,14 @@ namespace ns3 {
     class SCIONCapableNode : public Node {
     public:
         SCIONCapableNode (uint32_t system_id, uint16_t isd_number, uint16_t as_number, host_addr_t local_address,
-                                            double latitude, double longitude, Time time_shift):
+                                            double latitude, double longitude, Ptr<Node> AS):
                                             Node(system_id),
                                             isd_number(isd_number),
                                             as_number(as_number),
                                             local_address(local_address),
                                             latitude(latitude),
                                             longitude(longitude),
-                                            time_shift_relative_to_simulator(time_shift)
+                                            AS(AS)
                                             {
             ia_addr = (((uint32_t) isd_number) << 16) | ((uint32_t) as_number);
             receive_scheduler_local_as = new LocalScheduler();
@@ -63,7 +63,7 @@ namespace ns3 {
         double latitude;
         double longitude;
 
-        Time time_shift_relative_to_simulator;
+        Ptr<Node> AS;
 
         LocalScheduler* receive_scheduler_local_as;
         LocalScheduler* receive_scheduler_remote_as;

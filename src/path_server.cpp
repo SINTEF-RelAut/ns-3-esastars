@@ -63,17 +63,17 @@ namespace ns3 {
     void PathServer::process_local_host_request_for_path (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, host_addr_t host_addr) {
 
         if (path_type == path_segment_type::UP_SEG) {
-            NS_LOG_DEBUG("Received up path segment request from " << node->isd_number << ":" << node->as_number  << ":" << host_addr << " between " << GET_ISDN(src_ia) << ":" << GET_ASN(src_ia) << " and " << GET_ISDN(dst_ia) << ":" << GET_ASN(dst_ia));
+            NS_LOG_DEBUG("Received up path segment request from " << isd_number << ":" << as_number  << ":" << host_addr << " between " << GET_ISDN(src_ia) << ":" << GET_ASN(src_ia) << " and " << GET_ISDN(dst_ia) << ":" << GET_ASN(dst_ia));
             return; // TODO
         }
 
         if (path_type == path_segment_type::DOWN_SEG) {
-            NS_LOG_DEBUG("Received down path segment request from " << node->isd_number << ":" << node->as_number  << ":" << host_addr << " between " << GET_ISDN(src_ia) << ":" << GET_ASN(src_ia) << " and " << GET_ISDN(dst_ia) << ":" << GET_ASN(dst_ia));
+            NS_LOG_DEBUG("Received down path segment request from " << isd_number << ":" << as_number  << ":" << host_addr << " between " << GET_ISDN(src_ia) << ":" << GET_ASN(src_ia) << " and " << GET_ISDN(dst_ia) << ":" << GET_ASN(dst_ia));
             return; // TODO
         }
 
-        if (path_type == path_segment_type::CORE_SEG && DynamicCast<SCION_Core_AS>(node) == NULL) {
-            NS_LOG_DEBUG("non-core as received core path segment request from " << node->isd_number << ":" << node->as_number  << ":" << host_addr << " between " << GET_ISDN(src_ia) << ":" << GET_ASN(src_ia) << " and " << GET_ISDN(dst_ia) << ":" << GET_ASN(dst_ia));
+        if (path_type == path_segment_type::CORE_SEG && DynamicCast<SCION_Core_AS>(AS) == NULL) {
+            NS_LOG_DEBUG("non-core as received core path segment request from " << isd_number << ":" << as_number  << ":" << host_addr << " between " << GET_ISDN(src_ia) << ":" << GET_ASN(src_ia) << " and " << GET_ISDN(dst_ia) << ":" << GET_ASN(dst_ia));
             if (dst_ia == 0) {
                 return; //TODO
             } else {
@@ -81,12 +81,12 @@ namespace ns3 {
             }
         }
 
-        if (path_type == path_segment_type::CORE_SEG && DynamicCast<SCION_Core_AS>(node) != NULL) {
-            NS_LOG_DEBUG("Core AS received core path segment request from " << node->isd_number << ":" << node->as_number  << ":" << host_addr << " between " << GET_ISDN(src_ia) << ":" << GET_ASN(src_ia) << " and " << GET_ISDN(dst_ia) << ":" << GET_ASN(dst_ia));
+        if (path_type == path_segment_type::CORE_SEG && DynamicCast<SCION_Core_AS>(AS) != NULL) {
+            NS_LOG_DEBUG("Core AS received core path segment request from " << isd_number << ":" << as_number  << ":" << host_addr << " between " << GET_ISDN(src_ia) << ":" << GET_ASN(src_ia) << " and " << GET_ISDN(dst_ia) << ":" << GET_ASN(dst_ia));
             if (dst_ia == 0) {
                 for (auto const & [registered_dst_ia, paths_to_dst_ia] : registered_core_segments) {
-                    NS_LOG_DEBUG(GET_ISDN(registered_dst_ia) << ":" << GET_ASN(registered_dst_ia) << " " <<  GET_ISDN(node->isd_number) << ":" << GET_ASN(node->isd_number));
-                    if (GET_ISDN(registered_dst_ia) == node->isd_number) {
+                    NS_LOG_DEBUG(GET_ISDN(registered_dst_ia) << ":" << GET_ASN(registered_dst_ia) << " " <<  GET_ISDN(ia_addr) << ":" << GET_ASN(ia_addr));
+                    if (GET_ISDN(registered_dst_ia) == isd_number) {
                         send_registered_path_to_local_host(host_addr, path_segment_type::CORE_SEG, ia_addr, registered_dst_ia, paths_to_dst_ia);
                     }
                 }

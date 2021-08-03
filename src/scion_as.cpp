@@ -167,7 +167,7 @@ namespace ns3 {
 
     Ptr<BorderRouter> SCION_AS::AddBR(double latitude, double longitude, Time processing_delay, Time processing_throughput_delay) {
         Ptr<BorderRouter> the_br = CreateObject<BorderRouter>(0,  isd_number,  as_number,  0,
-                                                               latitude,  longitude, local_time - Simulator::Now());
+                                                               latitude,  longitude, Ptr<Node>(this));
 
         the_br->SetProcessingDelay(processing_delay, processing_throughput_delay);
 

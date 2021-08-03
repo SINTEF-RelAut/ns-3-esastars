@@ -18,7 +18,7 @@ namespace ns3 {
 
         for (auto const & key_path_segment_pair : *path_segments) {
             PathSegment* path_segment = key_path_segment_pair.second;
-            if (path_segment->expiration_time > node->local_time.GetMinutes()) {
+            if (path_segment->expiration_time > DynamicCast<SCION_AS>(AS)->local_time.GetMinutes()) {
                 cache_path_segment (seg_type,  src_ia, dst_ia,  path_segment);
             }
         }
@@ -102,13 +102,13 @@ namespace ns3 {
             return;
         }
 
-        if (dst_in_which_cache == 0 && DynamicCast<SCION_Core_AS>(node) != NULL
+        if (dst_in_which_cache == 0 && DynamicCast<SCION_Core_AS>(AS) != NULL
         && cached_core_path_segments.at(dst_ia)->find(ia_addr) != cached_core_path_segments.at(dst_ia)->end()) {
             the_path.push_back(cached_core_path_segments.at(dst_ia)->at(ia_addr)->begin()->second);
             return;
         }
 
-        if (dst_in_which_cache == 0 && DynamicCast<SCION_Core_AS>(node) == NULL) {
+        if (dst_in_which_cache == 0 && DynamicCast<SCION_Core_AS>(AS) == NULL) {
             for (auto const & [core_seg_src_ia, core_path_segs] : *cached_core_path_segments.at(dst_ia)){
                 if (cached_up_path_segments.find(core_seg_src_ia) != cached_up_path_segments.end()) {
                     NS_ASSERT(cached_up_path_segments.at(core_seg_src_ia)->find(ia_addr) != cached_up_path_segments.at(dst_ia)->end());
@@ -123,13 +123,13 @@ namespace ns3 {
         }
 
 
-        if (dst_in_which_cache == 1 && DynamicCast<SCION_Core_AS>(node) == NULL) {
+        if (dst_in_which_cache == 1 && DynamicCast<SCION_Core_AS>(AS) == NULL) {
             NS_ASSERT(cached_up_path_segments.at(dst_ia)->find(ia_addr) != cached_up_path_segments.at(dst_ia)->end());
             the_path.push_back(cached_up_path_segments.at(dst_ia)->at(ia_addr)->begin()->second);
             return;
         }
 
-        if (dst_in_which_cache == 2 && DynamicCast<SCION_Core_AS>(node) != NULL){
+        if (dst_in_which_cache == 2 && DynamicCast<SCION_Core_AS>(AS) != NULL){
             if (cached_down_path_segments.at(dst_ia)->find(ia_addr) != cached_down_path_segments.at(dst_ia)->end()) {
                 the_path.push_back(cached_down_path_segments.find(dst_ia)->second->begin()->second->begin()->second);
                 return;
@@ -146,7 +146,7 @@ namespace ns3 {
             return;
         }
 
-        if (dst_in_which_cache == 2 && DynamicCast<SCION_Core_AS>(node) == NULL) {
+        if (dst_in_which_cache == 2 && DynamicCast<SCION_Core_AS>(AS) == NULL) {
             for (auto const & [down_seg_src_ia, down_path_segs] : *cached_down_path_segments.at(dst_ia)){
                 if (cached_core_path_segments.find(down_seg_src_ia) != cached_core_path_segments.end()) {
                     for (auto const & [core_seg_src_ia, core_path_segs] : *cached_core_path_segments.at(down_seg_src_ia)){
@@ -195,7 +195,7 @@ namespace ns3 {
             packet->src_host = local_address;
 
             packet->path_reversed = !packet->path_reversed;
-            packet->timestamp = node->local_time;
+            packet->timestamp = DynamicCast<SCION_AS>(AS)->local_time;
             send_packet(packet);
         }
     }
