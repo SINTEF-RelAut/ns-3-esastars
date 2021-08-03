@@ -9,10 +9,9 @@
 
 #include "src/SCION/headers/local_scheduler.h"
 #include "src/SCION/headers/scion_packet.h"
+#include "src/SCION/headers/scion_as.h"
 
 namespace ns3 {
-
-    class SCION_AS;
 
     class SCIONCapableNode : public Node {
     public:

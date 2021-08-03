@@ -13,7 +13,7 @@
 
 #include "src/SCION/headers/path_segment.h"
 #include "src/SCION/headers/scion_packet.h"
-#include "scion_capable_node.h"
+#include "src/SCION/headers/scion_capable_node.h"
 
 
 namespace ns3 {
