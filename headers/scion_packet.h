@@ -65,7 +65,7 @@ namespace ns3 {
 
         bool path_reversed;
 
-        SCIONPacket(packet_id_t id, const Ptr<Node> packet_originator) : id(id), packet_originator(packet_originator) {}
+        SCIONPacket(const Ptr<Node> packet_originator, packet_id_t id) : id(id), packet_originator(packet_originator) {}
 
     };
 
