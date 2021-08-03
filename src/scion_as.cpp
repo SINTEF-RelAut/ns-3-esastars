@@ -33,6 +33,8 @@ namespace ns3 {
             host->InitializeTransmissionQueues();
         }
 
+        pathServer->InitializeTransmissionQueues();
+
         AS_max_bwd = 0;
         for (auto const curr_bwd : inter_as_bwds) {
             if (curr_bwd > AS_max_bwd) {
