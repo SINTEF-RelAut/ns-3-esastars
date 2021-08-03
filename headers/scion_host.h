@@ -18,8 +18,8 @@ namespace ns3 {
 
     public:
         SCIONHost(uint32_t system_id, uint16_t isd_number, uint16_t as_number, host_addr_t local_address,
-                  double latitude, double longitude, Ptr<SCION_AS> node) :
-                  SCIONCapableNode(system_id, isd_number, as_number, local_address, latitude, longitude, node){}
+                  double latitude, double longitude, Time time_shift) :
+                  SCIONCapableNode(system_id, isd_number, as_number, local_address, latitude, longitude, time_shift){}
 
 
         void SendArbitraryPacket(ia_t dst_ia, host_addr_t dst_host);
