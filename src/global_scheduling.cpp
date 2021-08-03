@@ -58,8 +58,7 @@ namespace ns3 {
             node->GetBeaconServer()->ScheduleBeaconing(last_beaconing_event_time);
 
             if (i == 0) {
-                node->events.at(node->GetHostSchedulerIdx(2))
-                        ->Schedule(Minutes(180),
+                node->GetHost(2)->GetProcessScheduler()->Schedule(Minutes(180),
                                    &SCIONHost::SendArbitraryPacket,
                                    node->GetHost(2),
                                    DynamicCast<SCION_AS>(nodes.Get(1))->ia_addr, 2);

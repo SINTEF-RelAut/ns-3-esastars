@@ -12,18 +12,19 @@
 
 namespace ns3 {
 
-
+    class SCION_AS;
 
     class SCIONCapableNode : public Node {
     public:
         SCIONCapableNode (uint32_t system_id, uint16_t isd_number, uint16_t as_number, host_addr_t local_address,
-                          double latitude, double longitude):
+                          double latitude, double longitude, Ptr<SCION_AS> node):
           Node(system_id),
           isd_number(isd_number),
           as_number(as_number),
           local_address(local_address),
           latitude(latitude),
-          longitude(longitude)
+          longitude(longitude),
+          node(node)
         {
             ia_addr = (((uint32_t) isd_number) << 16) | ((uint32_t) as_number);
             receive_scheduler_local_as = new LocalScheduler();
@@ -52,6 +53,7 @@ namespace ns3 {
         void SetProcessingDelay(Time delay, Time throughput_delay);
         void AddToRemoteNodesInfo (Ptr<SCIONCapableNode> remote_node, uint16_t remote_if, uint16_t remote_isd, uint16_t remote_as);
         void InitializeTransmissionQueues();
+        void Drop(SCIONPacket* packet);
     protected:
         uint16_t isd_number;
         uint16_t as_number;
@@ -62,6 +64,8 @@ namespace ns3 {
 
         double latitude;
         double longitude;
+
+        Ptr<SCION_AS> node;
 
         LocalScheduler* receive_scheduler_local_as;
         LocalScheduler* receive_scheduler_remote_as;
@@ -89,6 +93,9 @@ namespace ns3 {
         void send (uint16_t local_if, SCIONPacket* packet);
         virtual void process_received_packet(uint16_t local_if, SCIONPacket* packet);
         void schedule_for_send(uint16_t local_if, SCIONPacket* packet);
+
+        void send_packet(SCIONPacket* packet);
+        SCIONPacket* create_packet(Payload payload, payload_type_t payload_type, ia_t dst_ia, host_addr_t dst_host);
 
 
     };

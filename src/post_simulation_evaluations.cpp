@@ -143,7 +143,7 @@ namespace ns3 {
 
                 ns3::Ptr<ns3::SCION_AS> src_node = ns3::DynamicCast<ns3::SCION_AS>(nodes.Get(ASes.at(src_as_no)));
 
-                uint16_t last_br;
+                uint16_t last_br = 0;
                 double min_latency_to_dst_as = std::numeric_limits<double>::max();
                 ns3::path *selected_path = NULL;
 
@@ -200,7 +200,7 @@ namespace ns3 {
                                                                   selected_instance_coordinates.second) << "|"
                           << "(" << probe_lat << ", " << probe_long << ")" << "|";
 
-                int hop_cnt = 0;
+                uint32_t hop_cnt = 0;
                 std::vector<ns3::link_information>::reverse_iterator hop = selected_path->rbegin();
                 for (; hop != selected_path->rend(); ++hop) {
                     if (hop_cnt != 0) {
@@ -249,7 +249,7 @@ namespace ns3 {
                         std::cout << src_as_no << "|" << dst_as_no << "|";
                         ns3::path *the_path = &the_beacon->the_path;
 
-                        int hop_cnt = 0;
+                        uint32_t hop_cnt = 0;
                         std::vector<ns3::link_information>::reverse_iterator hop = the_path->rbegin();
                         for (; hop != the_path->rend(); ++hop) {
                             if (hop_cnt != 0) {
@@ -310,7 +310,7 @@ namespace ns3 {
                             continue;
                         }
                         std::cout << "\t" << "\t";
-                        int hop_cnt = 0;
+                        uint32_t hop_cnt = 0;
                         std::vector<ns3::link_information>::reverse_iterator hop = the_beacon->the_path.rbegin();
                         for (; hop != the_beacon->the_path.rend(); ++hop) {
                             if (hop_cnt != 0) {

@@ -13,6 +13,20 @@
 namespace ns3 {
     NS_LOG_COMPONENT_DEFINE("PathServer");
 
+    void PathServer::process_received_packet(uint16_t local_if, SCIONPacket* packet) {
+        NS_ASSERT(packet->dst_ia == ia_addr && packet->dst_host == local_address);
+        SCIONCapableNode::process_received_packet(local_if, packet);
+
+        if (packet->payload_type == payload_type_t::PATH_REQ_FROM_HOST && packet->src_ia == ia_addr) {
+            PathReqFromHost path_req_from_host = packet->payload.path_req_from_host;
+            process_local_host_request_for_path(path_req_from_host.seg_type, path_req_from_host.src_ia,
+                                                path_req_from_host.dst_ia, packet->src_host);
+
+            DynamicCast<SCIONCapableNode>(packet->packet_originator)->Drop(packet);
+            return;
+        }
+    }
+
     void PathServer::RegisterCorePathSegment (PathSegment& pathSegment, std::string key) {
         pathSegment.reverse = true;
         if (registered_core_segments.find(pathSegment.originator) == registered_core_segments.end()) {
@@ -46,19 +60,19 @@ namespace ns3 {
         pathSegment.reverse = false;
     }
 
-    void PathServer::ReceiveRequestForPathSegmentFromHost (path_segment_type seg_type, ia_t src_ia, ia_t dst_ia, host_addr_t host_addr) {
+    void PathServer::process_local_host_request_for_path (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, host_addr_t host_addr) {
 
-        if (seg_type == path_segment_type::UP_SEG) {
-            NS_LOG_DEBUG("received up path segment request from " << node->isd_number << ":" << node->as_number  << ":" << host_addr << " between " << GET_ISDN(src_ia) << ":" << GET_ASN(src_ia) << " and " << GET_ISDN(dst_ia) << ":" << GET_ASN(dst_ia));
+        if (path_type == path_segment_type::UP_SEG) {
+            NS_LOG_DEBUG("Received up path segment request from " << node->isd_number << ":" << node->as_number  << ":" << host_addr << " between " << GET_ISDN(src_ia) << ":" << GET_ASN(src_ia) << " and " << GET_ISDN(dst_ia) << ":" << GET_ASN(dst_ia));
             return; // TODO
         }
 
-        if (seg_type == path_segment_type::DOWN_SEG) {
-            NS_LOG_DEBUG("received down path segment request from " << node->isd_number << ":" << node->as_number  << ":" << host_addr << " between " << GET_ISDN(src_ia) << ":" << GET_ASN(src_ia) << " and " << GET_ISDN(dst_ia) << ":" << GET_ASN(dst_ia));
+        if (path_type == path_segment_type::DOWN_SEG) {
+            NS_LOG_DEBUG("Received down path segment request from " << node->isd_number << ":" << node->as_number  << ":" << host_addr << " between " << GET_ISDN(src_ia) << ":" << GET_ASN(src_ia) << " and " << GET_ISDN(dst_ia) << ":" << GET_ASN(dst_ia));
             return; // TODO
         }
 
-        if (seg_type == path_segment_type::CORE_SEG && DynamicCast<SCION_Core_AS>(node) == NULL) {
+        if (path_type == path_segment_type::CORE_SEG && DynamicCast<SCION_Core_AS>(node) == NULL) {
             NS_LOG_DEBUG("non-core as received core path segment request from " << node->isd_number << ":" << node->as_number  << ":" << host_addr << " between " << GET_ISDN(src_ia) << ":" << GET_ASN(src_ia) << " and " << GET_ISDN(dst_ia) << ":" << GET_ASN(dst_ia));
             if (dst_ia == 0) {
                 return; //TODO
@@ -67,32 +81,35 @@ namespace ns3 {
             }
         }
 
-        if (seg_type == path_segment_type::CORE_SEG && DynamicCast<SCION_Core_AS>(node) != NULL) {
-            NS_LOG_DEBUG("core as received core path segment request from " << node->isd_number << ":" << node->as_number  << ":" << host_addr << " between " << GET_ISDN(src_ia) << ":" << GET_ASN(src_ia) << " and " << GET_ISDN(dst_ia) << ":" << GET_ASN(dst_ia));
+        if (path_type == path_segment_type::CORE_SEG && DynamicCast<SCION_Core_AS>(node) != NULL) {
+            NS_LOG_DEBUG("Core AS received core path segment request from " << node->isd_number << ":" << node->as_number  << ":" << host_addr << " between " << GET_ISDN(src_ia) << ":" << GET_ASN(src_ia) << " and " << GET_ISDN(dst_ia) << ":" << GET_ASN(dst_ia));
             if (dst_ia == 0) {
                 for (auto const & [registered_dst_ia, paths_to_dst_ia] : registered_core_segments) {
                     NS_LOG_DEBUG(GET_ISDN(registered_dst_ia) << ":" << GET_ASN(registered_dst_ia) << " " <<  GET_ISDN(node->isd_number) << ":" << GET_ASN(node->isd_number));
                     if (GET_ISDN(registered_dst_ia) == node->isd_number) {
-                        node->events.at(node->GetHostSchedulerIdx(host_addr))
-                        ->Schedule(request_processing_delay + node->latencies_between_hosts_and_path_server.at(host_addr),
-                                   &SCIONHost::ReceiveRegisteredPathSegments,
-                                   node->GetHost(host_addr),
-                                   path_segment_type::CORE_SEG, node->ia_addr, registered_dst_ia, paths_to_dst_ia);
+                        send_registered_path_to_local_host(host_addr, path_segment_type::CORE_SEG, ia_addr, registered_dst_ia, paths_to_dst_ia);
                     }
                 }
             } else {
                 for (auto const & [registered_dst_ia, paths_to_dst_ia] : registered_core_segments) {
                     NS_LOG_DEBUG(GET_ISDN(registered_dst_ia) << ":" << GET_ASN(registered_dst_ia) << " " <<  GET_ISDN(dst_ia) << ":" << GET_ASN(dst_ia));
                     if (GET_ISDN(registered_dst_ia) == GET_ISDN(dst_ia)) {
-                        node->events.at(node->GetHostSchedulerIdx(host_addr))
-                                ->Schedule(request_processing_delay + node->latencies_between_hosts_and_path_server.at(host_addr),
-                                           &SCIONHost::ReceiveRegisteredPathSegments,
-                                           node->GetHost(host_addr),
-                                           path_segment_type::CORE_SEG, node->ia_addr, registered_dst_ia, paths_to_dst_ia);
+                        send_registered_path_to_local_host(host_addr, path_segment_type::CORE_SEG, ia_addr, registered_dst_ia, paths_to_dst_ia);
                     }
                 }
             }
         }
+    }
 
+    void PathServer::send_registered_path_to_local_host(host_addr_t host_addr, path_segment_type path_type, ia_t src_ia, ia_t dst_ia, const reg_path_segs_to_one_as_t* paths_to_dst_ia) {
+        payload_type_t payload_type = payload_type_t::REG_PATHS_FROM_LOCAL_PS;
+        Payload payload;
+        payload.registered_paths_from_local_ps.seg_type = path_type;
+        payload.registered_paths_from_local_ps.src_ia = src_ia;
+        payload.registered_paths_from_local_ps.dst_ia = dst_ia;
+        payload.registered_paths_from_local_ps.registered_path_segments = paths_to_dst_ia;
+
+        SCIONPacket* packet = create_packet(payload, payload_type, ia_addr, host_addr);
+        send_packet(packet);
     }
 }

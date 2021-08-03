@@ -143,29 +143,14 @@ namespace ns3 {
         return this->beaconServer;
     }
 
-    PathServer*
+    Ptr<PathServer>
     SCION_AS::GetPathServer() {
         return this->pathServer;
     }
 
     void
-    SCION_AS::SetPathServer(PathServer* the_pathServer) {
+    SCION_AS::SetPathServer(Ptr<PathServer> the_pathServer) {
         this->pathServer = the_pathServer;
-    }
-
-    uint32_t
-    SCION_AS::GetPathServerSchedulerIdx() {
-        return GetNDevices() * 4 + 1;
-    }
-
-    uint32_t
-    SCION_AS::GetBeaconServerSchedulerIdx() {
-        return GetNDevices() * 4;
-    }
-
-    uint32_t
-    SCION_AS::GetHostSchedulerIdx(host_addr_t host_addr) {
-        return GetNDevices() * 4 + 2 + (host_addr - 2) * 5;
     }
 
     Ptr<SCIONHost>
@@ -180,7 +165,7 @@ namespace ns3 {
 
     Ptr<BorderRouter> SCION_AS::AddBR(double latitude, double longitude, Time processing_delay, Time processing_throughput_delay) {
         Ptr<BorderRouter> the_br = CreateObject<BorderRouter>(0,  isd_number,  as_number,  0,
-                                                               latitude,  longitude, GetNDevices() - 1);
+                                                               latitude,  longitude, Ptr<SCION_AS>(this));
 
         the_br->SetProcessingDelay(processing_delay, processing_throughput_delay);
 
@@ -206,6 +191,7 @@ namespace ns3 {
 
         PointToPointHelper helper;
 
+        // Connect border routers to border routers
         for (uint32_t i = 0; i < border_routers_vec.size() - 1; ++i) {
             Ptr<BorderRouter> br1 = border_routers_vec.at(i);
             for (uint32_t j = i + 1; j < border_routers_vec.size(); ++j) {
@@ -213,13 +199,13 @@ namespace ns3 {
 
                 helper.Install(br1, br2);
 
-                Time propagation_delay = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) br1->GetLatitude(), (ld) br1->GetLogitude(), (ld) br2->GetLogitude(), (ld) br2->GetLogitude())));
+                Time propagation_delay = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) br1->GetLatitude(), (ld) br1->GetLogitude(), (ld) br2->GetLatitude(), (ld) br2->GetLogitude())));
 
                 br1->AddToPropagationDelays(propagation_delay);
                 br2->AddToPropagationDelays(propagation_delay);
 
-                br1->AddToTransmissionDelays(PicoSeconds(20));
-                br2->AddToTransmissionDelays(PicoSeconds(20));// 400 Gbps link
+                br1->AddToTransmissionDelays(PicoSeconds(20)); // transmission delay for one byte assuming 400 Gbps link
+                br2->AddToTransmissionDelays(PicoSeconds(20));
 
                 br1->AddToRemoteNodesInfo(br2, br2->GetNDevices() - 1, isd_number, as_number);
                 br2->AddToRemoteNodesInfo(br1, br1->GetNDevices() - 1, isd_number, as_number);
@@ -234,19 +220,20 @@ namespace ns3 {
             }
         }
 
+        // Connect border routers to hosts
         for (uint32_t i = 0; i < border_routers_vec.size(); ++i) {
             Ptr<BorderRouter> br = border_routers_vec.at(i);
             for (uint32_t j = 0; j < hosts.size(); ++j) {
                 Ptr<SCIONHost> host = hosts.at(j);
                 helper.Install(br, host);
 
-                Time propagation_delay = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) br->GetLatitude(), (ld) br->GetLogitude(), (ld) host->GetLogitude(), (ld) host->GetLogitude())));
+                Time propagation_delay = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) br->GetLatitude(), (ld) br->GetLogitude(), (ld) host->GetLatitude(), (ld) host->GetLogitude())));
 
                 br->AddToPropagationDelays(propagation_delay);
                 host->AddToPropagationDelays(propagation_delay);
 
-                br->AddToTransmissionDelays(PicoSeconds(20)); // 400 Gbps link
-                host->AddToTransmissionDelays(PicoSeconds(20));
+                br->AddToTransmissionDelays(NanoSeconds(8)); // transmission delay for one byte assuming 1 Gbps link
+                host->AddToTransmissionDelays(NanoSeconds(8));
 
                 br->AddToRemoteNodesInfo(host, host->GetNDevices() - 1, isd_number, as_number);
                 host->AddToRemoteNodesInfo(br, br->GetNDevices() - 1, isd_number, as_number);
@@ -259,13 +246,78 @@ namespace ns3 {
             }
         }
 
+        // Connect border routers to path server
+        for (uint32_t i = 0; i < border_routers_vec.size(); ++i) {
+            Ptr<BorderRouter> br = border_routers_vec.at(i);
+            helper.Install(pathServer, br);
 
+            Time propagation_delay = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) br->GetLatitude(), (ld) br->GetLogitude(), (ld) pathServer->GetLatitude(), (ld) pathServer->GetLogitude())));
 
+            br->AddToPropagationDelays(propagation_delay);
+            pathServer->AddToPropagationDelays(propagation_delay);
+
+            br->AddToTransmissionDelays(PicoSeconds(800)); // transmission delay for one byte assuming 10 Gbps link
+            pathServer->AddToTransmissionDelays(PicoSeconds(800));
+
+            br->AddToRemoteNodesInfo(pathServer, pathServer->GetNDevices() - 1, isd_number, as_number);
+            pathServer->AddToRemoteNodesInfo(br, br->GetNDevices() - 1, isd_number, as_number);
+
+            for (uint16_t as_if : border_router_to_if.at(br)) {
+                pathServer->AddToIFForwadingTable(as_if, pathServer->GetNDevices() - 1);
+            }
+
+            br->AddToAddressForwardingTable(pathServer->GetLocalAddress(), br->GetNDevices() - 1);
+        }
+
+        // Connect hosts to local path server
+        for (uint32_t i = 0; i < hosts.size(); ++i) {
+            Ptr<SCIONHost> host = hosts.at(i);
+            helper.Install(pathServer, host);
+
+            Time propagation_delay = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) host->GetLatitude(), (ld) host->GetLogitude(), (ld) pathServer->GetLatitude(), (ld) pathServer->GetLogitude())));
+
+            host->AddToPropagationDelays(propagation_delay);
+            pathServer->AddToPropagationDelays(propagation_delay);
+
+            host->AddToTransmissionDelays(NanoSeconds(8)); // transmission delay for one byte assuming 1 Gbps link
+            pathServer->AddToTransmissionDelays(NanoSeconds(8));
+
+            host->AddToRemoteNodesInfo(pathServer, pathServer->GetNDevices() - 1, isd_number, as_number);
+            pathServer->AddToRemoteNodesInfo(host, host->GetNDevices() - 1, isd_number, as_number);
+
+            host->AddToAddressForwardingTable(pathServer->GetLocalAddress(), host->GetNDevices() - 1);
+            pathServer->AddToAddressForwardingTable(host->GetLocalAddress(), pathServer->GetNDevices() - 1);
+        }
+
+        // Connect hosts to each other
+        for (uint32_t i = 0; i < hosts.size() - 1; ++i) {
+            Ptr<SCIONHost> h1 = hosts.at(i);
+            for (uint32_t j = i + 1; j < hosts.size(); ++j) {
+                Ptr<SCIONHost> h2 = hosts.at(j);
+
+                helper.Install(h1, h2);
+
+                Time propagation_delay = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) h1->GetLatitude(), (ld) h1->GetLogitude(), (ld) h2->GetLatitude(), (ld) h2->GetLogitude())));
+
+                h1->AddToPropagationDelays(propagation_delay);
+                h2->AddToPropagationDelays(propagation_delay);
+
+                h1->AddToTransmissionDelays(NanoSeconds(8)); // transmission delay for one byte assuming 1 Gbps link
+                h2->AddToTransmissionDelays(NanoSeconds(8));
+
+                h1->AddToRemoteNodesInfo(h2, h2->GetNDevices() - 1, isd_number, as_number);
+                h2->AddToRemoteNodesInfo(h1, h1->GetNDevices() - 1, isd_number, as_number);
+
+                h1->AddToAddressForwardingTable(h2->GetLocalAddress(), h1->GetNDevices() - 1);
+                h2->AddToAddressForwardingTable(h1->GetLocalAddress(), h2->GetNDevices() - 1);
+            }
+        }
     }
 
     void SCION_AS::initialize_schedulers() {
         std::set<Ptr<BorderRouter>> border_routers_set (border_routers.begin(), border_routers.end());
-        events.resize(border_routers_set.size() * 4 + 2 + hosts.size() * 5);
+        events.resize((border_routers_set.size() + hosts.size() + 1) * 4 + 1);
+
         int i = 0;
         for (auto const & br : border_routers_set) {
             auto const & [receive_scheduler_local_as, receive_scheduler_remote_as] = br->GetReceiveSchedulers();
@@ -276,21 +328,26 @@ namespace ns3 {
             i += 4;
         }
 
-        events.at(i) = new LocalScheduler();
-        events.at(i + 1) = new LocalScheduler();
-        i += 2;
-
         int k = 0;
-        for (uint64_t j = i; j < i + hosts.size() * 5; j += 5) {
+        for (uint64_t j = border_routers_set.size() * 4; j < (border_routers_set.size() + hosts.size()) * 4; j += 4) {
             Ptr<SCIONHost> host = hosts.at(k);
             auto const & [receive_scheduler_local_as, receive_scheduler_remote_as] = host->GetReceiveSchedulers();
-            events.at(j) = new LocalScheduler();
-            events.at(j + 1) = receive_scheduler_local_as;
-            events.at(j + 2) = receive_scheduler_remote_as;
-            events.at(j + 3) = hosts.at(k)->GetProcessScheduler();
-            events.at(j + 4) = hosts.at(k)->GetSendScheduler();
+            events.at(j) = receive_scheduler_local_as;
+            events.at(j + 1) = receive_scheduler_remote_as;
+            events.at(j + 2) = hosts.at(k)->GetProcessScheduler();
+            events.at(j + 3) = hosts.at(k)->GetSendScheduler();
             k++;
         }
+
+        int l = (border_routers_set.size() + hosts.size()) * 4;
+
+        events.at(l) = pathServer->GetReceiveSchedulers().first;
+        events.at(l + 1) = pathServer->GetReceiveSchedulers().second;
+        events.at(l + 2) = pathServer->GetProcessScheduler();
+        events.at(l + 3) = pathServer->GetSendScheduler();
+
+        events.at(l + 4) = beaconServer->GetScheduler();
+
     }
 
     void SCION_AS::initialize_latencies() {

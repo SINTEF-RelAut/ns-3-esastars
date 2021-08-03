@@ -117,19 +117,13 @@ namespace ns3 {
 
         void SetBeaconServer(BeaconServer* beaconServer);
 
-        void SetPathServer(PathServer* pathServer);
+        void SetPathServer(Ptr<PathServer> pathServer);
 
         BeaconServer* GetBeaconServer();
 
-        PathServer* GetPathServer();
+        Ptr<PathServer> GetPathServer();
 
         Ptr<SCIONHost> GetHost(host_addr_t host_addr);
-
-        uint32_t GetPathServerSchedulerIdx();
-
-        uint32_t GetBeaconServerSchedulerIdx();
-
-        uint32_t GetHostSchedulerIdx(host_addr_t host_addr);
 
         void AdvanceTime (ns3::Time advance);
 
@@ -143,7 +137,7 @@ namespace ns3 {
 
     protected:
         BeaconServer *beaconServer;
-        PathServer *pathServer;
+        Ptr<PathServer> pathServer;
         std::vector<Ptr<SCIONHost>> hosts;
         std::vector<Ptr<BorderRouter>> border_routers;
     private:

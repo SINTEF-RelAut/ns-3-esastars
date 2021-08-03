@@ -342,14 +342,12 @@ namespace ns3 {
             }
 
             if (node->GetPathServer() != NULL) {
-                node->events.at(node->GetBeaconServerSchedulerIdx())
-                ->Schedule(t - node->local_time + node->latency_between_path_server_and_beacon_server,
+                scheduler->Schedule(t - node->local_time + node->latency_between_path_server_and_beacon_server,
                            &BeaconServer::RegisterToLocalPathServer,
                            this);
             }
 
-            node->events.at(node->GetBeaconServerSchedulerIdx())
-            ->Schedule(t - node->local_time + MilliSeconds(150),
+            scheduler->Schedule(t - node->local_time + MilliSeconds(150),
                        &BeaconServer::UpdateStatePeriodic,
                        this);
         }
@@ -368,7 +366,7 @@ namespace ns3 {
                 }
             }
         }
-
-
     }
+
+    LocalScheduler* BeaconServer::GetScheduler() {return scheduler;}
 } // namespace ns3

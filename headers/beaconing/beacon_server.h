@@ -50,7 +50,10 @@ namespace ns3 {
     class BeaconServer {
     public:
         BeaconServer(beaconing_timing_params params) : beaconing_period(params.first),
-                                                       expiration_period(params.second) {}
+                                                       expiration_period(params.second)
+        {
+            scheduler = new LocalScheduler();
+        }
 
         // beacon store structures ***************************************************************************************************
         /** @brief Pointers to all the beacons indexable by their destination AS and their hop count.*/
@@ -131,6 +134,8 @@ namespace ns3 {
         GetCurrentTime() const;
 
         void ScheduleBeaconing(Time last_beaconing_event_time);
+
+        LocalScheduler* GetScheduler();
     protected:
         Ptr<SCION_AS> node;
 
@@ -143,6 +148,7 @@ namespace ns3 {
         /** @brief Expiration time of beacon. */
         uint16_t expiration_period;
 
+        LocalScheduler* scheduler;
 
         // helper structures ********************************************************************************************************
         /**

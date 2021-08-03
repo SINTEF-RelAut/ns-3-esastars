@@ -225,7 +225,7 @@ namespace ns3 {
                         continue;
                     }
                     std::cout << "\t" << "\t";
-                    int hop_cnt = 0;
+                    uint32_t hop_cnt = 0;
                     std::vector<link_information>::reverse_iterator hop = the_beacon->the_path.rbegin();
                     for (; hop != the_beacon->the_path.rend(); ++hop) {
                         if (hop_cnt != 0) {

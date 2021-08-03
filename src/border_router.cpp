@@ -2,7 +2,6 @@
 // Created by seyedali on 28.07.21.
 //
 
-#include <cassert>
 
 #include "src/SCION/headers/border_router.h"
 #include "src/SCION/headers/scion_packet.h"
@@ -28,9 +27,8 @@ namespace ns3 {
         }
 
         if (packet->dst_ia == ia_addr) {
-            uint64_t hopf = packet->path.at(packet->curr_inf)->hops.at(packet->cur_hopf);
-            assert(GET_HOP_ISD(hopf) == isd_number);
-            assert(GET_HOP_AS(hopf) == as_number);
+            NS_ASSERT(GET_HOP_ISD(packet->path.at(packet->curr_inf)->hops.at(packet->cur_hopf)) == isd_number);
+            NS_ASSERT(GET_HOP_AS(packet->path.at(packet->curr_inf)->hops.at(packet->cur_hopf)) == as_number);
 
             if (forwarding_table_to_addresses_inside_as.find(packet->dst_host) == forwarding_table_to_addresses_inside_as.end()) {
                 NS_LOG_DEBUG("Address not in the forwarding table");
@@ -64,12 +62,12 @@ namespace ns3 {
             }
         }
 
-        assert(packet->curr_inf >= 0);
-        assert(packet->curr_inf < packet->path.size());
+        NS_ASSERT(packet->curr_inf >= 0);
+        NS_ASSERT(packet->curr_inf < packet->path.size());
 
         uint64_t hopf = packet->path.at(packet->curr_inf)->hops.at(packet->cur_hopf);
-        assert(GET_HOP_ISD(hopf) == isd_number);
-        assert(GET_HOP_AS(hopf) == as_number);
+        NS_ASSERT(GET_HOP_ISD(hopf) == isd_number);
+        NS_ASSERT(GET_HOP_AS(hopf) == as_number);
         bool reverse = packet->path_reversed ^ packet->path.at(packet->curr_inf)->reverse;
 
         uint16_t as_if_to_send;
@@ -88,13 +86,12 @@ namespace ns3 {
         }
 
 
-        assert(packet->cur_hopf >= 0);
-        assert(packet->cur_hopf < packet->path.at(packet->curr_inf)->hops.size());
+        NS_ASSERT(packet->cur_hopf >= 0);
+        NS_ASSERT(packet->cur_hopf < packet->path.at(packet->curr_inf)->hops.size());
 
         uint16_t local_if_to_send = forwarding_table_to_other_AS_ifaces.at(as_if_to_send);
         schedule_for_send(local_if_to_send, packet);
     }
 
-    uint32_t BorderRouter::GetIndex() {return index;}
 
 }

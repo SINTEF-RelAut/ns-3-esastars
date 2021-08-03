@@ -216,7 +216,7 @@ namespace ns3 {
         if (beacons.size() == 0) {
             return std::make_pair(the_beacon, -1);
         }
-        Beacon* diverse;
+        Beacon* diverse = NULL;
         int32_t max_diversity = -1;
         uint32_t min_len = std::numeric_limits<uint32_t>::max();
 
