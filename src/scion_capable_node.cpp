@@ -24,8 +24,7 @@ namespace ns3 {
                       as_number(as_number),
                       local_address(local_address),
                       latitude(latitude),
-                      longitude(longitude),
-                      node(node)
+                      longitude(longitude)
                       {
         ia_addr = (((uint32_t) isd_number) << 16) | ((uint32_t) as_number);
         receive_scheduler_local_as = new LocalScheduler();

@@ -24,7 +24,9 @@
 #include "src/SCION/headers/beaconing/beacon.h"
 #include "src/SCION/headers/local_scheduler.h"
 #include "src/SCION/headers/scion_packet.h"
-
+#include "src/SCION/headers/border_router.h"
+#include "src/SCION/headers/scion_host.h"
+#include "src/SCION/headers/path_server.h"
 
 
 namespace ns3 {
@@ -34,9 +36,6 @@ namespace ns3 {
     };
 
     class BeaconServer;
-    class PathServer;
-    class SCIONHost;
-    class BorderRouter;
 
     class SCION_AS : public Node {
     public:

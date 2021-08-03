@@ -15,9 +15,7 @@
 #include "src/SCION/headers/utils.h"
 #include "src/SCION/headers/scion_as.h"
 
-#include "src/SCION/headers/border_router.h"
-#include "src/SCION/headers/scion_host.h"
-#include "src/SCION/headers/path_server.h"
+
 
 namespace ns3 {
 
