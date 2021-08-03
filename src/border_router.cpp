@@ -10,7 +10,7 @@ namespace ns3 {
     NS_LOG_COMPONENT_DEFINE("BorderRouter");
     void BorderRouter::process_received_packet(uint16_t if_rcv, SCIONPacket* packet) {
         NS_LOG_DEBUG("packet received " << packet);
-        NS_LOG_DEBUG(isd_number<< ":" << as_number << ":" << index
+        NS_LOG_DEBUG(isd_number<< ":" << as_number
                      << " packet from " <<  GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia)
                      << " to " << GET_ISDN(packet->dst_ia) << ":" << GET_ASN(packet->dst_ia)
                      << ", currIF: " << packet->curr_inf << ", currHopF: " << packet->cur_hopf
