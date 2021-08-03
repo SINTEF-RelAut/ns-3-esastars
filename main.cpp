@@ -59,6 +59,7 @@ int main(int argc, char *argv[]) {
     std::string simulation_end_time_str;
     std::string topology_name;
 
+    ns3::Time::SetResolution(ns3::Time::PS);
     ns3::Time beaconing_period;
     ns3::Time last_beaconing_event_time;
     uint16_t expiration_period;
