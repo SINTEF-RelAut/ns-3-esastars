@@ -193,7 +193,7 @@ namespace ns3 {
         std::set<Ptr<BorderRouter>> border_routers_set (border_routers.begin(), border_routers.end());
         std::vector<Ptr<BorderRouter>> border_routers_vec (border_routers_set.begin(), border_routers_set.end());
 
-        PointToPointHelper helper;
+        //PointToPointHelper helper;
 
         // Connect border routers to border routers
         for (uint32_t i = 0; i < border_routers_vec.size() - 1; ++i) {
@@ -201,7 +201,7 @@ namespace ns3 {
             for (uint32_t j = i + 1; j < border_routers_vec.size(); ++j) {
                 Ptr<BorderRouter> br2 = border_routers_vec.at(j);
 
-                helper.Install(br1, br2);
+//                helper.Install(br1, br2);
 
                 Time propagation_delay = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) br1->GetLatitude(), (ld) br1->GetLogitude(), (ld) br2->GetLatitude(), (ld) br2->GetLogitude())));
 
@@ -229,7 +229,7 @@ namespace ns3 {
             Ptr<BorderRouter> br = border_routers_vec.at(i);
             for (uint32_t j = 0; j < hosts.size(); ++j) {
                 Ptr<SCIONHost> host = hosts.at(j);
-                helper.Install(br, host);
+//                helper.Install(br, host);
 
                 Time propagation_delay = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) br->GetLatitude(), (ld) br->GetLogitude(), (ld) host->GetLatitude(), (ld) host->GetLogitude())));
 
@@ -253,7 +253,7 @@ namespace ns3 {
         // Connect border routers to path server
         for (uint32_t i = 0; i < border_routers_vec.size(); ++i) {
             Ptr<BorderRouter> br = border_routers_vec.at(i);
-            helper.Install(pathServer, br);
+//            helper.Install(pathServer, br);
 
             Time propagation_delay = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) br->GetLatitude(), (ld) br->GetLogitude(), (ld) pathServer->GetLatitude(), (ld) pathServer->GetLogitude())));
 
@@ -276,7 +276,7 @@ namespace ns3 {
         // Connect hosts to local path server
         for (uint32_t i = 0; i < hosts.size(); ++i) {
             Ptr<SCIONHost> host = hosts.at(i);
-            helper.Install(pathServer, host);
+//            helper.Install(pathServer, host);
 
             Time propagation_delay = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) host->GetLatitude(), (ld) host->GetLogitude(), (ld) pathServer->GetLatitude(), (ld) pathServer->GetLogitude())));
 
@@ -299,7 +299,7 @@ namespace ns3 {
             for (uint32_t j = i + 1; j < hosts.size(); ++j) {
                 Ptr<SCIONHost> h2 = hosts.at(j);
 
-                helper.Install(h1, h2);
+//                helper.Install(h1, h2);
 
                 Time propagation_delay = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) h1->GetLatitude(), (ld) h1->GetLogitude(), (ld) h2->GetLatitude(), (ld) h2->GetLogitude())));
 

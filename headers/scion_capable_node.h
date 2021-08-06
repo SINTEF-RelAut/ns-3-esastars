@@ -52,6 +52,7 @@ namespace ns3 {
         void AddToRemoteNodesInfo (Ptr<SCIONCapableNode> remote_node, uint16_t remote_if, uint16_t remote_isd, uint16_t remote_as);
         void InitializeTransmissionQueues();
         void Drop(SCIONPacket* packet);
+        uint32_t GetNDevices (void) const;
     protected:
         uint16_t isd_number;
         uint16_t as_number;

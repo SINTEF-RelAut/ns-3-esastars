@@ -150,4 +150,9 @@ namespace ns3 {
         return packet;
     }
 
+    uint32_t SCIONCapableNode::GetNDevices (void) const {
+        NS_LOG_DEBUG("GetNDevices");
+        return propagation_delays.size();
+    }
+
 }
