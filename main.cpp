@@ -12,7 +12,7 @@
  */
 
 #include <istream>
-
+#include <omp.h>
 #include <random>
 #include <set>
 
@@ -350,6 +350,7 @@ void InstantiateLinksFromTopo (rapidxml::xml_node<>* xml_root, ns3::NodeContaine
 }
 
 void InitializeNodesAttributes(ns3::NodeContainer& AS_nodes, std::string beaconing_policy_str) {
+#pragma omp parallel for
     for (uint64_t i = 0; i < AS_nodes.GetN(); ++i) {
         if (beaconing_policy_str == "baseline") {
             ns3::DynamicCast<ns3::SCION_AS>(AS_nodes.Get(i))->DoInitializations();
