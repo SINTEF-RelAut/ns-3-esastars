@@ -17,6 +17,8 @@ namespace ns3 {
     typedef uint16_t host_addr_t;
     typedef uint32_t packet_id_t;
 
+    class SCIONCapableNode;
+
     enum payload_type_t {
             EMPTY = 0, PATH_REQ_FROM_HOST = 1, REG_PATHS_FROM_LOCAL_PS = 2
     };
@@ -42,7 +44,7 @@ namespace ns3 {
     public:
         Time timestamp;
 
-        const Ptr<Node> packet_originator; // This field is used for memory management of packets
+        SCIONCapableNode* const packet_originator; // This field is used for memory management of packets
 
         std::vector<const PathSegment*> path;
 
@@ -65,7 +67,7 @@ namespace ns3 {
 
         bool path_reversed;
 
-        SCIONPacket(const Ptr<Node> packet_originator, packet_id_t id) :  packet_originator(packet_originator), id(id) {}
+        SCIONPacket(const SCIONCapableNode* packet_originator, packet_id_t id) :  packet_originator(packet_originator), id(id) {}
 
     };
 

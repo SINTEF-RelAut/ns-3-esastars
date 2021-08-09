@@ -12,10 +12,12 @@
 
 
 namespace ns3 {
+    class SCION_AS;
+
     class SCIONCapableNode : public Node {
     public:
         SCIONCapableNode (uint32_t system_id, uint16_t isd_number, uint16_t as_number, host_addr_t local_address,
-                                            double latitude, double longitude, Ptr<Node> AS):
+                          double latitude, double longitude, SCION_AS* AS):
                                             Node(system_id),
                                             isd_number(isd_number),
                                             as_number(as_number),
@@ -64,7 +66,7 @@ namespace ns3 {
         double latitude;
         double longitude;
 
-        Ptr<Node> AS;
+        SCION_AS* AS;
 
         LocalScheduler* receive_scheduler_local_as;
         LocalScheduler* receive_scheduler_remote_as;

@@ -128,7 +128,7 @@ namespace ns3 {
     }
 
     SCIONPacket* SCIONCapableNode::create_packet(Payload payload, payload_type_t payload_type, ia_t dst_ia, host_addr_t dst_host) {
-        on_the_flight_packets.insert(std::make_pair(next_packet_id, SCIONPacket( Ptr<SCIONCapableNode>(this), next_packet_id)));
+        on_the_flight_packets.insert(std::make_pair(next_packet_id, SCIONPacket(this, next_packet_id)));
         SCIONPacket* packet = &on_the_flight_packets.at(next_packet_id);
         next_packet_id++;
 
@@ -144,7 +144,7 @@ namespace ns3 {
         packet->payload_type = payload_type;
         packet->payload = payload;
 
-        packet->timestamp = DynamicCast<SCION_AS>(AS)->local_time;
+        packet->timestamp = AS->local_time;
         packet->size = 114;
 
         return packet;

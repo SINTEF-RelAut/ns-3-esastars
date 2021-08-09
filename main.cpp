@@ -211,11 +211,11 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::string beaconi
         beaconing_policy->SetNode(PeekPointer(AS_node));
 
         ns3::Ptr<ns3::PathServer> path_server = ns3::CreateObject<ns3::PathServer>( 0, isd_number, node_counter, 1,
-                                                                                    0.0,  0.0, AS_node);
+                                                                                    0.0,  0.0, PeekPointer(AS_node));
         AS_node->SetPathServer(path_server);
 
         ns3::Ptr<ns3::SCIONHost> scion_host = ns3::CreateObject<ns3::SCIONHost>(0, isd_number, node_counter, 2,
-                                                                                0.0, 0.0, AS_node);
+                                                                                0.0, 0.0, PeekPointer(AS_node));
 
         AS_node->AddHost(scion_host);
 

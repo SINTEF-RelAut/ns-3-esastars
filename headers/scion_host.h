@@ -18,7 +18,7 @@ namespace ns3 {
 
     public:
         SCIONHost(uint32_t system_id, uint16_t isd_number, uint16_t as_number, host_addr_t local_address,
-                  double latitude, double longitude, Ptr<Node> AS) :
+                  double latitude, double longitude, SCION_AS* AS) :
                   SCIONCapableNode(system_id, isd_number, as_number, local_address, latitude, longitude, AS){}
 
 
