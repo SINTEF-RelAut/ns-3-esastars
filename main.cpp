@@ -275,6 +275,9 @@ void InstantiateLinksFromTopo (rapidxml::xml_node<>* xml_root, ns3::NodeContaine
         ns3::PointToPointHelper helper;
         helper.Install(from_AS, to_AS);
 
+        to_AS->AddToRemoteASInfo(from_AS->GetNDevices() - 1, ns3::PeekPointer(from_AS));
+        from_AS->AddToRemoteASInfo(to_AS->GetNDevices() - 1, ns3::PeekPointer(to_AS));
+
         ns3::Time to_processing_delay = ns3::NanoSeconds(10);
         ns3::Time from_processing_delay = ns3::NanoSeconds(10);
 

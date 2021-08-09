@@ -56,20 +56,9 @@ namespace ns3 {
  * @param egress_interface_no The number of the egress interface.
  * @return A pair holding the remote ingress interface number and the remote AS number.
  */
-    std::pair<uint16_t, Ptr<SCION_AS>>
+    std::pair<uint16_t, SCION_AS*>
     SCION_AS::GetRemoteAsInfo(uint16_t egress_interface_no) {
-        Ptr<PointToPointNetDevice> self_egress_device = DynamicCast<PointToPointNetDevice>(
-                GetDevice(egress_interface_no));
-
-        Ptr<PointToPointChannel> channel = DynamicCast<PointToPointChannel>(self_egress_device->GetChannel());
-        uint32_t wire = self_egress_device == channel->GetSource(0) ? 0 : 1;
-        Ptr<PointToPointNetDevice> remote_device = channel->GetDestination(wire);
-
-        uint16_t remote_ingress_if_no = (uint16_t) remote_device->GetIfIndex();
-
-        Ptr<SCION_AS> remote_as = (DynamicCast<SCION_AS>(remote_device->GetNode()));
-
-        return std::make_pair(remote_ingress_if_no, remote_as);
+        return remote_as_info.at(egress_interface_no);
     }
 
 
@@ -368,5 +357,9 @@ namespace ns3 {
         for (uint32_t i = 0; i < hosts.size(); ++i) {
             latencies_between_hosts_and_path_server.push_back(MilliSeconds(20));
         }
+    }
+
+    void SCION_AS::AddToRemoteASInfo (uint16_t remote_if, SCION_AS* remote_as) {
+        remote_as_info.push_back(std::make_pair(remote_if, remote_as));
     }
 }

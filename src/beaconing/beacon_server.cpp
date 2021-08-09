@@ -9,7 +9,7 @@
 #include <omp.h>
 
 #include "ns3/point-to-point-net-device.h"
-#include "ns3/ptr.h"
+
 
 #include "src/SCION/headers/beaconing/beacon_server.h"
 #include "src/SCION/headers/utils.h"
@@ -41,11 +41,11 @@ namespace ns3 {
             uint16_t remote_as_no = node->neighbors.at(i).first;
             const auto &interfaces = node->interfaces_per_neighbor_as.at(remote_as_no);
             for (auto const &self_egress_if_no : interfaces) {
-                std::pair<uint16_t, Ptr<SCION_AS>>
+                std::pair<uint16_t, SCION_AS*>
                         remote_as_if_pair = node->GetRemoteAsInfo(self_egress_if_no);
 
                 uint16_t remote_ingress_if_no = remote_as_if_pair.first;
-                Ptr<SCION_AS> remote_as = remote_as_if_pair.second;
+                SCION_AS* remote_as = remote_as_if_pair.second;
 
                 GenerateBeaconAndSend(
                         NULL, self_egress_if_no, remote_ingress_if_no, remote_as, 0,
@@ -90,7 +90,7 @@ namespace ns3 {
  */
 
    void BeaconServer::GenerateBeaconAndSend(Beacon *selected_beacon, uint16_t self_egress_if_no,
-                                            uint16_t remote_ingress_if_no, Ptr<SCION_AS> remote_as,
+                                            uint16_t remote_ingress_if_no, SCION_AS* remote_as,
                                             ld latency, ld bwd)
     {
         std::string key;

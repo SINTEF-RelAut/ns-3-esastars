@@ -75,14 +75,14 @@ namespace ns3 {
                     continue;
                 }
 
-                std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, Ptr<SCION_AS>, ld, ld> > selected_beacons =
+                std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS*, ld, ld> > selected_beacons =
                         select_beacons_to_disseminate_per_dst_per_nbr(remote_as_no, dst_as_no, beacons_to_the_dst_as);
 
                 for (auto const &the_tuple_pair : selected_beacons) {
                     Beacon *the_beacon;
                     uint16_t remote_ingress_if_no;
                     uint16_t self_egress_if_no;
-                    Ptr<SCION_AS> remote_as;
+                    SCION_AS* remote_as;
                     ld latency;
                     ld bwd;
 
@@ -161,10 +161,10 @@ namespace ns3 {
     }
 
 
-    std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, Ptr<SCION_AS>, ld, ld> >
+    std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS*, ld, ld> >
     CriteriaMatching::select_beacons_to_disseminate_per_dst_per_nbr(uint16_t remote_as_no, uint16_t dst_as_no,
                                                                     const beacons_with_same_dst_as &beacons_to_the_dst_as) {
-        std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, Ptr<SCION_AS>, ld, ld> > score_map_to_beacon_and_metadata;
+        std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS*, ld, ld> > score_map_to_beacon_and_metadata;
         std::map<std::pair<Beacon *, uint16_t>, std::pair<ld, ld> > valid_candidates;
 
         ld max_score = 0.0;
@@ -173,7 +173,7 @@ namespace ns3 {
         uint16_t max_score_iface = 0;
 
         uint16_t remote_ingress_if_no;
-        Ptr<SCION_AS> remote_as = node->GetRemoteAsInfo(
+        SCION_AS* remote_as = node->GetRemoteAsInfo(
                 node->interfaces_per_neighbor_as.at(remote_as_no).at(0)).second;
 
         uint32_t min_no_paths_to_send = (20 * node->interfaces_per_neighbor_as.at(remote_as_no).size()) / remote_as->interfaces_coordinates.size();
@@ -259,7 +259,7 @@ namespace ns3 {
 
                 score_map_to_beacon_and_metadata.insert(
                         std::make_pair(max_score,
-                                       std::tuple<Beacon *, uint16_t, uint16_t, Ptr<SCION_AS>, ld, ld>
+                                       std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS*, ld, ld>
                                                (max_score_beacon, max_score_iface, remote_ingress_if_no, remote_as,
                                                 latency, bwd)));
 
@@ -316,7 +316,7 @@ namespace ns3 {
     }
 
     inline ld
-    CriteriaMatching::calculate_raw_score (Beacon* the_beacon, uint16_t dst_as_no, uint16_t self_egress_if_no, Ptr<SCION_AS> remote_as) {
+    CriteriaMatching::calculate_raw_score (Beacon* the_beacon, uint16_t dst_as_no, uint16_t self_egress_if_no, SCION_AS* remote_as) {
         ld latency = the_beacon->latency_stat +
                      node->latencies_between_interfaces.at(LOWER_16_BITS(the_beacon->the_path.back())).at(self_egress_if_no);
         ld bwd = the_beacon->bwd_stat > (ld) node->inter_as_bwds.at(self_egress_if_no)

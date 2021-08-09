@@ -131,11 +131,11 @@ namespace ns3 {
                 for (auto const &egress_interface_no : interfaces) {
 
 
-                    std::pair<uint16_t, Ptr<SCION_AS>>
+                    std::pair<uint16_t, SCION_AS*>
                             remote_as_if_pair = node->GetRemoteAsInfo(egress_interface_no);
 
                     uint16_t remote_ingress_if_no = remote_as_if_pair.first;
-                    Ptr<SCION_AS> remote_as = remote_as_if_pair.second;
+                    SCION_AS* remote_as = remote_as_if_pair.second;
 
                     ld latency = the_beacon->latency_stat +
                                  node->latencies_between_interfaces

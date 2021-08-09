@@ -13,7 +13,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "ns3/ptr.h"
 #include "ns3/network-module.h"
 #include "ns3/node.h"
 #include "ns3/point-to-point-helper.h"
@@ -110,7 +109,7 @@ namespace ns3 {
 
         void DoInitializations(uint32_t all_nodes);
 
-        std::pair<uint16_t, Ptr<SCION_AS>>
+        std::pair<uint16_t, SCION_AS*>
         GetRemoteAsInfo(uint16_t egress_interface_no);
 
         void ReceiveBeacon(Beacon &the_beacon, uint16_t sender_as, uint16_t remote_if, uint16_t local_if);
@@ -135,12 +134,15 @@ namespace ns3 {
 
         uint64_t GetFirstEventTime ();
 
+        void AddToRemoteASInfo (uint16_t remote_if, SCION_AS* remote_as);
+
     protected:
         BeaconServer* beaconServer;
         PathServer* pathServer;
         std::vector<SCIONHost*> hosts;
         std::vector<BorderRouter*> border_routers;
-    private:
+
+        std::vector<std::pair<uint16_t, SCION_AS*>> remote_as_info;
         /**
          *  @brief Returns the average as-level diversity and link-level diversity scores of the passed beacon compared to all other beacons the node has which
          *  originated at the same destination as number.

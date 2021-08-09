@@ -14,7 +14,7 @@
 #include <map>
 
 #include "ns3/nstime.h"
-#include "ns3/ptr.h"
+
 
 #include "src/SCION/headers/beaconing/beacon.h"
 #include "src/SCION/headers/scion_as.h"
@@ -175,7 +175,7 @@ namespace ns3 {
          * and schedules a processing event on the simulator if the beacon needs to continue being disseminated right away.
          */
         void GenerateBeaconAndSend(Beacon *selected_beacon, uint16_t self_egress_if_no,
-                                   uint16_t remote_ingress_if_no, Ptr<SCION_AS> remote_as, ld latency, ld bwd);
+                                   uint16_t remote_ingress_if_no, SCION_AS* remote_as, ld latency, ld bwd);
 
         void RegisterToLocalPathServer();
 

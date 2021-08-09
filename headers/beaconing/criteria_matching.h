@@ -119,7 +119,7 @@ typedef std::tuple<ld, ld, ld, ld> coefficients;
 
         bool path_not_sent_before(uint16_t remote_as, uint16_t self_egress_if_no, Beacon *the_beacon);
 
-        std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, Ptr<SCION_AS>, ld, ld> >
+        std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS*, ld, ld> >
         select_beacons_to_disseminate_per_dst_per_nbr(uint16_t remote_as_no, uint16_t dst_as_no,
                                                       const beacons_with_same_dst_as &beacons_to_the_dst_as);
 
@@ -129,7 +129,7 @@ typedef std::tuple<ld, ld, ld, ld> coefficients;
 
         void dec_links_jointnesses_on_received_paths(Beacon* the_beacon, uint16_t  dst_as);
 
-        inline ld calculate_raw_score (Beacon* the_beacon, uint16_t dst_as_no, uint16_t self_egress_if_no, Ptr<SCION_AS> remote_as);
+        inline ld calculate_raw_score (Beacon* the_beacon, uint16_t dst_as_no, uint16_t self_egress_if_no, SCION_AS* remote_as);
 
         inline ld
         calculate_import_raw_score (Beacon& the_beacon);
