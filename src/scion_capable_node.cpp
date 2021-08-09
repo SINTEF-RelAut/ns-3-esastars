@@ -49,7 +49,7 @@ namespace ns3 {
     void SCIONCapableNode::send (uint16_t local_if, SCIONPacket* packet) {
         NS_LOG_DEBUG(packet);
         transmission_queues_lengths.at(local_if) -= packet->size;
-        Ptr<SCIONCapableNode> remote_node = std::get<0>(remote_nodes_info.at(local_if));
+        SCIONCapableNode* remote_node = std::get<0>(remote_nodes_info.at(local_if));
         uint16_t remote_if = std::get<1>(remote_nodes_info.at(local_if));
         remote_node->ScheduleReceive(remote_if, packet, propagation_delays.at(local_if));
     }
@@ -78,7 +78,7 @@ namespace ns3 {
     void SCIONCapableNode::AddToTransmissionDelays (Time delay) {transmission_delays.push_back(delay);}
     void SCIONCapableNode::SetProcessingDelay(Time delay, Time throughput_delay) {processing_delay = delay; processing_throughput_delay = throughput_delay;}
 
-    void SCIONCapableNode::AddToRemoteNodesInfo (Ptr<SCIONCapableNode> remote_node, uint16_t remote_if, uint16_t remote_isd, uint16_t remote_as) {
+    void SCIONCapableNode::AddToRemoteNodesInfo (SCIONCapableNode* remote_node, uint16_t remote_if, uint16_t remote_isd, uint16_t remote_as) {
         if (remote_isd == isd_number && remote_as == as_number) {
             remote_nodes_info.push_back(std::make_tuple(remote_node, remote_if, true));
         } else {

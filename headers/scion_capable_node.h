@@ -51,7 +51,7 @@ namespace ns3 {
         void AddToPropagationDelays (Time delay);
         void AddToTransmissionDelays (Time delay);
         void SetProcessingDelay(Time delay, Time throughput_delay);
-        void AddToRemoteNodesInfo (Ptr<SCIONCapableNode> remote_node, uint16_t remote_if, uint16_t remote_isd, uint16_t remote_as);
+        void AddToRemoteNodesInfo (SCIONCapableNode* remote_node, uint16_t remote_if, uint16_t remote_isd, uint16_t remote_as);
         void InitializeTransmissionQueues();
         void Drop(SCIONPacket* packet);
         uint32_t GetNDevices (void) const;
@@ -88,7 +88,7 @@ namespace ns3 {
 
         std::unordered_map<packet_id_t, SCIONPacket> on_the_flight_packets;
 
-        std::vector<std::tuple<Ptr<SCIONCapableNode>, uint16_t, bool>> remote_nodes_info;
+        std::vector<std::tuple<SCIONCapableNode*, uint16_t, bool>> remote_nodes_info;
 
         void receive (uint16_t local_if, SCIONPacket* packet);
         void send (uint16_t local_if, SCIONPacket* packet);
