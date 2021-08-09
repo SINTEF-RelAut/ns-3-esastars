@@ -14,7 +14,8 @@
 #include "ns3/rapidxml.hpp"
 #include <map>
 
-extern ns3::NodeContainer all_ases;
+
+extern std::map<uint16_t, uint16_t> as_to_isd_map;
 
 namespace ns3 {
 

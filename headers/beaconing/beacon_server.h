@@ -22,8 +22,8 @@
 
 namespace ns3 {
 #define NUM_CORE 128
-#define MAX_BEACONS_TO_STORE 10000
-#define MAX_BEACONS_TO_SEND 20
+#define MAX_BEACONS_TO_STORE 60
+#define MAX_BEACONS_TO_SEND 5
     class SCION_AS;
 
 /** @brief Holds a set of beacons with constant length.*/
@@ -73,7 +73,7 @@ namespace ns3 {
          * */
         std::unordered_map<uint16_t, std::vector<uint32_t>> bytes_sent_per_interface_per_period;
 
-        void SetNode(Ptr<SCION_AS> node);
+        void SetNode(SCION_AS* node);
 
         virtual void DoInitializations(uint32_t all_nodes) = 0;
 
@@ -137,7 +137,7 @@ namespace ns3 {
 
         LocalScheduler* GetScheduler();
     protected:
-        Ptr<SCION_AS> node;
+        SCION_AS* node;
 
         /** @brief The current simulator time in minutes. */
         uint16_t now;

@@ -32,7 +32,7 @@ namespace ns3 {
                 ingress = LOWER_16_BITS(*hop);
             }
 
-            uint16_t isd = DynamicCast<SCION_AS>(all_ases.Get(as))->isd_number;
+            uint16_t isd = as_to_isd_map.at(as);
             previous_hop = *hop;
             uint64_t hop_field = (((uint64_t) isd) << 48) | (((uint64_t) as) << 32) | (((uint64_t) ingress) << 16) | ((uint64_t) egress);
             pathSegment.hops.push_back(hop_field);
@@ -41,7 +41,7 @@ namespace ns3 {
         uint16_t egress = SECOND_UPPER_16_BITS(previous_hop);
         uint16_t ingress = 0;
         uint16_t as = UPPER_16_BITS(previous_hop);
-        uint16_t isd = DynamicCast<SCION_AS>(all_ases.Get(as))->isd_number;
+        uint16_t isd = as_to_isd_map.at(as);
 
         uint64_t hop_field = (((uint64_t) isd) << 48) | (((uint64_t) as) << 32) | (((uint64_t) ingress) << 16) | ((uint64_t) egress);
         pathSegment.hops.push_back(hop_field);

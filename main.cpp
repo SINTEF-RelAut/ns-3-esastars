@@ -49,6 +49,7 @@ void InitializeNodesAttributes(ns3::NodeContainer& AS_nodes, std::string beaconi
 
 
 int main(int argc, char *argv[]) {
+    ns3::NodeContainer all_ases;
     std::map<int32_t, uint16_t> AS_no_to_index;
     std::map<uint16_t, int32_t> index_to_AS_no;
 
@@ -207,7 +208,7 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::string beaconi
             exit(1);
         }
         AS_node->SetBeaconServer(beaconing_policy);
-        beaconing_policy->SetNode(AS_node);
+        beaconing_policy->SetNode(PeekPointer(AS_node));
 
         ns3::Ptr<ns3::PathServer> path_server = ns3::CreateObject<ns3::PathServer>( 0, isd_number, node_counter, 1,
                                                                                     0.0,  0.0, AS_node);
@@ -219,6 +220,8 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::string beaconi
         AS_node->AddHost(scion_host);
 
         AS_nodes.Add(AS_node);
+
+        as_to_isd_map.insert(std::make_pair(node_counter, isd_number));
 
         AS_no_to_index.insert(std::make_pair(as_number, node_counter));
         index_to_AS_no.insert(std::make_pair(node_counter, as_number));
@@ -352,6 +355,7 @@ void InstantiateLinksFromTopo (rapidxml::xml_node<>* xml_root, ns3::NodeContaine
 }
 
 void InitializeNodesAttributes(ns3::NodeContainer& AS_nodes, std::string beaconing_policy_str) {
+    omp_set_num_threads(128);
 #pragma omp parallel for
     for (uint64_t i = 0; i < AS_nodes.GetN(); ++i) {
         if (beaconing_policy_str == "baseline") {

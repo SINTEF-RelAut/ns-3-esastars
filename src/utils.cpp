@@ -23,7 +23,8 @@
  * @return The link-level jaccard distance between the two paths.
  */
 
-ns3::NodeContainer all_ases;
+
+std::map<uint16_t, uint16_t> as_to_isd_map;
 namespace ns3 {
     ld link_level_jaccard_distance_between_two_paths(Beacon *beacon1, Beacon *beacon2) {
         std::set<uint32_t> set_of_links_on_path1;
