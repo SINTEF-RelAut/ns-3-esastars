@@ -117,29 +117,29 @@ namespace ns3 {
 
         void SetBeaconServer(BeaconServer* beaconServer);
 
-        void SetPathServer(Ptr<PathServer> pathServer);
+        void SetPathServer(PathServer* pathServer);
 
         BeaconServer* GetBeaconServer();
 
-        Ptr<PathServer> GetPathServer();
+        PathServer* GetPathServer();
 
-        Ptr<SCIONHost> GetHost(host_addr_t host_addr);
+        SCIONHost* GetHost(host_addr_t host_addr);
 
         void AdvanceTime (ns3::Time advance);
 
         void ExecuteLocalScheduler();
 
-        void AddHost(Ptr<SCIONHost> host);
+        void AddHost(SCIONHost* host);
 
-        Ptr<BorderRouter> AddBR (double latitude, double longitude, Time processing_delay, Time processing_throughput_delay);
+        BorderRouter* AddBR (double latitude, double longitude, Time processing_delay, Time processing_throughput_delay);
 
         uint64_t GetFirstEventTime ();
 
     protected:
-        BeaconServer *beaconServer;
-        Ptr<PathServer> pathServer;
-        std::vector<Ptr<SCIONHost>> hosts;
-        std::vector<Ptr<BorderRouter>> border_routers;
+        BeaconServer* beaconServer;
+        PathServer* pathServer;
+        std::vector<SCIONHost*> hosts;
+        std::vector<BorderRouter*> border_routers;
     private:
         /**
          *  @brief Returns the average as-level diversity and link-level diversity scores of the passed beacon compared to all other beacons the node has which

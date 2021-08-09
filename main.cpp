@@ -207,16 +207,14 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::string beaconi
             std::cerr << "Incompatible AS_node type!" << std::endl;
             exit(1);
         }
+
         AS_node->SetBeaconServer(beaconing_policy);
         beaconing_policy->SetNode(PeekPointer(AS_node));
 
-        ns3::Ptr<ns3::PathServer> path_server = ns3::CreateObject<ns3::PathServer>( 0, isd_number, node_counter, 1,
-                                                                                    0.0,  0.0, PeekPointer(AS_node));
+        ns3::PathServer* path_server = new ns3::PathServer( 0, isd_number, node_counter, 1,0.0,  0.0, PeekPointer(AS_node));
         AS_node->SetPathServer(path_server);
 
-        ns3::Ptr<ns3::SCIONHost> scion_host = ns3::CreateObject<ns3::SCIONHost>(0, isd_number, node_counter, 2,
-                                                                                0.0, 0.0, PeekPointer(AS_node));
-
+        ns3::SCIONHost* scion_host = new ns3::SCIONHost(0, isd_number, node_counter, 2,0.0, 0.0, PeekPointer(AS_node));
         AS_node->AddHost(scion_host);
 
         AS_nodes.Add(AS_node);
@@ -283,10 +281,8 @@ void InstantiateLinksFromTopo (rapidxml::xml_node<>* xml_root, ns3::NodeContaine
         ns3::Time to_processing_throughput_delay = ns3::PicoSeconds(200); // 5 Giga packets per second
         ns3::Time from_processing_throughput_delay = ns3::PicoSeconds(200);
 
-        ns3::Ptr<ns3::BorderRouter> to_br = to_AS->AddBR(latitude, longitude, to_processing_delay, to_processing_throughput_delay);
-        ns3::Ptr<ns3::BorderRouter> from_br = from_AS->AddBR(latitude, longitude, from_processing_delay, from_processing_throughput_delay);
-
-        helper.Install(from_br, to_br);
+        ns3::BorderRouter* to_br = to_AS->AddBR(latitude, longitude, to_processing_delay, to_processing_throughput_delay);
+        ns3::BorderRouter* from_br = from_AS->AddBR(latitude, longitude, from_processing_delay, from_processing_throughput_delay);
 
         to_br->AddToPropagationDelays(ns3::NanoSeconds(5)); // Assuming 1m fiber optic between neighboring devices in the same location
         to_br->AddToTransmissionDelays(ns3::PicoSeconds(20)); //Per byte transmission delay assuming 400 Gbps link

@@ -147,29 +147,28 @@ namespace ns3 {
         return this->beaconServer;
     }
 
-    Ptr<PathServer>
+    PathServer*
     SCION_AS::GetPathServer() {
         return this->pathServer;
     }
 
     void
-    SCION_AS::SetPathServer(Ptr<PathServer> the_pathServer) {
+    SCION_AS::SetPathServer(PathServer* the_pathServer) {
         this->pathServer = the_pathServer;
     }
 
-    Ptr<SCIONHost>
+    SCIONHost*
     SCION_AS::GetHost(host_addr_t host_addr) {
         return hosts.at(host_addr - 2);
     }
 
     void
-    SCION_AS::AddHost(Ptr<SCIONHost> host) {
+    SCION_AS::AddHost(SCIONHost* host) {
         hosts.push_back(host);
     }
 
-    Ptr<BorderRouter> SCION_AS::AddBR(double latitude, double longitude, Time processing_delay, Time processing_throughput_delay) {
-        Ptr<BorderRouter> the_br = CreateObject<BorderRouter>(0,  isd_number,  as_number,  0,
-                                                               latitude,  longitude, this);
+    BorderRouter* SCION_AS::AddBR(double latitude, double longitude, Time processing_delay, Time processing_throughput_delay) {
+        BorderRouter* the_br = new BorderRouter(0,  isd_number,  as_number,  0, latitude,  longitude, this);
 
         the_br->SetProcessingDelay(processing_delay, processing_throughput_delay);
 
@@ -180,28 +179,24 @@ namespace ns3 {
     }
 
     void SCION_AS::connect_internal_nodes() {
-        std::map<Ptr<BorderRouter>, std::set<uint16_t>> border_router_to_if;
+        std::map<BorderRouter*, std::set<uint16_t>> border_router_to_if;
 
         for (uint16_t i = 0; i < GetNDevices(); ++i) {
-            Ptr<BorderRouter> br = border_routers.at(i);
+            BorderRouter* br = border_routers.at(i);
             if (border_router_to_if.find(br) == border_router_to_if.end()) {
                 border_router_to_if.insert(std::make_pair(br, std::set<uint16_t>()));
             }
             border_router_to_if.at(br).insert(i);
         }
 
-        std::set<Ptr<BorderRouter>> border_routers_set (border_routers.begin(), border_routers.end());
-        std::vector<Ptr<BorderRouter>> border_routers_vec (border_routers_set.begin(), border_routers_set.end());
-
-        //PointToPointHelper helper;
+        std::set<BorderRouter*> border_routers_set (border_routers.begin(), border_routers.end());
+        std::vector<BorderRouter*> border_routers_vec (border_routers_set.begin(), border_routers_set.end());
 
         // Connect border routers to border routers
         for (uint32_t i = 0; i < border_routers_vec.size() - 1; ++i) {
-            Ptr<BorderRouter> br1 = border_routers_vec.at(i);
+            BorderRouter* br1 = border_routers_vec.at(i);
             for (uint32_t j = i + 1; j < border_routers_vec.size(); ++j) {
-                Ptr<BorderRouter> br2 = border_routers_vec.at(j);
-
-//                helper.Install(br1, br2);
+                BorderRouter* br2 = border_routers_vec.at(j);
 
                 Time propagation_delay = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) br1->GetLatitude(), (ld) br1->GetLogitude(), (ld) br2->GetLatitude(), (ld) br2->GetLogitude())));
 
@@ -226,10 +221,9 @@ namespace ns3 {
 
         // Connect border routers to hosts
         for (uint32_t i = 0; i < border_routers_vec.size(); ++i) {
-            Ptr<BorderRouter> br = border_routers_vec.at(i);
+            BorderRouter* br = border_routers_vec.at(i);
             for (uint32_t j = 0; j < hosts.size(); ++j) {
-                Ptr<SCIONHost> host = hosts.at(j);
-//                helper.Install(br, host);
+                SCIONHost* host = hosts.at(j);
 
                 Time propagation_delay = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) br->GetLatitude(), (ld) br->GetLogitude(), (ld) host->GetLatitude(), (ld) host->GetLogitude())));
 
@@ -252,8 +246,7 @@ namespace ns3 {
 
         // Connect border routers to path server
         for (uint32_t i = 0; i < border_routers_vec.size(); ++i) {
-            Ptr<BorderRouter> br = border_routers_vec.at(i);
-//            helper.Install(pathServer, br);
+            BorderRouter* br = border_routers_vec.at(i);
 
             Time propagation_delay = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) br->GetLatitude(), (ld) br->GetLogitude(), (ld) pathServer->GetLatitude(), (ld) pathServer->GetLogitude())));
 
@@ -275,8 +268,7 @@ namespace ns3 {
 
         // Connect hosts to local path server
         for (uint32_t i = 0; i < hosts.size(); ++i) {
-            Ptr<SCIONHost> host = hosts.at(i);
-//            helper.Install(pathServer, host);
+            SCIONHost* host = hosts.at(i);
 
             Time propagation_delay = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) host->GetLatitude(), (ld) host->GetLogitude(), (ld) pathServer->GetLatitude(), (ld) pathServer->GetLogitude())));
 
@@ -295,11 +287,9 @@ namespace ns3 {
 
         // Connect hosts to each other
         for (uint32_t i = 0; i < hosts.size() - 1; ++i) {
-            Ptr<SCIONHost> h1 = hosts.at(i);
+            SCIONHost* h1 = hosts.at(i);
             for (uint32_t j = i + 1; j < hosts.size(); ++j) {
-                Ptr<SCIONHost> h2 = hosts.at(j);
-
-//                helper.Install(h1, h2);
+                SCIONHost* h2 = hosts.at(j);
 
                 Time propagation_delay = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) h1->GetLatitude(), (ld) h1->GetLogitude(), (ld) h2->GetLatitude(), (ld) h2->GetLogitude())));
 
@@ -319,7 +309,7 @@ namespace ns3 {
     }
 
     void SCION_AS::initialize_schedulers() {
-        std::set<Ptr<BorderRouter>> border_routers_set (border_routers.begin(), border_routers.end());
+        std::set<BorderRouter*> border_routers_set (border_routers.begin(), border_routers.end());
         events.resize((border_routers_set.size() + hosts.size() + 1) * 4 + 1);
 
         int i = 0;
@@ -334,7 +324,7 @@ namespace ns3 {
 
         int k = 0;
         for (uint64_t j = border_routers_set.size() * 4; j < (border_routers_set.size() + hosts.size()) * 4; j += 4) {
-            Ptr<SCIONHost> host = hosts.at(k);
+            SCIONHost* host = hosts.at(k);
             auto const & [receive_scheduler_local_as, receive_scheduler_remote_as] = host->GetReceiveSchedulers();
             events.at(j) = receive_scheduler_local_as;
             events.at(j + 1) = receive_scheduler_remote_as;
