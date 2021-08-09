@@ -151,7 +151,6 @@ namespace ns3 {
     }
 
     uint32_t SCIONCapableNode::GetNDevices (void) const {
-        NS_LOG_DEBUG("GetNDevices");
         return propagation_delays.size();
     }
 
