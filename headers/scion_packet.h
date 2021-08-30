@@ -20,7 +20,8 @@ namespace ns3 {
     class SCIONCapableNode;
 
     enum payload_type_t {
-            EMPTY = 0, PATH_REQ_FROM_HOST = 1, REG_PATHS_FROM_LOCAL_PS = 2
+            EMPTY = 0, PATH_REQ_FROM_HOST = 1, REG_PATHS_FROM_LOCAL_PS = 2, REG_PATHS_FROM_REMOTE_PS = 3,
+            LIST_OF_ALL_ASES_REQ = 4, LIST_OF_ALL_ASES_RESP = 5, LIST_OF_ASES_BROADCAST = 6, TIME_SYC_REQ = 7, TIME_SYNC_RESP = 8
     };
 
     struct PathReqFromHost {
@@ -35,9 +36,14 @@ namespace ns3 {
 
     };
 
+    struct ListOfAllASes {
+        std::set<ia_t>* set_of_all_ases;
+    };
+
     union Payload {
         PathReqFromHost path_req_from_host;
         RegPathsFromLocalPS registered_paths_from_local_ps;
+        ListOfAllASes list_of_all_ases;
     };
 
     struct SCIONPacket {

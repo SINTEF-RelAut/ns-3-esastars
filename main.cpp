@@ -15,6 +15,7 @@
 #include <omp.h>
 #include <random>
 #include <set>
+#include <yaml-cpp/yaml.h>
 
 #include "ns3/ptr.h"
 #include "ns3/core-module.h"
@@ -46,6 +47,7 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::string beaconi
 void InstantiateLinksFromTopo (rapidxml::xml_node<>* xml_root, ns3::NodeContainer& AS_nodes, std::map<int32_t, uint16_t>& AS_no_to_index);
 
 void InitializeNodesAttributes(ns3::NodeContainer& AS_nodes, std::string beaconing_policy_str);
+
 
 
 int main(int argc, char *argv[]) {

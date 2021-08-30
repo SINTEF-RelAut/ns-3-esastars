@@ -23,6 +23,9 @@ namespace ns3 {
 
 
         void SendArbitraryPacket(ia_t dst_ia, host_addr_t dst_host);
+
+    protected:
+        virtual void process_received_packet(uint16_t local_if, SCIONPacket* packet) override;
     private:
 
         cached_path_segs_dataset_t cached_up_path_segments;
@@ -37,7 +40,7 @@ namespace ns3 {
         void receive_registered_path_segments (path_segment_type seg_type, ia_t src_ia, ia_t dst_ia, const reg_path_segs_to_one_as_t* path_segments);
         void receive_cached_path_segments (path_segment_type seg_type, ia_t src_ia, ia_t dst_ia, cached_path_segs_per_dst_t* path_seg);
 
-        void process_received_packet(uint16_t local_if, SCIONPacket* packet) override;
+
 
         void cache_path_segment (path_segment_type seg_type, ia_t src_ia, ia_t dst_ia, PathSegment* path_seg);
 
