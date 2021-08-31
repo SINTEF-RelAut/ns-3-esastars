@@ -27,8 +27,8 @@ namespace ns3 {
         }
 
         if (packet->payload_type == payload_type_t::REQ_FOR_LIST_OF_ALL_CORE_ASES && packet->src_ia == ia_addr) {
-            NS_LOG_DEBUG("PthSrv rcv REQ_FOR_LIST_OF_ALL_CORE_ASES from " << packet->dst_host);
-            return_list_of_all_core_ases(packet->dst_host);
+            NS_LOG_DEBUG("PthSrv rcv REQ_FOR_LIST_OF_ALL_CORE_ASES from " << packet->src_host);
+            return_list_of_all_core_ases(packet->src_host);
             packet->packet_originator->Drop(packet);
             return;
         }
