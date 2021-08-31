@@ -21,17 +21,14 @@ namespace ns3 {
                   double latitude, double longitude, SCION_AS* AS) :
                   SCIONCapableNode(system_id, isd_number, as_number, local_address, latitude, longitude, AS){}
 
-
         void SendArbitraryPacket(ia_t dst_ia, host_addr_t dst_host);
 
     protected:
-        virtual void process_received_packet(uint16_t local_if, SCIONPacket* packet) override;
-    private:
-
         cached_path_segs_dataset_t cached_up_path_segments;
         cached_path_segs_dataset_t cached_core_path_segments;
         cached_path_segs_dataset_t cached_down_path_segments;
 
+        virtual void process_received_packet(uint16_t local_if, SCIONPacket* packet) override;
         void remove_expired_segments();
         void search_in_cached_segments(ia_t dst_ia, std::vector<const PathSegment*>& path, std::vector<uint8_t>& shortcuts);
         void request_for_path_segments(ia_t dst_ia);

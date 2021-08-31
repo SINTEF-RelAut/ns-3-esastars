@@ -36,7 +36,7 @@
 #include "src/SCION/headers/global_scheduling.h"
 #include "src/SCION/headers/path_server.h"
 #include "src/SCION/headers/scion_host.h"
-
+#include "src/SCION/headers/time_server.h"
 
 
 //rapidxml::xml_node<>* SetupTopologyFile (std::string topology_name);
@@ -216,7 +216,7 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::string beaconi
         ns3::PathServer* path_server = new ns3::PathServer( 0, isd_number, node_counter, 1,0.0,  0.0, PeekPointer(AS_node));
         AS_node->SetPathServer(path_server);
 
-        ns3::SCIONHost* scion_host = new ns3::SCIONHost(0, isd_number, node_counter, 2,0.0, 0.0, PeekPointer(AS_node));
+        ns3::SCIONHost* scion_host = new ns3::TimeServer(0, isd_number, node_counter, 2,0.0, 0.0, PeekPointer(AS_node));
         AS_node->AddHost(scion_host);
 
         AS_nodes.Add(AS_node);

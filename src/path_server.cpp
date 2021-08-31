@@ -25,12 +25,20 @@ namespace ns3 {
             packet->packet_originator->Drop(packet);
             return;
         }
+
+        if (packet->payload_type == payload_type_t::REQ_FOR_LIST_OF_ALL_CORE_ASES && packet->src_ia == ia_addr) {
+            NS_LOG_DEBUG("PthSrv rcv REQ_FOR_LIST_OF_ALL_CORE_ASES from " << packet->dst_host);
+            return_list_of_all_core_ases(packet->dst_host);
+            packet->packet_originator->Drop(packet);
+            return;
+        }
     }
 
     void PathServer::RegisterCorePathSegment (PathSegment& pathSegment, std::string key) {
         pathSegment.reverse = true;
         if (registered_core_segments.find(pathSegment.originator) == registered_core_segments.end()) {
             registered_core_segments.insert(std::make_pair(pathSegment.originator, new reg_path_segs_to_one_as_t ()));
+            set_of_all_core_ases.insert(pathSegment.originator);
         }
 
         if (registered_core_segments.at(pathSegment.originator)->find(key) == registered_core_segments.at(pathSegment.originator)->end()) {
@@ -108,6 +116,16 @@ namespace ns3 {
         payload.registered_paths_from_local_ps.src_ia = src_ia;
         payload.registered_paths_from_local_ps.dst_ia = dst_ia;
         payload.registered_paths_from_local_ps.registered_path_segments = paths_to_dst_ia;
+
+        SCIONPacket* packet = create_packet(payload, payload_type, ia_addr, host_addr);
+        send_packet(packet);
+    }
+
+    void PathServer::return_list_of_all_core_ases (host_addr_t host_addr) {
+        NS_LOG_DEBUG("PthSrv snd LIST_OF_ALL_CORE_ASES to " << host_addr);
+        payload_type_t payload_type = payload_type_t::LIST_OF_ALL_CORE_ASES;
+        Payload payload;
+        payload.list_of_all_ases.set_of_all_ases = &set_of_all_core_ases;
 
         SCIONPacket* packet = create_packet(payload, payload_type, ia_addr, host_addr);
         send_packet(packet);

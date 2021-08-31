@@ -151,6 +151,10 @@ namespace ns3 {
         return hosts.at(host_addr - 2);
     }
 
+    uint32_t SCION_AS::GetNHosts() {
+        return hosts.size();
+    }
+
     void
     SCION_AS::AddHost(SCIONHost* host) {
         hosts.push_back(host);

@@ -29,6 +29,8 @@ namespace ns3 {
         void RegisterDownPathSegment (PathSegment& pathSegment, std::string key);
 
     private:
+        std::set<ia_t> set_of_all_core_ases;
+
         registered_path_segs_dataset_t registered_core_segments;
         registered_path_segs_dataset_t registered_up_segments;
         registered_path_segs_dataset_t registered_down_segments;
@@ -43,6 +45,8 @@ namespace ns3 {
         void process_local_host_request_for_path (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, host_addr_t host_addr);
 
         void send_registered_path_to_local_host(host_addr_t host_addr, path_segment_type path_type, ia_t src_ia, ia_t dst_ia, const reg_path_segs_to_one_as_t*);
+
+        void return_list_of_all_core_ases(host_addr_t host_addr);
     };
 }
 

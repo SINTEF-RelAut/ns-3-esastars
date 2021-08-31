@@ -28,6 +28,7 @@ namespace ns3 {
 
 #define GET_HOP_ISD(input) ((uint16_t) ((input) >> 48))
 #define GET_HOP_AS(input) ((uint16_t) (((input) & 0x0000ffff00000000) >> 32))
+#define GET_HOP_IA(input) ((ia_t) (((input) & 0xffffffff00000000) >> 32))
 #define GET_HOP_ING_IF(input) ((uint16_t) (((input) & 0x00000000ffff0000) >> 16))
 #define GET_HOP_EG_IF(input) ((uint16_t) ((input) & 0x000000000000ffff))
 

@@ -124,6 +124,8 @@ namespace ns3 {
 
         SCIONHost* GetHost(host_addr_t host_addr);
 
+        uint32_t GetNHosts();
+
         void AdvanceTime (ns3::Time advance);
 
         void ExecuteLocalScheduler();

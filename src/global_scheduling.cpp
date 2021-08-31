@@ -15,6 +15,7 @@
 #include "src/SCION/headers/beaconing/beacon_server.h"
 #include "src/SCION/headers/global_scheduling.h"
 #include "src/SCION/headers/scion_host.h"
+#include "src/SCION/headers/time_server.h"
 
 namespace ns3 {
     void ExecuteLocallyScheduledEvents (NodeContainer nodes) {
@@ -51,18 +52,18 @@ namespace ns3 {
     }
 
     void SchedulePeriodicEvents(NodeContainer& nodes, Time beaconing_period, Time last_beaconing_event_time, Time simulation_end) {
-
-
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             Ptr<SCION_AS> node = DynamicCast<SCION_AS>(nodes.Get(i));
-            node->GetBeaconServer()->ScheduleBeaconing(last_beaconing_event_time);
 
-            if (i == 0) {
-                node->GetHost(2)->GetProcessScheduler()->Schedule(Minutes(180),
-                                   &SCIONHost::SendArbitraryPacket,
-                                   node->GetHost(2),
-                                   DynamicCast<SCION_AS>(nodes.Get(1))->ia_addr, 2);
+            if (node->GetBeaconServer() != NULL) {
+                node->GetBeaconServer()->ScheduleBeaconing(last_beaconing_event_time);
             }
+
+            if (node->GetNHosts() > 0 && dynamic_cast<TimeServer*>(node->GetHost(2)) != NULL) {
+                dynamic_cast<TimeServer*>( node->GetHost(2))->ScheduleListOfAllASesRequest();
+                dynamic_cast<TimeServer*>( node->GetHost(2))->ScheduleTimeSync();
+            }
+
         }
 
         ScheduleNextEvent(nodes);

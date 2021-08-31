@@ -180,7 +180,7 @@ namespace ns3 {
             packet->packet_originator->Drop(packet);
             return;
         }
-
+/*
         if (packet->packet_originator == this) {
             NS_ASSERT(on_the_flight_packets.find(packet->id) != on_the_flight_packets.end());
             NS_ASSERT(&on_the_flight_packets.at(packet->id) == packet);
@@ -198,6 +198,7 @@ namespace ns3 {
             packet->timestamp = AS->local_time;
             send_packet(packet);
         }
+*/
     }
 
     void SCIONHost::SendArbitraryPacket(ia_t dst_ia, host_addr_t dst_host) {
