@@ -23,7 +23,8 @@ def build(bld):
                    'src/utils.cpp',
                    'src/scion_capable_node.cpp',
                    'src/border_router.cpp',
-                   'src/beaconing/scionlab_algo.cpp']
+                   'src/beaconing/scionlab_algo.cpp',
+                   'src/time_server.cpp']
 
     headers = bld(features='ns3header')
     headers.module = 'SCION'
@@ -45,7 +46,8 @@ def build(bld):
                      'headers/scion_capable_node.h',
                      'headers/border_router.h',
                      'headers/utils.h',
-                     'headers/beaconing/scionlab_algo.h']
+                     'headers/beaconing/scionlab_algo.h',
+                     'headers/time_server']
 
     obj = bld.create_ns3_program('main',
                                 ['SCION', 'point-to-point'])
