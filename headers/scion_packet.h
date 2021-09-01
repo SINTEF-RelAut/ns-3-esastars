@@ -21,7 +21,7 @@ namespace ns3 {
 
     enum payload_type_t {
             EMPTY = 0, PATH_REQ_FROM_HOST = 1, REG_PATHS_FROM_LOCAL_PS = 2, REG_PATHS_FROM_REMOTE_PS = 3,
-            REQ_FOR_LIST_OF_ALL_CORE_ASES = 4, LIST_OF_ALL_CORE_ASES = 5, BROADCAST_LIST_OF_ALL_CORE_ASES = 6, TIME_SYC_REQ = 7, TIME_SYNC_RESP = 8
+            REQ_FOR_LIST_OF_ALL_CORE_ASES = 4, LIST_OF_ALL_CORE_ASES = 5, BROADCAST_LIST_OF_ALL_CORE_ASES = 6, NTP_REQ = 7, NTP_RESP = 8
     };
 
     struct PathReqFromHost {
@@ -40,10 +40,15 @@ namespace ns3 {
         std::set<ia_t>* set_of_all_ases;
     };
 
+    struct NTPReqOrResp {
+        int64_t t0, t1 , t2, t3;
+    };
+
     union Payload {
         PathReqFromHost path_req_from_host;
         RegPathsFromLocalPS registered_paths_from_local_ps;
         ListOfAllASes list_of_all_ases;
+        NTPReqOrResp ntp_req_or_resp;
     };
 
     struct SCIONPacket {

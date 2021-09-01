@@ -3,6 +3,7 @@
 //
 
 #include <algorithm>
+#include <random>
 
 #include "ns3/log.h"
 
@@ -14,17 +15,19 @@ namespace ns3 {
 
 
     void TimeServer::request_set_of_all_core_ases_from_path_server () {
+        AdvanceLocalTime();
+
         NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " sent req for all core ASes to PthSrv");
 
         payload_type_t payload_type = payload_type_t::REQ_FOR_LIST_OF_ALL_CORE_ASES;
         Payload payload;
-        SCIONPacket* packet = create_packet(payload, payload_type, ia_addr, 1);
+        SCIONPacket* packet = create_scion_packet(payload, payload_type, ia_addr, 1, 0);
 
-        send_packet(packet);
+        send_scion_packet(packet);
     }
 
-    void TimeServer::process_received_packet(uint16_t local_if, SCIONPacket* packet) {
-        SCIONHost::process_received_packet(local_if, packet);
+    void TimeServer::process_received_packet(uint16_t local_if, SCIONPacket *packet, Time receive_time) {
+        SCIONHost::process_received_packet(local_if, packet, receive_time);
 
         if (packet->payload_type == payload_type_t::LIST_OF_ALL_CORE_ASES) {
             NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " rcv all core ASes from PthSrv");
@@ -40,14 +43,14 @@ namespace ns3 {
             return;
         }
 
-        if (packet->payload_type == payload_type_t::TIME_SYC_REQ) {
-
-            packet->packet_originator->Drop(packet);
+        if (packet->payload_type == payload_type_t::NTP_REQ) {
+            receive_ntp_req_from_peer(packet, receive_time);
+            // We do not drop the packet because we re-use the request packet; The originator AS will drop the packet.
             return;
         }
 
-        if (packet->payload_type == payload_type_t::TIME_SYNC_RESP) {
-
+        if (packet->payload_type == payload_type_t::NTP_RESP) {
+            receive_ntp_res_from_peer(packet, receive_time);
             packet->packet_originator->Drop(packet);
             return;
         }
@@ -102,7 +105,7 @@ namespace ns3 {
 
         for (auto const & dst_ia_cached_paths_pair : cached_core_path_segments) {
             for (auto const & [exp_time, path_seg] : *dst_ia_cached_paths_pair.second->at(ia_addr)) {
-                if (exp_time > AS->local_time.GetMinutes()) {
+                if (exp_time > local_time.GetMinutes()) {
                     if (path_seg->hops.size() == 2) {
                         paths_to_neighbor_ases.insert(path_seg);
                     }
@@ -117,27 +120,111 @@ namespace ns3 {
             Payload payload;
             payload.list_of_all_ases.set_of_all_ases = &set_of_all_core_ases;
 
-            SCIONPacket* packet = create_packet(payload, payload_type, GET_HOP_IA(path->hops.back()), 2);
+            SCIONPacket* packet = create_scion_packet(payload, payload_type, GET_HOP_IA(path->hops.back()), 2, set_of_all_core_ases.size() * 8);
 
             packet->path.push_back(path);
 
-            send_packet(packet);
+            send_scion_packet(packet);
         }
     }
 
-    Time TimeServer::get_local_time() {
-        return drift * ((Simulator::Now().GetPicoSeconds() - the_real_time_of_last_sync.GetPicoSeconds()) / Days(1).GetPicoSeconds());
+    void TimeServer::AdvanceLocalTime() {
+        Time advance = Simulator::Now() - real_time_of_last_local_time_update;
+
+        Time max_drift = get_max_drift(advance);
+        std::random_device rd;
+        std::uniform_int_distribution<int64_t> dist (-std::abs(max_drift.GetPicoSeconds()), std::abs(max_drift.GetPicoSeconds()));
+        int64_t random_drift_int =  dist(rd);
+
+        local_time += advance;
+        if (random_drift_int < 0) {
+            local_time -= PicoSeconds(std::abs(random_drift_int));
+        } else {
+            local_time += PicoSeconds(std::abs(random_drift_int));
+        }
+
+        real_time_of_last_local_time_update = Simulator::Now();
     }
 
     Time TimeServer::get_reference_time() {
-        return Simulator::Now() - Time("10ns");
+        return Simulator::Now() - NanoSeconds(10);
     }
 
-    void TimeServer::run_core_time_sync_algo() {
-        get_local_time();
-        get_reference_time();
+    Time TimeServer::get_max_drift(Time duration) {
+        return max_drift_per_day * (duration.GetPicoSeconds() / Days(1).GetPicoSeconds());
+    }
 
-        the_real_time_of_last_sync = Simulator::Now();
+    void TimeServer::trigger_core_time_sync_algo() {
+        AdvanceLocalTime();
+        loff = get_reference_time() - local_time;
+
+        if (synchronization_round == 0) {
+            send_ntp_req_to_peers();
+        } else {
+            correct_local_time(loff);
+        }
+
+        synchronization_round = (synchronization_round + 1) % G;
+    }
+
+    void TimeServer::correct_local_time (Time corr) {
+        Time max_drift = get_max_drift(time_sync_period);
+
+        if (std::abs(corr.GetPicoSeconds()) > max_drift.GetPicoSeconds()) {
+            if (corr > 0) {
+                local_time += max_drift;
+            } else {
+                local_time -= max_drift;
+            }
+        } else {
+            local_time += corr;
+        }
+    }
+
+    void TimeServer::send_ntp_req_to_peers() {
+        for (auto const & peer_ia : set_of_all_core_ases) {
+            std::set<const PathSegment*> set_of_core_path_segs;
+            get_the_most_disjoint_set_of_core_path_segs_to_as(peer_ia, set_of_core_path_segs);
+
+            for (auto const & path : set_of_core_path_segs) {
+                payload_type_t payload_type = payload_type_t::NTP_REQ;
+
+                Payload payload;
+                payload.ntp_req_or_resp.t0 = local_time.GetPicoSeconds();
+
+                SCIONPacket* packet = create_scion_packet(payload, payload_type, peer_ia, 2, 8 + 48);
+
+                packet->path.push_back(path);
+
+                send_scion_packet(packet);
+            }
+        }
+    }
+
+    void TimeServer::receive_ntp_req_from_peer(SCIONPacket *packet, Time receive_time) {
+        packet->dst_host = packet->src_host;
+        packet->dst_ia = packet->src_ia;
+        packet->src_ia = ia_addr;
+        packet->src_host = local_address;
+
+        packet->path_reversed = !packet->path_reversed;
+        packet->timestamp = local_time;
+
+        packet->payload_type = payload_type_t::NTP_RESP;
+        packet->payload.ntp_req_or_resp.t1 = receive_time.GetPicoSeconds();
+        packet->payload.ntp_req_or_resp.t2 = local_time.GetPicoSeconds();
+
+        send_scion_packet(packet);
+    }
+
+
+    void TimeServer::get_the_most_disjoint_set_of_core_path_segs_to_as (ia_t dst_ia, std::set<const PathSegment*>& set_of_core_path_segs) {
+        for (auto const & [exp_time, path_seg] : *cached_core_path_segments.at(dst_ia)->at(ia_addr)) {
+            if (exp_time > local_time.GetMinutes()) {
+                set_of_core_path_segs.insert(path_seg);
+                return; // TODO: Later we should implement the multi-path ntp with disjoint path
+            }
+        }
     }
 
     void TimeServer::ScheduleListOfAllASesRequest() {
@@ -147,7 +234,7 @@ namespace ns3 {
     }
     void TimeServer::ScheduleTimeSync() {
         for (Time t = first_event + Seconds(1); t < last_event + Seconds(1); t += time_sync_period) {
-            process_scheduler->Schedule(t, &TimeServer::run_core_time_sync_algo, this);
+            process_scheduler->Schedule(t, &TimeServer::trigger_core_time_sync_algo, this);
         }
     }
 }

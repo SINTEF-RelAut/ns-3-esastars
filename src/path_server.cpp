@@ -13,9 +13,9 @@
 namespace ns3 {
     NS_LOG_COMPONENT_DEFINE("PathServer");
 
-    void PathServer::process_received_packet(uint16_t local_if, SCIONPacket* packet) {
+    void PathServer::process_received_packet(uint16_t local_if, SCIONPacket *packet, Time receive_time) {
         NS_ASSERT(packet->dst_ia == ia_addr && packet->dst_host == local_address);
-        SCIONCapableNode::process_received_packet(local_if, packet);
+        SCIONCapableNode::process_received_packet(local_if, packet, receive_time);
 
         if (packet->payload_type == payload_type_t::PATH_REQ_FROM_HOST && packet->src_ia == ia_addr) {
             PathReqFromHost path_req_from_host = packet->payload.path_req_from_host;
@@ -117,8 +117,8 @@ namespace ns3 {
         payload.registered_paths_from_local_ps.dst_ia = dst_ia;
         payload.registered_paths_from_local_ps.registered_path_segments = paths_to_dst_ia;
 
-        SCIONPacket* packet = create_packet(payload, payload_type, ia_addr, host_addr);
-        send_packet(packet);
+        SCIONPacket* packet = create_scion_packet(payload, payload_type, ia_addr, host_addr, 0);
+        send_scion_packet(packet);
     }
 
     void PathServer::return_list_of_all_core_ases (host_addr_t host_addr) {
@@ -127,7 +127,7 @@ namespace ns3 {
         Payload payload;
         payload.list_of_all_ases.set_of_all_ases = &set_of_all_core_ases;
 
-        SCIONPacket* packet = create_packet(payload, payload_type, ia_addr, host_addr);
-        send_packet(packet);
+        SCIONPacket* packet = create_scion_packet(payload, payload_type, ia_addr, host_addr, 0);
+        send_scion_packet(packet);
     }
 }

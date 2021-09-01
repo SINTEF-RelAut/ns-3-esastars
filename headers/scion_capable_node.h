@@ -33,7 +33,8 @@ namespace ns3 {
             send_scheduler = new LocalScheduler();
             next_packet_id = 0;
             processing_queue_length = 0;
-                                            }
+            Time local_time = PicoSeconds(0);
+            }
 
         void AddToIFForwadingTable(uint16_t as_if, uint16_t local_if);
         void AddToAddressForwardingTable(host_addr_t addr, uint16_t local_if);
@@ -55,6 +56,8 @@ namespace ns3 {
         void InitializeTransmissionQueues();
         void Drop(SCIONPacket* packet);
         uint32_t GetNDevices (void) const;
+
+        virtual void AdvanceLocalTime();
     protected:
         uint16_t isd_number;
         uint16_t as_number;
@@ -83,6 +86,8 @@ namespace ns3 {
 
         packet_id_t next_packet_id;
 
+        Time local_time;
+
         std::unordered_map<uint16_t, uint16_t> forwarding_table_to_other_AS_ifaces;
         std::unordered_map<host_addr_t, uint16_t> forwarding_table_to_addresses_inside_as;
 
@@ -90,13 +95,16 @@ namespace ns3 {
 
         std::vector<std::tuple<SCIONCapableNode*, uint16_t, bool>> remote_nodes_info;
 
-        void receive (uint16_t local_if, SCIONPacket* packet);
+
+        void receive (uint16_t local_if, SCIONPacket* packet, Time receive_time);
         void send (uint16_t local_if, SCIONPacket* packet);
-        virtual void process_received_packet(uint16_t local_if, SCIONPacket* packet);
+        virtual void process_received_packet(uint16_t local_if, SCIONPacket *packet, Time receive_time);
         void schedule_for_send(uint16_t local_if, SCIONPacket* packet);
 
-        void send_packet(SCIONPacket* packet);
-        SCIONPacket* create_packet(Payload payload, payload_type_t payload_type, ia_t dst_ia, host_addr_t dst_host);
+        void send_scion_packet(SCIONPacket* packet);
+        SCIONPacket *
+        create_scion_packet(Payload payload, payload_type_t payload_type, ia_t dst_ia, host_addr_t dst_host,
+                            int32_t payload_size);
 
 
     };

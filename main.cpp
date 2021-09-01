@@ -216,7 +216,12 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::string beaconi
         ns3::PathServer* path_server = new ns3::PathServer( 0, isd_number, node_counter, 1,0.0,  0.0, PeekPointer(AS_node));
         AS_node->SetPathServer(path_server);
 
-        ns3::SCIONHost* scion_host = new ns3::TimeServer(0, isd_number, node_counter, 2,0.0, 0.0, PeekPointer(AS_node));
+        ns3::SCIONHost* scion_host = new ns3::TimeServer(0, isd_number, node_counter, 2,0.0, 0.0, PeekPointer(AS_node),
+                                                         ns3::MilliSeconds(4),
+                                                         ns3::Minutes(60),
+                                                         ns3::Minutes(400),
+                                                         ns3::Minutes(60),
+                                                         ns3::Minutes(10), 5);
         AS_node->AddHost(scion_host);
 
         AS_nodes.Add(AS_node);

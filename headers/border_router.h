@@ -22,7 +22,7 @@ namespace ns3 {
                      SCIONCapableNode(system_id, isd_number, as_number, local_address, latitude, longitude, AS) {}
 
     private:
-        void process_received_packet(uint16_t local_if, SCIONPacket* packet) override;
+        void process_received_packet(uint16_t local_if, SCIONPacket *packet, Time receive_time) override;
 
     };
 }

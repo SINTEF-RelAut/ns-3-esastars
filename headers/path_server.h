@@ -40,7 +40,7 @@ namespace ns3 {
         cached_path_segs_dataset_t cached_down_segments;
 
 
-        void process_received_packet(uint16_t local_if, SCIONPacket* packet) override;
+        void process_received_packet(uint16_t local_if, SCIONPacket *packet, Time receive_time) override;
 
         void process_local_host_request_for_path (path_segment_type path_type, ia_t src_ia, ia_t dst_ia, host_addr_t host_addr);
 

@@ -18,7 +18,7 @@ namespace ns3 {
 
         for (auto const & key_path_segment_pair : *path_segments) {
             PathSegment* path_segment = key_path_segment_pair.second;
-            if (path_segment->expiration_time > AS->local_time.GetMinutes()) {
+            if (path_segment->expiration_time > local_time.GetMinutes()) {
                 cache_path_segment (seg_type,  src_ia, dst_ia,  path_segment);
             }
         }
@@ -78,8 +78,8 @@ namespace ns3 {
         payload.path_req_from_host.dst_ia = dst_ia;
         payload.path_req_from_host.seg_type = seg_type;
 
-        SCIONPacket* packet = create_packet(payload, payload_type, ia_addr, 1);
-        send_packet(packet);
+        SCIONPacket* packet = create_scion_packet(payload, payload_type, ia_addr, 1, 0);
+        send_scion_packet(packet);
     }
 
 
@@ -165,11 +165,11 @@ namespace ns3 {
         return;
     }
 
-    void SCIONHost::process_received_packet(uint16_t local_if, SCIONPacket* packet) {
+    void SCIONHost::process_received_packet(uint16_t local_if, SCIONPacket *packet, Time receive_time) {
         NS_ASSERT(packet->dst_ia == ia_addr && packet->dst_host == local_address);
         NS_LOG_DEBUG("I am host " << isd_number << ":" << as_number << ":" << local_address << ". Packet received from " << GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia) << ":" << packet->src_host);
 
-        SCIONCapableNode::process_received_packet(local_if, packet);
+        SCIONCapableNode::process_received_packet(local_if, packet, receive_time);
 
         if (packet->payload_type == payload_type_t::REG_PATHS_FROM_LOCAL_PS) {
             RegPathsFromLocalPS registered_paths_from_local_ps = packet->payload.registered_paths_from_local_ps;
@@ -195,8 +195,8 @@ namespace ns3 {
             packet->src_host = local_address;
 
             packet->path_reversed = !packet->path_reversed;
-            packet->timestamp = AS->local_time;
-            send_packet(packet);
+            packet->timestamp = local_time;
+            send_scion_packet(packet);
         }
 */
     }
@@ -205,9 +205,9 @@ namespace ns3 {
         Payload payload;
         payload_type_t payload_type = payload_type_t::EMPTY;
 
-        SCIONPacket* packet = create_packet(payload, payload_type, dst_ia, dst_host);
+        SCIONPacket* packet = create_scion_packet(payload, payload_type, dst_ia, dst_host, 0);
         if (dst_ia == ia_addr) {
-            send_packet(packet);
+            send_scion_packet(packet);
         } else {
             find_path_and_send(packet, 0);
         }
@@ -217,7 +217,7 @@ namespace ns3 {
         search_in_cached_segments(packet->dst_ia, packet->path, packet->shortcut_hopfs);
 
         if (packet->path.size() != 0) {
-            send_packet(packet);
+            send_scion_packet(packet);
         }
 
         if (packet->path.size() == 0 && count == 0) {

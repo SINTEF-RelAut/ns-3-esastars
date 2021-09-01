@@ -19,21 +19,24 @@ namespace ns3 {
     NS_LOG_COMPONENT_DEFINE("SCIONCapableDevice");
 
     void SCIONCapableNode::ScheduleReceive(uint16_t local_if, SCIONPacket* packet, Time propagation_delay) {
+        AdvanceLocalTime();
         bool in_the_same_as = std::get<2>(remote_nodes_info.at(local_if));
         if (in_the_same_as) {
-            receive_scheduler_local_as->Schedule(propagation_delay, &SCIONCapableNode::receive, this, local_if, packet);
+            receive_scheduler_local_as->Schedule(propagation_delay, &SCIONCapableNode::receive, this, local_if, packet, local_time + propagation_delay);
         } else {
-            receive_scheduler_remote_as->Schedule(propagation_delay, &SCIONCapableNode::receive, this, local_if, packet);
+            receive_scheduler_remote_as->Schedule(propagation_delay, &SCIONCapableNode::receive, this, local_if, packet, local_time + propagation_delay);
         }
     }
 
-    void SCIONCapableNode::receive (uint16_t local_if, SCIONPacket* packet) {
+    void SCIONCapableNode::receive (uint16_t local_if, SCIONPacket* packet, Time receive_time) {
+        AdvanceLocalTime();
         processing_queue_length++;
         Time delay = processing_throughput_delay * processing_queue_length + processing_delay;
-        process_scheduler->Schedule(delay, &SCIONCapableNode::process_received_packet, this, local_if, packet);
+        process_scheduler->Schedule(delay, &SCIONCapableNode::process_received_packet, this, local_if, packet, receive_time);
     }
 
-    void SCIONCapableNode::process_received_packet(uint16_t local_if, SCIONPacket* packet) {
+    void SCIONCapableNode::process_received_packet(uint16_t local_if, SCIONPacket *packet, Time receive_time) {
+        AdvanceLocalTime();
         processing_queue_length--;
         // Other tasks should be done in derived classes
     }
@@ -47,6 +50,7 @@ namespace ns3 {
     }
 
     void SCIONCapableNode::send (uint16_t local_if, SCIONPacket* packet) {
+        AdvanceLocalTime();
         NS_LOG_DEBUG(packet);
         transmission_queues_lengths.at(local_if) -= packet->size;
         SCIONCapableNode* remote_node = std::get<0>(remote_nodes_info.at(local_if));
@@ -95,7 +99,7 @@ namespace ns3 {
         on_the_flight_packets.erase(packet->id);
     }
 
-    void SCIONCapableNode::send_packet(SCIONPacket* packet) {
+    void SCIONCapableNode::send_scion_packet(SCIONPacket* packet) {
         NS_LOG_DEBUG("I am host " << isd_number << ":" << as_number << ":" << local_address << ". Packet sent to " << GET_ISDN(packet->dst_ia) << ":" << GET_ASN(packet->dst_ia) << ":" << packet->dst_host);
 
         uint16_t local_if_to_send;
@@ -127,7 +131,9 @@ namespace ns3 {
         schedule_for_send(local_if_to_send, packet);
     }
 
-    SCIONPacket* SCIONCapableNode::create_packet(Payload payload, payload_type_t payload_type, ia_t dst_ia, host_addr_t dst_host) {
+    SCIONPacket * SCIONCapableNode::create_scion_packet(Payload payload, payload_type_t payload_type, ia_t dst_ia,
+                                                        host_addr_t dst_host,
+                                                        int32_t payload_size) {
         on_the_flight_packets.insert(std::make_pair(next_packet_id, SCIONPacket(this, next_packet_id)));
         SCIONPacket* packet = &on_the_flight_packets.at(next_packet_id);
         next_packet_id++;
@@ -144,14 +150,18 @@ namespace ns3 {
         packet->payload_type = payload_type;
         packet->payload = payload;
 
-        packet->timestamp = AS->local_time;
-        packet->size = 114;
+        packet->timestamp = local_time;
+        packet->size = payload_size + 114;
 
         return packet;
     }
 
     uint32_t SCIONCapableNode::GetNDevices (void) const {
         return propagation_delays.size();
+    }
+
+    void SCIONCapableNode::AdvanceLocalTime(){
+        local_time = Simulator::Now();
     }
 
 }
