@@ -272,6 +272,9 @@ namespace ns3 {
 
 
     void TimeServer::get_the_most_disjoint_set_of_core_path_segs_to_as (ia_t dst_ia, std::set<const PathSegment*>& set_of_core_path_segs) {
+        NS_ASSERT(cached_core_path_segments.find(dst_ia) != cached_core_path_segments.end());
+        NS_ASSERT(cached_core_path_segments.at(dst_ia)->find(ia_addr) != cached_core_path_segments.at(dst_ia)->end());
+
         for (auto const & [exp_time, path_seg] : *cached_core_path_segments.at(dst_ia)->at(ia_addr)) {
             if (exp_time > local_time.GetMinutes()) {
                 set_of_core_path_segs.insert(path_seg);

@@ -37,8 +37,8 @@ namespace ns3 {
 #define LOWER_32_BITS(input) ((uint32_t) ((input) & 0x00000000ffffffff))
 
 
-    template<class T>
-    double GetMedian(const std::multiset<T>& data);
+
+    double GetMedian( std::multiset<int64_t>& data);
 
 /**
  * @brief Measures and returns the dissimilarity between the two paths in the passed beacons on the link-lvl.

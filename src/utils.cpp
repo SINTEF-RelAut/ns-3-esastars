@@ -27,8 +27,8 @@
 std::map<uint16_t, uint16_t> as_to_isd_map;
 namespace ns3 {
 
-    template<class T>
-    double GetMedian(const std::multiset<T>& data)
+
+    double GetMedian( std::multiset<int64_t>& data)
     {
         if (data.empty())
             throw std::length_error("Cannot calculate median value for empty dataset");
