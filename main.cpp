@@ -90,8 +90,8 @@ int main(int argc, char *argv[]) {
 
     //rapidxml::xml_node<>* xml_root = SetupTopologyFile (topology_name);
 
-    //std::string file = "/cluster/home/tabaeias/ns-3_beaconing_simulator/topology/" + std::string(topology_name) + ".xml";
-    std::string file = "/home/tabaeias/ns-3_beaconing_simulator/topology/" + std::string(topology_name) + ".xml";
+    std::string file = "/cluster/home/tabaeias/ns-3_beaconing_simulator/topology/" + std::string(topology_name) + ".xml";
+    //std::string file = "/home/tabaeias/ns-3_beaconing_simulator/topology/" + std::string(topology_name) + ".xml";
     std::ifstream fin(file.c_str());
     std::ostringstream sstr;
     sstr << fin.rdbuf();
@@ -110,13 +110,13 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    //    std::string out_path =
-    //            "/cluster/scratch/tabaeias/" + beaconing_policy_str + "_" + topology_name + "_" +
-    //            beaconing_period_str + "_" + expiration_period_str + "_" + last_beaconing_event_time_str + ".txt";
+        std::string out_path =
+                "/cluster/scratch/tabaeias/" + beaconing_policy_str + "_" + topology_name + "_" +
+                beaconing_period_str + "_" + expiration_period_str + "_" + last_beaconing_event_time_str + ".txt";
 
-    std::string out_path =
-            "/home/tabaeias/ns-3_beaconing_simulator/results/" + beaconing_policy_str + "_" + topology_name + "_" +
-            beaconing_period_str + "_" + expiration_period_str + "_" + last_beaconing_event_time_str + ".txt";
+//    std::string out_path =
+//            "/home/tabaeias/ns-3_beaconing_simulator/results/" + beaconing_policy_str + "_" + topology_name + "_" +
+//            beaconing_period_str + "_" + expiration_period_str + "_" + last_beaconing_event_time_str + ".txt";
 
     std::ofstream out(out_path);
     std::cout.rdbuf(out.rdbuf());

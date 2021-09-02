@@ -28,7 +28,7 @@ namespace ns3 {
         }
 
         void ScheduleListOfAllASesRequest();
-        void ScheduleTimeSync();
+        void ScheduleTimeSync(ia_t  printer_ia);
 
 
         void AdvanceLocalTime() override;
@@ -71,7 +71,7 @@ namespace ns3 {
 
         void receive_ntp_res_from_peer(SCIONPacket* packet, Time receive_time);
 
-        void trigger_core_time_sync_algo();
+        void trigger_core_time_sync_algo(ia_t printer_ia);
 
         void continue_global_time_sync();
 

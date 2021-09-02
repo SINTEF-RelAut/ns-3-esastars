@@ -159,8 +159,14 @@ namespace ns3 {
         return max_drift_per_day * (duration.GetPicoSeconds() / Days(1).GetPicoSeconds());
     }
 
-    void TimeServer::trigger_core_time_sync_algo() {
+    void TimeServer::trigger_core_time_sync_algo(ia_t  printer_ia) {
         AdvanceLocalTime();
+
+        if (ia_addr == printer_ia) {
+            std::cout << "##################################### Time Sync at " << Simulator::Now().GetMinutes() << "##################################" << std::endl;
+        }
+
+
         loff = get_reference_time().GetPicoSeconds() - local_time.GetPicoSeconds();
 
         if (synchronization_round == 0) {
@@ -300,9 +306,9 @@ namespace ns3 {
         }
     }
 
-    void TimeServer::ScheduleTimeSync() {
+    void TimeServer::ScheduleTimeSync(ia_t printer_ia) {
         for (Time t = first_event + Seconds(1); t < last_event + Seconds(1); t += time_sync_period) {
-            process_scheduler->Schedule(t, &TimeServer::trigger_core_time_sync_algo, this);
+            process_scheduler->Schedule(t, &TimeServer::trigger_core_time_sync_algo, this, printer_ia);
         }
     }
 }

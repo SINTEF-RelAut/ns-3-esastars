@@ -52,6 +52,7 @@ namespace ns3 {
     }
 
     void SchedulePeriodicEvents(NodeContainer& nodes, Time beaconing_period, Time last_beaconing_event_time, Time simulation_end) {
+        ia_t printer_ia = DynamicCast<SCION_AS>(nodes.Get(0))->ia_addr;
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             Ptr<SCION_AS> node = DynamicCast<SCION_AS>(nodes.Get(i));
 
@@ -61,7 +62,7 @@ namespace ns3 {
 
             if (node->GetNHosts() > 0 && dynamic_cast<TimeServer*>(node->GetHost(2)) != NULL) {
                 dynamic_cast<TimeServer*>( node->GetHost(2))->ScheduleListOfAllASesRequest();
-                dynamic_cast<TimeServer*>( node->GetHost(2))->ScheduleTimeSync();
+                dynamic_cast<TimeServer*>( node->GetHost(2))->ScheduleTimeSync(printer_ia);
             }
 
         }
