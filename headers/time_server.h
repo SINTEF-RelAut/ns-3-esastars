@@ -16,9 +16,9 @@ namespace ns3 {
 
     public:
         TimeServer(uint32_t system_id, uint16_t isd_number, uint16_t as_number, host_addr_t local_address,
-        double latitude, double longitude, SCION_AS* AS, Time max_drift_per_day, Time first_event, Time last_event, Time list_of_ases_req_period, Time time_sync_period, uint32_t G) :
+        double latitude, double longitude, SCION_AS* AS, Time max_drift_per_day, Time GlobalCutoff, Time first_event, Time last_event, Time list_of_ases_req_period, Time time_sync_period, uint32_t G) :
         SCIONHost(system_id, isd_number, as_number, local_address, latitude, longitude, AS),
-        max_drift_per_day(max_drift_per_day),
+        max_drift_per_day(max_drift_per_day), GlobalCutoff(GlobalCutoff),
         first_event(first_event), last_event(last_event), list_of_ases_req_period(list_of_ases_req_period),
         time_sync_period(time_sync_period), G(G){
             synchronization_round = 0;
@@ -33,6 +33,7 @@ namespace ns3 {
         void AdvanceLocalTime() override;
     private:
         Time max_drift_per_day;
+        Time GlobalCutoff;
         Time first_event, last_event;
         Time list_of_ases_req_period;
         Time time_sync_period;
@@ -44,12 +45,8 @@ namespace ns3 {
 
         std::set<ia_t> set_of_all_core_ases;
 
-        Time loff;
-        std::set<Time> off;
-        std::map<ia_t, std::set<Time>> poff;
-
-
-
+        int64_t loff;
+        std::map<ia_t, std::multiset<int64_t>> poff;
 
         Time get_reference_time();
 
@@ -75,7 +72,9 @@ namespace ns3 {
 
         void trigger_core_time_sync_algo();
 
-        void correct_local_time (Time corr);
+        void continue_global_time_sync();
+
+        void correct_local_time (int64_t corr);
 
         void process_received_packet(uint16_t local_if, SCIONPacket *packet, Time receive_time) override;
     };

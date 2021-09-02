@@ -9,6 +9,7 @@
 
 #include "src/SCION/headers/time_server.h"
 #include "src/SCION/headers/scion_core_as.h"
+#include "src/SCION/headers/utils.h"
 
 namespace ns3 {
     NS_LOG_COMPONENT_DEFINE("TimeServer");
@@ -156,10 +157,11 @@ namespace ns3 {
 
     void TimeServer::trigger_core_time_sync_algo() {
         AdvanceLocalTime();
-        loff = get_reference_time() - local_time;
+        loff = get_reference_time().GetPicoSeconds() - local_time.GetPicoSeconds();
 
         if (synchronization_round == 0) {
             send_ntp_req_to_peers();
+            process_scheduler->Schedule(Seconds(60), &TimeServer::continue_global_time_sync, this);
         } else {
             correct_local_time(loff);
         }
@@ -167,17 +169,52 @@ namespace ns3 {
         synchronization_round = (synchronization_round + 1) % G;
     }
 
-    void TimeServer::correct_local_time (Time corr) {
+    void TimeServer::continue_global_time_sync() {
+        AdvanceLocalTime();
+
+        int32_t N = set_of_all_core_ases.size();
+        int32_t F = std::floor((N - 1) / 3);
+        int64_t corr = loff;
+
+        std::multiset<int64_t> off;
+        off.insert(loff);
+
+        for (auto const & peer_ia : set_of_all_core_ases) {
+            if (poff.find(peer_ia) == poff.end()) {
+                off.insert(get_reference_time().GetPicoSeconds() - local_time.GetPicoSeconds());
+            } else {
+                int64_t median_off = (int64_t) std::round(GetMedian(poff.at(peer_ia)));
+                off.insert(median_off);
+            }
+        }
+
+        auto iter1 = off.cbegin();
+        auto iter2 = off.cbegin();
+        std::advance(iter1, F);
+        std::advance(iter2, N - 1 - F);
+
+        int64_t goff = std::floor((*iter1 + *iter2) / 2);
+        int64_t doff = loff - goff;
+
+        if (std::abs(doff) > std::abs(GlobalCutoff.GetPicoSeconds())) {
+            doff = doff > 0 ? std::abs(GlobalCutoff.GetPicoSeconds()) : -std::abs(GlobalCutoff.GetPicoSeconds());
+            corr = goff + doff;
+        }
+
+        correct_local_time(corr);
+
+        poff.clear();
+    }
+
+    void TimeServer::correct_local_time (int64_t corr) {
         Time max_drift = get_max_drift(time_sync_period);
 
-        if (std::abs(corr.GetPicoSeconds()) > max_drift.GetPicoSeconds()) {
-            if (corr > 0) {
-                local_time += max_drift;
-            } else {
-                local_time -= max_drift;
-            }
+        int64_t final_corr_abs = std::abs(corr) < std::abs(max_drift.GetPicoSeconds()) ? std::abs(corr) : std::abs(max_drift.GetPicoSeconds());
+
+        if (corr > 0) {
+            local_time += PicoSeconds(final_corr_abs);
         } else {
-            local_time += corr;
+            local_time -= PicoSeconds(final_corr_abs);
         }
     }
 
@@ -186,15 +223,15 @@ namespace ns3 {
             std::set<const PathSegment*> set_of_core_path_segs;
             get_the_most_disjoint_set_of_core_path_segs_to_as(peer_ia, set_of_core_path_segs);
 
-            for (auto const & path : set_of_core_path_segs) {
+            for (auto const & path_seg : set_of_core_path_segs) {
                 payload_type_t payload_type = payload_type_t::NTP_REQ;
 
                 Payload payload;
                 payload.ntp_req_or_resp.t0 = local_time.GetPicoSeconds();
 
-                SCIONPacket* packet = create_scion_packet(payload, payload_type, peer_ia, 2, 8 + 48);
+                SCIONPacket* packet = create_scion_packet(payload, payload_type, peer_ia, 2, 8 + 48 /* udp + ntp*/);
 
-                packet->path.push_back(path);
+                packet->path.push_back(path_seg);
 
                 send_scion_packet(packet);
             }
@@ -217,6 +254,22 @@ namespace ns3 {
         send_scion_packet(packet);
     }
 
+    void TimeServer::receive_ntp_res_from_peer(SCIONPacket* packet, Time receive_time) {
+        NS_LOG_DEBUG("I am TimeServ at " << isd_number << ":" << as_number <<
+        " RCV NTP resp from peer " << GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia));
+
+        int64_t poff_tmp = std::abs(
+                            ((packet->payload.ntp_req_or_resp.t1 - packet->payload.ntp_req_or_resp.t0) +
+                            (packet->payload.ntp_req_or_resp.t2 - receive_time.GetPicoSeconds())) / 2);
+
+        if (poff.find(packet->src_ia) == poff.end()) {
+            poff.insert(std::make_pair(packet->src_ia, std::multiset<int64_t>()));
+        }
+
+        poff.at(packet->src_ia).insert(poff_tmp);
+
+    }
+
 
     void TimeServer::get_the_most_disjoint_set_of_core_path_segs_to_as (ia_t dst_ia, std::set<const PathSegment*>& set_of_core_path_segs) {
         for (auto const & [exp_time, path_seg] : *cached_core_path_segments.at(dst_ia)->at(ia_addr)) {
@@ -232,6 +285,7 @@ namespace ns3 {
             process_scheduler->Schedule(t, &TimeServer::request_set_of_all_core_ases_from_path_server, this);
         }
     }
+
     void TimeServer::ScheduleTimeSync() {
         for (Time t = first_event + Seconds(1); t < last_event + Seconds(1); t += time_sync_period) {
             process_scheduler->Schedule(t, &TimeServer::trigger_core_time_sync_algo, this);

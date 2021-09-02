@@ -151,7 +151,14 @@ namespace ns3 {
         packet->payload = payload;
 
         packet->timestamp = local_time;
-        packet->size = payload_size + 114;
+        packet->size = 14 + 12 + 24 + payload_size; // MAC + Common Header + Address Header + payload size
+
+        if (packet->path.size() > 0) {
+            packet->size += 4 + packet->path.size() * 8; //Path Meta Hdr + Info fields
+            for (auto const & path_seg : packet->path) {
+                packet->size += path_seg->hops.size() * 12; // Hop Fields
+            }
+        }
 
         return packet;
     }

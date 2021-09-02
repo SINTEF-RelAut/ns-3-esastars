@@ -26,6 +26,33 @@
 
 std::map<uint16_t, uint16_t> as_to_isd_map;
 namespace ns3 {
+
+    template<class T>
+    double GetMedian(const std::multiset<T>& data)
+    {
+        if (data.empty())
+            throw std::length_error("Cannot calculate median value for empty dataset");
+
+        const size_t n = data.size();
+        double median = 0;
+
+        auto iter = data.cbegin();
+        std::advance(iter, n / 2);
+
+        // Middle or average of two middle values
+        if (n % 2 == 0)
+        {
+            const auto iter2 = iter--;
+            median = double(*iter + *iter2) / 2;    // data[n/2 - 1] AND data[n/2]
+        }
+        else
+        {
+            median = *iter;
+        }
+
+        return median;
+    }
+
     ld link_level_jaccard_distance_between_two_paths(Beacon *beacon1, Beacon *beacon2) {
         std::set<uint32_t> set_of_links_on_path1;
         int32_t intersection = 0;
