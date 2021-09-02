@@ -148,16 +148,16 @@ namespace ns3 {
         Time advance = Simulator::Now() - real_time_of_last_local_time_update;
 
         Time max_drift = get_max_drift(advance);
-        std::random_device rd;
-        std::uniform_int_distribution<int64_t> dist (-std::abs(max_drift.GetPicoSeconds()), std::abs(max_drift.GetPicoSeconds()));
-        int64_t random_drift_int =  dist(rd);
+        //std::random_device rd;
+        //std::uniform_int_distribution<int64_t> dist (-std::abs(max_drift.GetPicoSeconds()), std::abs(max_drift.GetPicoSeconds()));
+        int64_t random_drift_int = std::abs(max_drift.GetPicoSeconds()); //dist(rd);
 
-        local_time += advance;
-        if (random_drift_int < 0) {
-            local_time -= PicoSeconds(std::abs(random_drift_int));
-        } else {
-            local_time += PicoSeconds(std::abs(random_drift_int));
-        }
+        local_time += advance + PicoSeconds(random_drift_int);
+//        if (random_drift_int < 0) {
+//            local_time -= PicoSeconds(std::abs(random_drift_int));
+//        } else {
+//            local_time += PicoSeconds(std::abs(random_drift_int));
+//        }
 
         real_time_of_last_local_time_update = Simulator::Now();
     }
