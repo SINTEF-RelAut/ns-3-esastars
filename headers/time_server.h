@@ -24,6 +24,7 @@ namespace ns3 {
             synchronization_round = 0;
             local_time = PicoSeconds(0);
             real_time_of_last_local_time_update = PicoSeconds(0);
+            set_of_all_core_ases.insert(ia_addr);
         }
 
         void ScheduleListOfAllASesRequest();

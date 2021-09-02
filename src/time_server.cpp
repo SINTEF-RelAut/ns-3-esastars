@@ -88,6 +88,10 @@ namespace ns3 {
         std::set<uint16_t> all_isds;
 
         for (auto const & isd_as : set_of_all_core_ases) {
+            if (isd_as == ia_addr) {
+                continue;
+            }
+
             all_isds.insert(GET_ISDN(isd_as));
         }
 
@@ -180,6 +184,10 @@ namespace ns3 {
         off.insert(loff);
 
         for (auto const & peer_ia : set_of_all_core_ases) {
+            if (peer_ia == ia_addr) {
+                continue;
+            }
+
             if (poff.find(peer_ia) == poff.end()) {
                 off.insert(get_reference_time().GetPicoSeconds() - local_time.GetPicoSeconds());
             } else {
@@ -220,6 +228,9 @@ namespace ns3 {
 
     void TimeServer::send_ntp_req_to_peers() {
         for (auto const & peer_ia : set_of_all_core_ases) {
+            if (peer_ia == ia_addr) {
+                continue;
+            }
             std::set<const PathSegment*> set_of_core_path_segs;
             get_the_most_disjoint_set_of_core_path_segs_to_as(peer_ia, set_of_core_path_segs);
 
