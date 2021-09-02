@@ -94,7 +94,7 @@ namespace ns3 {
         transmission_queues_lengths.resize(GetNDevices());
     }
 
-    void SCIONCapableNode::Drop(SCIONPacket* packet) {
+    void SCIONCapableNode::DestroySCIONPacket(SCIONPacket* packet) {
         NS_ASSERT(packet == &on_the_flight_packets.at(packet->id));
         on_the_flight_packets.erase(packet->id);
     }
@@ -161,6 +161,18 @@ namespace ns3 {
         }
 
         return packet;
+    }
+
+    void SCIONCapableNode::return_scion_packet(SCIONPacket* packet) {
+        packet->dst_host = packet->src_host;
+        packet->dst_ia = packet->src_ia;
+        packet->src_ia = ia_addr;
+        packet->src_host = local_address;
+
+        packet->path_reversed = !packet->path_reversed;
+        packet->timestamp = local_time;
+
+        send_scion_packet(packet);
     }
 
     uint32_t SCIONCapableNode::GetNDevices (void) const {

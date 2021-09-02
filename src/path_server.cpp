@@ -22,14 +22,14 @@ namespace ns3 {
             process_local_host_request_for_path(path_req_from_host.seg_type, path_req_from_host.src_ia,
                                                 path_req_from_host.dst_ia, packet->src_host);
 
-            packet->packet_originator->Drop(packet);
+            packet->packet_originator->DestroySCIONPacket(packet);
             return;
         }
 
         if (packet->payload_type == payload_type_t::REQ_FOR_LIST_OF_ALL_CORE_ASES && packet->src_ia == ia_addr) {
             NS_LOG_DEBUG("PthSrv rcv REQ_FOR_LIST_OF_ALL_CORE_ASES from " << packet->src_host);
             return_list_of_all_core_ases(packet->src_host);
-            packet->packet_originator->Drop(packet);
+            packet->packet_originator->DestroySCIONPacket(packet);
             return;
         }
     }

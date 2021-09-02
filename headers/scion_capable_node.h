@@ -54,7 +54,7 @@ namespace ns3 {
         void SetProcessingDelay(Time delay, Time throughput_delay);
         void AddToRemoteNodesInfo (SCIONCapableNode* remote_node, uint16_t remote_if, uint16_t remote_isd, uint16_t remote_as);
         void InitializeTransmissionQueues();
-        void Drop(SCIONPacket* packet);
+        void DestroySCIONPacket(SCIONPacket* packet);
         uint32_t GetNDevices (void) const;
 
         virtual void AdvanceLocalTime();
@@ -105,6 +105,8 @@ namespace ns3 {
         SCIONPacket *
         create_scion_packet(Payload payload, payload_type_t payload_type, ia_t dst_ia, host_addr_t dst_host,
                             int32_t payload_size);
+
+        void return_scion_packet(SCIONPacket* packet);
 
 
     };

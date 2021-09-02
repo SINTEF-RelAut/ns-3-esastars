@@ -33,26 +33,32 @@ namespace ns3 {
         if (packet->payload_type == payload_type_t::LIST_OF_ALL_CORE_ASES) {
             NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " rcv all core ASes from PthSrv");
             receive_set_of_all_core_ases_from_path_server(packet);
-            packet->packet_originator->Drop(packet);
+            // In the same AS, dropping packets of remote hosts does not create race condition between threads
+            // Because the whole AS is running on one thread
+            packet->packet_originator->DestroySCIONPacket(packet);
             return;
         }
 
         if (packet->payload_type == payload_type_t::BROADCAST_LIST_OF_ALL_CORE_ASES){
+            if (packet->packet_originator == this) {
+                // For destroying inter-domain packets, the packet should be sent back to the originator itself
+                // Even if the protocol does not need any response or ACK
+                DestroySCIONPacket(packet);
+                return;
+            }
             NS_LOG_DEBUG("TimeSrv at" << isd_number << ":" << as_number << " rcv all core ASes from other TimeSrv " << GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia));
             receive_set_of_all_core_ases_from_other_time_server(packet);
-            packet->packet_originator->Drop(packet);
             return;
         }
 
         if (packet->payload_type == payload_type_t::NTP_REQ) {
             receive_ntp_req_from_peer(packet, receive_time);
-            // We do not drop the packet because we re-use the request packet; The originator AS will drop the packet.
             return;
         }
 
         if (packet->payload_type == payload_type_t::NTP_RESP) {
             receive_ntp_res_from_peer(packet, receive_time);
-            packet->packet_originator->Drop(packet);
+            DestroySCIONPacket(packet);
             return;
         }
     }
@@ -82,6 +88,11 @@ namespace ns3 {
 
             send_set_of_all_core_ases_to_neighbors();
         }
+        // This is just for simulator memory management;
+        // For every inter-domain packet there should a response (like an ACK) using the packet itself
+        // If the protocol itself does not have any real response like here, just return the message itself
+        // So the originator can destroy the packet, otherwise it can cause a memory problem
+        return_scion_packet(packet);
     }
 
     void TimeServer::request_for_paths_to_all_core_ases() {
@@ -256,19 +267,10 @@ namespace ns3 {
     }
 
     void TimeServer::receive_ntp_req_from_peer(SCIONPacket *packet, Time receive_time) {
-        packet->dst_host = packet->src_host;
-        packet->dst_ia = packet->src_ia;
-        packet->src_ia = ia_addr;
-        packet->src_host = local_address;
-
-        packet->path_reversed = !packet->path_reversed;
-        packet->timestamp = local_time;
-
         packet->payload_type = payload_type_t::NTP_RESP;
         packet->payload.ntp_req_or_resp.t1 = receive_time.GetPicoSeconds();
         packet->payload.ntp_req_or_resp.t2 = local_time.GetPicoSeconds();
-
-        send_scion_packet(packet);
+        return_scion_packet(packet);
     }
 
     void TimeServer::receive_ntp_res_from_peer(SCIONPacket* packet, Time receive_time) {

@@ -177,7 +177,7 @@ namespace ns3 {
                                           registered_paths_from_local_ps.src_ia,
                                           registered_paths_from_local_ps.dst_ia,
                                           registered_paths_from_local_ps.registered_path_segments);
-            packet->packet_originator->Drop(packet);
+            packet->packet_originator->DestroySCIONPacket(packet);
             return;
         }
 /*
@@ -186,17 +186,10 @@ namespace ns3 {
             NS_ASSERT(&on_the_flight_packets.at(packet->id) == packet);
             NS_LOG_DEBUG("I am host " << isd_number << ":" << as_number << ":" << local_address << ". Response received from " << GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia) << ":" << packet->src_host);
 
-            on_the_flight_packets.erase(packet->id);
+            DestroySCIONPacket(packet);
             // The repose of a  previously-sent message has received; do whatever is necessary
         } else {
-            packet->dst_host = packet->src_host;
-            packet->dst_ia = packet->src_ia;
-            packet->src_ia = ia_addr;
-            packet->src_host = local_address;
-
-            packet->path_reversed = !packet->path_reversed;
-            packet->timestamp = local_time;
-            send_scion_packet(packet);
+            return_scion_packet(packet);
         }
 */
     }
