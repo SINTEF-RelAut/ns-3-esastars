@@ -46,17 +46,19 @@ namespace ns3 {
                 DestroySCIONPacket(packet);
                 return;
             }
-            NS_LOG_DEBUG("TimeSrv at" << isd_number << ":" << as_number << " rcv all core ASes from other TimeSrv " << GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia));
+            NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " rcv all core ASes from other TimeSrv " << GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia));
             receive_set_of_all_core_ases_from_other_time_server(packet);
             return;
         }
 
         if (packet->payload_type == payload_type_t::NTP_REQ) {
+            NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " rcv ntp req from " << GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia));
             receive_ntp_req_from_peer(packet, receive_time);
             return;
         }
 
         if (packet->payload_type == payload_type_t::NTP_RESP) {
+            NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " rcv ntp resp from " << GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia));
             receive_ntp_res_from_peer(packet, receive_time);
             DestroySCIONPacket(packet);
             return;
@@ -252,6 +254,7 @@ namespace ns3 {
             get_the_most_disjoint_set_of_core_path_segs_to_as(peer_ia, set_of_core_path_segs);
 
             for (auto const & path_seg : set_of_core_path_segs) {
+                NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " sent ntp req to " << GET_ISDN(peer_ia) << ":" << GET_ASN(peer_ia));
                 payload_type_t payload_type = payload_type_t::NTP_REQ;
 
                 Payload payload;
@@ -274,7 +277,7 @@ namespace ns3 {
     }
 
     void TimeServer::receive_ntp_res_from_peer(SCIONPacket* packet, Time receive_time) {
-        NS_LOG_DEBUG("I am TimeServ at " << isd_number << ":" << as_number <<
+        NS_LOG_DEBUG("TimeServ at " << isd_number << ":" << as_number <<
         " RCV NTP resp from peer " << GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia));
 
         int64_t poff_tmp = std::abs(

@@ -62,6 +62,7 @@ namespace ns3 {
         int32_t AS_max_bwd;
 
         std::vector<LocalScheduler*> events; // a vector of (#interfaces +  #services + #hosts) schedulers
+        std::vector<LocalScheduler*> schedulers_to_run_next;
 
         std::vector<Time> latencies_between_hosts_and_path_server;
         std::vector<Time> latencies_between_interfaces_and_beacon_server;

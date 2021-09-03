@@ -19,9 +19,9 @@
 
 namespace ns3 {
     void ExecuteLocallyScheduledEvents (NodeContainer nodes) {
-#pragma omp parallel for
-        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-            Ptr<SCION_AS> node = DynamicCast<SCION_AS>(nodes.Get(i));
+#pragma omp parallel for schedule(dynamic, 1)
+        for (uint32_t i = 0; i < nodes_to_run_next.size(); ++i) {
+            Ptr<SCION_AS> node = dynamic_cast<SCION_AS*>(nodes_to_run_next.at(i));
             node->ExecuteLocalScheduler();
         }
 
@@ -30,11 +30,17 @@ namespace ns3 {
 
     void ScheduleNextEvent (NodeContainer nodes) {
         uint64_t min_event_time = (uint64_t) std::numeric_limits<uint64_t>::max();
+        nodes_to_run_next.clear();
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             Ptr<SCION_AS> node = DynamicCast<SCION_AS>(nodes.Get(i));
             uint64_t event_time = node->GetFirstEventTime();
+            if (event_time == min_event_time) {
+                nodes_to_run_next.push_back(PeekPointer(node));
+            }
             if (event_time < min_event_time) {
                 min_event_time = event_time;
+                nodes_to_run_next.clear();
+                nodes_to_run_next.push_back(PeekPointer(node));
             }
         }
 

@@ -113,7 +113,7 @@ namespace ns3 {
     }
 
     void SCION_AS::ExecuteLocalScheduler() {
-        for (auto const & scheduler : events) {
+        for (auto const & scheduler : schedulers_to_run_next) {
             scheduler->ProcessEvents();
         }
     }
@@ -121,10 +121,18 @@ namespace ns3 {
     uint64_t SCION_AS::GetFirstEventTime () {
         uint64_t min_time = std::numeric_limits<uint64_t>::max();
 
+        schedulers_to_run_next.clear();
+
         for (auto const & scheduler : events) {
             uint64_t event_time = scheduler->GetFirstEventTime();
+            if (event_time == min_time) {
+                schedulers_to_run_next.push_back(scheduler);
+            }
+
             if (event_time < min_time) {
                 min_time = event_time;
+                schedulers_to_run_next.clear();
+                schedulers_to_run_next.push_back(scheduler);
             }
         }
 

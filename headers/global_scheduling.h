@@ -6,6 +6,8 @@
 #define NS_3_BEACONING_SIMULATOR_GLOBAL_SCHEDULING_H
 
 namespace ns3 {
+    std::vector<Node*> nodes_to_run_next;
+
     void ScheduleNextEvent (NodeContainer nodes);
 
     void ExecuteNonPeriodicEvents (ns3::NodeContainer nodes, ns3::Time advance);
