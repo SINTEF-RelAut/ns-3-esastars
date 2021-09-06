@@ -75,7 +75,8 @@ namespace ns3 {
             set_of_all_core_ases = result_set;
 
             request_for_paths_to_all_core_ases();
-            process_scheduler->Schedule(MilliSeconds(300), &TimeServer::send_set_of_all_core_ases_to_neighbors, this);
+            //process_scheduler->Schedule(MilliSeconds(300), &TimeServer::send_set_of_all_core_ases_to_neighbors, this);
+            Simulator::Schedule(MilliSeconds(300), &TimeServer::send_set_of_all_core_ases_to_neighbors, this);
         }
     }
 
@@ -184,7 +185,8 @@ namespace ns3 {
 
         if (synchronization_round == 0) {
             send_ntp_req_to_peers();
-            process_scheduler->Schedule(Seconds(60), &TimeServer::continue_global_time_sync, this);
+            //process_scheduler->Schedule(Seconds(60), &TimeServer::continue_global_time_sync, this);
+            Simulator::Schedule(Seconds(60), &TimeServer::continue_global_time_sync, this);
         } else {
             correct_local_time(loff);
         }
@@ -307,13 +309,15 @@ namespace ns3 {
 
     void TimeServer::ScheduleListOfAllASesRequest() {
         for (Time t = first_event; t < last_event; t += list_of_ases_req_period) {
-            process_scheduler->Schedule(t, &TimeServer::request_set_of_all_core_ases_from_path_server, this);
+            //process_scheduler->Schedule(t, &TimeServer::request_set_of_all_core_ases_from_path_server, this);
+            Simulator::Schedule(t, &TimeServer::request_set_of_all_core_ases_from_path_server, this);
         }
     }
 
     void TimeServer::ScheduleTimeSync(ia_t printer_ia) {
         for (Time t = first_event + Seconds(1); t < last_event + Seconds(1); t += time_sync_period) {
-            process_scheduler->Schedule(t, &TimeServer::trigger_core_time_sync_algo, this, printer_ia);
+            //process_scheduler->Schedule(t, &TimeServer::trigger_core_time_sync_algo, this, printer_ia);
+            Simulator::Schedule(t, &TimeServer::trigger_core_time_sync_algo, this, printer_ia);
         }
     }
 }

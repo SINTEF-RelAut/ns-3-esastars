@@ -3,6 +3,7 @@
 //
 
 #include <omp.h>
+#include <chrono>
 
 #include "ns3/simulator.h"
 #include "ns3/nstime.h"
@@ -21,13 +22,22 @@ namespace ns3 {
     std::vector<Node*> nodes_to_run_next;
 
     void ExecuteLocallyScheduledEvents (NodeContainer& nodes) {
+        auto start = std::chrono::system_clock::now();
 #pragma omp parallel for schedule(dynamic, 1)
         for (uint32_t i = 0; i < nodes_to_run_next.size(); ++i) {
             Ptr<SCION_AS> node = dynamic_cast<SCION_AS*>(nodes_to_run_next.at(i));
             node->ExecuteLocalScheduler();
         }
+        auto end = std::chrono::system_clock::now();
+        std::chrono::duration<double> elapsed_seconds = end-start;
+        NS_LOG_DEBUG("parallel time " << elapsed_seconds.count());
 
+        start = std::chrono::system_clock::now();
         ScheduleNextEvent (nodes);
+        end = std::chrono::system_clock::now();
+        elapsed_seconds = end-start;
+        NS_LOG_DEBUG("serial time " << elapsed_seconds.count());
+
     }
 
     void ScheduleNextEvent (NodeContainer& nodes) {

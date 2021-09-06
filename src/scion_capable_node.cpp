@@ -22,9 +22,11 @@ namespace ns3 {
         AdvanceLocalTime();
         bool in_the_same_as = std::get<2>(remote_nodes_info.at(local_if));
         if (in_the_same_as) {
-            receive_scheduler_local_as->Schedule(propagation_delay, &SCIONCapableNode::receive, this, local_if, packet, local_time + propagation_delay);
+            //receive_scheduler_local_as->Schedule(propagation_delay, &SCIONCapableNode::receive, this, local_if, packet, local_time + propagation_delay);
+            Simulator::Schedule(propagation_delay, &SCIONCapableNode::receive, this, local_if, packet, local_time + propagation_delay);
         } else {
-            receive_scheduler_remote_as->Schedule(propagation_delay, &SCIONCapableNode::receive, this, local_if, packet, local_time + propagation_delay);
+            //receive_scheduler_remote_as->Schedule(propagation_delay, &SCIONCapableNode::receive, this, local_if, packet, local_time + propagation_delay);
+            Simulator::Schedule(propagation_delay, &SCIONCapableNode::receive, this, local_if, packet, local_time + propagation_delay);
         }
     }
 
@@ -32,7 +34,8 @@ namespace ns3 {
         AdvanceLocalTime();
         processing_queue_length++;
         Time delay = processing_throughput_delay * processing_queue_length + processing_delay;
-        process_scheduler->Schedule(delay, &SCIONCapableNode::process_received_packet, this, local_if, packet, receive_time);
+        //process_scheduler->Schedule(delay, &SCIONCapableNode::process_received_packet, this, local_if, packet, receive_time);
+        Simulator::Schedule(delay, &SCIONCapableNode::process_received_packet, this, local_if, packet, receive_time);
     }
 
     void SCIONCapableNode::process_received_packet(uint16_t local_if, SCIONPacket *packet, Time receive_time) {
@@ -45,8 +48,8 @@ namespace ns3 {
         NS_LOG_DEBUG(packet);
         transmission_queues_lengths.at(local_if) += packet->size;
         Time delay = transmission_delays.at(local_if) * transmission_queues_lengths.at(local_if) ;
-        send_scheduler->Schedule(delay, &SCIONCapableNode::send,this, local_if, packet);
-
+        //send_scheduler->Schedule(delay, &SCIONCapableNode::send,this, local_if, packet);
+        Simulator::Schedule(delay, &SCIONCapableNode::send,this, local_if, packet);
     }
 
     void SCIONCapableNode::send (uint16_t local_if, SCIONPacket* packet) {
