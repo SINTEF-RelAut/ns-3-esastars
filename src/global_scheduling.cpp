@@ -19,6 +19,7 @@
 #include "src/SCION/headers/time_server.h"
 
 namespace ns3 {
+    NS_LOG_COMPONENT_DEFINE("GlobalScheduling");
     std::vector<Node*> nodes_to_run_next;
 
     void ExecuteLocallyScheduledEvents (NodeContainer& nodes) {
