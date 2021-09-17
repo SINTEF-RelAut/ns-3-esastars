@@ -33,21 +33,14 @@ namespace ns3 {
         if (packet->payload_type == payload_type_t::LIST_OF_ALL_CORE_ASES) {
             NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " rcv all core ASes from PthSrv");
             receive_set_of_all_core_ases_from_path_server(packet);
-            // In the same AS, dropping packets of remote hosts does not create race condition between threads
-            // Because the whole AS is running on one thread
             packet->packet_originator->DestroySCIONPacket(packet);
             return;
         }
 
         if (packet->payload_type == payload_type_t::BROADCAST_LIST_OF_ALL_CORE_ASES){
-            if (packet->packet_originator == this) {
-                // For destroying inter-domain packets, the packet should be sent back to the originator itself
-                // Even if the protocol does not need any response or ACK
-                DestroySCIONPacket(packet);
-                return;
-            }
             NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " rcv all core ASes from other TimeSrv " << GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia));
             receive_set_of_all_core_ases_from_other_time_server(packet);
+            packet->packet_originator->DestroySCIONPacket(packet);
             return;
         }
 
@@ -75,8 +68,106 @@ namespace ns3 {
             set_of_all_core_ases = result_set;
 
             request_for_paths_to_all_core_ases();
-            //process_scheduler->Schedule(MilliSeconds(300), &TimeServer::send_set_of_all_core_ases_to_neighbors, this);
+
+            Simulator::Schedule(MilliSeconds(300), &TimeServer::construct_set_of_most_disjoint_paths, this);
             Simulator::Schedule(MilliSeconds(300), &TimeServer::send_set_of_all_core_ases_to_neighbors, this);
+        }
+    }
+
+    void TimeServer::construct_set_of_most_disjoint_paths() {
+        std::vector<ia_t> vector_of_all_core_ases(set_of_all_core_ases.begin(), set_of_all_core_ases.end());
+        uint32_t size = vector_of_all_core_ases.size();
+
+        for (uint32_t i = 0; i < size; ++i) {
+            ia_t dst_ia = vector_of_all_core_ases.at(i);
+            set_of_most_disjoint_paths.insert(std::make_pair(dst_ia, std::set<const PathSegment*>()));
+        }
+
+#pragma omp parallel for
+        for (uint32_t i = 0; i < size; ++i) {
+            ia_t dst_ia = vector_of_all_core_ases.at(i);
+            std::unordered_map<uint32_t, uint32_t> number_of_paths_per_link_all;
+            std::unordered_map<uint32_t, uint32_t> number_of_paths_per_link_selected_paths;
+
+            for (auto const & path_seg : *cached_core_path_segments.at(dst_ia)->at(ia_addr)) {
+                for (auto const & hop : path_seg.second->hops) {
+                    uint32_t link = GET_HOP_AS_ING(hop);
+                    if (number_of_paths_per_link_all.find(link) == number_of_paths_per_link_all.end()) {
+                        number_of_paths_per_link_all.insert(std::make_pair(link, 0));
+                    }
+                    number_of_paths_per_link_all.at(link)++;
+                }
+            }
+
+            while (set_of_most_disjoint_paths.at(dst_ia).size() < number_of_paths_to_use_for_global_sync
+                   && set_of_most_disjoint_paths.at(dst_ia).size() < cached_core_path_segments.at(dst_ia)->at(ia_addr)->size()) {
+
+                std::unordered_set<const PathSegment*> best_segs;
+
+                uint64_t best_path_score = std::numeric_limits<uint64_t>::max();
+                for (auto const &path_seg: *cached_core_path_segments.at(dst_ia)->at(ia_addr)) {
+                    uint64_t path_seg_score = 1;
+                    for (auto const &hop: path_seg.second->hops) {
+                        uint32_t link = GET_HOP_AS_ING(hop);
+                        if (set_of_most_disjoint_paths.at(dst_ia).size() == 0){
+                            if (number_of_paths_per_link_all.find(link) != number_of_paths_per_link_all.end()) {
+                                path_seg_score *= number_of_paths_per_link_all.at(link);
+                            }
+                        } else {
+                            if (number_of_paths_per_link_selected_paths.find(link) != number_of_paths_per_link_selected_paths.end()) {
+                                path_seg_score *= (number_of_paths_per_link_selected_paths.at(link) + 1);
+                            }
+                        }
+
+                    }
+
+                    if (path_seg_score == best_path_score) {
+                        best_segs.insert(path_seg.second);
+                    }
+
+                    if (path_seg_score < best_path_score) {
+                        best_segs.clear();
+                        best_segs.insert(path_seg.second);
+                        best_path_score = path_seg_score;
+                    }
+                }
+
+                const PathSegment* best_path;
+
+                if (set_of_most_disjoint_paths.at(dst_ia).size() == 0 || best_segs.size() == 1) {
+                    best_path = *best_segs.begin();
+                } else {
+                    best_path_score = std::numeric_limits<uint64_t>::max();
+                    for (auto const &path_seg : best_segs) {
+                        uint64_t path_seg_score = 1;
+                        for (auto const &hop: path_seg->hops) {
+                            uint32_t link = GET_HOP_AS_ING(hop);
+                            if (number_of_paths_per_link_all.find(link) != number_of_paths_per_link_all.end()) {
+                                path_seg_score *= number_of_paths_per_link_all.at(link);
+                            }
+                        }
+
+                        if (path_seg_score < best_path_score) {
+                            best_path = path_seg;
+                            best_path_score = path_seg_score;
+                        }
+                    }
+                }
+
+                set_of_most_disjoint_paths.at(dst_ia).insert(best_path);
+
+                for (auto const & hop : best_path->hops) {
+                    uint32_t link = GET_HOP_AS_ING(hop);
+                    if (number_of_paths_per_link_selected_paths.find(link) == number_of_paths_per_link_selected_paths.end()) {
+                        number_of_paths_per_link_selected_paths.insert(std::make_pair(link, 0));
+                    }
+                    number_of_paths_per_link_selected_paths.at(link)++;
+
+                    if (number_of_paths_per_link_all.find(link) == number_of_paths_per_link_all.end()) {
+                        number_of_paths_per_link_all.at(link)--;
+                    }
+                }
+            }
         }
     }
 
@@ -91,11 +182,6 @@ namespace ns3 {
 
             send_set_of_all_core_ases_to_neighbors();
         }
-        // This is just for simulator memory management;
-        // For every inter-domain packet there should a response (like an ACK) using the packet itself
-        // If the protocol itself does not have any real response like here, just return the message itself
-        // So the originator can destroy the packet, otherwise it can cause a memory problem
-        return_scion_packet(packet);
     }
 
     void TimeServer::request_for_paths_to_all_core_ases() {
@@ -177,15 +263,17 @@ namespace ns3 {
         AdvanceLocalTime();
 
         if (ia_addr == printer_ia) {
-            std::cout << "##################################### Time Sync at " << Simulator::Now().GetMinutes() << "##################################" << std::endl;
+            if (synchronization_round == 0) {
+                std::cout << "##################################### Global Time Sync at " << Simulator::Now().GetMinutes() << "##################################" << std::endl;
+            } else {
+                std::cout << "##################################### Local Time Sync at " << Simulator::Now().GetMinutes() << "##################################" << std::endl;
+            }
         }
-
 
         loff = get_reference_time().GetPicoSeconds() - local_time.GetPicoSeconds();
 
         if (synchronization_round == 0) {
             send_ntp_req_to_peers();
-            //process_scheduler->Schedule(Seconds(60), &TimeServer::continue_global_time_sync, this);
             Simulator::Schedule(Seconds(60), &TimeServer::continue_global_time_sync, this);
         } else {
             correct_local_time(loff);
@@ -225,8 +313,8 @@ namespace ns3 {
         int64_t goff = std::floor((*iter1 + *iter2) / 2);
         int64_t doff = loff - goff;
 
-        if (std::abs(doff) > std::abs(GlobalCutoff.GetPicoSeconds())) {
-            doff = doff > 0 ? std::abs(GlobalCutoff.GetPicoSeconds()) : -std::abs(GlobalCutoff.GetPicoSeconds());
+        if (std::abs(doff) > std::abs(global_cut_off.GetPicoSeconds())) {
+            doff = doff > 0 ? std::abs(global_cut_off.GetPicoSeconds()) : -std::abs(global_cut_off.GetPicoSeconds());
             corr = goff + doff;
         }
 
@@ -252,10 +340,8 @@ namespace ns3 {
             if (peer_ia == ia_addr) {
                 continue;
             }
-            std::set<const PathSegment*> set_of_core_path_segs;
-            get_the_most_disjoint_set_of_core_path_segs_to_as(peer_ia, set_of_core_path_segs);
 
-            for (auto const & path_seg : set_of_core_path_segs) {
+            for (auto const & path_seg : set_of_most_disjoint_paths.at(peer_ia)) {
                 NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " sent ntp req to " << GET_ISDN(peer_ia) << ":" << GET_ASN(peer_ia));
                 payload_type_t payload_type = payload_type_t::NTP_REQ;
 
@@ -295,17 +381,7 @@ namespace ns3 {
     }
 
 
-    void TimeServer::get_the_most_disjoint_set_of_core_path_segs_to_as (ia_t dst_ia, std::set<const PathSegment*>& set_of_core_path_segs) {
-        NS_ASSERT(cached_core_path_segments.find(dst_ia) != cached_core_path_segments.end());
-        NS_ASSERT(cached_core_path_segments.at(dst_ia)->find(ia_addr) != cached_core_path_segments.at(dst_ia)->end());
 
-        for (auto const & [exp_time, path_seg] : *cached_core_path_segments.at(dst_ia)->at(ia_addr)) {
-            if (exp_time > local_time.GetMinutes()) {
-                set_of_core_path_segs.insert(path_seg);
-                return; // TODO: Later we should implement the multi-path ntp with disjoint path
-            }
-        }
-    }
 
     void TimeServer::ScheduleListOfAllASesRequest() {
         for (Time t = first_event; t < last_event; t += list_of_ases_req_period) {

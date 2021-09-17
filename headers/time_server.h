@@ -16,11 +16,13 @@ namespace ns3 {
 
     public:
         TimeServer(uint32_t system_id, uint16_t isd_number, uint16_t as_number, host_addr_t local_address,
-        double latitude, double longitude, SCION_AS* AS, Time max_drift_per_day, Time GlobalCutoff, Time first_event, Time last_event, Time list_of_ases_req_period, Time time_sync_period, uint32_t G) :
-        SCIONHost(system_id, isd_number, as_number, local_address, latitude, longitude, AS),
-        max_drift_per_day(max_drift_per_day), GlobalCutoff(GlobalCutoff),
-        first_event(first_event), last_event(last_event), list_of_ases_req_period(list_of_ases_req_period),
-        time_sync_period(time_sync_period), G(G){
+        double latitude, double longitude, SCION_AS* AS, Time max_drift_per_day, Time global_cut_off,
+        Time first_event, Time last_event, Time list_of_ases_req_period, Time time_sync_period, uint32_t G,
+                   uint32_t number_of_paths_to_use_for_global_sync) :
+                SCIONHost(system_id, isd_number, as_number, local_address, latitude, longitude, AS),
+                max_drift_per_day(max_drift_per_day), global_cut_off(global_cut_off),
+                first_event(first_event), last_event(last_event), list_of_ases_req_period(list_of_ases_req_period),
+                time_sync_period(time_sync_period), G(G), number_of_paths_to_use_for_global_sync(number_of_paths_to_use_for_global_sync){
             synchronization_round = 0;
             local_time = PicoSeconds(0);
             real_time_of_last_local_time_update = PicoSeconds(0);
@@ -34,12 +36,13 @@ namespace ns3 {
         void AdvanceLocalTime() override;
     private:
         Time max_drift_per_day;
-        Time GlobalCutoff;
+        Time global_cut_off;
         Time first_event, last_event;
         Time list_of_ases_req_period;
         Time time_sync_period;
 
         uint32_t G;
+        uint32_t number_of_paths_to_use_for_global_sync;
         uint32_t synchronization_round; // i in the Listing 2
 
         Time real_time_of_last_local_time_update;
@@ -47,7 +50,9 @@ namespace ns3 {
         std::set<ia_t> set_of_all_core_ases;
 
         int64_t loff;
-        std::map<ia_t, std::multiset<int64_t>> poff;
+        std::unordered_map<ia_t, std::multiset<int64_t>> poff;
+
+        std::unordered_map<ia_t, std::set<const PathSegment*>> set_of_most_disjoint_paths;
 
         Time get_reference_time();
 
@@ -61,9 +66,9 @@ namespace ns3 {
 
         void send_ntp_req_to_peers();
 
-        void get_the_most_disjoint_set_of_core_path_segs_to_as (ia_t dst_ia, std::set<const PathSegment*>& set_of_paths);
-
         void receive_set_of_all_core_ases_from_path_server(SCIONPacket* packet);
+
+        void construct_set_of_most_disjoint_paths();
 
         void receive_set_of_all_core_ases_from_other_time_server(SCIONPacket* packet);
 

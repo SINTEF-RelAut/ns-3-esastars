@@ -31,6 +31,7 @@ namespace ns3 {
 #define GET_HOP_IA(input) ((ia_t) (((input) & 0xffffffff00000000) >> 32))
 #define GET_HOP_ING_IF(input) ((uint16_t) (((input) & 0x00000000ffff0000) >> 16))
 #define GET_HOP_EG_IF(input) ((uint16_t) ((input) & 0x000000000000ffff))
+#define GET_HOP_AS_ING(input) ((uint32_t) (((input) & 0x0000ffffffff0000) >> 16))
 
     enum path_segment_type  {
         CORE_SEG = 0, UP_SEG = 1, DOWN_SEG = 2
