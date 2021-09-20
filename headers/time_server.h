@@ -5,6 +5,8 @@
 #ifndef NS_3_BEACONING_SIMULATOR_TIME_SERVER_H
 #define NS_3_BEACONING_SIMULATOR_TIME_SERVER_H
 
+#include <algorithm>
+#include <random>
 #include <set>
 
 #include "ns3/nstime.h"
@@ -16,15 +18,27 @@ namespace ns3 {
 
     public:
         TimeServer(uint32_t system_id, uint16_t isd_number, uint16_t as_number, host_addr_t local_address,
-        double latitude, double longitude, SCION_AS* AS, Time max_drift_per_day, Time global_cut_off,
+        double latitude, double longitude, SCION_AS* AS, Time max_initial_drift, Time max_drift_per_day, Time global_cut_off,
         Time first_event, Time last_event, Time list_of_ases_req_period, Time time_sync_period, uint32_t G,
                    uint32_t number_of_paths_to_use_for_global_sync) :
                 SCIONHost(system_id, isd_number, as_number, local_address, latitude, longitude, AS),
-                max_drift_per_day(max_drift_per_day), global_cut_off(global_cut_off),
+                max_initial_drift(max_initial_drift), max_drift_per_day(max_drift_per_day), global_cut_off(global_cut_off),
                 first_event(first_event), last_event(last_event), list_of_ases_req_period(list_of_ases_req_period),
                 time_sync_period(time_sync_period), G(G), number_of_paths_to_use_for_global_sync(number_of_paths_to_use_for_global_sync){
             synchronization_round = 0;
+
+            std::random_device rd;
+            std::uniform_int_distribution<int64_t> dist (-std::abs(max_initial_drift.GetPicoSeconds()), std::abs(max_initial_drift.GetPicoSeconds()));
+            int64_t random_drift_int = dist(rd);
+
             local_time = PicoSeconds(0);
+
+            if (random_drift_int < 0) {
+                local_time -= PicoSeconds(std::abs(random_drift_int));
+            } else {
+                local_time += PicoSeconds(std::abs(random_drift_int));
+            }
+
             real_time_of_last_local_time_update = PicoSeconds(0);
             set_of_all_core_ases.insert(ia_addr);
         }
@@ -35,6 +49,7 @@ namespace ns3 {
 
         void AdvanceLocalTime() override;
     private:
+        Time max_initial_drift;
         Time max_drift_per_day;
         Time global_cut_off;
         Time first_event, last_event;

@@ -2,8 +2,7 @@
 // Created by seyedali on 30.08.21.
 //
 
-#include <algorithm>
-#include <random>
+
 
 #include "ns3/log.h"
 
@@ -90,7 +89,8 @@ namespace ns3 {
             std::unordered_map<uint32_t, uint32_t> number_of_paths_per_link_selected_paths;
 
             for (auto const & path_seg : *cached_core_path_segments.at(dst_ia)->at(ia_addr)) {
-                for (auto const & hop : path_seg.second->hops) {
+                for (uint32_t  j = 0; j < path_seg.second->hops.size() - 1; ++j) {
+                    uint64_t hop = path_seg.second->hops.at(j);
                     uint32_t link = GET_HOP_AS_ING(hop);
                     if (number_of_paths_per_link_all.find(link) == number_of_paths_per_link_all.end()) {
                         number_of_paths_per_link_all.insert(std::make_pair(link, 0));
@@ -107,7 +107,8 @@ namespace ns3 {
                 uint64_t best_path_score = std::numeric_limits<uint64_t>::max();
                 for (auto const &path_seg: *cached_core_path_segments.at(dst_ia)->at(ia_addr)) {
                     uint64_t path_seg_score = 1;
-                    for (auto const &hop: path_seg.second->hops) {
+                    for (uint32_t  j = 0; j < path_seg.second->hops.size() - 1; ++j) {
+                        uint64_t hop = path_seg.second->hops.at(j);
                         uint32_t link = GET_HOP_AS_ING(hop);
                         if (set_of_most_disjoint_paths.at(dst_ia).size() == 0){
                             if (number_of_paths_per_link_all.find(link) != number_of_paths_per_link_all.end()) {
@@ -140,7 +141,8 @@ namespace ns3 {
                     best_path_score = std::numeric_limits<uint64_t>::max();
                     for (auto const &path_seg : best_segs) {
                         uint64_t path_seg_score = 1;
-                        for (auto const &hop: path_seg->hops) {
+                        for (uint32_t  j = 0; j < path_seg->hops.size() - 1; ++j) {
+                            uint64_t hop = path_seg->hops.at(j);
                             uint32_t link = GET_HOP_AS_ING(hop);
                             if (number_of_paths_per_link_all.find(link) != number_of_paths_per_link_all.end()) {
                                 path_seg_score *= number_of_paths_per_link_all.at(link);
@@ -156,7 +158,8 @@ namespace ns3 {
 
                 set_of_most_disjoint_paths.at(dst_ia).insert(best_path);
 
-                for (auto const & hop : best_path->hops) {
+                for (uint32_t  j = 0; j < best_path->hops.size() - 1; ++j) {
+                    uint64_t hop = best_path->hops.at(j);
                     uint32_t link = GET_HOP_AS_ING(hop);
                     if (number_of_paths_per_link_selected_paths.find(link) == number_of_paths_per_link_selected_paths.end()) {
                         number_of_paths_per_link_selected_paths.insert(std::make_pair(link, 0));
@@ -237,16 +240,16 @@ namespace ns3 {
         Time advance = Simulator::Now() - real_time_of_last_local_time_update;
 
         Time max_drift = get_max_drift(advance);
-        //std::random_device rd;
-        //std::uniform_int_distribution<int64_t> dist (-std::abs(max_drift.GetPicoSeconds()), std::abs(max_drift.GetPicoSeconds()));
-        int64_t random_drift_int = std::abs(max_drift.GetPicoSeconds()); //dist(rd);
+        std::random_device rd;
+        std::uniform_int_distribution<int64_t> dist (-std::abs(max_drift.GetPicoSeconds()), std::abs(max_drift.GetPicoSeconds()));
+        int64_t random_drift_int = dist(rd); //std::abs(max_drift.GetPicoSeconds());
 
-        local_time += advance + PicoSeconds(random_drift_int);
-//        if (random_drift_int < 0) {
-//            local_time -= PicoSeconds(std::abs(random_drift_int));
-//        } else {
-//            local_time += PicoSeconds(std::abs(random_drift_int));
-//        }
+        //local_time += advance + PicoSeconds(random_drift_int);
+        if (random_drift_int < 0) {
+            local_time -= PicoSeconds(std::abs(random_drift_int));
+        } else {
+            local_time += PicoSeconds(std::abs(random_drift_int));
+        }
 
         real_time_of_last_local_time_update = Simulator::Now();
     }
@@ -264,15 +267,16 @@ namespace ns3 {
 
         if (ia_addr == printer_ia) {
             if (synchronization_round == 0) {
-                std::cout << "##################################### Global Time Sync at " << Simulator::Now().GetMinutes() << "##################################" << std::endl;
+                std::cout << "##################################### Global Time Sync at " << Simulator::Now().GetPicoSeconds() << "##################################" << std::endl;
             } else {
-                std::cout << "##################################### Local Time Sync at " << Simulator::Now().GetMinutes() << "##################################" << std::endl;
+                std::cout << "##################################### Local Time Sync at " << Simulator::Now().GetPicoSeconds() << "##################################" << std::endl;
             }
         }
 
         loff = get_reference_time().GetPicoSeconds() - local_time.GetPicoSeconds();
 
         if (synchronization_round == 0) {
+            std::cout << "AS " << isd_number << "-" << as_number << ": " << local_time << std::endl;
             send_ntp_req_to_peers();
             Simulator::Schedule(Seconds(60), &TimeServer::continue_global_time_sync, this);
         } else {
