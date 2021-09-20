@@ -3,6 +3,7 @@
 //
 
 
+#include <omp.h>
 
 #include "ns3/log.h"
 
@@ -74,6 +75,7 @@ namespace ns3 {
     }
 
     void TimeServer::construct_set_of_most_disjoint_paths() {
+        NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " constructing disjoint paths");
         std::set<ia_t> tmp_set_of_all_core_ases = set_of_all_core_ases;
         tmp_set_of_all_core_ases.erase(ia_addr);
 
@@ -84,8 +86,8 @@ namespace ns3 {
             ia_t dst_ia = vector_of_all_core_ases.at(i);
             set_of_most_disjoint_paths.insert(std::make_pair(dst_ia, std::set<const PathSegment*>()));
         }
-
-#pragma omp parallel for
+        omp_set_num_threads(128);
+#pragma omp parallel for schedule(dynamic, 1)
         for (uint32_t i = 0; i < size; ++i) {
             ia_t dst_ia = vector_of_all_core_ases.at(i);
             std::unordered_map<uint32_t, uint32_t> number_of_paths_per_link_all;
@@ -175,6 +177,8 @@ namespace ns3 {
                 }
             }
         }
+
+        NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " FINISHED constructing disjoint paths");
     }
 
     void TimeServer::receive_set_of_all_core_ases_from_other_time_server(SCIONPacket *packet) {
