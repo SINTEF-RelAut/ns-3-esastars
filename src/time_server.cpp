@@ -74,6 +74,9 @@ namespace ns3 {
     }
 
     void TimeServer::construct_set_of_most_disjoint_paths() {
+        std::set<ia_t> tmp_set_of_all_core_ases = set_of_all_core_ases;
+        tmp_set_of_all_core_ases.erase(ia_addr);
+
         std::vector<ia_t> vector_of_all_core_ases(set_of_all_core_ases.begin(), set_of_all_core_ases.end());
         uint32_t size = vector_of_all_core_ases.size();
 
