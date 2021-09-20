@@ -77,7 +77,7 @@ namespace ns3 {
         std::set<ia_t> tmp_set_of_all_core_ases = set_of_all_core_ases;
         tmp_set_of_all_core_ases.erase(ia_addr);
 
-        std::vector<ia_t> vector_of_all_core_ases(set_of_all_core_ases.begin(), set_of_all_core_ases.end());
+        std::vector<ia_t> vector_of_all_core_ases(tmp_set_of_all_core_ases.begin(), tmp_set_of_all_core_ases.end());
         uint32_t size = vector_of_all_core_ases.size();
 
         for (uint32_t i = 0; i < size; ++i) {
