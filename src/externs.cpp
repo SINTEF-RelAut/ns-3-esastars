@@ -6,6 +6,6 @@
 #include "src/SCION/headers/externs.h"
 
 
-extern std::map<uint16_t, uint16_t> as_to_isd_map;
-extern ns3::NodeContainer nodes;
-extern uint32_t NUM_CORE;
+std::map<uint16_t, uint16_t> as_to_isd_map;
+ns3::NodeContainer nodes;
+uint32_t NUM_CORE;
