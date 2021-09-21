@@ -53,7 +53,7 @@ void InitializeNodesAttributes(YAML::Node& config, ns3::NodeContainer& AS_nodes)
 
 
 int main(int argc, char *argv[]) {
-    if (argc != 1) {
+    if (argc != 2) {
         std::cerr << "Please pass the config file location as the argument." << std::endl;
         return 1;
     }
