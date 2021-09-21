@@ -5,12 +5,12 @@
 #ifndef NS_3_BEACONING_SIMULATOR_POST_SIMULATION_EVALUATIONS_H
 #define NS_3_BEACONING_SIMULATOR_POST_SIMULATION_EVALUATIONS_H
 
+#include <yaml-cpp/yaml.h>
+
 namespace ns3 {
 
-    void DoFinalEvaluations(ns3::NodeContainer &nodes, std::map<int32_t, uint16_t> &ASes,
-                            std::map<uint16_t, int32_t> &index_to_AS_no,
-                            uint16_t expiration_period, ns3::Time beaconing_period,
-                            ns3::Time last_beaconing_event_time);
+    void DoFinalEvaluations(YAML::Node& config, ns3::NodeContainer &nodes, std::map<int32_t, uint16_t> &ASes,
+                            std::map<uint16_t, int32_t> &index_to_AS_no);
 
     void PrintTrafficSentFromCollectorsPerDstPerPeriod(ns3::NodeContainer &nodes, std::map<int32_t, uint16_t> &ASes,
                                                        std::map<uint16_t, int32_t> &index_to_AS_no,

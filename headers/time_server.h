@@ -48,6 +48,8 @@ namespace ns3 {
 
 
         void AdvanceLocalTime() override;
+
+        void ConstructSetOfMostDisjointPaths();
     private:
         Time max_initial_drift;
         Time max_drift_per_day;
@@ -83,7 +85,7 @@ namespace ns3 {
 
         void receive_set_of_all_core_ases_from_path_server(SCIONPacket* packet);
 
-        void construct_set_of_most_disjoint_paths();
+
 
         void receive_set_of_all_core_ases_from_other_time_server(SCIONPacket* packet);
 

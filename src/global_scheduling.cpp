@@ -22,6 +22,15 @@ namespace ns3 {
     NS_LOG_COMPONENT_DEFINE("GlobalScheduling");
     std::vector<Node*> nodes_to_run_next;
 
+    void RunParallelEvents (host_addr_t host_addr) {
+        omp_set_num_threads(NUM_CORE);
+#pragma omp parallel for schedule (dynamic)
+        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
+            Ptr<SCION_AS> node = dynamic_cast<SCION_AS*>(PeekPointer(nodes.Get(i)));
+            (dynamic_cast<TimeServer*>(node->GetHost(host_addr)))->ConstructSetOfMostDisjointPaths();
+        }
+    }
+
     void ExecuteLocallyScheduledEvents (NodeContainer& nodes) {
         auto start = std::chrono::system_clock::now();
 #pragma omp parallel for schedule(dynamic, 1)
@@ -70,16 +79,16 @@ namespace ns3 {
         Simulator::Schedule(advance, &ExecuteLocallyScheduledEvents, nodes);
     }
 
-    void SchedulePeriodicEvents(NodeContainer& nodes, Time beaconing_period, Time last_beaconing_event_time, Time simulation_end) {
+    void SchedulePeriodicEvents(YAML::Node& config, NodeContainer& nodes) {
         ia_t printer_ia = DynamicCast<SCION_AS>(nodes.Get(0))->ia_addr;
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             Ptr<SCION_AS> node = DynamicCast<SCION_AS>(nodes.Get(i));
 
-            if (node->GetBeaconServer() != NULL) {
-                node->GetBeaconServer()->ScheduleBeaconing(last_beaconing_event_time);
+            if (config["beacon_service"]) {
+                node->GetBeaconServer()->ScheduleBeaconing(Time(config["beacon_service"]["last_beaconing"].as<std::string>()));
             }
 
-            if (node->GetNHosts() > 0 && dynamic_cast<TimeServer*>(node->GetHost(2)) != NULL) {
+            if (config["time_service"]) {
                 dynamic_cast<TimeServer*>( node->GetHost(2))->ScheduleListOfAllASesRequest();
                 dynamic_cast<TimeServer*>( node->GetHost(2))->ScheduleTimeSync(printer_ia);
             }
@@ -88,16 +97,14 @@ namespace ns3 {
 
         ScheduleNextEvent(nodes);
 
-        for (Time t = ns3::Seconds(0.0); t < last_beaconing_event_time; t += beaconing_period) {
-            Simulator::Schedule(t + ns3::Seconds(1.0), &PeriodicCheckPoint, nodes);
+        if (config["beacon_service"]) {
+            for (Time t = ns3::Seconds(0.0); t < Time(config["beacon_service"]["last_beaconing"].as<std::string>()); t += Time(config["beacon_service"]["period"].as<std::string>())) {
+                Simulator::Schedule(t + ns3::Seconds(1.0), &PeriodicBeaconingCheckPoint, nodes);
+            }
         }
-
-
-
-
     }
 
-    void PeriodicCheckPoint(NodeContainer& nodes) {
+    void PeriodicBeaconingCheckPoint(NodeContainer& nodes) {
         std::cout << "################################## " << DynamicCast<SCION_AS>(nodes.Get(0))->GetBeaconServer()->GetCurrentTime() << " #########################################" << std::endl;
         uint32_t node_number = nodes.GetN();
 

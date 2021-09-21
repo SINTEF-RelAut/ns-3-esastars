@@ -37,62 +37,73 @@
 #include "src/SCION/headers/path_server.h"
 #include "src/SCION/headers/scion_host.h"
 #include "src/SCION/headers/time_server.h"
+#include "src/SCION/headers/externs.h"
 
+void SetTimeResolution (std::string time_res_str);
 
 //rapidxml::xml_node<>* SetupTopologyFile (std::string topology_name);
 
-void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::string beaconing_policy_str, std::map<int32_t, uint16_t>& AS_no_to_index, std::map<uint16_t,
-                             int32_t>& index_to_AS_no, ns3::NodeContainer& AS_nodes, uint16_t expiration_period, ns3::Time beaconing_period);
+void InstantiateASesFromTopo(YAML::Node& config, rapidxml::xml_node<>* xml_root,  std::map<int32_t, uint16_t>& AS_no_to_index,
+                             std::map<uint16_t, int32_t>& index_to_AS_no, ns3::NodeContainer& AS_nodes );
 
-void InstantiateLinksFromTopo (rapidxml::xml_node<>* xml_root, ns3::NodeContainer& AS_nodes, std::map<int32_t, uint16_t>& AS_no_to_index);
+void InstantiateLinksFromTopo (YAML::Node& config, rapidxml::xml_node<>* xml_root, ns3::NodeContainer& AS_nodes, std::map<int32_t, uint16_t>& AS_no_to_index);
 
-void InitializeNodesAttributes(ns3::NodeContainer& AS_nodes, std::string beaconing_policy_str);
+void InitializeNodesAttributes(YAML::Node& config, ns3::NodeContainer& AS_nodes);
 
 
 
 int main(int argc, char *argv[]) {
-    ns3::NodeContainer all_ases;
-    std::map<int32_t, uint16_t> AS_no_to_index;
-    std::map<uint16_t, int32_t> index_to_AS_no;
-
-    std::string beaconing_policy_str;
-    std::string beaconing_period_str;
-    std::string expiration_period_str;
-    std::string last_beaconing_event_time_str;
-    std::string simulation_end_time_str;
-    std::string topology_name;
-
-    ns3::Time::SetResolution(ns3::Time::PS);
-    ns3::Time beaconing_period;
-    ns3::Time last_beaconing_event_time;
-    uint16_t expiration_period;
-
-    ns3::Time simulation_end_time;
-
-    if (argc == 7) {
-        beaconing_policy_str = std::string (argv[1]);
-        beaconing_period_str = std::string(argv[2]);
-        expiration_period_str = std::string(argv[3]);
-        last_beaconing_event_time_str = std::string(argv[4]);
-        simulation_end_time_str = std::string(argv[5]);
-        topology_name = std::string(argv[6]);
-    } else {
-        std::cerr << "Less arguments than expected!" << std::endl;
+    if (argc != 1) {
+        std::cerr << "Please pass the config file location as the argument." << std::endl;
         return 1;
     }
 
-    beaconing_period = ns3::Time(beaconing_period_str);
-    last_beaconing_event_time = ns3::Time(last_beaconing_event_time_str);
-    expiration_period = (uint16_t) ns3::Time(expiration_period_str).ToInteger(ns3::Time::MIN);
+    YAML::Node config = YAML::LoadFile(std::string (argv[1]));
 
-    // simulation_end_time can be something other than last_beaconing_event_time if we want to simulate other stuff as well
-    simulation_end_time = ns3::Time(simulation_end_time_str);
+    if (!config["time_resolution"]) {
+        std::cerr << "Please specify simulator's time resolution." << std::endl;
+        return 1;
+    }
 
-    //rapidxml::xml_node<>* xml_root = SetupTopologyFile (topology_name);
+    if (!config["topology"]) {
+        std::cerr << "No topology file specified in the config file." << std::endl;
+        return 1;
+    }
 
-    std::string file = "/cluster/home/tabaeias/ns-3_beaconing_simulator/topology/" + std::string(topology_name) + ".xml";
-    //std::string file = "/home/tabaeias/ns-3_beaconing_simulator/topology/" + std::string(topology_name) + ".xml";
-    std::ifstream fin(file.c_str());
+    if (!config["output"]) {
+        std::cerr << "Please specify output file's path." << std::endl;
+        return 1;
+    }
+
+
+    if (!config["simulation_duration"]) {
+        std::cerr << "Simulation duration is not specified in the config file." << std::endl;
+        return 1;
+    }
+
+    if (!config["NUM_CORE"]) {
+        std::cerr << "Please Specify number of cores to use." << std::endl;
+        return 1;
+    }
+
+    if (!config["beacon_server"]
+    && !(config["path_server"] && config["path_server"].as<bool>())
+    && !(config["border_router"] && config["border_router"].as<bool>())) {
+        std::cerr << "No simulation is possible." << std::endl;
+        return 1;
+    }
+
+    SetTimeResolution(config["simulation_duration"].as<std::string>());
+
+    std::string topology_file = config["topology"].as<std::string>();
+
+    std::string out_path = config["output"].as<std::string>();
+
+    ns3::Time simulation_end_time = ns3::Time(config["simulation_duration"].as<std::string>());
+
+    NUM_CORE = config["NUM_CORE"].as<uint32_t>();
+
+    std::ifstream fin(topology_file.c_str());
     std::ostringstream sstr;
     sstr << fin.rdbuf();
 
@@ -110,35 +121,48 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-        std::string out_path =
-                "/cluster/scratch/tabaeias/" + beaconing_policy_str + "_" + topology_name + "_" +
-                beaconing_period_str + "_" + expiration_period_str + "_" + last_beaconing_event_time_str + ".txt";
-
-//    std::string out_path =
-//            "/home/tabaeias/ns-3_beaconing_simulator/results/" + beaconing_policy_str + "_" + topology_name + "_" +
-//            beaconing_period_str + "_" + expiration_period_str + "_" + last_beaconing_event_time_str + ".txt";
-
     std::ofstream out(out_path);
     std::cout.rdbuf(out.rdbuf());
 
-    InstantiateASesFromTopo(xml_root, beaconing_policy_str, AS_no_to_index, index_to_AS_no, all_ases, expiration_period, beaconing_period);
-    InstantiateLinksFromTopo(xml_root, all_ases, AS_no_to_index);
+    ns3::NodeContainer all_ases;
+    std::map<int32_t, uint16_t> AS_no_to_index;
+    std::map<uint16_t, int32_t> index_to_AS_no;
 
-    InitializeNodesAttributes(all_ases, beaconing_policy_str);
+    InstantiateASesFromTopo(config, xml_root, AS_no_to_index, index_to_AS_no, all_ases);
+    InstantiateLinksFromTopo(config, xml_root, all_ases, AS_no_to_index);
+    InitializeNodesAttributes(config, all_ases);
 
+    nodes = all_ases;
 
-
-
-    ns3::SchedulePeriodicEvents(all_ases, beaconing_period, last_beaconing_event_time, simulation_end_time);
+    ns3::SchedulePeriodicEvents(config, all_ases);
     ns3::Simulator::Stop(simulation_end_time);
     ns3::Simulator::Run();
 
-    ns3::DoFinalEvaluations(all_ases, AS_no_to_index, index_to_AS_no, expiration_period, beaconing_period, last_beaconing_event_time);
+    ns3::DoFinalEvaluations(config, all_ases, AS_no_to_index, index_to_AS_no);
 
     ns3::Simulator::Destroy();
 
     return 0;
 }
+
+void SetTimeResolution(std::string time_res_str) {
+    if (time_res_str == "FS") {
+        ns3::Time::SetResolution(ns3::Time::FS);
+    } else if (time_res_str == "PS") {
+        ns3::Time::SetResolution(ns3::Time::PS);
+    } else if (time_res_str == "NS") {
+        ns3::Time::SetResolution(ns3::Time::NS);
+    } else if (time_res_str == "US") {
+        ns3::Time::SetResolution(ns3::Time::US);
+    } else if (time_res_str == "MS") {
+        ns3::Time::SetResolution(ns3::Time::MS);
+    } else if (time_res_str == "S") {
+        ns3::Time::SetResolution(ns3::Time::S);
+    } else if (time_res_str == "MIN") {
+        ns3::Time::SetResolution(ns3::Time::MIN);
+    }
+}
+
 
 //rapidxml::xml_node<>* SetupTopologyFile (std::string topology_name) {
 //    std::string file = "/home/tabaeias/ns-3_beaconing_simulator/topology/" + std::string(topology_name) + ".xml";
@@ -163,8 +187,14 @@ int main(int argc, char *argv[]) {
 //    return rootNode;
 //}
 
-void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::string beaconing_policy_str, std::map<int32_t, uint16_t>& AS_no_to_index, std::map<uint16_t,
-        int32_t>& index_to_AS_no, ns3::NodeContainer& AS_nodes, uint16_t expiration_period, ns3::Time beaconing_period) {
+void InstantiateASesFromTopo(YAML::Node config, rapidxml::xml_node<>* xml_root, std::map<int32_t, uint16_t>& AS_no_to_index,
+                             std::map<uint16_t,int32_t>& index_to_AS_no, ns3::NodeContainer& AS_nodes) {
+
+
+    ns3::Time beaconing_period = ns3::Time(config["beacon_service"]["period"].as<std::string>());
+    ns3::Time last_beaconing_event_time = ns3::Time(config["beacon_service"]["last_beaconing"].as<std::string>());
+    uint16_t expiration_period = ns3::Time(config["beacon_service"]["expiration_period"].as<std::string>()).ToInteger(ns3::Time::MIN);
+
     int16_t node_counter = 0;
 
     rapidxml::xml_node<>* cur_xml_node = xml_root->first_node("node");
@@ -177,20 +207,21 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::string beaconi
             isd_number = std::stoi(p.getProperty("isd"));
         }
 
-        ns3::ld latency_coef = 0.0; //std::stod(p.getProperty("latency_coef"));
-        ns3::ld bandwidth_coef = 0.0; //std::stod(p.getProperty("bandwidth_coef"));
-        ns3::ld AS_level_diversity_coef = 0.0; // std::stod(p.getProperty("AS_level_diversity_coef"));
-        ns3::ld link_level_diversity_coef = 1.0; //std::stod(p.getProperty("link_level_diversity_coef"));
+        ns3::beaconing_timing_params params = std::make_pair(beaconing_period, expiration_period);
         std::string type = "core"; //p.getProperty("type");
 
-        ns3::beaconing_timing_params params = std::make_pair(beaconing_period, expiration_period);
-        ns3::coefficients coefs = std::make_tuple(latency_coef, bandwidth_coef, AS_level_diversity_coef,
-                                                  link_level_diversity_coef);
-
+        std::string beaconing_policy_str = config["beacon_service"]["policy"].as<std::string>();
         ns3::BeaconServer* beaconing_policy;
         if (beaconing_policy_str == "baseline") {
             beaconing_policy = (ns3::BeaconServer*) new ns3::Baseline(params);
         } else if (beaconing_policy_str == "criteria_matching") {
+            ns3::ld latency_coef = 0.0; //std::stod(p.getProperty("latency_coef"));
+            ns3::ld bandwidth_coef = 0.0; //std::stod(p.getProperty("bandwidth_coef"));
+            ns3::ld AS_level_diversity_coef = 0.0; // std::stod(p.getProperty("AS_level_diversity_coef"));
+            ns3::ld link_level_diversity_coef = 1.0; //std::stod(p.getProperty("link_level_diversity_coef"));
+
+            ns3::coefficients coefs = std::make_tuple(latency_coef, bandwidth_coef, AS_level_diversity_coef,
+                                                      link_level_diversity_coef);
             beaconing_policy = (ns3::BeaconServer *) new ns3::CriteriaMatching(params, coefs);
         } else if (beaconing_policy_str == "latency_optimized") {
             beaconing_policy = (ns3::BeaconServer *) new ns3::LatencyOptimized(params);
@@ -213,20 +244,26 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::string beaconi
         AS_node->SetBeaconServer(beaconing_policy);
         beaconing_policy->SetNode(PeekPointer(AS_node));
 
-        ns3::PathServer* path_server = new ns3::PathServer( 0, isd_number, node_counter, 1,0.0,  0.0, PeekPointer(AS_node));
-        AS_node->SetPathServer(path_server);
+        if (config["path_service"] && config["path_service"].as<bool>()) {
+            ns3::PathServer* path_server = new ns3::PathServer( 0, isd_number, node_counter, 1,0.0,  0.0, PeekPointer(AS_node));
+            AS_node->SetPathServer(path_server);
+        }
 
-        ns3::SCIONHost* scion_host = new ns3::TimeServer(0, isd_number, node_counter, 2,0.0, 0.0, PeekPointer(AS_node),
-                                                         ns3::MilliSeconds(1000),
-                                                         ns3::MilliSeconds(4),
-                                                         ns3::MilliSeconds(25),
-                                                         ns3::Minutes(60),
-                                                         ns3::Days(180),
-                                                         ns3::Hours(12),
-                                                         ns3::Minutes(60),
-                                                         24,
-                                                         5);
-        AS_node->AddHost(scion_host);
+        if (config["time_service"] && config["time_service"].as<bool>()) {
+            ns3::SCIONHost* time_server = new ns3::TimeServer(0, isd_number, node_counter, 2,0.0, 0.0, PeekPointer(AS_node),
+                                                             ns3::Time(config["time_service"]["max_initial_drift"].as<std::string>()),
+                                                             ns3::Time(config["time_service"]["max_drift_per_day"].as<std::string>()),
+                                                             ns3::Time(config["time_service"]["global_cut_off"].as<std::string>()),
+                                                             ns3::Time(config["time_service"]["first_event"].as<std::string>()),
+                                                             ns3::Time(config["time_service"]["last_event"].as<std::string>()),
+                                                             ns3::Time(config["time_service"]["list_of_ases_req_period"].as<std::string>()),
+                                                             ns3::Time(config["time_service"]["time_sync_period"].as<std::string>()),
+                                                             config["time_service"]["G"].as<uint32_t>(),
+                                                             config["time_service"]["number_of_paths_to_use_for_global_sync"].as<uint32_t>());
+            AS_node->AddHost(time_server);
+        }
+
+
 
         AS_nodes.Add(AS_node);
 
@@ -241,7 +278,7 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::string beaconi
     }
 }
 
-void InstantiateLinksFromTopo (rapidxml::xml_node<>* xml_root, ns3::NodeContainer& AS_nodes, std::map<int32_t, uint16_t>& AS_no_to_index){
+void InstantiateLinksFromTopo (YAML::Node& config, rapidxml::xml_node<>* xml_root, ns3::NodeContainer& AS_nodes, std::map<int32_t, uint16_t>& AS_no_to_index){
     rapidxml::xml_node<> *curr_xml_node = xml_root->first_node("link");
     while (curr_xml_node) {
         int32_t to = std::stoi(curr_xml_node->first_node("to")->value());
@@ -286,29 +323,34 @@ void InstantiateLinksFromTopo (rapidxml::xml_node<>* xml_root, ns3::NodeContaine
         ns3::PointToPointHelper helper;
         helper.Install(from_AS, to_AS);
 
-        to_AS->AddToRemoteASInfo(from_AS->GetNDevices() - 1, ns3::PeekPointer(from_AS));
-        from_AS->AddToRemoteASInfo(to_AS->GetNDevices() - 1, ns3::PeekPointer(to_AS));
+        if (config["border_router"] && config["border_router"].as<bool>()) {
+            to_AS->AddToRemoteASInfo(from_AS->GetNDevices() - 1, ns3::PeekPointer(from_AS));
+            from_AS->AddToRemoteASInfo(to_AS->GetNDevices() - 1, ns3::PeekPointer(to_AS));
 
-        ns3::Time to_processing_delay = ns3::NanoSeconds(10);
-        ns3::Time from_processing_delay = ns3::NanoSeconds(10);
+            ns3::Time to_processing_delay = ns3::NanoSeconds(10);
+            ns3::Time from_processing_delay = ns3::NanoSeconds(10);
 
-        ns3::Time to_processing_throughput_delay = ns3::PicoSeconds(200); // 5 Giga packets per second
-        ns3::Time from_processing_throughput_delay = ns3::PicoSeconds(200);
+            ns3::Time to_processing_throughput_delay = ns3::PicoSeconds(200); // 5 Giga packets per second
+            ns3::Time from_processing_throughput_delay = ns3::PicoSeconds(200);
 
-        ns3::BorderRouter* to_br = to_AS->AddBR(latitude, longitude, to_processing_delay, to_processing_throughput_delay);
-        ns3::BorderRouter* from_br = from_AS->AddBR(latitude, longitude, from_processing_delay, from_processing_throughput_delay);
+            ns3::BorderRouter *to_br = to_AS->AddBR(latitude, longitude, to_processing_delay,
+                                                    to_processing_throughput_delay);
+            ns3::BorderRouter *from_br = from_AS->AddBR(latitude, longitude, from_processing_delay,
+                                                        from_processing_throughput_delay);
 
-        to_br->AddToPropagationDelays(ns3::NanoSeconds(5)); // Assuming 1m fiber optic between neighboring devices in the same location
-        to_br->AddToTransmissionDelays(ns3::PicoSeconds(20)); //Per byte transmission delay assuming 400 Gbps link
+            to_br->AddToPropagationDelays(
+                    ns3::NanoSeconds(5)); // Assuming 1m fiber optic between neighboring devices in the same location
+            to_br->AddToTransmissionDelays(ns3::PicoSeconds(20)); //Per byte transmission delay assuming 400 Gbps link
 
-        from_br->AddToPropagationDelays(ns3::NanoSeconds(5));
-        from_br->AddToTransmissionDelays(ns3::PicoSeconds(20));
+            from_br->AddToPropagationDelays(ns3::NanoSeconds(5));
+            from_br->AddToTransmissionDelays(ns3::PicoSeconds(20));
 
-        to_br->AddToIFForwadingTable(to_AS->GetNDevices() - 1, to_br->GetNDevices() - 1);
-        from_br->AddToIFForwadingTable(from_AS->GetNDevices() - 1, from_br->GetNDevices() - 1);
+            to_br->AddToIFForwadingTable(to_AS->GetNDevices() - 1, to_br->GetNDevices() - 1);
+            from_br->AddToIFForwadingTable(from_AS->GetNDevices() - 1, from_br->GetNDevices() - 1);
 
-        to_br->AddToRemoteNodesInfo(from_br, from_br->GetNDevices() - 1, from_AS->isd_number, from_AS->as_number);
-        from_br->AddToRemoteNodesInfo(to_br, to_br->GetNDevices() - 1, to_AS->isd_number, to_AS->as_number);
+            to_br->AddToRemoteNodesInfo(from_br, from_br->GetNDevices() - 1, from_AS->isd_number, from_AS->as_number);
+            from_br->AddToRemoteNodesInfo(to_br, to_br->GetNDevices() - 1, to_AS->isd_number, to_AS->as_number);
+        }
 
         to_AS->inter_as_bwds.push_back(bwd);
         from_AS->inter_as_bwds.push_back(bwd);
@@ -364,8 +406,9 @@ void InstantiateLinksFromTopo (rapidxml::xml_node<>* xml_root, ns3::NodeContaine
     }
 }
 
-void InitializeNodesAttributes(ns3::NodeContainer& AS_nodes, std::string beaconing_policy_str) {
-    omp_set_num_threads(128);
+void InitializeNodesAttributes(YAML::Node& config, ns3::NodeContainer& AS_nodes) {
+    std::string beaconing_policy_str = config["beacon_service"]["policy"].as<std::string>();
+    omp_set_num_threads(NUM_CORE);
 #pragma omp parallel for
     for (uint64_t i = 0; i < AS_nodes.GetN(); ++i) {
         if (beaconing_policy_str == "baseline") {

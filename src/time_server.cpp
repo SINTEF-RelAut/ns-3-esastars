@@ -7,9 +7,11 @@
 
 #include "ns3/log.h"
 
+#include "src/SCION/headers/global_scheduling.h"
 #include "src/SCION/headers/time_server.h"
 #include "src/SCION/headers/scion_core_as.h"
 #include "src/SCION/headers/utils.h"
+#include "src/SCION/headers/externs.h"
 
 namespace ns3 {
     NS_LOG_COMPONENT_DEFINE("TimeServer");
@@ -69,12 +71,15 @@ namespace ns3 {
 
             request_for_paths_to_all_core_ases();
 
-            Simulator::Schedule(MilliSeconds(300), &TimeServer::construct_set_of_most_disjoint_paths, this);
-            Simulator::Schedule(MilliSeconds(300), &TimeServer::send_set_of_all_core_ases_to_neighbors, this);
+            if (as_number == 0) {
+                Simulator::Schedule(MilliSeconds(300), &RunParallelEvents, local_address);
+            }
+
+            Simulator::Schedule(MilliSeconds(350), &TimeServer::send_set_of_all_core_ases_to_neighbors, this);
         }
     }
 
-    void TimeServer::construct_set_of_most_disjoint_paths() {
+    void TimeServer::ConstructSetOfMostDisjointPaths () {
         NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " constructing disjoint paths");
         std::set<ia_t> tmp_set_of_all_core_ases = set_of_all_core_ases;
         tmp_set_of_all_core_ases.erase(ia_addr);
@@ -86,8 +91,8 @@ namespace ns3 {
             ia_t dst_ia = vector_of_all_core_ases.at(i);
             set_of_most_disjoint_paths.insert(std::make_pair(dst_ia, std::set<const PathSegment*>()));
         }
-        omp_set_num_threads(128);
-#pragma omp parallel for schedule(dynamic, 1)
+//        omp_set_num_threads(NUM_CORE);
+//#pragma omp parallel for schedule(dynamic, 1)
         for (uint32_t i = 0; i < size; ++i) {
             ia_t dst_ia = vector_of_all_core_ases.at(i);
             std::unordered_map<uint32_t, uint32_t> number_of_paths_per_link_all;

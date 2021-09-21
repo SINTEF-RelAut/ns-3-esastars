@@ -27,10 +27,12 @@
 
 namespace ns3 {
 
-    void DoFinalEvaluations(ns3::NodeContainer &nodes, std::map<int32_t, uint16_t> &ASes,
-                            std::map<uint16_t, int32_t> &index_to_AS_no,
-                            uint16_t expiration_period, ns3::Time beaconing_period,
-                            ns3::Time last_beaconing_event_time) {
+    void DoFinalEvaluations(YAML::Node& config, ns3::NodeContainer &nodes, std::map<int32_t, uint16_t> &ASes,
+                            std::map<uint16_t, int32_t> &index_to_AS_no) {
+
+        Time beaconing_period = Time(config["beacon_service"]["period"].as<std::string>());
+        Time last_beaconing_event_time = Time(config["beacon_service"]["last_beaconing"].as<std::string>());
+//        uint16_t expiration_period = Time(config["beacon_service"]["expiration_period"].as<std::string>()).ToInteger(Time::MIN);
 
 //    PrintTrafficSentFromCollectorsPerDstPerPeriod(nodes, ASes, index_to_AS_no, expiration_period,  beaconing_period,  last_beaconing_event_time);
 //    PrintPathNoDistribution (nodes);

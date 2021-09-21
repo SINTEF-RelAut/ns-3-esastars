@@ -15,7 +15,7 @@
 #include <map>
 
 
-extern std::map<uint16_t, uint16_t> as_to_isd_map;
+
 
 namespace ns3 {
 
