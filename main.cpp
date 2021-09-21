@@ -187,7 +187,7 @@ void SetTimeResolution(std::string time_res_str) {
 //    return rootNode;
 //}
 
-void InstantiateASesFromTopo(YAML::Node config, rapidxml::xml_node<>* xml_root, std::map<int32_t, uint16_t>& AS_no_to_index,
+void InstantiateASesFromTopo(YAML::Node& config, rapidxml::xml_node<>* xml_root, std::map<int32_t, uint16_t>& AS_no_to_index,
                              std::map<uint16_t,int32_t>& index_to_AS_no, ns3::NodeContainer& AS_nodes) {
 
 
