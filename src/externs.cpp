@@ -7,5 +7,3 @@
 
 
 std::map<uint16_t, uint16_t> as_to_isd_map;
-ns3::NodeContainer nodes;
-uint32_t NUM_CORE;

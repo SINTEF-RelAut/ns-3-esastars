@@ -71,10 +71,11 @@ namespace ns3 {
 
             request_for_paths_to_all_core_ases();
 
-            if (as_number == 0) {
-                Simulator::Schedule(MilliSeconds(300), &RunParallelEvents, local_address);
-            }
+//            if (as_number == 0) {
+//                Simulator::Schedule(MilliSeconds(300), &RunParallelEvents, local_address);
+//            }
 
+            Simulator::Schedule(MilliSeconds(300), &TimeServer::ConstructSetOfMostDisjointPaths, this);
             Simulator::Schedule(MilliSeconds(350), &TimeServer::send_set_of_all_core_ases_to_neighbors, this);
         }
     }

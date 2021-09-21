@@ -43,12 +43,12 @@ void SetTimeResolution (std::string time_res_str);
 
 //rapidxml::xml_node<>* SetupTopologyFile (std::string topology_name);
 
-void InstantiateASesFromTopo(YAML::Node& config, rapidxml::xml_node<>* xml_root,  std::map<int32_t, uint16_t>& AS_no_to_index,
-                             std::map<uint16_t, int32_t>& index_to_AS_no, ns3::NodeContainer& AS_nodes );
+void InstantiateASesFromTopo( rapidxml::xml_node<>* xml_root,  std::map<int32_t, uint16_t>& AS_no_to_index,
+                             std::map<uint16_t, int32_t>& index_to_AS_no, ns3::NodeContainer& AS_nodes, YAML::Node& config);
 
-void InstantiateLinksFromTopo (YAML::Node& config, rapidxml::xml_node<>* xml_root, ns3::NodeContainer& AS_nodes, std::map<int32_t, uint16_t>& AS_no_to_index);
+void InstantiateLinksFromTopo ( rapidxml::xml_node<>* xml_root, ns3::NodeContainer& AS_nodes, std::map<int32_t, uint16_t>& AS_no_to_index, YAML::Node& config);
 
-void InitializeNodesAttributes(YAML::Node& config, ns3::NodeContainer& AS_nodes);
+void InitializeNodesAttributes( ns3::NodeContainer& AS_nodes, YAML::Node& config);
 
 
 
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
 
     ns3::Time simulation_end_time = ns3::Time(config["simulation_duration"].as<std::string>());
 
-    NUM_CORE = config["NUM_CORE"].as<uint32_t>();
+
 
     std::ifstream fin(topology_file.c_str());
     std::ostringstream sstr;
@@ -128,11 +128,9 @@ int main(int argc, char *argv[]) {
     std::map<int32_t, uint16_t> AS_no_to_index;
     std::map<uint16_t, int32_t> index_to_AS_no;
 
-    InstantiateASesFromTopo(config, xml_root, AS_no_to_index, index_to_AS_no, all_ases);
-    InstantiateLinksFromTopo(config, xml_root, all_ases, AS_no_to_index);
-    InitializeNodesAttributes(config, all_ases);
-
-    nodes = all_ases;
+    InstantiateASesFromTopo( xml_root, AS_no_to_index, index_to_AS_no, all_ases, config);
+    InstantiateLinksFromTopo( xml_root, all_ases, AS_no_to_index, config);
+    InitializeNodesAttributes( all_ases, config);
 
     ns3::SchedulePeriodicEvents(config, all_ases);
     ns3::Simulator::Stop(simulation_end_time);
@@ -187,8 +185,8 @@ void SetTimeResolution(std::string time_res_str) {
 //    return rootNode;
 //}
 
-void InstantiateASesFromTopo(YAML::Node& config, rapidxml::xml_node<>* xml_root, std::map<int32_t, uint16_t>& AS_no_to_index,
-                             std::map<uint16_t,int32_t>& index_to_AS_no, ns3::NodeContainer& AS_nodes) {
+void InstantiateASesFromTopo( rapidxml::xml_node<>* xml_root, std::map<int32_t, uint16_t>& AS_no_to_index,
+                             std::map<uint16_t,int32_t>& index_to_AS_no, ns3::NodeContainer& AS_nodes, YAML::Node& config) {
 
 
     ns3::Time beaconing_period = ns3::Time(config["beacon_service"]["period"].as<std::string>());
@@ -278,7 +276,7 @@ void InstantiateASesFromTopo(YAML::Node& config, rapidxml::xml_node<>* xml_root,
     }
 }
 
-void InstantiateLinksFromTopo (YAML::Node& config, rapidxml::xml_node<>* xml_root, ns3::NodeContainer& AS_nodes, std::map<int32_t, uint16_t>& AS_no_to_index){
+void InstantiateLinksFromTopo ( rapidxml::xml_node<>* xml_root, ns3::NodeContainer& AS_nodes, std::map<int32_t, uint16_t>& AS_no_to_index, YAML::Node& config){
     rapidxml::xml_node<> *curr_xml_node = xml_root->first_node("link");
     while (curr_xml_node) {
         int32_t to = std::stoi(curr_xml_node->first_node("to")->value());
@@ -406,7 +404,7 @@ void InstantiateLinksFromTopo (YAML::Node& config, rapidxml::xml_node<>* xml_roo
     }
 }
 
-void InitializeNodesAttributes(YAML::Node& config, ns3::NodeContainer& AS_nodes) {
+void InitializeNodesAttributes(ns3::NodeContainer& AS_nodes, YAML::Node& config) {
     std::string beaconing_policy_str = config["beacon_service"]["policy"].as<std::string>();
     omp_set_num_threads(NUM_CORE);
 #pragma omp parallel for
