@@ -87,8 +87,8 @@ int main(int argc, char *argv[]) {
     }
 
     if (!config["beacon_server"]
-    && !(config["path_server"] && config["path_server"].as<bool>())
-    && !(config["border_router"] && config["border_router"].as<bool>())) {
+    && !(config["path_server"])
+    && !(config["border_router"])) {
         std::cerr << "No simulation is possible." << std::endl;
         return 1;
     }
@@ -244,12 +244,12 @@ void InstantiateASesFromTopo(YAML::Node& config, rapidxml::xml_node<>* xml_root,
         AS_node->SetBeaconServer(beaconing_policy);
         beaconing_policy->SetNode(PeekPointer(AS_node));
 
-        if (config["path_service"] && config["path_service"].as<bool>()) {
+        if (config["path_service"]) {
             ns3::PathServer* path_server = new ns3::PathServer( 0, isd_number, node_counter, 1,0.0,  0.0, PeekPointer(AS_node));
             AS_node->SetPathServer(path_server);
         }
 
-        if (config["time_service"] && config["time_service"].as<bool>()) {
+        if (config["time_service"]) {
             ns3::SCIONHost* time_server = new ns3::TimeServer(0, isd_number, node_counter, 2,0.0, 0.0, PeekPointer(AS_node),
                                                              ns3::Time(config["time_service"]["max_initial_drift"].as<std::string>()),
                                                              ns3::Time(config["time_service"]["max_drift_per_day"].as<std::string>()),
@@ -323,7 +323,7 @@ void InstantiateLinksFromTopo (YAML::Node& config, rapidxml::xml_node<>* xml_roo
         ns3::PointToPointHelper helper;
         helper.Install(from_AS, to_AS);
 
-        if (config["border_router"] && config["border_router"].as<bool>()) {
+        if (config["border_router"]) {
             to_AS->AddToRemoteASInfo(from_AS->GetNDevices() - 1, ns3::PeekPointer(from_AS));
             from_AS->AddToRemoteASInfo(to_AS->GetNDevices() - 1, ns3::PeekPointer(to_AS));
 
