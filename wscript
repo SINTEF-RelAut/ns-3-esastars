@@ -24,7 +24,8 @@ def build(bld):
                    'src/scion_capable_node.cpp',
                    'src/border_router.cpp',
                    'src/beaconing/scionlab_algo.cpp',
-                   'src/time_server.cpp']
+                   'src/time_server.cpp',
+                   'src/externs.cpp']
 
     headers = bld(features='ns3header')
     headers.module = 'SCION'

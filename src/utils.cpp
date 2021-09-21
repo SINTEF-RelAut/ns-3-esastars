@@ -23,8 +23,6 @@
  * @return The link-level jaccard distance between the two paths.
  */
 
-
-std::map<uint16_t, uint16_t> as_to_isd_map;
 namespace ns3 {
 
 
