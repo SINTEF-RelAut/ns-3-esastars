@@ -19,9 +19,10 @@
 #include "src/SCION/headers/beaconing/beacon.h"
 #include "src/SCION/headers/scion_as.h"
 #include "src/SCION/headers/local_scheduler.h"
+#include "src/SCION/headers/externs.h"
 
 namespace ns3 {
-#define NUM_CORE 128
+
 #define MAX_BEACONS_TO_STORE 60
 #define MAX_BEACONS_TO_SEND 5
     class SCION_AS;
