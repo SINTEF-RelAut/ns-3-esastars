@@ -22,14 +22,14 @@ namespace ns3 {
     NS_LOG_COMPONENT_DEFINE("GlobalScheduling");
     std::vector<Node*> nodes_to_run_next;
 
-//    void RunParallelEvents (host_addr_t host_addr) {
-//        omp_set_num_threads(NUM_CORE);
-//#pragma omp parallel for schedule (dynamic)
-//        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-//            Ptr<SCION_AS> node = dynamic_cast<SCION_AS*>(PeekPointer(nodes.Get(i)));
-//            (dynamic_cast<TimeServer*>(node->GetHost(host_addr)))->ConstructSetOfMostDisjointPaths();
-//        }
-//    }
+    void RunParallelEvents (host_addr_t host_addr) {
+        omp_set_num_threads(NUM_CORE);
+#pragma omp parallel for schedule (dynamic)
+        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
+            Ptr<SCION_AS> node = dynamic_cast<SCION_AS*>(PeekPointer(nodes.Get(i)));
+            (dynamic_cast<TimeServer*>(node->GetHost(host_addr)))->ConstructSetOfMostDisjointPaths();
+        }
+    }
 
     void ExecuteLocallyScheduledEvents (NodeContainer& nodes) {
         auto start = std::chrono::system_clock::now();

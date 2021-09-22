@@ -11,7 +11,7 @@
 
 namespace ns3 {
 
-//    void RunParallelEvents (host_addr_t host_addr);
+    void RunParallelEvents (host_addr_t host_addr);
 
     void ScheduleNextEvent (NodeContainer& nodes);
 

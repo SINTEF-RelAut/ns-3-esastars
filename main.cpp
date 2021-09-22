@@ -44,16 +44,15 @@ void SetTimeResolution (std::string time_res_str);
 //rapidxml::xml_node<>* SetupTopologyFile (std::string topology_name);
 
 void InstantiateASesFromTopo( rapidxml::xml_node<>* xml_root,  std::map<int32_t, uint16_t>& AS_no_to_index,
-                             std::map<uint16_t, int32_t>& index_to_AS_no, ns3::NodeContainer& AS_nodes, YAML::Node& config);
+                             std::map<uint16_t, int32_t>& index_to_AS_no, ns3::NodeContainer& AS_nodes, const YAML::Node & config);
 
-void InstantiateLinksFromTopo ( rapidxml::xml_node<>* xml_root, ns3::NodeContainer& AS_nodes, std::map<int32_t, uint16_t>& AS_no_to_index, YAML::Node& config);
+void InstantiateLinksFromTopo ( rapidxml::xml_node<>* xml_root, ns3::NodeContainer& AS_nodes, std::map<int32_t, uint16_t>& AS_no_to_index, const YAML::Node& config);
 
-void InitializeNodesAttributes( ns3::NodeContainer& AS_nodes, std::string beaconing_policy_str);
+void InitializeNodesAttributes(const ns3::NodeContainer& AS_nodes, const YAML::Node& config);
 
 
 
 int main(int argc, char *argv[]) {
-    ns3::NodeContainer all_ases;
     std::map<int32_t, uint16_t> AS_no_to_index;
     std::map<uint16_t, int32_t> index_to_AS_no;
 
@@ -130,15 +129,15 @@ int main(int argc, char *argv[]) {
 
 
 
-    InstantiateASesFromTopo( xml_root, AS_no_to_index, index_to_AS_no, all_ases, config);
-    InstantiateLinksFromTopo( xml_root, all_ases, AS_no_to_index, config);
-    InitializeNodesAttributes( all_ases, config["beacon_service"]["policy"].as<std::string>());
+    InstantiateASesFromTopo( xml_root, AS_no_to_index, index_to_AS_no, nodes, config);
+    InstantiateLinksFromTopo( xml_root, nodes, AS_no_to_index, config);
+    InitializeNodesAttributes( nodes, config);
 
-    ns3::SchedulePeriodicEvents(config, all_ases);
+    ns3::SchedulePeriodicEvents(config, nodes);
     ns3::Simulator::Stop(simulation_end_time);
     ns3::Simulator::Run();
 
-    ns3::DoFinalEvaluations(config, all_ases, AS_no_to_index, index_to_AS_no);
+    ns3::DoFinalEvaluations(config, nodes, AS_no_to_index, index_to_AS_no);
 
     ns3::Simulator::Destroy();
 
@@ -187,8 +186,8 @@ void SetTimeResolution(std::string time_res_str) {
 //    return rootNode;
 //}
 
-void InstantiateASesFromTopo( rapidxml::xml_node<>* xml_root, std::map<int32_t, uint16_t>& AS_no_to_index,
-                             std::map<uint16_t,int32_t>& index_to_AS_no, ns3::NodeContainer& AS_nodes, YAML::Node& config) {
+void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::map<int32_t, uint16_t>& AS_no_to_index,
+                             std::map<uint16_t,int32_t>& index_to_AS_no, ns3::NodeContainer& AS_nodes, const YAML::Node& config) {
 
 
     ns3::Time beaconing_period = ns3::Time(config["beacon_service"]["period"].as<std::string>());
@@ -278,7 +277,7 @@ void InstantiateASesFromTopo( rapidxml::xml_node<>* xml_root, std::map<int32_t, 
     }
 }
 
-void InstantiateLinksFromTopo ( rapidxml::xml_node<>* xml_root, ns3::NodeContainer& AS_nodes, std::map<int32_t, uint16_t>& AS_no_to_index, YAML::Node& config){
+void InstantiateLinksFromTopo (rapidxml::xml_node<>* xml_root, ns3::NodeContainer& AS_nodes, std::map<int32_t, uint16_t>& AS_no_to_index, const YAML::Node& config){
     rapidxml::xml_node<> *curr_xml_node = xml_root->first_node("link");
     while (curr_xml_node) {
         int32_t to = std::stoi(curr_xml_node->first_node("to")->value());
@@ -406,10 +405,10 @@ void InstantiateLinksFromTopo ( rapidxml::xml_node<>* xml_root, ns3::NodeContain
     }
 }
 
-void InitializeNodesAttributes(ns3::NodeContainer& AS_nodes, std::string beaconing_policy_str) {
-
-    omp_set_num_threads(NUM_CORE);
-#pragma omp parallel for
+void InitializeNodesAttributes(const ns3::NodeContainer& AS_nodes, const YAML::Node& config ) {
+    std::string beaconing_policy_str = config["beacon_service"]["policy"].as<std::string>();
+//    omp_set_num_threads(NUM_CORE);
+//#pragma omp parallel for
     for (uint64_t i = 0; i < AS_nodes.GetN(); ++i) {
         if (beaconing_policy_str == "baseline") {
             ns3::DynamicCast<ns3::SCION_AS>(AS_nodes.Get(i))->DoInitializations();
