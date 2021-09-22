@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
 
     ns3::Time simulation_end_time = ns3::Time(config["simulation_duration"].as<std::string>());
 
-
+    NUM_CORE = config["NUM_CORE"].as<uint32_t>();
 
     std::ifstream fin(topology_file.c_str());
     std::ostringstream sstr;
