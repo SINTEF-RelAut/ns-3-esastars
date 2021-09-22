@@ -11,7 +11,7 @@
 
 #define NUM_CORE 128
 
-extern std::map<uint16_t, uint16_t> as_to_isd_map;
+
 
 
 #endif //NS_3_BEACONING_SIMULATOR_EXTERNS_H

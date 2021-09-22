@@ -48,11 +48,15 @@ void InstantiateASesFromTopo( rapidxml::xml_node<>* xml_root,  std::map<int32_t,
 
 void InstantiateLinksFromTopo ( rapidxml::xml_node<>* xml_root, ns3::NodeContainer& AS_nodes, std::map<int32_t, uint16_t>& AS_no_to_index, YAML::Node& config);
 
-void InitializeNodesAttributes( ns3::NodeContainer& AS_nodes, YAML::Node& config);
+void InitializeNodesAttributes( ns3::NodeContainer& AS_nodes, std::string beaconing_policy_str);
 
 
 
 int main(int argc, char *argv[]) {
+    ns3::NodeContainer all_ases;
+    std::map<int32_t, uint16_t> AS_no_to_index;
+    std::map<uint16_t, int32_t> index_to_AS_no;
+
     if (argc != 2) {
         std::cerr << "Please pass the config file location as the argument." << std::endl;
         return 1;
@@ -124,13 +128,11 @@ int main(int argc, char *argv[]) {
     std::ofstream out(out_path);
     std::cout.rdbuf(out.rdbuf());
 
-    ns3::NodeContainer all_ases;
-    std::map<int32_t, uint16_t> AS_no_to_index;
-    std::map<uint16_t, int32_t> index_to_AS_no;
+
 
     InstantiateASesFromTopo( xml_root, AS_no_to_index, index_to_AS_no, all_ases, config);
     InstantiateLinksFromTopo( xml_root, all_ases, AS_no_to_index, config);
-    InitializeNodesAttributes( all_ases, config);
+    InitializeNodesAttributes( all_ases, config["beacon_service"]["policy"].as<std::string>());
 
     ns3::SchedulePeriodicEvents(config, all_ases);
     ns3::Simulator::Stop(simulation_end_time);
@@ -404,8 +406,8 @@ void InstantiateLinksFromTopo ( rapidxml::xml_node<>* xml_root, ns3::NodeContain
     }
 }
 
-void InitializeNodesAttributes(ns3::NodeContainer& AS_nodes, YAML::Node& config) {
-    std::string beaconing_policy_str = config["beacon_service"]["policy"].as<std::string>();
+void InitializeNodesAttributes(ns3::NodeContainer& AS_nodes, std::string beaconing_policy_str) {
+
     omp_set_num_threads(NUM_CORE);
 #pragma omp parallel for
     for (uint64_t i = 0; i < AS_nodes.GetN(); ++i) {
