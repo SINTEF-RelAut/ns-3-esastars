@@ -109,9 +109,9 @@ namespace ns3 {
             while (set_of_most_disjoint_paths_per_dst_ia.size() < number_of_paths_to_use_for_global_sync
                    && set_of_most_disjoint_paths_per_dst_ia.size() < path_segments.size()) {
 
-                const PathSegment* best_path;
+                const PathSegment* best_path = NULL;
                 uint64_t best_path_score = std::numeric_limits<uint64_t>::max();
-                uint64_t best_path_len = std::numeric_limits<uint64_t>::max();
+                uint32_t best_path_len = std::numeric_limits<uint32_t>::max();
 
                 for (auto const & [path_len, path_seg] : path_segments) {
                     if (set_of_most_disjoint_paths_per_dst_ia.find(path_seg) != set_of_most_disjoint_paths_per_dst_ia.end()) {
@@ -119,7 +119,7 @@ namespace ns3 {
                     }
 
                     uint64_t path_seg_score = 1;
-                    for (uint32_t  j = 0; j < path_len - 1; ++j) {
+                    for (uint32_t  j = 0; j < (uint32_t) path_len - 1; ++j) {
                         uint64_t hop = path_seg->hops.at(j);
                         uint32_t link = GET_HOP_AS_ING(hop);
                         if (number_of_paths_per_link_selected_paths.find(link) != number_of_paths_per_link_selected_paths.end()) {
