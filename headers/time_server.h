@@ -78,7 +78,7 @@ namespace ns3 {
         int64_t loff;
         std::unordered_map<ia_t, std::multiset<int64_t>> poff;
 
-        std::unordered_map<ia_t, std::set<const PathSegment*>> set_of_most_disjoint_paths;
+        std::unordered_map<ia_t, std::unordered_set<const PathSegment*>> set_of_most_disjoint_paths;
 
         Time get_reference_time();
 

@@ -64,8 +64,8 @@ namespace ns3 {
             cached_path_segs_data_set->at(dst_ia)->insert(std::make_pair(src_ia, new cached_path_segs_per_src_dst_t()));
         }
 
-        if (cached_path_segs_data_set->at(dst_ia)->at(src_ia)->find(path_seg->expiration_time) == cached_path_segs_data_set->at(dst_ia)->at(src_ia)->end()){
-            cached_path_segs_data_set->at(dst_ia)->at(src_ia)->insert(std::make_pair(path_seg->expiration_time, path_seg));
+        if (cached_path_segs_data_set->at(dst_ia)->at(src_ia)->find(path_seg->hops.size()) == cached_path_segs_data_set->at(dst_ia)->at(src_ia)->end()){
+            cached_path_segs_data_set->at(dst_ia)->at(src_ia)->insert(std::make_pair(path_seg->hops.size(), path_seg));
         }
     }
 

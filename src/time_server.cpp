@@ -103,33 +103,35 @@ namespace ns3 {
             }
 
             std::unordered_map<uint32_t, uint32_t> number_of_paths_per_link_selected_paths;
+            auto & set_of_most_disjoint_paths_per_dst_ia = set_of_most_disjoint_paths.at(dst_ia);
+            auto const & path_segments = *cached_core_path_segments.at(dst_ia)->at(ia_addr);
 
-            while (set_of_most_disjoint_paths.at(dst_ia).size() < number_of_paths_to_use_for_global_sync
-                   && set_of_most_disjoint_paths.at(dst_ia).size() < cached_core_path_segments.at(dst_ia)->at(ia_addr)->size()) {
+            while (set_of_most_disjoint_paths_per_dst_ia.size() < number_of_paths_to_use_for_global_sync
+                   && set_of_most_disjoint_paths_per_dst_ia.size() < path_segments.size()) {
 
                 const PathSegment* best_path;
-
                 uint64_t best_path_score = std::numeric_limits<uint64_t>::max();
                 uint64_t best_path_len = std::numeric_limits<uint64_t>::max();
-                auto const & path_segments = *cached_core_path_segments.at(dst_ia)->at(ia_addr);
-                for (auto const &exp_time_path_seg_pair : path_segments) {
-                    auto const & path_seg = exp_time_path_seg_pair.second;
+
+                for (auto const & [path_len, path_seg] : path_segments) {
+                    if (set_of_most_disjoint_paths_per_dst_ia.find(path_seg) != set_of_most_disjoint_paths_per_dst_ia.end()) {
+                        continue;
+                    }
+
                     uint64_t path_seg_score = 1;
-                    uint64_t path_len = path_seg->hops.size();
                     for (uint32_t  j = 0; j < path_len - 1; ++j) {
                         uint64_t hop = path_seg->hops.at(j);
                         uint32_t link = GET_HOP_AS_ING(hop);
                         if (number_of_paths_per_link_selected_paths.find(link) != number_of_paths_per_link_selected_paths.end()) {
-                            path_seg_score += (number_of_paths_per_link_selected_paths.at(link) + 1);
+                            path_seg_score *= (number_of_paths_per_link_selected_paths.at(link) + 1);
                         }
                     }
 
                     if (path_seg_score == 1) {
                         best_path = path_seg;
+                        best_path_len = path_len;
                         break;
                     }
-
-                    path_seg_score /= path_len;
 
                     if (path_seg_score < best_path_score) {
                         best_path = path_seg;
@@ -144,7 +146,7 @@ namespace ns3 {
 
                 }
 
-                set_of_most_disjoint_paths.at(dst_ia).insert(best_path);
+                set_of_most_disjoint_paths_per_dst_ia.insert(best_path);
 
                 for (uint32_t  j = 0; j < best_path_len - 1; ++j) {
                     uint64_t hop = best_path->hops.at(j);
@@ -181,7 +183,7 @@ namespace ns3 {
 
             nlohmann::json path_segs_json = set_of_disjoint_paths_json[dst_ia];
 
-            set_of_most_disjoint_paths.insert(std::make_pair(dst_ia, std::set<const PathSegment*>()));
+            set_of_most_disjoint_paths.insert(std::make_pair(dst_ia, std::unordered_set<const PathSegment*>()));
 
             for (auto const & path_seg_json : path_segs_json) {
                 PathSegment* path_seg = new PathSegment();
