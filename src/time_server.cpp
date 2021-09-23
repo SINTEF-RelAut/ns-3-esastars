@@ -95,24 +95,12 @@ namespace ns3 {
 //#pragma omp parallel for schedule(dynamic, 1)
         for (uint32_t i = 0; i < size; ++i) {
             ia_t dst_ia = vector_of_all_core_ases.at(i);
-            std::unordered_map<uint32_t, uint32_t> number_of_paths_per_link_all;
             std::unordered_map<uint32_t, uint32_t> number_of_paths_per_link_selected_paths;
-
-            for (auto const & path_seg : *cached_core_path_segments.at(dst_ia)->at(ia_addr)) {
-                for (uint32_t  j = 0; j < path_seg.second->hops.size() - 1; ++j) {
-                    uint64_t hop = path_seg.second->hops.at(j);
-                    uint32_t link = GET_HOP_AS_ING(hop);
-                    if (number_of_paths_per_link_all.find(link) == number_of_paths_per_link_all.end()) {
-                        number_of_paths_per_link_all.insert(std::make_pair(link, 0));
-                    }
-                    number_of_paths_per_link_all.at(link)++;
-                }
-            }
 
             while (set_of_most_disjoint_paths.at(dst_ia).size() < number_of_paths_to_use_for_global_sync
                    && set_of_most_disjoint_paths.at(dst_ia).size() < cached_core_path_segments.at(dst_ia)->at(ia_addr)->size()) {
 
-                std::unordered_set<const PathSegment*> best_segs;
+                const PathSegment* best_path;
 
                 uint64_t best_path_score = std::numeric_limits<uint64_t>::max();
                 for (auto const &path_seg: *cached_core_path_segments.at(dst_ia)->at(ia_addr)) {
@@ -120,49 +108,16 @@ namespace ns3 {
                     for (uint32_t  j = 0; j < path_seg.second->hops.size() - 1; ++j) {
                         uint64_t hop = path_seg.second->hops.at(j);
                         uint32_t link = GET_HOP_AS_ING(hop);
-                        if (set_of_most_disjoint_paths.at(dst_ia).size() == 0){
-                            if (number_of_paths_per_link_all.find(link) != number_of_paths_per_link_all.end()) {
-                                path_seg_score *= number_of_paths_per_link_all.at(link);
-                            }
-                        } else {
-                            if (number_of_paths_per_link_selected_paths.find(link) != number_of_paths_per_link_selected_paths.end()) {
-                                path_seg_score *= (number_of_paths_per_link_selected_paths.at(link) + 1);
-                            }
+                        if (number_of_paths_per_link_selected_paths.find(link) != number_of_paths_per_link_selected_paths.end()) {
+                            path_seg_score += (number_of_paths_per_link_selected_paths.at(link) + 1);
                         }
-
                     }
 
-                    if (path_seg_score == best_path_score) {
-                        best_segs.insert(path_seg.second);
-                    }
+                    path_seg_score /= (path_seg.second->hops.size() - 1);
 
                     if (path_seg_score < best_path_score) {
-                        best_segs.clear();
-                        best_segs.insert(path_seg.second);
+                        best_path = path_seg.second;
                         best_path_score = path_seg_score;
-                    }
-                }
-
-                const PathSegment* best_path;
-
-                if (set_of_most_disjoint_paths.at(dst_ia).size() == 0 || best_segs.size() == 1) {
-                    best_path = *best_segs.begin();
-                } else {
-                    best_path_score = std::numeric_limits<uint64_t>::max();
-                    for (auto const &path_seg : best_segs) {
-                        uint64_t path_seg_score = 1;
-                        for (uint32_t  j = 0; j < path_seg->hops.size() - 1; ++j) {
-                            uint64_t hop = path_seg->hops.at(j);
-                            uint32_t link = GET_HOP_AS_ING(hop);
-                            if (number_of_paths_per_link_all.find(link) != number_of_paths_per_link_all.end()) {
-                                path_seg_score *= number_of_paths_per_link_all.at(link);
-                            }
-                        }
-
-                        if (path_seg_score < best_path_score) {
-                            best_path = path_seg;
-                            best_path_score = path_seg_score;
-                        }
                     }
                 }
 
@@ -175,10 +130,6 @@ namespace ns3 {
                         number_of_paths_per_link_selected_paths.insert(std::make_pair(link, 0));
                     }
                     number_of_paths_per_link_selected_paths.at(link)++;
-
-                    if (number_of_paths_per_link_all.find(link) == number_of_paths_per_link_all.end()) {
-                        number_of_paths_per_link_all.at(link)--;
-                    }
                 }
             }
         }
