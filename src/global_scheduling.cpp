@@ -29,6 +29,12 @@ namespace ns3 {
             Ptr<SCION_AS> node = dynamic_cast<SCION_AS*>(PeekPointer(nodes.Get(i)));
             (dynamic_cast<TimeServer*>(node->GetHost(host_addr)))->ConstructSetOfMostDisjointPaths();
         }
+
+#pragma omp parallel for schedule (dynamic)
+        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
+            Ptr<SCION_AS> node = dynamic_cast<SCION_AS*>(PeekPointer(nodes.Get(i)));
+            (dynamic_cast<TimeServer*>(node->GetHost(host_addr)))->ReadOrWriteDisjointPaths();
+        }
     }
 
     void ExecuteLocallyScheduledEvents (NodeContainer& nodes) {

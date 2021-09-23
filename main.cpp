@@ -258,7 +258,9 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::map<int32_t, u
                                                              ns3::Time(config["time_service"]["list_of_ases_req_period"].as<std::string>()),
                                                              ns3::Time(config["time_service"]["time_sync_period"].as<std::string>()),
                                                              config["time_service"]["G"].as<uint32_t>(),
-                                                             config["time_service"]["number_of_paths_to_use_for_global_sync"].as<uint32_t>());
+                                                             config["time_service"]["number_of_paths_to_use_for_global_sync"].as<uint32_t>(),
+                                                             config["time_service"]["read_disjoint_paths"].as<uint32_t>(),
+                                                             config["time_service"]["set_of_disjoint_paths_directory"].as<std::string>());
             AS_node->AddHost(time_server);
         }
 
@@ -322,10 +324,10 @@ void InstantiateLinksFromTopo (rapidxml::xml_node<>* xml_root, ns3::NodeContaine
         ns3::PointToPointHelper helper;
         helper.Install(from_AS, to_AS);
 
-        if (config["border_router"]) {
-            to_AS->AddToRemoteASInfo(from_AS->GetNDevices() - 1, ns3::PeekPointer(from_AS));
-            from_AS->AddToRemoteASInfo(to_AS->GetNDevices() - 1, ns3::PeekPointer(to_AS));
+        to_AS->AddToRemoteASInfo(from_AS->GetNDevices() - 1, ns3::PeekPointer(from_AS));
+        from_AS->AddToRemoteASInfo(to_AS->GetNDevices() - 1, ns3::PeekPointer(to_AS));
 
+        if (config["border_router"]) {
             ns3::Time to_processing_delay = ns3::NanoSeconds(10);
             ns3::Time from_processing_delay = ns3::NanoSeconds(10);
 

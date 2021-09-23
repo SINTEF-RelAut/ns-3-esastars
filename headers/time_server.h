@@ -20,11 +20,12 @@ namespace ns3 {
         TimeServer(uint32_t system_id, uint16_t isd_number, uint16_t as_number, host_addr_t local_address,
         double latitude, double longitude, SCION_AS* AS, Time max_initial_drift, Time max_drift_per_day, Time global_cut_off,
         Time first_event, Time last_event, Time list_of_ases_req_period, Time time_sync_period, uint32_t G,
-                   uint32_t number_of_paths_to_use_for_global_sync) :
+                   uint32_t number_of_paths_to_use_for_global_sync, bool read_disjoint_paths, std::string set_of_disjoint_paths_directory) :
                 SCIONHost(system_id, isd_number, as_number, local_address, latitude, longitude, AS),
                 max_initial_drift(max_initial_drift), max_drift_per_day(max_drift_per_day), global_cut_off(global_cut_off),
                 first_event(first_event), last_event(last_event), list_of_ases_req_period(list_of_ases_req_period),
-                time_sync_period(time_sync_period), G(G), number_of_paths_to_use_for_global_sync(number_of_paths_to_use_for_global_sync){
+                time_sync_period(time_sync_period), G(G), number_of_paths_to_use_for_global_sync(number_of_paths_to_use_for_global_sync),
+        read_disjoint_paths(read_disjoint_paths){
             synchronization_round = 0;
 
             std::random_device rd;
@@ -41,6 +42,8 @@ namespace ns3 {
 
             real_time_of_last_local_time_update = PicoSeconds(0);
             set_of_all_core_ases.insert(ia_addr);
+
+            set_of_disjoint_paths_file = set_of_disjoint_paths_directory + "set_of_disjoint_path_TS_" + std::to_string(ia_addr) + ".json";
         }
 
         void ScheduleListOfAllASesRequest();
@@ -50,6 +53,9 @@ namespace ns3 {
         void AdvanceLocalTime() override;
 
         void ConstructSetOfMostDisjointPaths();
+
+        void ReadOrWriteDisjointPaths();
+
     private:
         Time max_initial_drift;
         Time max_drift_per_day;
@@ -60,11 +66,14 @@ namespace ns3 {
 
         uint32_t G;
         uint32_t number_of_paths_to_use_for_global_sync;
+        bool read_disjoint_paths;
         uint32_t synchronization_round; // i in the Listing 2
 
         Time real_time_of_last_local_time_update;
 
         std::set<ia_t> set_of_all_core_ases;
+
+        std::string  set_of_disjoint_paths_file;
 
         int64_t loff;
         std::unordered_map<ia_t, std::multiset<int64_t>> poff;
@@ -85,7 +94,9 @@ namespace ns3 {
 
         void receive_set_of_all_core_ases_from_path_server(SCIONPacket* packet);
 
+        void read_set_of_disjoint_paths();
 
+        void write_set_of_disjoint_paths();
 
         void receive_set_of_all_core_ases_from_other_time_server(SCIONPacket* packet);
 

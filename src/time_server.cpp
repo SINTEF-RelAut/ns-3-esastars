@@ -12,6 +12,7 @@
 #include "src/SCION/headers/scion_core_as.h"
 #include "src/SCION/headers/utils.h"
 #include "src/SCION/headers/externs.h"
+#include "src/SCION/headers/json.hpp"
 
 namespace ns3 {
     NS_LOG_COMPONENT_DEFINE("TimeServer");
@@ -81,20 +82,26 @@ namespace ns3 {
 
     void TimeServer::ConstructSetOfMostDisjointPaths () {
         NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " constructing disjoint paths");
-        std::set<ia_t> tmp_set_of_all_core_ases = set_of_all_core_ases;
-        tmp_set_of_all_core_ases.erase(ia_addr);
-
-        std::vector<ia_t> vector_of_all_core_ases(tmp_set_of_all_core_ases.begin(), tmp_set_of_all_core_ases.end());
-        uint32_t size = vector_of_all_core_ases.size();
-
-        for (uint32_t i = 0; i < size; ++i) {
-            ia_t dst_ia = vector_of_all_core_ases.at(i);
-            set_of_most_disjoint_paths.insert(std::make_pair(dst_ia, std::set<const PathSegment*>()));
-        }
+//        std::set<ia_t> tmp_set_of_all_core_ases = set_of_all_core_ases;
+//        tmp_set_of_all_core_ases.erase(ia_addr);
+//
+//        std::vector<ia_t> vector_of_all_core_ases(tmp_set_of_all_core_ases.begin(), tmp_set_of_all_core_ases.end());
+//        uint32_t size = vector_of_all_core_ases.size();
+//
+//        for (uint32_t i = 0; i < size; ++i) {
+//            ia_t dst_ia = vector_of_all_core_ases.at(i);
+//            set_of_most_disjoint_paths.insert(std::make_pair(dst_ia, std::set<const PathSegment*>()));
+//        }
 //        omp_set_num_threads(NUM_CORE);
 //#pragma omp parallel for schedule(dynamic, 1)
-        for (uint32_t i = 0; i < size; ++i) {
-            ia_t dst_ia = vector_of_all_core_ases.at(i);
+//        for (uint32_t i = 0; i < size; ++i) {
+//            ia_t dst_ia = vector_of_all_core_ases.at(i);
+
+        for (auto const & dst_ia : set_of_all_core_ases) {
+            if (dst_ia == ia_addr) {
+                continue;
+            }
+
             std::unordered_map<uint32_t, uint32_t> number_of_paths_per_link_selected_paths;
 
             while (set_of_most_disjoint_paths.at(dst_ia).size() < number_of_paths_to_use_for_global_sync
@@ -103,27 +110,43 @@ namespace ns3 {
                 const PathSegment* best_path;
 
                 uint64_t best_path_score = std::numeric_limits<uint64_t>::max();
-                for (auto const &path_seg: *cached_core_path_segments.at(dst_ia)->at(ia_addr)) {
+                uint64_t best_path_len = std::numeric_limits<uint64_t>::max();
+                auto const & path_segments = *cached_core_path_segments.at(dst_ia)->at(ia_addr);
+                for (auto const &exp_time_path_seg_pair : path_segments) {
+                    auto const & path_seg = exp_time_path_seg_pair.second;
                     uint64_t path_seg_score = 1;
-                    for (uint32_t  j = 0; j < path_seg.second->hops.size() - 1; ++j) {
-                        uint64_t hop = path_seg.second->hops.at(j);
+                    uint64_t path_len = path_seg->hops.size();
+                    for (uint32_t  j = 0; j < path_len - 1; ++j) {
+                        uint64_t hop = path_seg->hops.at(j);
                         uint32_t link = GET_HOP_AS_ING(hop);
                         if (number_of_paths_per_link_selected_paths.find(link) != number_of_paths_per_link_selected_paths.end()) {
                             path_seg_score += (number_of_paths_per_link_selected_paths.at(link) + 1);
                         }
                     }
 
-                    path_seg_score /= (path_seg.second->hops.size() - 1);
+                    if (path_seg_score == 1) {
+                        best_path = path_seg;
+                        break;
+                    }
+
+                    path_seg_score /= path_len;
 
                     if (path_seg_score < best_path_score) {
-                        best_path = path_seg.second;
+                        best_path = path_seg;
                         best_path_score = path_seg_score;
+                        best_path_len = path_len;
+                    } else if (path_seg_score == best_path_score && path_len < best_path_len) {
+                        best_path = path_seg;
+                        best_path_score = path_seg_score;
+                        best_path_len = path_len;
                     }
+
+
                 }
 
                 set_of_most_disjoint_paths.at(dst_ia).insert(best_path);
 
-                for (uint32_t  j = 0; j < best_path->hops.size() - 1; ++j) {
+                for (uint32_t  j = 0; j < best_path_len - 1; ++j) {
                     uint64_t hop = best_path->hops.at(j);
                     uint32_t link = GET_HOP_AS_ING(hop);
                     if (number_of_paths_per_link_selected_paths.find(link) == number_of_paths_per_link_selected_paths.end()) {
@@ -135,6 +158,63 @@ namespace ns3 {
         }
 
         NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " FINISHED constructing disjoint paths");
+    }
+
+    void TimeServer::ReadOrWriteDisjointPaths() {
+        if (read_disjoint_paths) {
+            read_set_of_disjoint_paths();
+        } else {
+            write_set_of_disjoint_paths();
+        }
+    }
+
+    void TimeServer::read_set_of_disjoint_paths() {
+        nlohmann::json set_of_disjoint_paths_json;
+        std::ifstream disjoint_paths_file(set_of_disjoint_paths_file);
+        disjoint_paths_file >> set_of_disjoint_paths_json;
+        disjoint_paths_file.close();
+
+        for (auto const & dst_ia: set_of_all_core_ases) {
+            if (dst_ia == ia_addr) {
+                continue;
+            }
+
+            nlohmann::json path_segs_json = set_of_disjoint_paths_json[dst_ia];
+
+            set_of_most_disjoint_paths.insert(std::make_pair(dst_ia, std::set<const PathSegment*>()));
+
+            for (auto const & path_seg_json : path_segs_json) {
+                PathSegment* path_seg = new PathSegment();
+                path_seg->initiation_time = path_seg_json["initiation_time"];
+                path_seg->expiration_time = path_seg_json["expiration_time"];
+                path_seg->originator = path_seg_json["originator"];
+                path_seg->reverse = path_seg_json["reverse"];
+                path_seg->hops = path_seg_json["hops"].get<std::vector<uint64_t>>();
+                set_of_most_disjoint_paths.at(dst_ia).insert(path_seg);
+            }
+        }
+    }
+
+    void TimeServer::write_set_of_disjoint_paths() {
+        nlohmann::json set_of_disjoint_paths_json;
+
+        for (auto const & [dst_ia, path_segs] : set_of_most_disjoint_paths) {
+            nlohmann::json path_segs_json;
+            for (auto const & path_seg : path_segs) {
+                nlohmann::json path_seg_json;
+                path_seg_json["initiation_time"] = 0;
+                path_seg_json["expiration_time"] = 0xFFFF;
+                path_seg_json["originator"] = path_seg->originator;
+                path_seg_json["reverse"] = 0;
+                path_seg_json["hops"] = nlohmann::json (path_seg->hops);
+                path_segs_json.push_back(path_seg_json);
+            }
+            set_of_disjoint_paths_json[dst_ia] = path_segs_json;
+        }
+
+        std::ofstream disjoint_paths_file(set_of_disjoint_paths_file);
+        disjoint_paths_file << set_of_disjoint_paths_json.dump();
+        disjoint_paths_file.close();
     }
 
     void TimeServer::receive_set_of_all_core_ases_from_other_time_server(SCIONPacket *packet) {
