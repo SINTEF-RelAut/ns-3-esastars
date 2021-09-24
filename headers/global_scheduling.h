@@ -13,11 +13,11 @@ namespace ns3 {
 
     void RunParallelEvents (host_addr_t host_addr);
 
-//    template <typename MEM, typename OBJ>
-//    void RunParallelEvents (host_addr_t host_addr, MEM mem_ptr, OBJ obj);
-//
+    template <typename MEM, typename OBJ>
+    void RunParallelEvents (host_addr_t host_addr, MEM mem_ptr, OBJ obj);
 
-    void ScheduleNextEvent (NodeContainer& nodes);
+
+//    void ScheduleNextEvent (NodeContainer& nodes);
 
     void ExecuteNonPeriodicEvents (ns3::NodeContainer& nodes, ns3::Time advance);
 
