@@ -40,18 +40,19 @@ namespace ns3 {
     template <typename FUNC, typename CLAS>
     void RunParallelEvents (host_addr_t host_addr, std::pair<FUNC, CLAS> mem_obj_pair) {
         FUNC mem_ptr = mem_obj_pair.first;
-        omp_set_num_threads(NUM_CORE);
-#pragma omp parallel for schedule (dynamic)
-        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-            Ptr<SCION_AS> node = dynamic_cast<SCION_AS *>(PeekPointer(nodes.Get(i)));
-            if (host_addr == 0) {
-                ((dynamic_cast<CLAS>(node->GetBeaconServer()))->*mem_ptr)();
-            } else if (host_addr == 1) {
-                ((dynamic_cast<CLAS>(node->GetPathServer()))->*mem_ptr)();
-            } else {
-                ((dynamic_cast<CLAS>(node->GetHost(host_addr)))->*mem_ptr)();
-            }
-        }
+        std::cout << mem_ptr;
+//        omp_set_num_threads(NUM_CORE);
+//#pragma omp parallel for schedule (dynamic)
+//        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
+//            Ptr<SCION_AS> node = dynamic_cast<SCION_AS *>(PeekPointer(nodes.Get(i)));
+//            if (host_addr == 0) {
+//                ((dynamic_cast<CLAS>(node->GetBeaconServer()))->*mem_ptr)();
+//            } else if (host_addr == 1) {
+//                ((dynamic_cast<CLAS>(node->GetPathServer()))->*mem_ptr)();
+//            } else {
+//                ((dynamic_cast<CLAS>(node->GetHost(host_addr)))->*mem_ptr)();
+//            }
+//        }
     }
 
     void ExecuteLocallyScheduledEvents (NodeContainer& nodes) {

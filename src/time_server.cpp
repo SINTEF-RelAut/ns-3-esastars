@@ -74,12 +74,17 @@ namespace ns3 {
 
             if (as_number == 0) {
                 if (!read_disjoint_paths) {
-                    Simulator::Schedule(MilliSeconds(300), &RunParallelEvents, local_address, std::make_pair(&TimeServer::ConstructSetOfMostDisjointPaths,
-                                        this));
-                }
+//                    Simulator::Schedule(MilliSeconds(300), &RunParallelEvents, local_address, std::make_pair(&TimeServer::ConstructSetOfMostDisjointPaths,
+//                                        this));
 
-                Simulator::Schedule(MilliSeconds(310), &RunParallelEvents, local_address, std::make_pair(&TimeServer::ReadOrWriteDisjointPaths,
-                                    this));
+                    Simulator::Schedule(MilliSeconds(300), &RunParallelEvents, local_address, std::make_pair(5,
+                                                                                                             10));
+                }
+//
+//                Simulator::Schedule(MilliSeconds(310), &RunParallelEvents, local_address, std::make_pair(&TimeServer::ReadOrWriteDisjointPaths,
+//                                    this));
+                Simulator::Schedule(MilliSeconds(310), &RunParallelEvents, local_address, std::make_pair(5,
+                                                                                                         10));
             }
 
             Simulator::Schedule(MilliSeconds(350), &TimeServer::send_set_of_all_core_ases_to_neighbors, this);
