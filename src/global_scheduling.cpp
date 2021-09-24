@@ -38,9 +38,9 @@ namespace ns3 {
 //    }
 
 
-    void RunParallelEvents ( std::pair<int, int> mem_obj_pair) {
-        int mem_ptr = mem_obj_pair.first;
-        std::cout << mem_ptr;
+    void RunParallelEvents (host_addr_t host_addr) {
+
+        std::cout << host_addr;
 //        omp_set_num_threads(NUM_CORE);
 //#pragma omp parallel for schedule (dynamic)
 //        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
