@@ -8,6 +8,8 @@
 #include <yaml-cpp/yaml.h>
 
 #include "src/SCION/headers/externs.h"
+#include "src/SCION/headers/scion_packet.h"
+#include "src/SCION/headers/scion_as.h"
 
 namespace ns3 {
 

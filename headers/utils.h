@@ -9,13 +9,12 @@
 #ifndef SCION_BEACONING_SIMMULATOR_UTILS_H
 #define SCION_BEACONING_SIMMULATOR_UTILS_H
 
-#include "src/SCION/headers/beaconing/beacon.h"
-#include "scion_as.h"
-#include "ns3/rapidxml.hpp"
 #include <map>
 
+#include "ns3/rapidxml.hpp"
 
-
+#include "src/SCION/headers/beaconing/beacon.h"
+#include "src/SCION/headers/scion_as.h"
 
 namespace ns3 {
 
