@@ -38,7 +38,7 @@ namespace ns3 {
 //    }
 
 
-    void RunParallelEvents (host_addr_t host_addr) {
+    void RunParallelEvents (host_addr_t host_addr, int xx) {
 
         std::cout << host_addr;
 //        omp_set_num_threads(NUM_CORE);
