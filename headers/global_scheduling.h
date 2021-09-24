@@ -7,7 +7,7 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include "src/SCION/headers/utils.h"
+#include "src/SCION/headers/externs.h"
 
 namespace ns3 {
 
@@ -30,8 +30,6 @@ namespace ns3 {
             ((node->GetBeaconServer())->*mem_ptr)();
         }
     }
-
-
 
     void ScheduleNextEvent (NodeContainer& nodes);
 
