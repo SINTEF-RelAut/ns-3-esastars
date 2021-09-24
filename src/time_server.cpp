@@ -96,7 +96,7 @@ namespace ns3 {
 //
 //        for (uint32_t i = 0; i < size; ++i) {
 //            ia_t dst_ia = vector_of_all_core_ases.at(i);
-//            set_of_most_disjoint_paths.insert(std::make_pair(dst_ia, std::set<const PathSegment*>()));
+//            set_of_most_disjoint_paths.insert(std::make_pair(dst_ia, std::unordered_set<const PathSegment*>()));
 //        }
 //        omp_set_num_threads(NUM_CORE);
 //#pragma omp parallel for schedule(dynamic, 1)
@@ -108,8 +108,10 @@ namespace ns3 {
                 continue;
             }
 
-            std::unordered_map<uint32_t, uint32_t> number_of_paths_per_link_selected_paths;
+            set_of_most_disjoint_paths.insert(std::make_pair(dst_ia, std::unordered_set<const PathSegment*>()));
             auto & set_of_most_disjoint_paths_per_dst_ia = set_of_most_disjoint_paths.at(dst_ia);
+
+            std::unordered_map<uint32_t, uint32_t> number_of_paths_per_link_selected_paths;
             auto const & path_segments = *cached_core_path_segments.at(dst_ia)->at(ia_addr);
 
             while (set_of_most_disjoint_paths_per_dst_ia.size() < number_of_paths_to_use_for_global_sync
@@ -148,8 +150,6 @@ namespace ns3 {
                         best_path_score = path_seg_score;
                         best_path_len = path_len;
                     }
-
-
                 }
 
                 set_of_most_disjoint_paths_per_dst_ia.insert(best_path);
@@ -182,12 +182,8 @@ namespace ns3 {
         disjoint_paths_file >> set_of_disjoint_paths_json;
         disjoint_paths_file.close();
 
-        for (auto const & dst_ia: set_of_all_core_ases) {
-            if (dst_ia == ia_addr) {
-                continue;
-            }
-
-            nlohmann::json path_segs_json = set_of_disjoint_paths_json[dst_ia];
+        for (auto const & [dst_ia_str, path_segs_json] : set_of_disjoint_paths_json.items()) {
+            ia_t dst_ia = std::stoi(dst_ia_str);
 
             set_of_most_disjoint_paths.insert(std::make_pair(dst_ia, std::unordered_set<const PathSegment*>()));
 
@@ -217,7 +213,7 @@ namespace ns3 {
                 path_seg_json["hops"] = nlohmann::json (path_seg->hops);
                 path_segs_json.push_back(path_seg_json);
             }
-            set_of_disjoint_paths_json[dst_ia] = path_segs_json;
+            set_of_disjoint_paths_json[std::to_string(dst_ia)] = path_segs_json;
         }
 
         std::ofstream disjoint_paths_file(set_of_disjoint_paths_file);
