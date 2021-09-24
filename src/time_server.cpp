@@ -77,15 +77,15 @@ namespace ns3 {
                 if (!read_disjoint_paths) {
                     Simulator::Schedule(MilliSeconds(300),
                                         &RunParallelEvents<void (TimeServer::*)(), TimeServer*>,
-                                        local_address, &TimeServer::construct_set_of_most_disjoint_paths,this);
+                                        local_address, &TimeServer::construct_set_of_most_disjoint_paths);
                     Simulator::Schedule(MilliSeconds(310),
                                         &RunParallelEvents<void (TimeServer::*)(), TimeServer*>,
-                                        local_address, &TimeServer::write_set_of_disjoint_paths,this);
+                                        local_address, &TimeServer::write_set_of_disjoint_paths);
                 } else {
                     if (set_of_most_disjoint_paths.empty()) {
                         Simulator::Schedule(MilliSeconds(310),
                                             &RunParallelEvents<void (TimeServer::*)(), TimeServer*>,
-                                            local_address, &TimeServer::read_set_of_disjoint_paths,this);
+                                            local_address, &TimeServer::read_set_of_disjoint_paths);
                     }
                 }
             }

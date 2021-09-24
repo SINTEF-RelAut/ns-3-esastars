@@ -14,7 +14,7 @@
 namespace ns3 {
 
     template <typename MEM, typename OBJ>
-    void RunParallelEvents (host_addr_t host_addr, MEM mem_ptr, OBJ obj) {
+    void RunParallelEvents (host_addr_t host_addr, MEM mem_ptr) {
         omp_set_num_threads(NUM_CORE);
 #pragma omp parallel for schedule (dynamic)
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
