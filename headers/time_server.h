@@ -14,18 +14,24 @@
 #include "src/SCION/headers/scion_host.h"
 
 namespace ns3 {
-    class TimeServer : public SCIONHost {
+    enum READ_OR_WRITE_DISJOINT_PATHS {R = 0, W = 2, NO_R_NO_W = 3};
 
+    class TimeServer : public SCIONHost {
     public:
         TimeServer(uint32_t system_id, uint16_t isd_number, uint16_t as_number, host_addr_t local_address,
-        double latitude, double longitude, SCION_AS* AS, bool parallel_scheduler, Time max_initial_drift, Time max_drift_per_day, Time global_cut_off,
-        Time first_event, Time last_event, Time list_of_ases_req_period, Time time_sync_period, uint32_t G,
-                   uint32_t number_of_paths_to_use_for_global_sync, bool read_disjoint_paths, std::string set_of_disjoint_paths_directory) :
-                SCIONHost(system_id, isd_number, as_number, local_address, latitude, longitude, AS),
-                max_initial_drift(max_initial_drift), max_drift_per_day(max_drift_per_day), global_cut_off(global_cut_off),
-                first_event(first_event), last_event(last_event), list_of_ases_req_period(list_of_ases_req_period),
-                time_sync_period(time_sync_period), G(G), number_of_paths_to_use_for_global_sync(number_of_paths_to_use_for_global_sync),
-        read_disjoint_paths(read_disjoint_paths){
+                   double latitude, double longitude, SCION_AS* AS, bool parallel_scheduler, Time max_initial_drift,
+                   Time max_drift_per_day, Time global_cut_off, Time first_event, Time last_event,
+                   Time list_of_ases_req_period, Time time_sync_period, uint32_t G,
+                   uint32_t number_of_paths_to_use_for_global_sync, int read_disjoint_paths,
+                   std::string set_of_disjoint_paths_directory) :
+                   SCIONHost(system_id, isd_number, as_number, local_address, latitude, longitude, AS),
+                   parallel_scheduler(parallel_scheduler), max_initial_drift(max_initial_drift),
+                   max_drift_per_day(max_drift_per_day), global_cut_off(global_cut_off),
+                   first_event(first_event), last_event(last_event), list_of_ases_req_period(list_of_ases_req_period),
+                   time_sync_period(time_sync_period), G(G),
+                   number_of_paths_to_use_for_global_sync(number_of_paths_to_use_for_global_sync),
+                   read_disjoint_paths(read_disjoint_paths){
+
             synchronization_round = 0;
 
             std::random_device rd;
@@ -65,7 +71,7 @@ namespace ns3 {
 
         uint32_t G;
         uint32_t number_of_paths_to_use_for_global_sync;
-        bool read_disjoint_paths;
+        int read_disjoint_paths;
         uint32_t synchronization_round; // i in the Listing 2
 
         Time real_time_of_last_local_time_update;

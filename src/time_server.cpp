@@ -74,14 +74,17 @@ namespace ns3 {
             Simulator::Schedule(MilliSeconds(350), &TimeServer::send_set_of_all_core_ases_to_neighbors, this);
 
             if (parallel_scheduler) {
-                if (!read_disjoint_paths) {
+                if (read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::W ||
+                    read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::NO_R_NO_W) {
                     Simulator::Schedule(MilliSeconds(300),
                                         &RunParallelEvents<void (TimeServer::*)(), TimeServer*>,
                                         local_address, &TimeServer::construct_set_of_most_disjoint_paths);
-                    Simulator::Schedule(MilliSeconds(310),
-                                        &RunParallelEvents<void (TimeServer::*)(), TimeServer*>,
-                                        local_address, &TimeServer::write_set_of_disjoint_paths);
-                } else {
+                    if (read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::W) {
+                        Simulator::Schedule(MilliSeconds(310),
+                                            &RunParallelEvents<void (TimeServer::*)(), TimeServer*>,
+                                            local_address, &TimeServer::write_set_of_disjoint_paths);
+                    }
+                } else if (read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::R)  {
                     if (set_of_most_disjoint_paths.empty()) {
                         Simulator::Schedule(MilliSeconds(310),
                                             &RunParallelEvents<void (TimeServer::*)(), TimeServer*>,
@@ -420,11 +423,10 @@ namespace ns3 {
 
 
     void TimeServer::ScheduleListOfAllASesRequest() {
-        if (!read_disjoint_paths) {
+        if (read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::W) {
             Simulator::Schedule(first_event, &TimeServer::request_set_of_all_core_ases_from_path_server, this);
         } else {
             for (Time t = first_event; t < last_event; t += list_of_ases_req_period) {
-                //process_scheduler->Schedule(t, &TimeServer::request_set_of_all_core_ases_from_path_server, this);
                 Simulator::Schedule(t, &TimeServer::request_set_of_all_core_ases_from_path_server, this);
             }
         }
@@ -432,9 +434,9 @@ namespace ns3 {
     }
 
     void TimeServer::ScheduleTimeSync(ia_t printer_ia) {
-        if (read_disjoint_paths) {
+        if (read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::R ||
+                read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::NO_R_NO_W) {
             for (Time t = first_event + Seconds(1); t < last_event + Seconds(1); t += time_sync_period) {
-                //process_scheduler->Schedule(t, &TimeServer::trigger_core_time_sync_algo, this, printer_ia);
                 Simulator::Schedule(t, &TimeServer::trigger_core_time_sync_algo, this, printer_ia);
             }
         }

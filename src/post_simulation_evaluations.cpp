@@ -39,8 +39,8 @@ namespace ns3 {
 //    PrintMinimumLatencyDist(nodes);
 //    Evaluate_S_T_Connectivity(nodes);
 //    PrintAllDiscoveredPaths(nodes, ASes, index_to_AS_no);
-//     FindMinLatencyToDNSRootServers(nodes, ASes, index_to_AS_no);
-        PrintConsumedBWAtEachPeriod(nodes, beaconing_period, last_beaconing_event_time);
+//    FindMinLatencyToDNSRootServers(nodes, ASes, index_to_AS_no);
+//    PrintConsumedBWAtEachPeriod(nodes, beaconing_period, last_beaconing_event_time);
 //    PrintDistributionOfPathsWithSpecificHopCount(nodes);
 
 //    PrintPathQualities(nodes);
