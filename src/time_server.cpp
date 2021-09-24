@@ -73,16 +73,16 @@ namespace ns3 {
             request_for_paths_to_all_core_ases();
 
             if (as_number == 0) {
-                if (!read_disjoint_paths) {
-//                    Simulator::Schedule(MilliSeconds(300), &RunParallelEvents, local_address, std::make_pair(&TimeServer::ConstructSetOfMostDisjointPaths,
-//                                        this));
+                Simulator::Schedule(MilliSeconds(300), &RunParallelEvents, local_address);
+//                if (!read_disjoint_paths) {
+//                    Simulator::Schedule(MilliSeconds(300), &RunParallelEvents, local_address, &TimeServer::ConstructSetOfMostDisjointPaths,
+//                                        this);
+//                }
+//                Simulator::Schedule(MilliSeconds(310), &RunParallelEvents, local_address, &TimeServer::ReadOrWriteDisjointPaths,
+//                                    this);
 
-                    Simulator::Schedule(MilliSeconds(300), &RunParallelEvents,  local_address, 5);
-                }
-//
-//                Simulator::Schedule(MilliSeconds(310), &RunParallelEvents, local_address, std::make_pair(&TimeServer::ReadOrWriteDisjointPaths,
-//                                    this));
-                Simulator::Schedule(MilliSeconds(310), &RunParallelEvents,  local_address, 5);
+                Simulator::Schedule(MilliSeconds(300), &RunParallelEvents, local_address, &TimeServer::ConstructSetOfMostDisjointPaths,
+                                    this);
             }
 
             Simulator::Schedule(MilliSeconds(350), &TimeServer::send_set_of_all_core_ases_to_neighbors, this);
@@ -90,22 +90,10 @@ namespace ns3 {
     }
 
     void TimeServer::ConstructSetOfMostDisjointPaths () {
+        if (read_disjoint_paths) {
+            return;
+        }
         NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " constructing disjoint paths");
-//        std::set<ia_t> tmp_set_of_all_core_ases = set_of_all_core_ases;
-//        tmp_set_of_all_core_ases.erase(ia_addr);
-//
-//        std::vector<ia_t> vector_of_all_core_ases(tmp_set_of_all_core_ases.begin(), tmp_set_of_all_core_ases.end());
-//        uint32_t size = vector_of_all_core_ases.size();
-//
-//        for (uint32_t i = 0; i < size; ++i) {
-//            ia_t dst_ia = vector_of_all_core_ases.at(i);
-//            set_of_most_disjoint_paths.insert(std::make_pair(dst_ia, std::unordered_set<const PathSegment*>()));
-//        }
-//        omp_set_num_threads(NUM_CORE);
-//#pragma omp parallel for schedule(dynamic, 1)
-//        for (uint32_t i = 0; i < size; ++i) {
-//            ia_t dst_ia = vector_of_all_core_ases.at(i);
-
         for (auto const & dst_ia : set_of_all_core_ases) {
             if (dst_ia == ia_addr) {
                 continue;

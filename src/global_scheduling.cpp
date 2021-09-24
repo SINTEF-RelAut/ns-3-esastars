@@ -22,38 +22,36 @@ namespace ns3 {
     NS_LOG_COMPONENT_DEFINE("GlobalScheduling");
     std::vector<Node*> nodes_to_run_next;
 
-//    void RunParallelEvents (host_addr_t host_addr) {
-//        omp_set_num_threads(NUM_CORE);
-//#pragma omp parallel for schedule (dynamic)
-//        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-//            Ptr<SCION_AS> node = dynamic_cast<SCION_AS*>(PeekPointer(nodes.Get(i)));
-//            (dynamic_cast<TimeServer*>(node->GetHost(host_addr)))->ConstructSetOfMostDisjointPaths();
-//        }
-//
-//#pragma omp parallel for schedule (dynamic)
-//        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-//            Ptr<SCION_AS> node = dynamic_cast<SCION_AS*>(PeekPointer(nodes.Get(i)));
-//            (dynamic_cast<TimeServer*>(node->GetHost(host_addr)))->ReadOrWriteDisjointPaths();
-//        }
-//    }
+    void RunParallelEvents (host_addr_t host_addr) {
+        omp_set_num_threads(NUM_CORE);
+#pragma omp parallel for schedule (dynamic)
+        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
+            Ptr<SCION_AS> node = dynamic_cast<SCION_AS*>(PeekPointer(nodes.Get(i)));
+            (dynamic_cast<TimeServer*>(node->GetHost(host_addr)))->ConstructSetOfMostDisjointPaths();
+        }
 
+#pragma omp parallel for schedule (dynamic)
+        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
+            Ptr<SCION_AS> node = dynamic_cast<SCION_AS*>(PeekPointer(nodes.Get(i)));
+            (dynamic_cast<TimeServer*>(node->GetHost(host_addr)))->ReadOrWriteDisjointPaths();
+        }
+    }
 
-    void RunParallelEvents (host_addr_t host_addr, int xx) {
-
-        std::cout << host_addr;
+//    template <typename MEM, typename OBJ>
+//    void RunParallelEvents (host_addr_t host_addr, MEM mem_ptr, OBJ obj) {
 //        omp_set_num_threads(NUM_CORE);
 //#pragma omp parallel for schedule (dynamic)
 //        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
 //            Ptr<SCION_AS> node = dynamic_cast<SCION_AS *>(PeekPointer(nodes.Get(i)));
 //            if (host_addr == 0) {
-//                ((dynamic_cast<CLAS>(node->GetBeaconServer()))->*mem_ptr)();
+//                ((dynamic_cast<OBJ>(node->GetBeaconServer()))->*mem_ptr)();
 //            } else if (host_addr == 1) {
-//                ((dynamic_cast<CLAS>(node->GetPathServer()))->*mem_ptr)();
+//                ((dynamic_cast<OBJ>(node->GetPathServer()))->*mem_ptr)();
 //            } else {
-//                ((dynamic_cast<CLAS>(node->GetHost(host_addr)))->*mem_ptr)();
+//                ((dynamic_cast<OBJ>(node->GetHost(host_addr)))->*mem_ptr)();
 //            }
 //        }
-    }
+//    }
 
     void ExecuteLocallyScheduledEvents (NodeContainer& nodes) {
         auto start = std::chrono::system_clock::now();

@@ -49,7 +49,8 @@ def build(bld):
                      'headers/utils.h',
                      'headers/beaconing/scionlab_algo.h',
                      'headers/time_server.h',
-                     'headers/externs.h']
+                     'headers/externs.h',
+                     'headers/json.hpp']
 
     obj = bld.create_ns3_program('main',
                                 ['SCION', 'point-to-point'])
