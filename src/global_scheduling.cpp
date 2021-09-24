@@ -37,9 +37,9 @@ namespace ns3 {
 //        }
 //    }
 
-    template <typename FUNC, typename CLAS>
-    void RunParallelEvents (host_addr_t host_addr, std::pair<FUNC, CLAS> mem_obj_pair) {
-        FUNC mem_ptr = mem_obj_pair.first;
+
+    void RunParallelEvents (host_addr_t host_addr, std::pair<int, int> mem_obj_pair) {
+        int mem_ptr = mem_obj_pair.first;
         std::cout << mem_ptr;
 //        omp_set_num_threads(NUM_CORE);
 //#pragma omp parallel for schedule (dynamic)
