@@ -14,7 +14,7 @@
 #include "src/SCION/headers/beaconing/beacon_server.h"
 #include "src/SCION/headers/utils.h"
 #include "src/SCION/headers/scion_core_as.h"
-#include "src/SCION/headers/local_scheduler.h"
+#include "src/SCION/headers/global_scheduling.h"
 #include "src/SCION/headers/path_server.h"
 
 namespace ns3 {
@@ -330,26 +330,28 @@ namespace ns3 {
 
     void BeaconServer::ScheduleBeaconing(Time last_beaconing_event_time) {
         for (Time t = Seconds(0); t < last_beaconing_event_time; t += beaconing_period) {
-            Simulator::Schedule(t - node->local_time, &BeaconServer::UpdateTimeAndStats, this);
+            Simulator::Schedule(t, &BeaconServer::UpdateTimeAndStats, this);
 
             if (dynamic_cast<SCION_Core_AS*>(node) != NULL) {
-                Simulator::Schedule(t - node->local_time, &BeaconServer::DisseminateBeacons, this, neighbour_relation::CORE);
+                Simulator::Schedule(t, &BeaconServer::DisseminateBeacons, this, neighbour_relation::CORE);
 
-                Simulator::Schedule(t - node->local_time, &BeaconServer::InitiateBeacons, this, neighbour_relation::CORE);
-                Simulator::Schedule(t - node->local_time, &BeaconServer::InitiateBeacons, this, neighbour_relation::CUSTOMER);
+                Simulator::Schedule(t, &BeaconServer::InitiateBeacons, this, neighbour_relation::CORE);
+                Simulator::Schedule(t, &BeaconServer::InitiateBeacons, this, neighbour_relation::CUSTOMER);
             } else {
-                Simulator::Schedule(t - node->local_time, &BeaconServer::DisseminateBeacons, this, neighbour_relation::CUSTOMER);
+                Simulator::Schedule(t, &BeaconServer::DisseminateBeacons, this, neighbour_relation::CUSTOMER);
             }
 
-            if (node->GetPathServer() != NULL) {
-                scheduler->Schedule(t - node->local_time + node->latency_between_path_server_and_beacon_server,
-                           &BeaconServer::RegisterToLocalPathServer,
-                           this);
-            }
+            if (parallel_scheduler) {
+                if (node->GetPathServer() != NULL) {
+                    Simulator::Schedule(t + node->latency_between_path_server_and_beacon_server,
+                                        &RunParallelEvents<void (BeaconServer::*)()>,
+                                        &BeaconServer::RegisterToLocalPathServer);
+                }
 
-            scheduler->Schedule(t - node->local_time + MilliSeconds(150),
-                       &BeaconServer::UpdateStatePeriodic,
-                       this);
+                Simulator::Schedule(t + MilliSeconds(150),
+                                    &RunParallelEvents<void (BeaconServer::*)()>,
+                                    &BeaconServer::UpdateStatePeriodic);
+            }
         }
     }
 

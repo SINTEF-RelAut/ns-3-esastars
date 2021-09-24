@@ -41,8 +41,8 @@ typedef std::tuple<ld, ld, ld, ld> coefficients;
     class CriteriaMatching : public BeaconServer {
     public:
 
-        CriteriaMatching (beaconing_timing_params params, coefficients coefs) :
-        BeaconServer(params){
+        CriteriaMatching (bool parallel_scheduler, beaconing_timing_params params, coefficients coefs) :
+        BeaconServer(parallel_scheduler, params){
             std::tie(latency_coef, bandwidth_coef, AS_level_diversity_coef, link_level_diversity_coef) = coefs;
         }
 

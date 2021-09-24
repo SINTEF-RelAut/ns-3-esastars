@@ -12,7 +12,7 @@ namespace ns3 {
     class SCIONLAB : public BeaconServer
     {
     public:
-        SCIONLAB (beaconing_timing_params params) : BeaconServer(params) {}
+        SCIONLAB (bool parallel_scheduler, beaconing_timing_params params) : BeaconServer(parallel_scheduler, params) {}
 
         /**
          * @brief Disseminates the valid beacons towards multiple interfaces of the appropriate neighbours until the limit for

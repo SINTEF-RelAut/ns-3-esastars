@@ -15,7 +15,7 @@ namespace ns3 {
 
     class Baseline : public BeaconServer {
     public:
-        Baseline(beaconing_timing_params params) : BeaconServer(params) {}
+        Baseline(bool parallel_scheduler, beaconing_timing_params params) : BeaconServer(parallel_scheduler, params) {}
 
         /**
          * @brief Disseminates the valid beacons towards multiple interfaces of the appropriate neighbours until the limit for

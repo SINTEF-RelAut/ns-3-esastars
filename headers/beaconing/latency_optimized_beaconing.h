@@ -18,7 +18,7 @@ namespace ns3 {
     class LatencyOptimized : public BeaconServer
     {
     public:
-        LatencyOptimized (beaconing_timing_params params) : BeaconServer(params) {}
+        LatencyOptimized (bool parallel_scheduler, beaconing_timing_params params) : BeaconServer(parallel_scheduler, params) {}
 
         std::vector<std::vector<std::multimap<ld, Beacon*> > > beacons_per_dst_per_ing_if_sorted_by_latency;
 

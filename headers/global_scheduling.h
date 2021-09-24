@@ -11,10 +11,26 @@
 
 namespace ns3 {
 
-//    void RunParallelEvents (host_addr_t host_addr);
-
     template <typename MEM, typename OBJ>
-    void RunParallelEvents (host_addr_t host_addr, MEM mem_ptr, OBJ obj);
+    void RunParallelEvents (host_addr_t host_addr, MEM mem_ptr, OBJ obj) {
+        omp_set_num_threads(NUM_CORE);
+#pragma omp parallel for schedule (dynamic)
+        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
+            Ptr<SCION_AS> node = dynamic_cast<SCION_AS *>(PeekPointer(nodes.Get(i)));
+            ((dynamic_cast<OBJ>(node->GetHost(host_addr)))->*mem_ptr)();
+        }
+    }
+
+    template <typename MEM>
+    void RunParallelEvents (MEM mem_ptr) {
+        omp_set_num_threads(NUM_CORE);
+#pragma omp parallel for schedule (dynamic)
+        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
+            Ptr<SCION_AS> node = dynamic_cast<SCION_AS *>(PeekPointer(nodes.Get(i)));
+            ((node->GetBeaconServer())->*mem_ptr)();
+        }
+    }
+
 
 
     void ScheduleNextEvent (NodeContainer& nodes);

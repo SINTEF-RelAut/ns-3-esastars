@@ -50,11 +50,13 @@ namespace ns3 {
 
     class BeaconServer {
     public:
-        BeaconServer(beaconing_timing_params params) : beaconing_period(params.first),
-                                                       expiration_period(params.second)
+        BeaconServer(bool parallel_scheduler, beaconing_timing_params params) :
+                     parallel_scheduler(parallel_scheduler), beaconing_period(params.first), expiration_period(params.second)
         {
             scheduler = new LocalScheduler();
         }
+
+
 
         // beacon store structures ***************************************************************************************************
         /** @brief Pointers to all the beacons indexable by their destination AS and their hop count.*/
@@ -138,6 +140,8 @@ namespace ns3 {
 
         LocalScheduler* GetScheduler();
     protected:
+        bool parallel_scheduler;
+
         SCION_AS* node;
 
         /** @brief The current simulator time in minutes. */

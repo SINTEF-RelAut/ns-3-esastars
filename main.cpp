@@ -196,6 +196,8 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::map<int32_t, u
 
     int16_t node_counter = 0;
 
+    bool parallel_scheduler = true;
+
     rapidxml::xml_node<>* cur_xml_node = xml_root->first_node("node");
     while (cur_xml_node) {
         int32_t as_number = std::stoi(ns3::getAttribute(cur_xml_node, "id"));
@@ -212,7 +214,7 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::map<int32_t, u
         std::string beaconing_policy_str = config["beacon_service"]["policy"].as<std::string>();
         ns3::BeaconServer* beaconing_policy;
         if (beaconing_policy_str == "baseline") {
-            beaconing_policy = (ns3::BeaconServer*) new ns3::Baseline(params);
+            beaconing_policy = (ns3::BeaconServer*) new ns3::Baseline(parallel_scheduler, params);
         } else if (beaconing_policy_str == "criteria_matching") {
             ns3::ld latency_coef = 0.0; //std::stod(p.getProperty("latency_coef"));
             ns3::ld bandwidth_coef = 0.0; //std::stod(p.getProperty("bandwidth_coef"));
@@ -221,13 +223,13 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::map<int32_t, u
 
             ns3::coefficients coefs = std::make_tuple(latency_coef, bandwidth_coef, AS_level_diversity_coef,
                                                       link_level_diversity_coef);
-            beaconing_policy = (ns3::BeaconServer *) new ns3::CriteriaMatching(params, coefs);
+            beaconing_policy = (ns3::BeaconServer *) new ns3::CriteriaMatching(parallel_scheduler, params, coefs);
         } else if (beaconing_policy_str == "latency_optimized") {
-            beaconing_policy = (ns3::BeaconServer *) new ns3::LatencyOptimized(params);
+            beaconing_policy = (ns3::BeaconServer *) new ns3::LatencyOptimized(parallel_scheduler, params);
         } else if (beaconing_policy_str == "scionlab") {
-            beaconing_policy = (ns3::BeaconServer *) new ns3::SCIONLAB(params);
+            beaconing_policy = (ns3::BeaconServer *) new ns3::SCIONLAB(parallel_scheduler, params);
         } else {
-            beaconing_policy = (ns3::BeaconServer*) new ns3::Baseline(params);
+            beaconing_policy = (ns3::BeaconServer*) new ns3::Baseline(parallel_scheduler, params);
         }
 
         ns3::Ptr<ns3::SCION_AS> AS_node;
@@ -250,6 +252,7 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::map<int32_t, u
 
         if (config["time_service"]) {
             ns3::SCIONHost* time_server = new ns3::TimeServer(0, isd_number, node_counter, 2,0.0, 0.0, PeekPointer(AS_node),
+                                                             parallel_scheduler,
                                                              ns3::Time(config["time_service"]["max_initial_drift"].as<std::string>()),
                                                              ns3::Time(config["time_service"]["max_drift_per_day"].as<std::string>()),
                                                              ns3::Time(config["time_service"]["global_cut_off"].as<std::string>()),
@@ -276,6 +279,7 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::map<int32_t, u
         node_counter++;
 
         cur_xml_node = cur_xml_node->next_sibling("node");
+        parallel_scheduler = false;
     }
 }
 

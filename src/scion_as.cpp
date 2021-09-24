@@ -154,9 +154,13 @@ namespace ns3 {
         this->pathServer = the_pathServer;
     }
 
-    SCIONHost*
+    SCIONCapableNode *
     SCION_AS::GetHost(host_addr_t host_addr) {
-        return hosts.at(host_addr - 2);
+        if (host_addr == 1) {
+            return GetPathServer();
+        }
+
+        return ((SCIONCapableNode *) hosts.at(host_addr - 2));
     }
 
     uint32_t SCION_AS::GetNHosts() {

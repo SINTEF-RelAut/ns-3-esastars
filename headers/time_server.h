@@ -18,7 +18,7 @@ namespace ns3 {
 
     public:
         TimeServer(uint32_t system_id, uint16_t isd_number, uint16_t as_number, host_addr_t local_address,
-        double latitude, double longitude, SCION_AS* AS, Time max_initial_drift, Time max_drift_per_day, Time global_cut_off,
+        double latitude, double longitude, SCION_AS* AS, bool parallel_scheduler, Time max_initial_drift, Time max_drift_per_day, Time global_cut_off,
         Time first_event, Time last_event, Time list_of_ases_req_period, Time time_sync_period, uint32_t G,
                    uint32_t number_of_paths_to_use_for_global_sync, bool read_disjoint_paths, std::string set_of_disjoint_paths_directory) :
                 SCIONHost(system_id, isd_number, as_number, local_address, latitude, longitude, AS),
@@ -52,11 +52,10 @@ namespace ns3 {
 
         void AdvanceLocalTime() override;
 
-        void ConstructSetOfMostDisjointPaths();
 
-        void ReadOrWriteDisjointPaths();
 
     private:
+        bool parallel_scheduler;
         Time max_initial_drift;
         Time max_drift_per_day;
         Time global_cut_off;
@@ -93,6 +92,8 @@ namespace ns3 {
         void send_ntp_req_to_peers();
 
         void receive_set_of_all_core_ases_from_path_server(SCIONPacket* packet);
+
+        void construct_set_of_most_disjoint_paths();
 
         void read_set_of_disjoint_paths();
 

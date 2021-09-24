@@ -218,7 +218,7 @@ namespace ns3 {
         }
 
         if (packet->path.size() == 0 && count < 3)  {
-            process_scheduler->Schedule(MilliSeconds(300), &SCIONHost::find_path_and_send, this, packet, (count + 1));
+            Simulator::Schedule(MilliSeconds(300), &SCIONHost::find_path_and_send, this, packet, (count + 1));
         }
     }
 }

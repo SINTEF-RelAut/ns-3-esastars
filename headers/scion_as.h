@@ -123,7 +123,7 @@ namespace ns3 {
 
         PathServer* GetPathServer();
 
-        SCIONHost* GetHost(host_addr_t host_addr);
+        SCIONCapableNode * GetHost(host_addr_t host_addr);
 
         uint32_t GetNHosts();
 
