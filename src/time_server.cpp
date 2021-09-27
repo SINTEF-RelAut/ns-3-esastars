@@ -71,7 +71,7 @@ namespace ns3 {
             set_of_all_core_ases = result_set;
 
             request_for_paths_to_all_core_ases();
-            Simulator::Schedule(MilliSeconds(350), &TimeServer::send_set_of_all_core_ases_to_neighbors, this);
+            //Simulator::Schedule(MilliSeconds(350), &TimeServer::send_set_of_all_core_ases_to_neighbors, this);
 
             if (parallel_scheduler) {
                 if (read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::W ||
@@ -279,12 +279,25 @@ namespace ns3 {
         std::uniform_int_distribution<int64_t> dist (-std::abs(max_drift.GetPicoSeconds()), std::abs(max_drift.GetPicoSeconds()));
         int64_t random_drift_int = dist(rd); //std::abs(max_drift.GetPicoSeconds());
 
+        Time tmp_local_time = local_time;
+
+
         //local_time += advance + PicoSeconds(random_drift_int);
         if (random_drift_int < 0) {
             local_time -= PicoSeconds(std::abs(random_drift_int));
+            NS_LOG_DEBUG( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << tmp_local_time
+                         << ", updated_local_time: " << local_time << ", last update: "
+                         << real_time_of_last_local_time_update << ", advance: " << advance
+                         << ", max_drift: " << max_drift << ", random_drift: -" << PicoSeconds(std::abs(random_drift_int)));
         } else {
             local_time += PicoSeconds(std::abs(random_drift_int));
+            NS_LOG_DEBUG( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << tmp_local_time
+                         << ", updated_local_time: " << local_time << ", last update: "
+                         << real_time_of_last_local_time_update << ", advance: " << advance
+                         << ", max_drift: " << max_drift << ", random_drift: +" << PicoSeconds(std::abs(random_drift_int)));
         }
+
+
 
         real_time_of_last_local_time_update = Simulator::Now();
     }
@@ -367,14 +380,26 @@ namespace ns3 {
 
         int64_t final_corr_abs = std::abs(corr) < std::abs(max_drift.GetPicoSeconds()) ? std::abs(corr) : std::abs(max_drift.GetPicoSeconds());
 
+        Time tmp_local_time = local_time;
+
         if (corr > 0) {
             local_time += PicoSeconds(final_corr_abs);
+            NS_LOG_DEBUG( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << tmp_local_time
+                          << ", updated_local_time: " << local_time << ", final_corr: +" << PicoSeconds(final_corr_abs)
+                          << ", max_drift: " << max_drift << ", corr: +" << PicoSeconds(corr) );
         } else {
             local_time -= PicoSeconds(final_corr_abs);
+            NS_LOG_DEBUG( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << tmp_local_time
+                                      << ", updated_local_time: " << local_time << ", final_corr: -" << PicoSeconds(final_corr_abs)
+                                      << ", max_drift: " << max_drift << ", corr: -" << PicoSeconds(corr) );
         }
+
+
     }
 
     void TimeServer::send_ntp_req_to_peers() {
+        NS_LOG_DEBUG( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << local_time);
+
         for (auto const & peer_ia : set_of_all_core_ases) {
             if (peer_ia == ia_addr) {
                 continue;
@@ -397,6 +422,9 @@ namespace ns3 {
     }
 
     void TimeServer::receive_ntp_req_from_peer(SCIONPacket *packet, Time receive_time) {
+        NS_LOG_DEBUG( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << local_time
+                       << ", sender_ia: " << GET_ISDN(packet->src_ia) << "-" << GET_ASN(packet->src_ia)
+                       << ", receive_time: " << receive_time << ", t0: " << PicoSeconds(packet->payload.ntp_req_or_resp.t0));
         packet->payload_type = payload_type_t::NTP_RESP;
         packet->payload.ntp_req_or_resp.t1 = receive_time.GetPicoSeconds();
         packet->payload.ntp_req_or_resp.t2 = local_time.GetPicoSeconds();
@@ -405,11 +433,14 @@ namespace ns3 {
 
     void TimeServer::receive_ntp_res_from_peer(SCIONPacket* packet, Time receive_time) {
         NS_LOG_DEBUG("TimeServ at " << isd_number << ":" << as_number <<
-        " RCV NTP resp from peer " << GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia));
+        " RCV NTP resp from peer " << GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia)
+        << ", local_time: " << local_time << ", t0: " << PicoSeconds(packet->payload.ntp_req_or_resp.t0)
+        << ", t1: " << PicoSeconds(packet->payload.ntp_req_or_resp.t1)
+        << ", t2: " << PicoSeconds(packet->payload.ntp_req_or_resp.t2)
+        << ", t3: " << receive_time);
 
-        int64_t poff_tmp = std::abs(
-                            ((packet->payload.ntp_req_or_resp.t1 - packet->payload.ntp_req_or_resp.t0) +
-                            (packet->payload.ntp_req_or_resp.t2 - receive_time.GetPicoSeconds())) / 2);
+        int64_t poff_tmp = ((packet->payload.ntp_req_or_resp.t1 - packet->payload.ntp_req_or_resp.t0) +
+                            (packet->payload.ntp_req_or_resp.t2 - receive_time.GetPicoSeconds())) / 2;
 
         if (poff.find(packet->src_ia) == poff.end()) {
             poff.insert(std::make_pair(packet->src_ia, std::multiset<int64_t>()));
