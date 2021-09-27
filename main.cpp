@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    SetTimeResolution(config["simulation_duration"].as<std::string>());
+    SetTimeResolution(config["time_resolution"].as<std::string>());
 
     std::string topology_file = config["topology"].as<std::string>();
 
