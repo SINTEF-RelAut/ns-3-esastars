@@ -316,9 +316,9 @@ namespace ns3 {
 
         if (ia_addr == printer_ia) {
             if (synchronization_round == 0) {
-                std::cout << "##################################### Global Time Sync at " << Simulator::Now().GetPicoSeconds() << "##################################" << std::endl;
+                std::cout << "##################################### Global Time Sync at " << Simulator::Now().GetPicoSeconds() << " ##################################" << std::endl;
             } else {
-                std::cout << "##################################### Local Time Sync at " << Simulator::Now().GetPicoSeconds() << "##################################" << std::endl;
+                std::cout << "##################################### Local Time Sync at " << Simulator::Now().GetPicoSeconds() << " ##################################" << std::endl;
             }
         }
 
