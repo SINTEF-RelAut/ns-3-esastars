@@ -105,7 +105,7 @@ namespace ns3 {
             set_of_most_disjoint_paths.insert(std::make_pair(dst_ia, std::unordered_set<const PathSegment*>()));
             auto & set_of_most_disjoint_paths_per_dst_ia = set_of_most_disjoint_paths.at(dst_ia);
 
-            std::unordered_map<uint32_t, uint32_t> number_of_paths_per_link_selected_paths;
+            std::unordered_map<ia_t, uint32_t> number_of_paths_per_hop_ia;
             auto const & path_segments = *cached_core_path_segments.at(dst_ia)->at(ia_addr);
 
             while (set_of_most_disjoint_paths_per_dst_ia.size() < number_of_paths_to_use_for_global_sync
@@ -121,11 +121,12 @@ namespace ns3 {
                     }
 
                     uint64_t path_seg_score = 1;
-                    for (uint32_t  j = 0; j < (uint32_t) path_len - 1; ++j) {
+                    for (uint32_t  j = 1; j < (uint32_t) path_len - 1; ++j) {
                         uint64_t hop = path_seg->hops.at(j);
-                        uint32_t link = GET_HOP_AS_ING(hop);
-                        if (number_of_paths_per_link_selected_paths.find(link) != number_of_paths_per_link_selected_paths.end()) {
-                            path_seg_score *= (number_of_paths_per_link_selected_paths.at(link) + 1);
+                        ia_t hop_ia = GET_HOP_IA(hop);
+
+                        if (number_of_paths_per_hop_ia.find(hop_ia) != number_of_paths_per_hop_ia.end()) {
+                            path_seg_score *= (number_of_paths_per_hop_ia.at(hop_ia) + 1);
                         }
                     }
 
@@ -146,15 +147,19 @@ namespace ns3 {
                     }
                 }
 
+                if (best_path == NULL) {
+                    break;
+                }
+
                 set_of_most_disjoint_paths_per_dst_ia.insert(best_path);
 
-                for (uint32_t  j = 0; j < best_path_len - 1; ++j) {
+                for (uint32_t  j = 1; j < best_path_len - 1; ++j) {
                     uint64_t hop = best_path->hops.at(j);
-                    uint32_t link = GET_HOP_AS_ING(hop);
-                    if (number_of_paths_per_link_selected_paths.find(link) == number_of_paths_per_link_selected_paths.end()) {
-                        number_of_paths_per_link_selected_paths.insert(std::make_pair(link, 0));
+                    ia_t hop_ia = GET_HOP_AS_ING(hop);
+                    if (number_of_paths_per_hop_ia.find(hop_ia) == number_of_paths_per_hop_ia.end()) {
+                        number_of_paths_per_hop_ia.insert(std::make_pair(hop_ia, 0));
                     }
-                    number_of_paths_per_link_selected_paths.at(link)++;
+                    number_of_paths_per_hop_ia.at(hop_ia)++;
                 }
             }
         }
