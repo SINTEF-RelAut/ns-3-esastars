@@ -196,10 +196,18 @@ void GetMaliciousTimeRefAndTimeServer (rapidxml::xml_node<>* xml_root, const YAM
     std::set<uint16_t> malicious_time_references;
     std::set<uint16_t> malicious_time_servers;
 
+
     rapidxml::xml_node<>* cur_xml_node = xml_root->first_node("node");
     while (cur_xml_node) {
-        malicious_time_references.insert(number_of_ASes);
-        malicious_time_servers.insert(number_of_ASes);
+        if (config["time_service"]["percent_of_malicious_time_references"].as<uint16_t>() != 0
+                && config["time_service"]["reference_clk"].as<std::string>() == "ON") {
+            malicious_time_references.insert(number_of_ASes);
+        }
+
+        if (config["time_service"]["percent_of_malicious_time_servers"].as<uint16_t>() != 0) {
+            malicious_time_servers.insert(number_of_ASes);
+        }
+
         number_of_ASes++;
         cur_xml_node = cur_xml_node->next_sibling("node");
     }
@@ -210,17 +218,17 @@ void GetMaliciousTimeRefAndTimeServer (rapidxml::xml_node<>* xml_root, const YAM
     uint16_t number_of_malicious_time_servers = (uint16_t) std::floor(
             ((double ) config["time_service"]["percent_of_malicious_time_servers"].as<uint16_t>() * (double ) number_of_ASes) / 100.0);
 
+
     std::random_device rd;
 
-    if (config["time_service"]["reference_clk"].as<std::string>() == "ON") {
-        while (malicious_time_references.size() > number_of_malicious_time_references) {
-            std::uniform_int_distribution<uint16_t> dist (0, malicious_time_references.size() - 1);
-            uint16_t random_index = dist(rd);
-            auto it = malicious_time_references.cbegin();
-            std::advance(it, random_index);
-            malicious_time_references.erase(it);
-        }
+    while (malicious_time_references.size() > number_of_malicious_time_references) {
+        std::uniform_int_distribution<uint16_t> dist (0, malicious_time_references.size() - 1);
+        uint16_t random_index = dist(rd);
+        auto it = malicious_time_references.cbegin();
+        std::advance(it, random_index);
+        malicious_time_references.erase(it);
     }
+
 
     while (malicious_time_servers.size() > number_of_malicious_time_servers) {
         std::uniform_int_distribution<uint16_t> dist(0, malicious_time_servers.size() - 1);
