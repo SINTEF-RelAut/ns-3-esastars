@@ -327,13 +327,17 @@ namespace ns3 {
             }
         }
 
-        loff = get_reference_time().GetPicoSeconds() - local_time.GetPicoSeconds();
+        if (reference_time_type != REFERENCE_TIME_TYPE::OFF) {
+            loff = get_reference_time().GetPicoSeconds() - local_time.GetPicoSeconds();
+        } else {
+            loff = 0;
+        }
 
         if (synchronization_round == 0) {
             std::cout << "AS " << isd_number << "-" << as_number << ": " << local_time << std::endl;
             send_ntp_req_to_peers();
             Simulator::Schedule(Seconds(60), &TimeServer::continue_global_time_sync, this);
-        } else {
+        } else if (reference_time_type != REFERENCE_TIME_TYPE::OFF) {
             correct_local_time(loff);
         }
 
@@ -348,7 +352,10 @@ namespace ns3 {
         int64_t corr = loff;
 
         std::multiset<int64_t> off;
-        off.insert(loff);
+
+        if (reference_time_type != REFERENCE_TIME_TYPE::OFF) { // If time reference is not off
+            off.insert(loff);
+        }
 
         for (auto const & peer_ia : set_of_all_core_ases) {
             if (peer_ia == ia_addr) {

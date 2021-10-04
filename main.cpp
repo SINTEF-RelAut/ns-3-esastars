@@ -186,6 +186,72 @@ void SetTimeResolution(std::string time_res_str) {
 //    return rootNode;
 //}
 
+void GetMaliciousTimeRefAndTimeServer (rapidxml::xml_node<>* xml_root, const YAML::Node& config, std::vector<std::string>& time_reference_types,  std::vector<std::string>& time_server_types) {
+    if (!config["time_service"]) {
+        return;
+    }
+
+    uint16_t number_of_ASes = 0;
+
+    std::set<uint16_t> malicious_time_references;
+    std::set<uint16_t> malicious_time_servers;
+
+    rapidxml::xml_node<>* cur_xml_node = xml_root->first_node("node");
+    while (cur_xml_node) {
+        malicious_time_references.insert(number_of_ASes);
+        malicious_time_servers.insert(number_of_ASes);
+        number_of_ASes++;
+        cur_xml_node = cur_xml_node->next_sibling("node");
+    }
+
+    uint16_t number_of_malicious_time_references = (uint16_t) std::floor(
+            ((double ) config["time_service"]["percent_of_malicious_time_references"].as<uint16_t>() * (double ) number_of_ASes) / 100.0);
+
+    uint16_t number_of_malicious_time_servers = (uint16_t) std::floor(
+            ((double ) config["time_service"]["percent_of_malicious_time_servers"].as<uint16_t>() * (double ) number_of_ASes) / 100.0);
+
+    std::random_device rd;
+
+    if (config["time_service"]["reference_clk"].as<std::string>() == "ON") {
+        while (malicious_time_references.size() > number_of_malicious_time_references) {
+            std::uniform_int_distribution<uint16_t> dist (0, malicious_time_references.size() - 1);
+            uint16_t random_index = dist(rd);
+            auto it = malicious_time_references.cbegin();
+            std::advance(it, random_index);
+            malicious_time_references.erase(it);
+        }
+    }
+
+    while (malicious_time_servers.size() > number_of_malicious_time_servers) {
+        std::uniform_int_distribution<uint16_t> dist(0, malicious_time_servers.size() - 1);
+        uint16_t random_index = dist(rd);
+        auto it = malicious_time_servers.cbegin();
+        std::advance(it, random_index);
+        malicious_time_servers.erase(it);
+    }
+
+    for (uint16_t i = 0; i < number_of_ASes; ++i) {
+        if (config["time_service"]["reference_clk"].as<std::string>() == "OFF") {
+            time_reference_types.push_back("OFF");
+        } else {
+            if (malicious_time_references.find(i) != malicious_time_references.end()) {
+                time_reference_types.push_back("MALICIOUS");
+            } else {
+                time_reference_types.push_back("ON");
+            }
+        }
+
+    }
+
+    for (uint16_t i = 0; i < number_of_ASes; ++i) {
+        if (malicious_time_servers.find(i) != malicious_time_servers.end()) {
+            time_server_types.push_back("MALICIOUS");
+        } else {
+            time_server_types.push_back("NORMAL");
+        }
+    }
+}
+
 void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::map<int32_t, uint16_t>& AS_no_to_index,
                              std::map<uint16_t,int32_t>& index_to_AS_no, ns3::NodeContainer& AS_nodes, const YAML::Node& config) {
 
@@ -197,6 +263,11 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::map<int32_t, u
     int16_t node_counter = 0;
 
     bool parallel_scheduler = true;
+
+    std::vector<std::string> time_reference_types;
+    std::vector<std::string> time_server_types;
+
+    GetMaliciousTimeRefAndTimeServer (xml_root, config, time_reference_types, time_server_types);
 
     rapidxml::xml_node<>* cur_xml_node = xml_root->first_node("node");
     while (cur_xml_node) {
@@ -262,8 +333,11 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::map<int32_t, u
                                                              ns3::Time(config["time_service"]["time_sync_period"].as<std::string>()),
                                                              config["time_service"]["G"].as<uint32_t>(),
                                                              config["time_service"]["number_of_paths_to_use_for_global_sync"].as<uint32_t>(),
-                                                             config["time_service"]["read_disjoint_paths"].as<uint32_t>(),
-                                                             config["time_service"]["set_of_disjoint_paths_directory"].as<std::string>());
+                                                             config["time_service"]["read_disjoint_paths"].as<std::string>(),
+                                                             config["time_service"]["set_of_disjoint_paths_directory"].as<std::string>(),
+                                                             time_reference_types.at(node_counter),
+                                                             time_server_types.at(node_counter),
+                                                             ns3::Time(config["time_service"]["malcious_response_minimum_offset"].as<std::string>()));
             AS_node->AddHost(time_server);
         }
 

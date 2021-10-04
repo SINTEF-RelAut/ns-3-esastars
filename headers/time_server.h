@@ -15,6 +15,21 @@
 
 namespace ns3 {
     enum READ_OR_WRITE_DISJOINT_PATHS {R = 0, W = 2, NO_R_NO_W = 3};
+    enum TIME_SERVER_TYPE {NORMAL = 0, MALICIOUS_SERVER = 1};
+    enum REFERENCE_TIME_TYPE {OFF = 0, ON = 1, MALICIOUS_REF = 2};
+
+
+    std::map<std::string, READ_OR_WRITE_DISJOINT_PATHS> READ_OR_WRITE_DISJOINT_PATHS_MAP
+                                                              = {{"R", READ_OR_WRITE_DISJOINT_PATHS::R},
+                                                                 {"W", READ_OR_WRITE_DISJOINT_PATHS::W},
+                                                                 {"NO_R_NO_W", READ_OR_WRITE_DISJOINT_PATHS::NO_R_NO_W}};
+
+    std::map<std::string, REFERENCE_TIME_TYPE> REFERENCE_TIME_TYPE_MAP = {{"OFF", REFERENCE_TIME_TYPE::OFF},
+                                                                          {"ON", REFERENCE_TIME_TYPE::ON},
+                                                                          {"MALICIOUS", REFERENCE_TIME_TYPE::MALICIOUS_REF}};
+
+    std::map<std::string, TIME_SERVER_TYPE> TIME_SERVER_TYPE_MAP = {{"NORMAL", TIME_SERVER_TYPE::NORMAL},
+                                                                    {"MALICIOUS", TIME_SERVER_TYPE::MALICIOUS_SERVER}};
 
     class TimeServer : public SCIONHost {
     public:
@@ -22,15 +37,18 @@ namespace ns3 {
                    double latitude, double longitude, SCION_AS* AS, bool parallel_scheduler, Time max_initial_drift,
                    Time max_drift_per_day, Time global_cut_off, Time first_event, Time last_event,
                    Time list_of_ases_req_period, Time time_sync_period, uint32_t G,
-                   uint32_t number_of_paths_to_use_for_global_sync, int read_disjoint_paths,
-                   std::string set_of_disjoint_paths_directory) :
+                   uint32_t number_of_paths_to_use_for_global_sync, std::string read_disjoint_paths,
+                   std::string set_of_disjoint_paths_directory, std::string reference_time_type,
+                   std::string server_type, Time minimum_malicious_offset):
                    SCIONHost(system_id, isd_number, as_number, local_address, latitude, longitude, AS),
                    parallel_scheduler(parallel_scheduler), max_initial_drift(max_initial_drift),
                    max_drift_per_day(max_drift_per_day), global_cut_off(global_cut_off),
                    first_event(first_event), last_event(last_event), list_of_ases_req_period(list_of_ases_req_period),
                    time_sync_period(time_sync_period), G(G),
                    number_of_paths_to_use_for_global_sync(number_of_paths_to_use_for_global_sync),
-                   read_disjoint_paths(read_disjoint_paths){
+                   read_disjoint_paths(READ_OR_WRITE_DISJOINT_PATHS_MAP[read_disjoint_paths]),
+                   reference_time_type (REFERENCE_TIME_TYPE_MAP[reference_time_type]),
+                   server_type(TIME_SERVER_TYPE_MAP[server_type]), minimum_malicious_offset(minimum_malicious_offset) {
 
             synchronization_round = 0;
 
@@ -50,6 +68,8 @@ namespace ns3 {
             set_of_all_core_ases.insert(ia_addr);
 
             set_of_disjoint_paths_file = set_of_disjoint_paths_directory + "set_of_disjoint_path_TS_" + std::to_string(ia_addr) + ".json";
+
+
         }
 
         void ScheduleListOfAllASesRequest();
@@ -71,7 +91,7 @@ namespace ns3 {
 
         uint32_t G;
         uint32_t number_of_paths_to_use_for_global_sync;
-        int read_disjoint_paths;
+        READ_OR_WRITE_DISJOINT_PATHS read_disjoint_paths;
         uint32_t synchronization_round; // i in the Listing 2
 
         Time real_time_of_last_local_time_update;
@@ -79,6 +99,11 @@ namespace ns3 {
         std::set<ia_t> set_of_all_core_ases;
 
         std::string  set_of_disjoint_paths_file;
+
+        REFERENCE_TIME_TYPE reference_time_type;
+        TIME_SERVER_TYPE server_type;
+
+        Time minimum_malicious_offset;
 
         int64_t loff;
         std::unordered_map<ia_t, std::multiset<int64_t>> poff;
