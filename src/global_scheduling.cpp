@@ -72,7 +72,6 @@ namespace ns3 {
     }
 
     void SchedulePeriodicEvents(YAML::Node& config, NodeContainer& nodes) {
-        ia_t printer_ia = DynamicCast<SCION_AS>(nodes.Get(0))->ia_addr;
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             Ptr<SCION_AS> node = DynamicCast<SCION_AS>(nodes.Get(i));
 
@@ -82,7 +81,8 @@ namespace ns3 {
 
             if (config["time_service"]) {
                 dynamic_cast<TimeServer*>( node->GetHost(2))->ScheduleListOfAllASesRequest();
-                dynamic_cast<TimeServer*>( node->GetHost(2))->ScheduleTimeSync(printer_ia);
+                dynamic_cast<TimeServer*>( node->GetHost(2))->ScheduleTimeSync();
+                dynamic_cast<TimeServer*>( node->GetHost(2))->ScheduleSnapShots();
             }
 
         }

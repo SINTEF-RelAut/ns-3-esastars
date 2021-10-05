@@ -19,31 +19,23 @@ namespace ns3 {
     enum REFERENCE_TIME_TYPE {OFF = 0, ON = 1, MALICIOUS_REF = 2};
 
 
-    std::map<std::string, READ_OR_WRITE_DISJOINT_PATHS> READ_OR_WRITE_DISJOINT_PATHS_MAP
-                                                              = {{"R", READ_OR_WRITE_DISJOINT_PATHS::R},
-                                                                 {"W", READ_OR_WRITE_DISJOINT_PATHS::W},
-                                                                 {"NO_R_NO_W", READ_OR_WRITE_DISJOINT_PATHS::NO_R_NO_W}};
 
-    std::map<std::string, REFERENCE_TIME_TYPE> REFERENCE_TIME_TYPE_MAP = {{"OFF", REFERENCE_TIME_TYPE::OFF},
-                                                                          {"ON", REFERENCE_TIME_TYPE::ON},
-                                                                          {"MALICIOUS", REFERENCE_TIME_TYPE::MALICIOUS_REF}};
-
-    std::map<std::string, TIME_SERVER_TYPE> TIME_SERVER_TYPE_MAP = {{"NORMAL", TIME_SERVER_TYPE::NORMAL},
-                                                                    {"MALICIOUS", TIME_SERVER_TYPE::MALICIOUS_SERVER}};
 
     class TimeServer : public SCIONHost {
     public:
         TimeServer(uint32_t system_id, uint16_t isd_number, uint16_t as_number, host_addr_t local_address,
                    double latitude, double longitude, SCION_AS* AS, bool parallel_scheduler, Time max_initial_drift,
-                   Time max_drift_per_day, Time global_cut_off, Time first_event, Time last_event,
+                   Time max_drift_per_day, uint32_t max_drift_coefficient,
+                   Time global_cut_off, Time first_event, Time last_event, Time snapshot_period,
                    Time list_of_ases_req_period, Time time_sync_period, uint32_t G,
                    uint32_t number_of_paths_to_use_for_global_sync, std::string read_disjoint_paths,
                    std::string set_of_disjoint_paths_directory, std::string reference_time_type,
                    std::string server_type, Time minimum_malicious_offset):
                    SCIONHost(system_id, isd_number, as_number, local_address, latitude, longitude, AS),
                    parallel_scheduler(parallel_scheduler), max_initial_drift(max_initial_drift),
-                   max_drift_per_day(max_drift_per_day), global_cut_off(global_cut_off),
-                   first_event(first_event), last_event(last_event), list_of_ases_req_period(list_of_ases_req_period),
+                   max_drift_per_day(max_drift_per_day), max_drift_coefficient(max_drift_coefficient),
+                   global_cut_off(global_cut_off), first_event(first_event), last_event(last_event),
+                   snapshot_period(snapshot_period), list_of_ases_req_period(list_of_ases_req_period),
                    time_sync_period(time_sync_period), G(G),
                    number_of_paths_to_use_for_global_sync(number_of_paths_to_use_for_global_sync),
                    read_disjoint_paths(READ_OR_WRITE_DISJOINT_PATHS_MAP[read_disjoint_paths]),
@@ -52,18 +44,8 @@ namespace ns3 {
 
             synchronization_round = 0;
 
-            std::random_device rd;
-            std::uniform_int_distribution<int64_t> dist (-std::abs(max_initial_drift.GetPicoSeconds()), std::abs(max_initial_drift.GetPicoSeconds()));
-            int64_t random_drift_int = dist(rd);
 
             local_time = PicoSeconds(0);
-
-            if (random_drift_int < 0) {
-                local_time -= PicoSeconds(std::abs(random_drift_int));
-            } else {
-                local_time += PicoSeconds(std::abs(random_drift_int));
-            }
-
             real_time_of_last_local_time_update = PicoSeconds(0);
             set_of_all_core_ases.insert(ia_addr);
 
@@ -73,19 +55,32 @@ namespace ns3 {
         }
 
         void ScheduleListOfAllASesRequest();
-        void ScheduleTimeSync(ia_t  printer_ia);
-
+        void ScheduleTimeSync();
+        void ScheduleSnapShots();
 
         void AdvanceLocalTime() override;
 
 
 
     private:
+        std::map<std::string, READ_OR_WRITE_DISJOINT_PATHS> READ_OR_WRITE_DISJOINT_PATHS_MAP
+                = {{"R", READ_OR_WRITE_DISJOINT_PATHS::R},
+                   {"W", READ_OR_WRITE_DISJOINT_PATHS::W},
+                   {"NO_R_NO_W", READ_OR_WRITE_DISJOINT_PATHS::NO_R_NO_W}};
+
+        std::map<std::string, REFERENCE_TIME_TYPE> REFERENCE_TIME_TYPE_MAP = {{"OFF", REFERENCE_TIME_TYPE::OFF},
+                                                                              {"ON", REFERENCE_TIME_TYPE::ON},
+                                                                              {"MALICIOUS", REFERENCE_TIME_TYPE::MALICIOUS_REF}};
+
+        std::map<std::string, TIME_SERVER_TYPE> TIME_SERVER_TYPE_MAP = {{"NORMAL", TIME_SERVER_TYPE::NORMAL},
+                                                                        {"MALICIOUS", TIME_SERVER_TYPE::MALICIOUS_SERVER}};
+
         bool parallel_scheduler;
         Time max_initial_drift;
         Time max_drift_per_day;
+        uint32_t max_drift_coefficient;
         Time global_cut_off;
-        Time first_event, last_event;
+        Time first_event, last_event, snapshot_period;
         Time list_of_ases_req_period;
         Time time_sync_period;
 
@@ -136,13 +131,17 @@ namespace ns3 {
 
         void receive_ntp_res_from_peer(SCIONPacket* packet, Time receive_time);
 
-        void trigger_core_time_sync_algo(ia_t printer_ia);
+        void trigger_core_time_sync_algo();
 
         void continue_global_time_sync();
 
         void correct_local_time (int64_t corr);
 
         void process_received_packet(uint16_t local_if, SCIONPacket *packet, Time receive_time) override;
+
+        void capture_snapshot();
+
+        void reset_time();
     };
 }
 

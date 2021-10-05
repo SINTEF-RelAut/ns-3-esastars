@@ -279,6 +279,10 @@ namespace ns3 {
     void TimeServer::AdvanceLocalTime() {
         Time advance = Simulator::Now() - real_time_of_last_local_time_update;
 
+        if (advance.GetPicoSeconds() == 0) {
+            return;
+        }
+
         Time max_drift = get_max_drift(advance);
         std::random_device rd;
         std::uniform_int_distribution<int64_t> dist (-std::abs(max_drift.GetPicoSeconds()), std::abs(max_drift.GetPicoSeconds()));
@@ -307,7 +311,7 @@ namespace ns3 {
     }
 
     Time TimeServer::get_reference_time() {
-        return Simulator::Now() - NanoSeconds(10);
+        return Simulator::Now();
     }
 
     Time TimeServer::get_max_drift(Time duration) {
@@ -316,16 +320,8 @@ namespace ns3 {
         return PicoSeconds((uint64_t) std::floor(max_drift));
     }
 
-    void TimeServer::trigger_core_time_sync_algo(ia_t  printer_ia) {
+    void TimeServer::trigger_core_time_sync_algo() {
         AdvanceLocalTime();
-
-        if (ia_addr == printer_ia) {
-            if (synchronization_round == 0) {
-                std::cout << "##################################### Global Time Sync at " << Simulator::Now().GetPicoSeconds() << " ##################################" << std::endl;
-            } else {
-                std::cout << "##################################### Local Time Sync at " << Simulator::Now().GetPicoSeconds() << " ##################################" << std::endl;
-            }
-        }
 
         if (reference_time_type != REFERENCE_TIME_TYPE::OFF) {
             loff = get_reference_time().GetPicoSeconds() - local_time.GetPicoSeconds();
@@ -334,9 +330,12 @@ namespace ns3 {
         }
 
         if (synchronization_round == 0) {
-            std::cout << "AS " << isd_number << "-" << as_number << ": " << local_time << std::endl;
             send_ntp_req_to_peers();
-            Simulator::Schedule(Seconds(60), &TimeServer::continue_global_time_sync, this);
+            if (parallel_scheduler) {
+                Simulator::Schedule(Seconds(60),
+                                    &RunParallelEvents<void (TimeServer::*)(), TimeServer*>,
+                                    local_address, &TimeServer::continue_global_time_sync);
+            }
         } else if (reference_time_type != REFERENCE_TIME_TYPE::OFF) {
             correct_local_time(loff);
         }
@@ -363,7 +362,9 @@ namespace ns3 {
             }
 
             if (poff.find(peer_ia) == poff.end()) {
-                off.insert(get_reference_time().GetPicoSeconds() - local_time.GetPicoSeconds());
+                if (reference_time_type != REFERENCE_TIME_TYPE::OFF) {
+                    off.insert(get_reference_time().GetPicoSeconds() - local_time.GetPicoSeconds());
+                }
             } else {
                 int64_t median_off = (int64_t) std::round(GetMedian(poff.at(peer_ia)));
                 off.insert(median_off);
@@ -378,11 +379,14 @@ namespace ns3 {
         int64_t goff = std::floor((*iter1 + *iter2) / 2);
         int64_t doff = loff - goff;
 
-        if (std::abs(doff) > std::abs(global_cut_off.GetPicoSeconds())) {
+        if (reference_time_type == REFERENCE_TIME_TYPE::OFF) {
+            corr = goff;
+        } else if (std::abs(doff) > std::abs(global_cut_off.GetPicoSeconds())) {
             doff = doff > 0 ? std::abs(global_cut_off.GetPicoSeconds()) : -std::abs(global_cut_off.GetPicoSeconds());
             corr = goff + doff;
         }
 
+        std::cout << "corr: " << corr << std::endl;
         correct_local_time(corr);
 
         poff.clear();
@@ -391,7 +395,8 @@ namespace ns3 {
     void TimeServer::correct_local_time (int64_t corr) {
         Time max_drift = get_max_drift(time_sync_period);
 
-        int64_t final_corr_abs = std::abs(corr) < std::abs(max_drift.GetPicoSeconds()) ? std::abs(corr) : std::abs(max_drift.GetPicoSeconds());
+        int64_t final_corr_abs = (std::abs(corr) < (max_drift_coefficient * std::abs(max_drift.GetPicoSeconds())))
+                                 ? std::abs(corr) : std::abs(max_drift.GetPicoSeconds());
 
         Time tmp_local_time = local_time;
 
@@ -471,8 +476,36 @@ namespace ns3 {
 
     }
 
+    void TimeServer::reset_time() {
+        real_time_of_last_local_time_update = Simulator::Now();
+        local_time = Simulator::Now();
 
+        if (max_initial_drift.GetPicoSeconds() == 0) {
+            return;
+        }
 
+        std::random_device rd;
+        std::uniform_int_distribution<int64_t> dist (-std::abs(max_initial_drift.GetPicoSeconds()), std::abs(max_initial_drift.GetPicoSeconds()));
+        int64_t random_drift_int = dist(rd);
+
+        if (random_drift_int < 0) {
+            local_time -= PicoSeconds(std::abs(random_drift_int));
+        } else {
+            local_time += PicoSeconds(std::abs(random_drift_int));
+        }
+
+    }
+
+    void TimeServer::capture_snapshot() {
+        AdvanceLocalTime();
+
+        if (parallel_scheduler) {
+            std::cout << "##################################### Snapshot at " << Simulator::Now().GetPicoSeconds() << " ##################################" << std::endl;
+        }
+
+        std::cout << "AS " << isd_number << "-" << as_number << ": " << local_time << std::endl;
+
+    }
 
     void TimeServer::ScheduleListOfAllASesRequest() {
         if (read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::W) {
@@ -485,12 +518,20 @@ namespace ns3 {
 
     }
 
-    void TimeServer::ScheduleTimeSync(ia_t printer_ia) {
+    void TimeServer::ScheduleTimeSync() {
         if (read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::R ||
                 read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::NO_R_NO_W) {
+            Simulator::Schedule(first_event + Seconds(1), &TimeServer::reset_time, this);
             for (Time t = first_event + Seconds(1); t < last_event + Seconds(1); t += time_sync_period) {
-                Simulator::Schedule(t, &TimeServer::trigger_core_time_sync_algo, this, printer_ia);
+                Simulator::Schedule(t, &TimeServer::trigger_core_time_sync_algo, this);
             }
+        }
+    }
+
+    void TimeServer::ScheduleSnapShots() {
+        Simulator::Schedule(first_event + Seconds(1), &TimeServer::capture_snapshot, this);
+        for (Time t = first_event + Seconds(62); t < last_event + Seconds(62); t += snapshot_period) {
+            Simulator::Schedule(t, &TimeServer::capture_snapshot, this);
         }
     }
 }
