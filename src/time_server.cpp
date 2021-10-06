@@ -283,26 +283,23 @@ namespace ns3 {
             return;
         }
 
-        Time max_drift = get_max_drift(advance);
-        std::random_device rd;
-        std::uniform_int_distribution<int64_t> dist (-std::abs(max_drift.GetPicoSeconds()), std::abs(max_drift.GetPicoSeconds()));
-        int64_t random_drift_int = dist(rd); //std::abs(max_drift.GetPicoSeconds());
+        int64_t drift_int = get_drift(advance);
 
         Time tmp_local_time = local_time;
 
         local_time += advance;
-        if (random_drift_int < 0) {
-            local_time -= PicoSeconds(std::abs(random_drift_int));
+        if (drift_int < 0) {
+            local_time -= PicoSeconds(std::abs(drift_int));
             NS_LOG_DEBUG( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << tmp_local_time
                          << ", updated_local_time: " << local_time << ", last update: "
                          << real_time_of_last_local_time_update << ", advance: " << advance
-                         << ", max_drift: " << max_drift << ", random_drift: -" << PicoSeconds(std::abs(random_drift_int)));
+                         << ", random_drift: -" << PicoSeconds(std::abs(drift_int)));
         } else {
-            local_time += PicoSeconds(std::abs(random_drift_int));
+            local_time += PicoSeconds(std::abs(drift_int));
             NS_LOG_DEBUG( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << tmp_local_time
                          << ", updated_local_time: " << local_time << ", last update: "
                          << real_time_of_last_local_time_update << ", advance: " << advance
-                         << ", max_drift: " << max_drift << ", random_drift: +" << PicoSeconds(std::abs(random_drift_int)));
+                         << ", random_drift: +" << PicoSeconds(std::abs(drift_int)));
         }
 
 
@@ -314,10 +311,25 @@ namespace ns3 {
         return Simulator::Now();
     }
 
+    int64_t TimeServer::get_drift(Time duration) {
+        if (jitter_in_drift) {
+            Time max_drift = get_max_drift(duration);
+            std::random_device rd;
+            std::uniform_int_distribution<int64_t> dist (-std::abs(max_drift.GetPicoSeconds()), std::abs(max_drift.GetPicoSeconds()));
+            int64_t random_drift_int = dist(rd);
+            return random_drift_int;
+        }
+
+        double drift = (((double) constant_drift_per_day_in_ps) * ((double) duration.GetPicoSeconds()))
+                           / ((double) Days(1).GetPicoSeconds());
+
+        return (int64_t) std::ceil(drift);
+    }
+
     Time TimeServer::get_max_drift(Time duration) {
         double max_drift = (((double) max_drift_per_day.GetPicoSeconds()) * ((double) duration.GetPicoSeconds()))
                           / ((double) Days(1).GetPicoSeconds());
-        return PicoSeconds((uint64_t) std::floor(max_drift));
+        return PicoSeconds((uint64_t) std::ceil(max_drift));
     }
 
     void TimeServer::trigger_core_time_sync_algo() {
@@ -395,8 +407,8 @@ namespace ns3 {
     void TimeServer::correct_local_time (int64_t corr) {
         Time max_drift = get_max_drift(time_sync_period);
 
-        int64_t final_corr_abs = (std::abs(corr) < (max_drift_coefficient * std::abs(max_drift.GetPicoSeconds())))
-                                 ? std::abs(corr) : std::abs(max_drift.GetPicoSeconds());
+        int64_t final_corr_abs = (std::abs(corr) < (std::abs(max_drift_coefficient * max_drift.GetPicoSeconds())))
+                                 ? std::abs(corr) : std::abs(max_drift_coefficient * max_drift.GetPicoSeconds());
 
         Time tmp_local_time = local_time;
 

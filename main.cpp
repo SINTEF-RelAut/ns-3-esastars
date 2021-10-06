@@ -334,6 +334,7 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::map<int32_t, u
                                                              parallel_scheduler,
                                                              ns3::Time(config["time_service"]["max_initial_drift"].as<std::string>()),
                                                              ns3::Time(config["time_service"]["max_drift_per_day"].as<std::string>()),
+                                                             config["time_service"]["jitter_in_drift"].as<uint32_t>(),
                                                              config["time_service"]["max_drift_coefficient"].as<uint32_t>(),
                                                              ns3::Time(config["time_service"]["global_cut_off"].as<std::string>()),
                                                              ns3::Time(config["time_service"]["first_event"].as<std::string>()),

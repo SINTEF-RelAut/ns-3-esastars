@@ -25,7 +25,7 @@ namespace ns3 {
     public:
         TimeServer(uint32_t system_id, uint16_t isd_number, uint16_t as_number, host_addr_t local_address,
                    double latitude, double longitude, SCION_AS* AS, bool parallel_scheduler, Time max_initial_drift,
-                   Time max_drift_per_day, uint32_t max_drift_coefficient,
+                   Time max_drift_per_day, bool jitter_in_drift, uint32_t max_drift_coefficient,
                    Time global_cut_off, Time first_event, Time last_event, Time snapshot_period,
                    Time list_of_ases_req_period, Time time_sync_period, uint32_t G,
                    uint32_t number_of_paths_to_use_for_global_sync, std::string read_disjoint_paths,
@@ -33,10 +33,10 @@ namespace ns3 {
                    std::string server_type, Time minimum_malicious_offset):
                    SCIONHost(system_id, isd_number, as_number, local_address, latitude, longitude, AS),
                    parallel_scheduler(parallel_scheduler), max_initial_drift(max_initial_drift),
-                   max_drift_per_day(max_drift_per_day), max_drift_coefficient(max_drift_coefficient),
-                   global_cut_off(global_cut_off), first_event(first_event), last_event(last_event),
-                   snapshot_period(snapshot_period), list_of_ases_req_period(list_of_ases_req_period),
-                   time_sync_period(time_sync_period), G(G),
+                   max_drift_per_day(max_drift_per_day), jitter_in_drift(jitter_in_drift),
+                   max_drift_coefficient(max_drift_coefficient), global_cut_off(global_cut_off),
+                   first_event(first_event), last_event(last_event), snapshot_period(snapshot_period),
+                   list_of_ases_req_period(list_of_ases_req_period), time_sync_period(time_sync_period), G(G),
                    number_of_paths_to_use_for_global_sync(number_of_paths_to_use_for_global_sync),
                    read_disjoint_paths(READ_OR_WRITE_DISJOINT_PATHS_MAP[read_disjoint_paths]),
                    reference_time_type (REFERENCE_TIME_TYPE_MAP[reference_time_type]),
@@ -50,6 +50,11 @@ namespace ns3 {
             set_of_all_core_ases.insert(ia_addr);
 
             set_of_disjoint_paths_file = set_of_disjoint_paths_directory + "set_of_disjoint_path_TS_" + std::to_string(ia_addr) + ".json";
+
+
+            std::random_device rd;
+            std::uniform_int_distribution<int64_t> dist (-std::abs(max_drift_per_day.GetPicoSeconds()), std::abs(max_drift_per_day.GetPicoSeconds()));
+            constant_drift_per_day_in_ps = dist(rd);
 
 
         }
@@ -78,6 +83,7 @@ namespace ns3 {
         bool parallel_scheduler;
         Time max_initial_drift;
         Time max_drift_per_day;
+        bool jitter_in_drift;
         uint32_t max_drift_coefficient;
         Time global_cut_off;
         Time first_event, last_event, snapshot_period;
@@ -99,6 +105,7 @@ namespace ns3 {
         TIME_SERVER_TYPE server_type;
 
         Time minimum_malicious_offset;
+        int64_t constant_drift_per_day_in_ps;
 
         int64_t loff;
         std::unordered_map<ia_t, std::multiset<int64_t>> poff;
@@ -108,6 +115,8 @@ namespace ns3 {
         Time get_reference_time();
 
         Time get_max_drift(Time duration);
+
+        int64_t get_drift(Time duration);
 
         void request_set_of_all_core_ases_from_path_server();
 
