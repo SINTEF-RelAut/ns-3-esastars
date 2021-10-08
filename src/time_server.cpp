@@ -398,7 +398,6 @@ namespace ns3 {
             corr = goff + doff;
         }
 
-        std::cout << "corr: " << corr << std::endl;
         correct_local_time(corr);
 
         poff.clear();
@@ -410,15 +409,18 @@ namespace ns3 {
         int64_t final_corr_abs = (std::abs(corr) < (std::abs(max_drift_coefficient * max_drift.GetPicoSeconds())))
                                  ? std::abs(corr) : std::abs(max_drift_coefficient * max_drift.GetPicoSeconds());
 
+
         Time tmp_local_time = local_time;
 
         if (corr > 0) {
             local_time += PicoSeconds(final_corr_abs);
+            std::cout << "corr: +" << final_corr_abs << std::endl;
             NS_LOG_DEBUG( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << tmp_local_time
                           << ", updated_local_time: " << local_time << ", final_corr: +" << PicoSeconds(final_corr_abs)
                           << ", max_drift: " << max_drift << ", corr: +" << PicoSeconds(std::abs(corr)) );
         } else {
             local_time -= PicoSeconds(final_corr_abs);
+            std::cout << "corr: -" << final_corr_abs << std::endl;
             NS_LOG_DEBUG( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << tmp_local_time
                                       << ", updated_local_time: " << local_time << ", final_corr: -" << PicoSeconds(final_corr_abs)
                                       << ", max_drift: " << max_drift << ", corr: -" << PicoSeconds(std::abs(corr)) );
