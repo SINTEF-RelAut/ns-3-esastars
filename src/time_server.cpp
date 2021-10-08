@@ -277,7 +277,7 @@ namespace ns3 {
     }
 
     void TimeServer::AdvanceLocalTime() {
-        Time advance = Simulator::Now() - real_time_of_last_local_time_update;
+        Time advance = Simulator::Now() - real_time_of_last_time_advance;
 
         if (advance.GetPicoSeconds() == 0) {
             return;
@@ -291,20 +291,20 @@ namespace ns3 {
         if (drift_int < 0) {
             local_time -= PicoSeconds(std::abs(drift_int));
             NS_LOG_DEBUG( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << tmp_local_time
-                         << ", updated_local_time: " << local_time << ", last update: "
-                         << real_time_of_last_local_time_update << ", advance: " << advance
+                                      << ", updated_local_time: " << local_time << ", last update: "
+                                      << real_time_of_last_time_advance << ", advance: " << advance
                          << ", random_drift: -" << PicoSeconds(std::abs(drift_int)));
         } else {
             local_time += PicoSeconds(std::abs(drift_int));
             NS_LOG_DEBUG( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << tmp_local_time
-                         << ", updated_local_time: " << local_time << ", last update: "
-                         << real_time_of_last_local_time_update << ", advance: " << advance
+                                      << ", updated_local_time: " << local_time << ", last update: "
+                                      << real_time_of_last_time_advance << ", advance: " << advance
                          << ", random_drift: +" << PicoSeconds(std::abs(drift_int)));
         }
 
 
 
-        real_time_of_last_local_time_update = Simulator::Now();
+        real_time_of_last_time_advance = Simulator::Now();
     }
 
     Time TimeServer::get_reference_time() {
@@ -405,7 +405,7 @@ namespace ns3 {
     }
 
     void TimeServer::correct_local_time (int64_t corr) {
-        Time max_drift = get_max_drift(time_sync_period);
+        Time max_drift = get_max_drift((Simulator::Now() - real_time_of_last_time_adjustment));
 
         int64_t final_corr_abs = (std::abs(corr) < (std::abs(max_drift_coefficient * max_drift.GetPicoSeconds())))
                                  ? std::abs(corr) : std::abs(max_drift_coefficient * max_drift.GetPicoSeconds());
@@ -424,7 +424,7 @@ namespace ns3 {
                                       << ", max_drift: " << max_drift << ", corr: -" << PicoSeconds(std::abs(corr)) );
         }
 
-
+        real_time_of_last_time_adjustment = Simulator::Now();
     }
 
     void TimeServer::send_ntp_req_to_peers() {
@@ -489,7 +489,8 @@ namespace ns3 {
     }
 
     void TimeServer::reset_time() {
-        real_time_of_last_local_time_update = Simulator::Now();
+        real_time_of_last_time_advance = Simulator::Now();
+        real_time_of_last_time_adjustment = Simulator::Now();
         local_time = Simulator::Now();
 
         if (max_initial_drift.GetPicoSeconds() == 0) {

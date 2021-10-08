@@ -46,7 +46,8 @@ namespace ns3 {
 
 
             local_time = PicoSeconds(0);
-            real_time_of_last_local_time_update = PicoSeconds(0);
+            real_time_of_last_time_advance = PicoSeconds(0);
+            real_time_of_last_time_adjustment = PicoSeconds(0);
             set_of_all_core_ases.insert(ia_addr);
 
             set_of_disjoint_paths_file = set_of_disjoint_paths_directory + "set_of_disjoint_path_TS_" + std::to_string(ia_addr) + ".json";
@@ -95,7 +96,8 @@ namespace ns3 {
         READ_OR_WRITE_DISJOINT_PATHS read_disjoint_paths;
         uint32_t synchronization_round; // i in the Listing 2
 
-        Time real_time_of_last_local_time_update;
+        Time real_time_of_last_time_advance;
+        Time real_time_of_last_time_adjustment;
 
         std::set<ia_t> set_of_all_core_ases;
 
