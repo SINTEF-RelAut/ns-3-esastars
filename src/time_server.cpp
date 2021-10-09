@@ -414,13 +414,11 @@ namespace ns3 {
 
         if (corr > 0) {
             local_time += PicoSeconds(final_corr_abs);
-            std::cout << "corr: +" << final_corr_abs << std::endl;
             NS_LOG_DEBUG( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << tmp_local_time
                           << ", updated_local_time: " << local_time << ", final_corr: +" << PicoSeconds(final_corr_abs)
                           << ", max_drift: " << max_drift << ", corr: +" << PicoSeconds(std::abs(corr)) );
         } else {
             local_time -= PicoSeconds(final_corr_abs);
-            std::cout << "corr: -" << final_corr_abs << std::endl;
             NS_LOG_DEBUG( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << tmp_local_time
                                       << ", updated_local_time: " << local_time << ", final_corr: -" << PicoSeconds(final_corr_abs)
                                       << ", max_drift: " << max_drift << ", corr: -" << PicoSeconds(std::abs(corr)) );
