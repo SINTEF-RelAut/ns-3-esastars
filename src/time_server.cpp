@@ -286,9 +286,6 @@ namespace ns3 {
 
         int64_t drift_int = get_drift(advance);
 
-        if (drift_int == 0) {
-            return;
-        }
 
         Time tmp_local_time = local_time;
 
