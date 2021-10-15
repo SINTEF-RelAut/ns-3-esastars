@@ -162,6 +162,7 @@ namespace ns3 {
                     number_of_paths_per_hop_ia.at(hop_ia)++;
                 }
             }
+            std::cout << set_of_most_disjoint_paths.at(dst_ia).size() << std::endl;
         }
 
         NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " FINISHED constructing disjoint paths");
@@ -279,27 +280,31 @@ namespace ns3 {
     void TimeServer::AdvanceLocalTime() {
         Time advance = Simulator::Now() - real_time_of_last_time_advance;
 
-        if (advance.GetPicoSeconds() == 0) {
+        if (advance == 0) {
             return;
         }
 
         int64_t drift_int = get_drift(advance);
 
+        if (drift_int == 0) {
+            return;
+        }
+
         Time tmp_local_time = local_time;
 
         local_time += advance;
         if (drift_int < 0) {
-            local_time -= PicoSeconds(std::abs(drift_int));
+            local_time -= TimeStep(std::abs(drift_int));
             NS_LOG_DEBUG( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << tmp_local_time
                                       << ", updated_local_time: " << local_time << ", last update: "
                                       << real_time_of_last_time_advance << ", advance: " << advance
-                         << ", random_drift: -" << PicoSeconds(std::abs(drift_int)));
+                         << ", random_drift: -" << TimeStep(std::abs(drift_int)));
         } else {
-            local_time += PicoSeconds(std::abs(drift_int));
+            local_time += TimeStep(std::abs(drift_int));
             NS_LOG_DEBUG( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << tmp_local_time
                                       << ", updated_local_time: " << local_time << ", last update: "
                                       << real_time_of_last_time_advance << ", advance: " << advance
-                         << ", random_drift: +" << PicoSeconds(std::abs(drift_int)));
+                         << ", random_drift: +" << TimeStep(std::abs(drift_int)));
         }
 
 
@@ -315,40 +320,35 @@ namespace ns3 {
         if (jitter_in_drift) {
             Time max_drift = get_max_drift(duration);
             std::random_device rd;
-            std::uniform_int_distribution<int64_t> dist (-std::abs(max_drift.GetPicoSeconds()), std::abs(max_drift.GetPicoSeconds()));
+            std::uniform_int_distribution<int64_t> dist (-std::abs(max_drift.GetTimeStep()), std::abs(max_drift.GetTimeStep()));
             int64_t random_drift_int = dist(rd);
             return random_drift_int;
         }
 
-        double drift = (((double) constant_drift_per_day_in_ps) * ((double) duration.GetPicoSeconds()))
-                           / ((double) Days(1).GetPicoSeconds());
+        double drift = (((double) constant_drift_per_day_in_ps) * ((double) duration.GetTimeStep()))
+                           / ((double) Days(1).GetTimeStep());
 
-        return (int64_t) std::ceil(drift);
+        return (int64_t) std::round(drift);
     }
 
     Time TimeServer::get_max_drift(Time duration) {
-        double max_drift = (((double) max_drift_per_day.GetPicoSeconds()) * ((double) duration.GetPicoSeconds()))
-                          / ((double) Days(1).GetPicoSeconds());
-        return PicoSeconds((uint64_t) std::ceil(max_drift));
+        double max_drift = (((double) max_drift_per_day.GetTimeStep()) * ((double) duration.GetTimeStep()))
+                          / ((double) Days(1).GetTimeStep());
+        return TimeStep((uint64_t) std::round(max_drift));
     }
 
     void TimeServer::trigger_core_time_sync_algo() {
         AdvanceLocalTime();
 
-        if (reference_time_type != REFERENCE_TIME_TYPE::OFF) {
-            loff = get_reference_time().GetPicoSeconds() - local_time.GetPicoSeconds();
-        } else {
-            loff = 0;
-        }
-
         if (synchronization_round == 0) {
             send_ntp_req_to_peers();
             if (parallel_scheduler) {
-                Simulator::Schedule(Seconds(60),
+                Simulator::Schedule(Time(NTP_REQ_GLOBAL_SYNC_DIFF),
                                     &RunParallelEvents<void (TimeServer::*)(), TimeServer*>,
                                     local_address, &TimeServer::continue_global_time_sync);
             }
         } else if (reference_time_type != REFERENCE_TIME_TYPE::OFF) {
+            int64_t loff = get_reference_time().GetTimeStep() - local_time.GetTimeStep();
             correct_local_time(loff);
         }
 
@@ -360,6 +360,12 @@ namespace ns3 {
 
         int32_t N = set_of_all_core_ases.size();
         int32_t F = std::floor((N - 1) / 3);
+
+        int64_t loff = 0;
+        if (reference_time_type != REFERENCE_TIME_TYPE::OFF) {
+            loff = get_reference_time().GetTimeStep() - local_time.GetTimeStep();
+        }
+
         int64_t corr = loff;
 
         std::multiset<int64_t> off;
@@ -375,7 +381,7 @@ namespace ns3 {
 
             if (poff.find(peer_ia) == poff.end()) {
                 if (reference_time_type != REFERENCE_TIME_TYPE::OFF) {
-                    off.insert(get_reference_time().GetPicoSeconds() - local_time.GetPicoSeconds());
+                    off.insert(loff);
                 }
             } else {
                 int64_t median_off = (int64_t) std::round(GetMedian(poff.at(peer_ia)));
@@ -393,8 +399,8 @@ namespace ns3 {
 
         if (reference_time_type == REFERENCE_TIME_TYPE::OFF) {
             corr = goff;
-        } else if (std::abs(doff) > std::abs(global_cut_off.GetPicoSeconds())) {
-            doff = doff > 0 ? std::abs(global_cut_off.GetPicoSeconds()) : -std::abs(global_cut_off.GetPicoSeconds());
+        } else if (std::abs(doff) > std::abs(global_cut_off.GetTimeStep())) {
+            doff = doff > 0 ? std::abs(global_cut_off.GetTimeStep()) : -std::abs(global_cut_off.GetTimeStep());
             corr = goff + doff;
         }
 
@@ -406,22 +412,22 @@ namespace ns3 {
     void TimeServer::correct_local_time (int64_t corr) {
         Time max_drift = get_max_drift((Simulator::Now() - real_time_of_last_time_adjustment));
 
-        int64_t final_corr_abs = (std::abs(corr) < (std::abs(max_drift_coefficient * max_drift.GetPicoSeconds())))
-                                 ? std::abs(corr) : std::abs(max_drift_coefficient * max_drift.GetPicoSeconds());
+        int64_t final_corr_abs = (std::abs(corr) < (std::abs(max_drift_coefficient * max_drift.GetTimeStep())))
+                                 ? std::abs(corr) : std::abs(max_drift_coefficient * max_drift.GetTimeStep());
 
 
         Time tmp_local_time = local_time;
 
         if (corr > 0) {
-            local_time += PicoSeconds(final_corr_abs);
+            local_time += TimeStep(final_corr_abs);
             NS_LOG_DEBUG( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << tmp_local_time
-                          << ", updated_local_time: " << local_time << ", final_corr: +" << PicoSeconds(final_corr_abs)
-                          << ", max_drift: " << max_drift << ", corr: +" << PicoSeconds(std::abs(corr)) );
+                          << ", updated_local_time: " << local_time << ", final_corr: +" << TimeStep(final_corr_abs)
+                          << ", max_drift: " << max_drift << ", corr: +" << TimeStep(std::abs(corr)) );
         } else {
-            local_time -= PicoSeconds(final_corr_abs);
+            local_time -= TimeStep(final_corr_abs);
             NS_LOG_DEBUG( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << tmp_local_time
-                                      << ", updated_local_time: " << local_time << ", final_corr: -" << PicoSeconds(final_corr_abs)
-                                      << ", max_drift: " << max_drift << ", corr: -" << PicoSeconds(std::abs(corr)) );
+                                      << ", updated_local_time: " << local_time << ", final_corr: -" << TimeStep(final_corr_abs)
+                                      << ", max_drift: " << max_drift << ", corr: -" << TimeStep(std::abs(corr)) );
         }
 
         real_time_of_last_time_adjustment = Simulator::Now();
@@ -440,7 +446,7 @@ namespace ns3 {
                 payload_type_t payload_type = payload_type_t::NTP_REQ;
 
                 Payload payload;
-                payload.ntp_req_or_resp.t0 = local_time.GetPicoSeconds();
+                payload.ntp_req_or_resp.t0 = local_time.GetTimeStep();
 
                 SCIONPacket* packet = create_scion_packet(payload, payload_type, peer_ia, 2, 8 + 48 /* udp + ntp*/);
 
@@ -456,11 +462,11 @@ namespace ns3 {
         NS_LOG_DEBUG( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << local_time
                        << ", sender_ia: " << GET_ISDN(packet->src_ia) << "-" << GET_ASN(packet->src_ia)
                        << ", receive_time: " << receive_time
-                       << ", t0: " << (t0 < 0 ? "-" : "+") << PicoSeconds(std::abs(t0)));
+                       << ", t0: " << (t0 < 0 ? "-" : "+") << TimeStep(std::abs(t0)));
 
         packet->payload_type = payload_type_t::NTP_RESP;
-        packet->payload.ntp_req_or_resp.t1 = receive_time.GetPicoSeconds();
-        packet->payload.ntp_req_or_resp.t2 = local_time.GetPicoSeconds();
+        packet->payload.ntp_req_or_resp.t1 = receive_time.GetTimeStep();
+        packet->payload.ntp_req_or_resp.t2 = local_time.GetTimeStep();
         return_scion_packet(packet);
     }
 
@@ -472,13 +478,13 @@ namespace ns3 {
         NS_LOG_DEBUG("TimeServ at " << isd_number << ":" << as_number <<
         " RCV NTP resp from peer " << GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia)
         << ", local_time: " << local_time
-        << ", t0: " << (t0 < 0 ? "-" : "+") << PicoSeconds(std::abs(t0))
-        << ", t1: " << (t1 < 0 ? "-" : "+") << PicoSeconds(std::abs(t1))
-        << ", t2: " << (t2 < 0 ? "-" : "+") << PicoSeconds(std::abs(t2))
+        << ", t0: " << (t0 < 0 ? "-" : "+") << TimeStep(std::abs(t0))
+        << ", t1: " << (t1 < 0 ? "-" : "+") << TimeStep(std::abs(t1))
+        << ", t2: " << (t2 < 0 ? "-" : "+") << TimeStep(std::abs(t2))
         << ", t3: " << receive_time);
 
         int64_t poff_tmp = ((packet->payload.ntp_req_or_resp.t1 - packet->payload.ntp_req_or_resp.t0) +
-                            (packet->payload.ntp_req_or_resp.t2 - receive_time.GetPicoSeconds())) / 2;
+                            (packet->payload.ntp_req_or_resp.t2 - receive_time.GetTimeStep())) / 2;
 
         if (poff.find(packet->src_ia) == poff.end()) {
             poff.insert(std::make_pair(packet->src_ia, std::multiset<int64_t>()));
@@ -493,18 +499,18 @@ namespace ns3 {
         real_time_of_last_time_adjustment = Simulator::Now();
         local_time = Simulator::Now();
 
-        if (max_initial_drift.GetPicoSeconds() == 0) {
+        if (max_initial_drift.GetTimeStep() == 0) {
             return;
         }
 
         std::random_device rd;
-        std::uniform_int_distribution<int64_t> dist (-std::abs(max_initial_drift.GetPicoSeconds()), std::abs(max_initial_drift.GetPicoSeconds()));
+        std::uniform_int_distribution<int64_t> dist (-std::abs(max_initial_drift.GetTimeStep()), std::abs(max_initial_drift.GetTimeStep()));
         int64_t random_drift_int = dist(rd);
 
         if (random_drift_int < 0) {
-            local_time -= PicoSeconds(std::abs(random_drift_int));
+            local_time -= TimeStep(std::abs(random_drift_int));
         } else {
-            local_time += PicoSeconds(std::abs(random_drift_int));
+            local_time += TimeStep(std::abs(random_drift_int));
         }
 
     }
@@ -513,7 +519,7 @@ namespace ns3 {
         AdvanceLocalTime();
 
         if (parallel_scheduler) {
-            std::cout << "##################################### Snapshot at " << Simulator::Now().GetPicoSeconds() << " ##################################" << std::endl;
+            std::cout << "##################################### Snapshot at " << Simulator::Now().GetTimeStep() << " ##################################" << std::endl;
         }
 
         std::cout << "AS " << isd_number << "-" << as_number << ": " << local_time << std::endl;
@@ -522,10 +528,17 @@ namespace ns3 {
 
     void TimeServer::ScheduleListOfAllASesRequest() {
         if (read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::W) {
-            Simulator::Schedule(first_event, &TimeServer::request_set_of_all_core_ases_from_path_server, this);
+            Simulator::Schedule(first_event - Time(PATH_RQ_TIME_SYNC_DIFF),
+                                &TimeServer::request_set_of_all_core_ases_from_path_server, this);
         } else {
             for (Time t = first_event; t < last_event; t += list_of_ases_req_period) {
-                Simulator::Schedule(t, &TimeServer::request_set_of_all_core_ases_from_path_server, this);
+                Time diff_with_first_event = t - first_event;
+                if (diff_with_first_event.GetTimeStep() % time_sync_period.GetTimeStep() == 0) {
+                    Simulator::Schedule(t - Time(PATH_RQ_TIME_SYNC_DIFF),
+                                        &TimeServer::request_set_of_all_core_ases_from_path_server, this);
+                } else {
+                    Simulator::Schedule(t, &TimeServer::request_set_of_all_core_ases_from_path_server, this);
+                }
             }
         }
 
@@ -533,18 +546,28 @@ namespace ns3 {
 
     void TimeServer::ScheduleTimeSync() {
         if (read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::R ||
-                read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::NO_R_NO_W) {
-            Simulator::Schedule(first_event + Seconds(1), &TimeServer::reset_time, this);
-            for (Time t = first_event + Seconds(1); t < last_event + Seconds(1); t += time_sync_period) {
+            read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::NO_R_NO_W) {
+            Simulator::Schedule(first_event, &TimeServer::reset_time, this);
+            for (Time t = first_event; t < last_event; t += time_sync_period) {
                 Simulator::Schedule(t, &TimeServer::trigger_core_time_sync_algo, this);
             }
         }
     }
 
     void TimeServer::ScheduleSnapShots() {
-        Simulator::Schedule(first_event + Seconds(1), &TimeServer::capture_snapshot, this);
-        for (Time t = first_event + Seconds(62); t < last_event + Seconds(62); t += snapshot_period) {
-            Simulator::Schedule(t, &TimeServer::capture_snapshot, this);
+        Simulator::Schedule(first_event, &TimeServer::capture_snapshot, this);
+        for (Time t = first_event; t < last_event; t += snapshot_period) {
+            Time diff_with_first_event = t - first_event;
+            if (diff_with_first_event.GetTimeStep() % time_sync_period.GetTimeStep() == 0) {
+                if ((diff_with_first_event.GetTimeStep() / time_sync_period.GetTimeStep()) % G == 0) {
+                    Simulator::Schedule(t + Time(NTP_REQ_GLOBAL_SYNC_DIFF) + TimeStep(1),
+                                        &TimeServer::capture_snapshot, this);
+                } else {
+                    Simulator::Schedule(t + TimeStep(1), &TimeServer::capture_snapshot, this);
+                }
+            } else {
+                Simulator::Schedule(t, &TimeServer::capture_snapshot, this);
+            }
         }
     }
 }

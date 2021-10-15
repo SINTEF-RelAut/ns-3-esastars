@@ -14,12 +14,13 @@
 #include "src/SCION/headers/scion_host.h"
 
 namespace ns3 {
+
+#define PATH_RQ_TIME_SYNC_DIFF "1s"
+#define NTP_REQ_GLOBAL_SYNC_DIFF "60s"
+
     enum READ_OR_WRITE_DISJOINT_PATHS {R = 0, W = 2, NO_R_NO_W = 3};
     enum TIME_SERVER_TYPE {NORMAL = 0, MALICIOUS_SERVER = 1};
     enum REFERENCE_TIME_TYPE {OFF = 0, ON = 1, MALICIOUS_REF = 2};
-
-
-
 
     class TimeServer : public SCIONHost {
     public:
@@ -44,30 +45,22 @@ namespace ns3 {
 
             synchronization_round = 0;
 
-
-            local_time = PicoSeconds(0);
-            real_time_of_last_time_advance = PicoSeconds(0);
-            real_time_of_last_time_adjustment = PicoSeconds(0);
+            local_time = TimeStep(0);
+            real_time_of_last_time_advance = TimeStep(0);
+            real_time_of_last_time_adjustment = TimeStep(0);
             set_of_all_core_ases.insert(ia_addr);
 
             set_of_disjoint_paths_file = set_of_disjoint_paths_directory + "set_of_disjoint_path_TS_" + std::to_string(ia_addr) + ".json";
 
-
             std::random_device rd;
-            std::uniform_int_distribution<int64_t> dist (-std::abs(max_drift_per_day.GetPicoSeconds()), std::abs(max_drift_per_day.GetPicoSeconds()));
+            std::uniform_int_distribution<int64_t> dist (-std::abs(max_drift_per_day.GetTimeStep()), std::abs(max_drift_per_day.GetTimeStep()));
             constant_drift_per_day_in_ps = dist(rd);
-
-
         }
 
         void ScheduleListOfAllASesRequest();
         void ScheduleTimeSync();
         void ScheduleSnapShots();
-
         void AdvanceLocalTime() override;
-
-
-
     private:
         std::map<std::string, READ_OR_WRITE_DISJOINT_PATHS> READ_OR_WRITE_DISJOINT_PATHS_MAP
                 = {{"R", READ_OR_WRITE_DISJOINT_PATHS::R},
@@ -109,7 +102,6 @@ namespace ns3 {
         Time minimum_malicious_offset;
         int64_t constant_drift_per_day_in_ps;
 
-        int64_t loff;
         std::unordered_map<ia_t, std::multiset<int64_t>> poff;
 
         std::unordered_map<ia_t, std::unordered_set<const PathSegment*>> set_of_most_disjoint_paths;
