@@ -16,7 +16,7 @@
 namespace ns3 {
 
 #define PATH_RQ_TIME_SYNC_DIFF "1s"
-#define NTP_REQ_GLOBAL_SYNC_DIFF "60s"
+#define NTP_REQ_GLOBAL_SYNC_DIFF "2s"
 
     enum READ_OR_WRITE_DISJOINT_PATHS {R = 0, W = 2, NO_R_NO_W = 3};
     enum TIME_SERVER_TYPE {NORMAL = 0, MALICIOUS_SERVER = 1};
