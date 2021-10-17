@@ -162,7 +162,6 @@ namespace ns3 {
                     number_of_paths_per_hop_ia.at(hop_ia)++;
                 }
             }
-            std::cout << set_of_most_disjoint_paths.at(dst_ia).size() << std::endl;
         }
 
         NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " FINISHED constructing disjoint paths");
