@@ -15,14 +15,12 @@
 #include "src/SCION/headers/utils.h"
 #include "src/SCION/headers/scion_as.h"
 
-
-
 namespace ns3 {
 
     void
-    SCION_AS::DoInitializations() {
-        connect_internal_nodes();
-        initialize_latencies();
+    SCION_AS::DoInitializations(uint32_t all_nodes, bool only_propagation_delay) {
+        connect_internal_nodes(only_propagation_delay);
+        initialize_latencies(only_propagation_delay);
         initialize_schedulers();
 
         for (auto const & br : border_routers) {
@@ -41,36 +39,15 @@ namespace ns3 {
                 AS_max_bwd = curr_bwd;
             }
         }
-    }
 
-    void
-    SCION_AS::DoInitializations(uint32_t all_nodes) {
-
-        DoInitializations();
         beaconServer->DoInitializations(all_nodes);
-
     }
 
-/**
- * @param node The node on which the egress interface is connected.
- * @param egress_interface_no The number of the egress interface.
- * @return A pair holding the remote ingress interface number and the remote AS number.
- */
     std::pair<uint16_t, SCION_AS*>
     SCION_AS::GetRemoteAsInfo(uint16_t egress_interface_no) {
         return remote_as_info.at(egress_interface_no);
     }
 
-
-/**
- *  Iterates over all the beacons which originated at the same source AS then the passed beacon and computes
- *  the average AS level diversity and link level diversity scores.
- *  @see AS_level_jaccard_distance_between_two_paths
- *  @see link_level_jaccard_distance_between_two_paths
- *
- * @param the_beacon The beacon holding the path for which you would like to get the diversity scores.
- * @return Pair(Average AS-lvl diversity, Average link-lvl diversity) of the passed beacon.
- */
     std::pair<ld, ld>
     SCION_AS::calculate_final_diversity_scores(Beacon *the_beacon) {
         ld AS_level_diversity_score = 0;
@@ -183,7 +160,7 @@ namespace ns3 {
         return the_br;
     }
 
-    void SCION_AS::connect_internal_nodes() {
+    void SCION_AS::connect_internal_nodes(bool only_propagation_delay) {
         std::map<BorderRouter*, std::set<uint16_t>> border_router_to_if;
 
         for (uint16_t i = 0; i < GetNDevices(); ++i) {
@@ -208,8 +185,13 @@ namespace ns3 {
                 br1->AddToPropagationDelays(propagation_delay);
                 br2->AddToPropagationDelays(propagation_delay);
 
-                br1->AddToTransmissionDelays(PicoSeconds(20)); // transmission delay for one byte assuming 400 Gbps link
-                br2->AddToTransmissionDelays(PicoSeconds(20));
+                if (only_propagation_delay) {
+                    br1->AddToTransmissionDelays(Time(0)); // transmission delay for one byte assuming 400 Gbps link
+                    br2->AddToTransmissionDelays(Time(0));
+                } else {
+                    br1->AddToTransmissionDelays(PicoSeconds(20)); // transmission delay for one byte assuming 400 Gbps link
+                    br2->AddToTransmissionDelays(PicoSeconds(20));
+                }
 
                 br1->AddToRemoteNodesInfo(br2, br2->GetNDevices() - 1, isd_number, as_number);
                 br2->AddToRemoteNodesInfo(br1, br1->GetNDevices() - 1, isd_number, as_number);
@@ -235,8 +217,13 @@ namespace ns3 {
                 br->AddToPropagationDelays(propagation_delay);
                 host->AddToPropagationDelays(propagation_delay);
 
-                br->AddToTransmissionDelays(NanoSeconds(8)); // transmission delay for one byte assuming 1 Gbps link
-                host->AddToTransmissionDelays(NanoSeconds(8));
+                if (only_propagation_delay) {
+                    br->AddToTransmissionDelays(Time(0)); // transmission delay for one byte assuming 1 Gbps link
+                    host->AddToTransmissionDelays(Time(0));
+                } else {
+                    br->AddToTransmissionDelays(NanoSeconds(8)); // transmission delay for one byte assuming 1 Gbps link
+                    host->AddToTransmissionDelays(NanoSeconds(8));
+                }
 
                 br->AddToRemoteNodesInfo(host, host->GetNDevices() - 1, isd_number, as_number);
                 host->AddToRemoteNodesInfo(br, br->GetNDevices() - 1, isd_number, as_number);
@@ -258,8 +245,13 @@ namespace ns3 {
             br->AddToPropagationDelays(propagation_delay);
             pathServer->AddToPropagationDelays(propagation_delay);
 
-            br->AddToTransmissionDelays(PicoSeconds(800)); // transmission delay for one byte assuming 10 Gbps link
-            pathServer->AddToTransmissionDelays(PicoSeconds(800));
+            if (only_propagation_delay) {
+                br->AddToTransmissionDelays(Time(0)); // transmission delay for one byte assuming 10 Gbps link
+                pathServer->AddToTransmissionDelays(Time(0));
+            } else {
+                br->AddToTransmissionDelays(PicoSeconds(800)); // transmission delay for one byte assuming 10 Gbps link
+                pathServer->AddToTransmissionDelays(PicoSeconds(800));
+            }
 
             br->AddToRemoteNodesInfo(pathServer, pathServer->GetNDevices() - 1, isd_number, as_number);
             pathServer->AddToRemoteNodesInfo(br, br->GetNDevices() - 1, isd_number, as_number);
@@ -280,8 +272,13 @@ namespace ns3 {
             host->AddToPropagationDelays(propagation_delay);
             pathServer->AddToPropagationDelays(propagation_delay);
 
-            host->AddToTransmissionDelays(NanoSeconds(8)); // transmission delay for one byte assuming 1 Gbps link
-            pathServer->AddToTransmissionDelays(NanoSeconds(8));
+            if (only_propagation_delay) {
+                host->AddToTransmissionDelays(Time(0)); // transmission delay for one byte assuming 1 Gbps link
+                pathServer->AddToTransmissionDelays(Time(0));
+            } else {
+                host->AddToTransmissionDelays(NanoSeconds(8)); // transmission delay for one byte assuming 1 Gbps link
+                pathServer->AddToTransmissionDelays(NanoSeconds(8));
+            }
 
             host->AddToRemoteNodesInfo(pathServer, pathServer->GetNDevices() - 1, isd_number, as_number);
             pathServer->AddToRemoteNodesInfo(host, host->GetNDevices() - 1, isd_number, as_number);
@@ -301,8 +298,13 @@ namespace ns3 {
                 h1->AddToPropagationDelays(propagation_delay);
                 h2->AddToPropagationDelays(propagation_delay);
 
-                h1->AddToTransmissionDelays(NanoSeconds(8)); // transmission delay for one byte assuming 1 Gbps link
-                h2->AddToTransmissionDelays(NanoSeconds(8));
+                if (only_propagation_delay) {
+                    h1->AddToTransmissionDelays(Time(0)); // transmission delay for one byte assuming 1 Gbps link
+                    h2->AddToTransmissionDelays(Time(0));
+                } else {
+                    h1->AddToTransmissionDelays(NanoSeconds(8)); // transmission delay for one byte assuming 1 Gbps link
+                    h2->AddToTransmissionDelays(NanoSeconds(8));
+                }
 
                 h1->AddToRemoteNodesInfo(h2, h2->GetNDevices() - 1, isd_number, as_number);
                 h2->AddToRemoteNodesInfo(h1, h1->GetNDevices() - 1, isd_number, as_number);
@@ -349,7 +351,7 @@ namespace ns3 {
 
     }
 
-    void SCION_AS::initialize_latencies() {
+    void SCION_AS::initialize_latencies(bool only_propagation_delay) {
         latencies_between_interfaces.resize(GetNDevices());
 
         for (uint64_t i = 0; i < GetNDevices(); ++i) {

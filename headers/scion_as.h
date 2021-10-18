@@ -68,9 +68,6 @@ namespace ns3 {
         std::vector<Time> latencies_between_interfaces_and_beacon_server;
         Time latency_between_path_server_and_beacon_server;
 
-
-
-
         // Interfaces Properties *****************************************************************************************************
         /**
          * @brief Different types of links.
@@ -100,15 +97,7 @@ namespace ns3 {
         /** @brief Holds the bandwidths of the links between border routers of ASes. */
         std::vector<int32_t> inter_as_bwds;
 
-
-
-        /**
-         * @brief Initializes the latencies_between_interfaces and the as_max_bw fields.
-         */
-
-        void DoInitializations();
-
-        void DoInitializations(uint32_t all_nodes);
+        void DoInitializations(uint32_t all_nodes, bool only_propagation_delay);
 
         std::pair<uint16_t, SCION_AS*>
         GetRemoteAsInfo(uint16_t egress_interface_no);
@@ -152,8 +141,8 @@ namespace ns3 {
          */
         std::pair<ld, ld> calculate_final_diversity_scores(Beacon *the_beacon);
 
-        void connect_internal_nodes();
-        void initialize_latencies();
+        void connect_internal_nodes(bool only_propagation_delay);
+        void initialize_latencies(bool only_propagation_delay);
         void initialize_schedulers();
 
     };

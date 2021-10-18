@@ -48,9 +48,9 @@ void InstantiateASesFromTopo( rapidxml::xml_node<>* xml_root,  std::map<int32_t,
 
 void InstantiateLinksFromTopo ( rapidxml::xml_node<>* xml_root, ns3::NodeContainer& AS_nodes, std::map<int32_t, uint16_t>& AS_no_to_index, const YAML::Node& config);
 
-void InitializeNodesAttributes(const ns3::NodeContainer& AS_nodes, const YAML::Node& config);
+void InitializeASesAttributes(const ns3::NodeContainer& AS_nodes, const YAML::Node& config);
 
-
+bool OnlyPropagationDelay(const YAML::Node& config);
 
 int main(int argc, char *argv[]) {
     std::map<int32_t, uint16_t> AS_no_to_index;
@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
 
     InstantiateASesFromTopo( xml_root, AS_no_to_index, index_to_AS_no, nodes, config);
     InstantiateLinksFromTopo( xml_root, nodes, AS_no_to_index, config);
-    InitializeNodesAttributes( nodes, config);
+    InitializeASesAttributes(nodes, config);
 
     ns3::SchedulePeriodicEvents(config, nodes);
     ns3::Simulator::Stop(simulation_end_time);
@@ -262,11 +262,10 @@ void GetMaliciousTimeRefAndTimeServer (rapidxml::xml_node<>* xml_root, const YAM
 
 void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::map<int32_t, uint16_t>& AS_no_to_index,
                              std::map<uint16_t,int32_t>& index_to_AS_no, ns3::NodeContainer& AS_nodes, const YAML::Node& config) {
-
-
     ns3::Time beaconing_period = ns3::Time(config["beacon_service"]["period"].as<std::string>());
     ns3::Time last_beaconing_event_time = ns3::Time(config["beacon_service"]["last_beaconing"].as<std::string>());
     uint16_t expiration_period = ns3::Time(config["beacon_service"]["expiration_period"].as<std::string>()).ToInteger(ns3::Time::MIN);
+    bool only_propagation_delay = OnlyPropagationDelay(config);
 
     int16_t node_counter = 0;
 
@@ -327,6 +326,12 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::map<int32_t, u
         if (config["path_service"]) {
             ns3::PathServer* path_server = new ns3::PathServer( 0, isd_number, node_counter, 1,0.0,  0.0, PeekPointer(AS_node));
             AS_node->SetPathServer(path_server);
+
+            if (only_propagation_delay) {
+                path_server->SetProcessingDelay(ns3::Time(0), ns3::Time(0));
+            } else {
+                path_server->SetProcessingDelay(ns3::NanoSeconds(10), ns3::PicoSeconds(200));
+            }
         }
 
         if (config["time_service"]) {
@@ -350,9 +355,13 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::map<int32_t, u
                                                              time_server_types.at(node_counter),
                                                              ns3::Time(config["time_service"]["malcious_response_minimum_offset"].as<std::string>()));
             AS_node->AddHost(time_server);
+
+            if (only_propagation_delay) {
+                time_server->SetProcessingDelay(ns3::Time(0), ns3::Time(0));
+            } else {
+                time_server->SetProcessingDelay(ns3::NanoSeconds(10), ns3::PicoSeconds(200));
+            }
         }
-
-
 
         AS_nodes.Add(AS_node);
 
@@ -369,6 +378,8 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::map<int32_t, u
 }
 
 void InstantiateLinksFromTopo (rapidxml::xml_node<>* xml_root, ns3::NodeContainer& AS_nodes, std::map<int32_t, uint16_t>& AS_no_to_index, const YAML::Node& config){
+    bool only_propagation_delay = OnlyPropagationDelay(config);
+
     rapidxml::xml_node<> *curr_xml_node = xml_root->first_node("link");
     while (curr_xml_node) {
         int32_t to = std::stoi(curr_xml_node->first_node("to")->value());
@@ -417,23 +428,44 @@ void InstantiateLinksFromTopo (rapidxml::xml_node<>* xml_root, ns3::NodeContaine
         from_AS->AddToRemoteASInfo(to_AS->GetNDevices() - 1, ns3::PeekPointer(to_AS));
 
         if (config["border_router"]) {
-            ns3::Time to_processing_delay = ns3::NanoSeconds(10);
-            ns3::Time from_processing_delay = ns3::NanoSeconds(10);
+            ns3::Time to_propagation_delay, from_propagation_delay;
+            ns3::Time to_transmission_delay, from_transmission_delay;
+            ns3::Time to_processing_delay, from_processing_delay;
+            ns3::Time to_processing_throughput_delay, from_processing_throughput_delay;
 
-            ns3::Time to_processing_throughput_delay = ns3::PicoSeconds(200); // 5 Giga packets per second
-            ns3::Time from_processing_throughput_delay = ns3::PicoSeconds(200);
+            to_propagation_delay = ns3::NanoSeconds(5); // Assuming 1m fiber optic between neighboring devices in the same location
+            from_propagation_delay = ns3::NanoSeconds(5);
+
+            if (only_propagation_delay) {
+                to_transmission_delay = ns3::Time(0);
+                from_transmission_delay = ns3::Time(0);
+
+                to_processing_delay = ns3::Time(0);
+                from_processing_delay = ns3::Time(0);
+
+                to_processing_throughput_delay = ns3::Time(0);
+                from_processing_throughput_delay = ns3::Time(0);
+            } else {
+                to_transmission_delay = ns3::PicoSeconds(20);//Per byte transmission delay assuming 400 Gbps link
+                from_transmission_delay = ns3::PicoSeconds(20);
+
+                to_processing_delay = ns3::NanoSeconds(10);
+                from_processing_delay = ns3::NanoSeconds(10);
+
+                to_processing_throughput_delay = ns3::PicoSeconds(200); // 5 Giga packets per second
+                from_processing_throughput_delay = ns3::PicoSeconds(200);
+            }
 
             ns3::BorderRouter *to_br = to_AS->AddBR(latitude, longitude, to_processing_delay,
                                                     to_processing_throughput_delay);
             ns3::BorderRouter *from_br = from_AS->AddBR(latitude, longitude, from_processing_delay,
                                                         from_processing_throughput_delay);
 
-            to_br->AddToPropagationDelays(
-                    ns3::NanoSeconds(5)); // Assuming 1m fiber optic between neighboring devices in the same location
-            to_br->AddToTransmissionDelays(ns3::PicoSeconds(20)); //Per byte transmission delay assuming 400 Gbps link
+            to_br->AddToPropagationDelays(to_propagation_delay);
+            to_br->AddToTransmissionDelays(to_transmission_delay);
 
-            from_br->AddToPropagationDelays(ns3::NanoSeconds(5));
-            from_br->AddToTransmissionDelays(ns3::PicoSeconds(20));
+            from_br->AddToPropagationDelays(from_propagation_delay);
+            from_br->AddToTransmissionDelays(from_transmission_delay);
 
             to_br->AddToIFForwadingTable(to_AS->GetNDevices() - 1, to_br->GetNDevices() - 1);
             from_br->AddToIFForwadingTable(from_AS->GetNDevices() - 1, from_br->GetNDevices() - 1);
@@ -496,21 +528,19 @@ void InstantiateLinksFromTopo (rapidxml::xml_node<>* xml_root, ns3::NodeContaine
     }
 }
 
-void InitializeNodesAttributes(const ns3::NodeContainer& AS_nodes, const YAML::Node& config ) {
-    std::string beaconing_policy_str = config["beacon_service"]["policy"].as<std::string>();
-//    omp_set_num_threads(NUM_CORE);
-//#pragma omp parallel for
+void InitializeASesAttributes(const ns3::NodeContainer& AS_nodes, const YAML::Node& config ) {
+    bool only_propagation_delay = OnlyPropagationDelay(config);
     for (uint64_t i = 0; i < AS_nodes.GetN(); ++i) {
-        if (beaconing_policy_str == "baseline") {
-            ns3::DynamicCast<ns3::SCION_AS>(AS_nodes.Get(i))->DoInitializations();
-        } else if (beaconing_policy_str == "criteria_matching") {
-            ns3::DynamicCast<ns3::SCION_AS>(AS_nodes.Get(i))->DoInitializations(AS_nodes.GetN());
-        } else if (beaconing_policy_str == "latency_optimized") {
-            ns3::DynamicCast<ns3::SCION_AS>(AS_nodes.Get(i))->DoInitializations(AS_nodes.GetN());
-        } else if (beaconing_policy_str == "scionlab") {
-            ns3::DynamicCast<ns3::SCION_AS>(AS_nodes.Get(i))->DoInitializations(AS_nodes.GetN());
-        }
+        ns3::DynamicCast<ns3::SCION_AS>(AS_nodes.Get(i))->DoInitializations(AS_nodes.GetN(), only_propagation_delay);
     }
 }
 
+
+bool OnlyPropagationDelay(const YAML::Node& config) {
+    if (config["only_propagation_delay"] && config["only_propagation_delay"].as<int32_t>() != 0) {
+        return true;
+    }
+
+    return false;
+}
 
