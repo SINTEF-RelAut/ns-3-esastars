@@ -372,7 +372,6 @@ namespace ns3 {
             off.insert(loff);
         }
 
-        std::cout << " ************************************* " << std::endl;
         for (auto const & peer_ia : set_of_all_core_ases) {
             if (peer_ia == ia_addr) {
                 continue;
@@ -388,10 +387,6 @@ namespace ns3 {
             }
         }
 
-        for (auto const & an_off : off) {
-            std::cout << an_off / 1e9 << std::endl;
-        }
-
         auto iter1 = off.cbegin();
         auto iter2 = off.cbegin();
         std::advance(iter1, F);
@@ -400,7 +395,11 @@ namespace ns3 {
         int64_t goff = std::floor((*iter1 + *iter2) / 2);
         int64_t doff = loff - goff;
 
-        std::cout << "goff: " << goff << ", N: " << N << ", F: " << F << std::endl;
+        std::cout << " ************************************* " << std::endl;
+        std::cout << "goff: " << goff / 1000000000.0 << ", loff: " << loff / 1000000000.0 << std::endl;
+        for (auto const & an_off : off) {
+            std::cout << an_off / 1000000000.0 << std::endl;
+        }
 
         if (reference_time_type == REFERENCE_TIME_TYPE::OFF) {
             corr = goff;
