@@ -402,7 +402,8 @@ namespace ns3 {
         int64_t doff = loff - goff;
 
         std::cout << " ************************************* " << std::endl;
-        std::cout << "goff: " << goff / 1000000000.0 << ", loff: " << loff / 1000000000.0 << std::endl;
+        std::cout << "goff: " << goff / 1000000000.0 <<
+                   ", real_time_diff: " << (Simulator::Now().GetTimeStep() - local_time.GetTimeStep()) / 1000000000.0 << std::endl;
         for (auto const & an_off : off) {
             std::cout << an_off / 1000000000.0 << std::endl;
         }
