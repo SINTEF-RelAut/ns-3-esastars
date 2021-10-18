@@ -33,7 +33,7 @@ namespace ns3 {
             send_scheduler = new LocalScheduler();
             next_packet_id = 0;
             processing_queue_length = 0;
-            Time local_time = PicoSeconds(0);
+            local_time = TimeStep(0);
             }
 
         void AddToIFForwadingTable(uint16_t as_if, uint16_t local_if);
