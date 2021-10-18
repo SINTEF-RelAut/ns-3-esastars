@@ -338,11 +338,13 @@ namespace ns3 {
 
         if (synchronization_round == 0) {
             send_ntp_req_to_peers();
-            if (parallel_scheduler) {
-                Simulator::Schedule(Time(NTP_REQ_GLOBAL_SYNC_DIFF),
-                                    &RunParallelEvents<void (TimeServer::*)(), TimeServer*>,
-                                    local_address, &TimeServer::continue_global_time_sync);
-            }
+//            if (parallel_scheduler) {
+//                Simulator::Schedule(Time(NTP_REQ_GLOBAL_SYNC_DIFF),
+//                                    &RunParallelEvents<void (TimeServer::*)(), TimeServer*>,
+//                                    local_address, &TimeServer::continue_global_time_sync);
+//            }
+
+            Simulator::Schedule(Time(NTP_REQ_GLOBAL_SYNC_DIFF), &TimeServer::continue_global_time_sync, this);
         } else if (reference_time_type != REFERENCE_TIME_TYPE::OFF) {
             int64_t loff = get_reference_time().GetTimeStep() - local_time.GetTimeStep();
             correct_local_time(loff);
@@ -370,6 +372,7 @@ namespace ns3 {
             off.insert(loff);
         }
 
+        std::cout << " ************************************* " << std::endl;
         for (auto const & peer_ia : set_of_all_core_ases) {
             if (peer_ia == ia_addr) {
                 continue;
@@ -385,6 +388,10 @@ namespace ns3 {
             }
         }
 
+        for (auto const & an_off : off) {
+            std::cout << an_off / 1e9 << std::endl;
+        }
+
         auto iter1 = off.cbegin();
         auto iter2 = off.cbegin();
         std::advance(iter1, F);
@@ -392,6 +399,8 @@ namespace ns3 {
 
         int64_t goff = std::floor((*iter1 + *iter2) / 2);
         int64_t doff = loff - goff;
+
+        std::cout << "goff: " << goff << ", N: " << N << ", F: " << F << std::endl;
 
         if (reference_time_type == REFERENCE_TIME_TYPE::OFF) {
             corr = goff;
