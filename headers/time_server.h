@@ -55,6 +55,22 @@ namespace ns3 {
             std::random_device rd;
             std::uniform_int_distribution<int64_t> dist (-std::abs(max_drift_per_day.GetTimeStep()), std::abs(max_drift_per_day.GetTimeStep()));
             constant_drift_per_day_in_ps = dist(rd);
+
+            if (REFERENCE_TIME_TYPE_MAP[reference_time_type] == REFERENCE_TIME_TYPE::MALICIOUS_REF
+               || TIME_SERVER_TYPE_MAP[server_type] == TIME_SERVER_TYPE::MALICIOUS_SERVER) {
+                std::uniform_int_distribution<uint32_t> neg_or_pos_dist(0, 1);
+                if (neg_or_pos_dist(rd) == 0) {
+                    std::uniform_int_distribution<int64_t> neg_dist
+                            (-10 * std::abs(minimum_malicious_offset.GetTimeStep()),
+                                -std::abs(minimum_malicious_offset.GetTimeStep()));
+                    malicious_offset_in_ps = neg_dist(rd);
+                } else {
+                    std::uniform_int_distribution<int64_t> pos_dist
+                            (std::abs(minimum_malicious_offset.GetTimeStep()),
+                             10 * std::abs(minimum_malicious_offset.GetTimeStep()));
+                    malicious_offset_in_ps = pos_dist(rd);
+                }
+            }
         }
 
         void ScheduleListOfAllASesRequest();
@@ -101,6 +117,7 @@ namespace ns3 {
 
         Time minimum_malicious_offset;
         int64_t constant_drift_per_day_in_ps;
+        int64_t malicious_offset_in_ps;
 
         std::unordered_map<ia_t, std::multiset<int64_t>> poff;
 

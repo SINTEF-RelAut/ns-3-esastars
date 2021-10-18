@@ -285,7 +285,6 @@ namespace ns3 {
 
         int64_t drift_int = get_drift(advance);
 
-
         Time tmp_local_time = local_time;
 
         local_time += advance;
@@ -309,6 +308,13 @@ namespace ns3 {
     }
 
     Time TimeServer::get_reference_time() {
+        if (reference_time_type == REFERENCE_TIME_TYPE::MALICIOUS_REF) {
+            if (malicious_offset_in_ps > 0) {
+                return Simulator::Now() + TimeStep(malicious_offset_in_ps);
+            }
+            return Simulator::Now() - TimeStep(malicious_offset_in_ps);
+        }
+
         return Simulator::Now();
     }
 
