@@ -344,13 +344,13 @@ namespace ns3 {
 
         if (synchronization_round == 0) {
             send_ntp_req_to_peers();
-//            if (parallel_scheduler) {
-//                Simulator::Schedule(Time(NTP_REQ_GLOBAL_SYNC_DIFF),
-//                                    &RunParallelEvents<void (TimeServer::*)(), TimeServer*>,
-//                                    local_address, &TimeServer::continue_global_time_sync);
-//            }
+            if (parallel_scheduler) {
+                Simulator::Schedule(Time(NTP_REQ_GLOBAL_SYNC_DIFF),
+                                    &RunParallelEvents<void (TimeServer::*)(), TimeServer*>,
+                                    local_address, &TimeServer::continue_global_time_sync);
+            }
 
-            Simulator::Schedule(Time(NTP_REQ_GLOBAL_SYNC_DIFF), &TimeServer::continue_global_time_sync, this);
+//            Simulator::Schedule(Time(NTP_REQ_GLOBAL_SYNC_DIFF), &TimeServer::continue_global_time_sync, this);
         } else if (reference_time_type != REFERENCE_TIME_TYPE::OFF) {
             int64_t loff = get_reference_time().GetTimeStep() - local_time.GetTimeStep();
             correct_local_time(loff);
@@ -401,12 +401,12 @@ namespace ns3 {
         int64_t goff = std::floor((*iter1 + *iter2) / 2);
         int64_t doff = loff - goff;
 
-        std::cout << " ************************************* " << std::endl;
-        std::cout << "goff: " << goff / 1000000000.0 <<
-                   ", real_time_diff: " << (Simulator::Now().GetTimeStep() - local_time.GetTimeStep()) / 1000000000.0 << std::endl;
-        for (auto const & an_off : off) {
-            std::cout << an_off / 1000000000.0 << std::endl;
-        }
+//        std::cout << " ************************************* " << std::endl;
+//        std::cout << "goff: " << goff / 1000000000.0 <<
+//                   ", real_time_diff: " << (Simulator::Now().GetTimeStep() - local_time.GetTimeStep()) / 1000000000.0 << std::endl;
+//        for (auto const & an_off : off) {
+//            std::cout << an_off / 1000000000.0 << std::endl;
+//        }
 
         if (reference_time_type == REFERENCE_TIME_TYPE::OFF) {
             corr = goff;
