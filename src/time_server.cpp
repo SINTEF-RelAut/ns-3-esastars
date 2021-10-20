@@ -308,6 +308,10 @@ namespace ns3 {
     }
 
     Time TimeServer::get_reference_time() {
+        if (reference_time_type == REFERENCE_TIME_TYPE::OFF){
+            return local_time;
+        }
+
         if (reference_time_type == REFERENCE_TIME_TYPE::MALICIOUS_REF) {
             if (malicious_offset_in_ps > 0) {
                 return Simulator::Now() + TimeStep(malicious_offset_in_ps);
@@ -351,7 +355,7 @@ namespace ns3 {
             }
 
 //            Simulator::Schedule(Time(NTP_REQ_GLOBAL_SYNC_DIFF), &TimeServer::continue_global_time_sync, this);
-        } else if (reference_time_type != REFERENCE_TIME_TYPE::OFF) {
+        } else {
             int64_t loff = get_reference_time().GetTimeStep() - local_time.GetTimeStep();
             correct_local_time(loff);
         }
@@ -365,18 +369,11 @@ namespace ns3 {
         int32_t N = set_of_all_core_ases.size();
         int32_t F = std::floor((N - 1) / 3);
 
-        int64_t loff = 0;
-        if (reference_time_type != REFERENCE_TIME_TYPE::OFF) {
-            loff = get_reference_time().GetTimeStep() - local_time.GetTimeStep();
-        }
-
+        int64_t loff = get_reference_time().GetTimeStep() - local_time.GetTimeStep();
         int64_t corr = loff;
 
         std::multiset<int64_t> off;
-
-        if (reference_time_type != REFERENCE_TIME_TYPE::OFF) { // If time reference is not off
-            off.insert(loff);
-        }
+        off.insert(loff);
 
         for (auto const & peer_ia : set_of_all_core_ases) {
             if (peer_ia == ia_addr) {
@@ -384,9 +381,7 @@ namespace ns3 {
             }
 
             if (poff.find(peer_ia) == poff.end()) {
-                if (reference_time_type != REFERENCE_TIME_TYPE::OFF) {
-                    off.insert(loff);
-                }
+                off.insert(loff);
             } else {
                 int64_t median_off = (int64_t) std::round(GetMedian(poff.at(peer_ia)));
                 off.insert(median_off);
@@ -408,9 +403,7 @@ namespace ns3 {
 //            std::cout << an_off / 1000000000.0 << std::endl;
 //        }
 
-        if (reference_time_type == REFERENCE_TIME_TYPE::OFF) {
-            corr = goff;
-        } else if (std::abs(doff) > std::abs(global_cut_off.GetTimeStep())) {
+        if (std::abs(doff) > std::abs(global_cut_off.GetTimeStep())) {
             doff = doff > 0 ? std::abs(global_cut_off.GetTimeStep()) : -std::abs(global_cut_off.GetTimeStep());
             corr = goff + doff;
         }
@@ -425,7 +418,6 @@ namespace ns3 {
 
         int64_t final_corr_abs = (std::abs(corr) < (std::abs(max_drift_coefficient * max_drift.GetTimeStep())))
                                  ? std::abs(corr) : std::abs(max_drift_coefficient * max_drift.GetTimeStep());
-
 
         Time tmp_local_time = local_time;
 
