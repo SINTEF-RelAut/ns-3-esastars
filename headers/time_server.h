@@ -137,6 +137,8 @@ namespace ns3 {
 
         void send_ntp_req_to_peers();
 
+        void modify_pkt_upon_send(SCIONPacket* packet) override;
+
         void receive_set_of_all_core_ases_from_path_server(SCIONPacket* packet);
 
         void construct_set_of_most_disjoint_paths();

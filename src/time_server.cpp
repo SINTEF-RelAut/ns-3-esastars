@@ -468,6 +468,18 @@ namespace ns3 {
         }
     }
 
+    void TimeServer::modify_pkt_upon_send(SCIONPacket* packet) {
+        if (packet->payload_type == payload_type_t::NTP_REQ) {
+            packet->payload.ntp_req_or_resp.t0 = local_time.GetTimeStep();
+            return;
+        }
+
+        if (packet->payload_type == payload_type_t::NTP_RESP) {
+            packet->payload.ntp_req_or_resp.t2 = local_time.GetTimeStep();
+            return;
+        }
+    }
+
     void TimeServer::receive_ntp_req_from_peer(SCIONPacket *packet, Time receive_time) {
         int64_t t0 = packet->payload.ntp_req_or_resp.t0;
         NS_LOG_DEBUG( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << local_time

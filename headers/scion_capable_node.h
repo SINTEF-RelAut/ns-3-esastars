@@ -98,6 +98,7 @@ namespace ns3 {
 
         void receive (uint16_t local_if, SCIONPacket* packet);
         void send (uint16_t local_if, SCIONPacket* packet);
+        virtual void modify_pkt_upon_send(SCIONPacket* packet);
         virtual void process_received_packet(uint16_t local_if, SCIONPacket *packet, Time receive_time);
         void schedule_for_send(uint16_t local_if, SCIONPacket* packet);
 

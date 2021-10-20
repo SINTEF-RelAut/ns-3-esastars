@@ -49,6 +49,7 @@ namespace ns3 {
         transmission_queues_lengths.at(local_if) -= packet->size;
         SCIONCapableNode* remote_node = std::get<0>(remote_nodes_info.at(local_if));
         uint16_t remote_if = std::get<1>(remote_nodes_info.at(local_if));
+        modify_pkt_upon_send(packet);
         remote_node->ScheduleReceive(remote_if, packet, propagation_delays.at(local_if));
     }
 

@@ -219,4 +219,6 @@ namespace ns3 {
             Simulator::Schedule(MilliSeconds(300), &SCIONHost::find_path_and_send, this, packet, (count + 1));
         }
     }
+
+    void SCIONHost::modify_pkt_upon_send(SCIONPacket* packet) {}
 }

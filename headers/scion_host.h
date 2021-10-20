@@ -29,6 +29,7 @@ namespace ns3 {
         cached_path_segs_dataset_t cached_down_path_segments;
 
         virtual void process_received_packet(uint16_t local_if, SCIONPacket *packet, Time receive_time) override;
+        virtual void modify_pkt_upon_send(SCIONPacket* packet) override;
         void remove_expired_segments();
         void search_in_cached_segments(ia_t dst_ia, std::vector<const PathSegment*>& path, std::vector<uint8_t>& shortcuts);
         void request_for_path_segments(ia_t dst_ia);
