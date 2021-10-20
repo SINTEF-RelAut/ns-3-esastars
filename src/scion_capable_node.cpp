@@ -178,4 +178,6 @@ namespace ns3 {
         local_time = Simulator::Now();
     }
 
+
+    void SCIONCapableNode::modify_pkt_upon_send(SCIONPacket* packet) {}
 }
