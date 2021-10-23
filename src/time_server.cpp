@@ -537,7 +537,12 @@ namespace ns3 {
             std::cout << "##################################### Snapshot at " << Simulator::Now().GetTimeStep() << " ##################################" << std::endl;
         }
 
-        std::cout << "AS " << isd_number << "-" << as_number << ": " << local_time << std::endl;
+        if (reference_time_type == REFERENCE_TIME_TYPE::MALICIOUS_REF) {
+            std::cout << "AS m " << isd_number << "-" << as_number << ": " << local_time << std::endl;
+        } else {
+            std::cout << "AS " << isd_number << "-" << as_number << ": " << local_time << std::endl;
+        }
+
 
     }
 
