@@ -357,7 +357,7 @@ namespace ns3 {
 //            Simulator::Schedule(Time(NTP_REQ_GLOBAL_SYNC_DIFF), &TimeServer::continue_global_time_sync, this);
         } else {
             int64_t loff = get_reference_time().GetTimeStep() - local_time.GetTimeStep();
-            correct_local_time(loff);
+            correct_local_time(loff, time_sync_period);
         }
 
         synchronization_round = (synchronization_round + 1) % G;
@@ -408,13 +408,13 @@ namespace ns3 {
             corr = goff + doff;
         }
 
-        correct_local_time(corr);
+        correct_local_time(corr, G * time_sync_period);
 
         poff.clear();
     }
 
-    void TimeServer::correct_local_time (int64_t corr) {
-        Time max_drift = get_max_drift((Simulator::Now() - real_time_of_last_time_adjustment));
+    void TimeServer::correct_local_time (int64_t corr, Time duration) {
+        Time max_drift = get_max_drift(duration);
 
         int64_t final_corr_abs = (std::abs(corr) < (std::abs(max_drift_coefficient * max_drift.GetTimeStep())))
                                  ? std::abs(corr) : std::abs(max_drift_coefficient * max_drift.GetTimeStep());
@@ -432,8 +432,6 @@ namespace ns3 {
                                       << ", updated_local_time: " << local_time << ", final_corr: -" << TimeStep(final_corr_abs)
                                       << ", max_drift: " << max_drift << ", corr: -" << TimeStep(std::abs(corr)) );
         }
-
-        real_time_of_last_time_adjustment = Simulator::Now();
     }
 
     void TimeServer::send_ntp_req_to_peers() {
@@ -511,7 +509,7 @@ namespace ns3 {
 
     void TimeServer::reset_time() {
         real_time_of_last_time_advance = Simulator::Now();
-        real_time_of_last_time_adjustment = Simulator::Now();
+
         local_time = Simulator::Now();
 
         if (max_initial_drift.GetTimeStep() == 0) {

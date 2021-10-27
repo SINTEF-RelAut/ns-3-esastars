@@ -106,7 +106,6 @@ namespace ns3 {
         uint32_t synchronization_round; // i in the Listing 2
 
         Time real_time_of_last_time_advance;
-        Time real_time_of_last_time_adjustment;
 
         std::set<ia_t> set_of_all_core_ases;
 
@@ -157,7 +156,7 @@ namespace ns3 {
 
         void continue_global_time_sync();
 
-        void correct_local_time (int64_t corr);
+        void correct_local_time (int64_t corr, Time duration);
 
         void process_received_packet(uint16_t local_if, SCIONPacket *packet, Time receive_time) override;
 
