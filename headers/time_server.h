@@ -47,7 +47,6 @@ namespace ns3 {
 
             local_time = TimeStep(0);
             real_time_of_last_time_advance = TimeStep(0);
-            real_time_of_last_time_adjustment = TimeStep(0);
             set_of_all_core_ases.insert(ia_addr);
 
             set_of_disjoint_paths_file = set_of_disjoint_paths_directory + "set_of_disjoint_path_TS_" + std::to_string(ia_addr) + ".json";
