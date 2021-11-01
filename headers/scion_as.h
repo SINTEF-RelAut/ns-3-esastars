@@ -97,7 +97,7 @@ namespace ns3 {
         /** @brief Holds the bandwidths of the links between border routers of ASes. */
         std::vector<int32_t> inter_as_bwds;
 
-        void DoInitializations(uint32_t all_nodes, bool only_propagation_delay);
+        void DoInitializations(uint32_t all_nodes, bool only_propagation_delay, std::string border_routers_malicious_action, Time malicious_delay);
 
         std::pair<uint16_t, SCION_AS*>
         GetRemoteAsInfo(uint16_t egress_interface_no);
@@ -141,7 +141,7 @@ namespace ns3 {
          */
         std::pair<ld, ld> calculate_final_diversity_scores(Beacon *the_beacon);
 
-        void connect_internal_nodes(bool only_propagation_delay);
+        void connect_internal_nodes(bool only_propagation_delay, std::string border_routers_malicious_action, Time malicious_delay);
         void initialize_latencies(bool only_propagation_delay);
         void initialize_schedulers();
 

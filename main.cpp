@@ -186,6 +186,45 @@ void SetTimeResolution(std::string time_res_str) {
 //    return rootNode;
 //}
 
+void GetASesWithMaliciousBRs (const ns3::NodeContainer& AS_nodes, const YAML::Node& config, std::vector<std::string>& border_routers_malicious_action) {
+    if (!config["border_router"]) {
+        return;
+    }
+
+    if (!config["border_router"]["percent_of_ASes_with_malicious_br"]) {
+        return;
+    }
+
+    std::set<uint16_t> ASes_with_malicious_br;
+
+    if (config["border_router"]["percent_of_ASes_with_malicious_br"].as<uint16_t>() != 0) {
+        for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+            ASes_with_malicious_br.insert(i);
+        }
+    }
+
+    uint16_t number_of_ASes_with_malicious_br = (uint16_t) std::floor(
+            ((double ) config["border_router"]["percent_of_ASes_with_malicious_br"].as<uint16_t>() * (double ) AS_nodes.GetN()) / 100.0);
+
+    std::random_device rd;
+
+    while (ASes_with_malicious_br.size() > number_of_ASes_with_malicious_br) {
+        std::uniform_int_distribution<uint16_t> dist(0, ASes_with_malicious_br.size() - 1);
+        uint16_t random_index = dist(rd);
+        auto it = ASes_with_malicious_br.cbegin();
+        std::advance(it, random_index);
+        ASes_with_malicious_br.erase(it);
+    }
+
+    for (uint16_t i = 0; i < AS_nodes.GetN(); ++i) {
+        if (ASes_with_malicious_br.find(i) != ASes_with_malicious_br.end()) {
+            border_routers_malicious_action.push_back(config["border_router"]["malicious_action"].as<std::string>());
+        } else {
+            border_routers_malicious_action.push_back("no");
+        }
+    }
+}
+
 void GetMaliciousTimeRefAndTimeServer (rapidxml::xml_node<>* xml_root, const YAML::Node& config, std::vector<std::string>& time_reference_types,  std::vector<std::string>& time_server_types) {
     if (!config["time_service"]) {
         return;
@@ -529,9 +568,22 @@ void InstantiateLinksFromTopo (rapidxml::xml_node<>* xml_root, ns3::NodeContaine
 }
 
 void InitializeASesAttributes(const ns3::NodeContainer& AS_nodes, const YAML::Node& config ) {
+
     bool only_propagation_delay = OnlyPropagationDelay(config);
+
+    std::vector<std::string> border_routers_malicious_action;
+    GetASesWithMaliciousBRs (AS_nodes, config, border_routers_malicious_action);
+
+    ns3::Time malicious_delay = ns3::TimeStep(0);
+    if (config["border_router"]["delay"] && !only_propagation_delay){
+        malicious_delay = ns3::Time(config["border_router"]["delay"].as<std::string>());
+    }
+
     for (uint64_t i = 0; i < AS_nodes.GetN(); ++i) {
-        ns3::DynamicCast<ns3::SCION_AS>(AS_nodes.Get(i))->DoInitializations(AS_nodes.GetN(), only_propagation_delay);
+        ns3::DynamicCast<ns3::SCION_AS>(AS_nodes.Get(i))->DoInitializations(AS_nodes.GetN(),
+                                                                            only_propagation_delay,
+                                                                            border_routers_malicious_action.at(i),
+                                                                            malicious_delay);
     }
 }
 

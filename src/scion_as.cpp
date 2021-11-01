@@ -18,8 +18,8 @@
 namespace ns3 {
 
     void
-    SCION_AS::DoInitializations(uint32_t all_nodes, bool only_propagation_delay) {
-        connect_internal_nodes(only_propagation_delay);
+    SCION_AS::DoInitializations(uint32_t all_nodes, bool only_propagation_delay, std::string border_routers_malicious_action, Time malicious_delay) {
+        connect_internal_nodes(only_propagation_delay,  border_routers_malicious_action, malicious_delay);
         initialize_latencies(only_propagation_delay);
         initialize_schedulers();
 
@@ -160,7 +160,7 @@ namespace ns3 {
         return the_br;
     }
 
-    void SCION_AS::connect_internal_nodes(bool only_propagation_delay) {
+    void SCION_AS::connect_internal_nodes(bool only_propagation_delay, std::string border_routers_malicious_action, Time malicious_delay) {
         std::map<BorderRouter*, std::set<uint16_t>> border_router_to_if;
 
         for (uint16_t i = 0; i < GetNDevices(); ++i) {
@@ -180,10 +180,18 @@ namespace ns3 {
             for (uint32_t j = i + 1; j < border_routers_vec.size(); ++j) {
                 BorderRouter* br2 = border_routers_vec.at(j);
 
-                Time propagation_delay = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) br1->GetLatitude(), (ld) br1->GetLogitude(), (ld) br2->GetLatitude(), (ld) br2->GetLogitude())));
+                Time propagation_delay1 = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) br1->GetLatitude(), (ld) br1->GetLogitude(), (ld) br2->GetLatitude(), (ld) br2->GetLogitude())));
+                Time propagation_delay2 = propagation_delay1;
 
-                br1->AddToPropagationDelays(propagation_delay);
-                br2->AddToPropagationDelays(propagation_delay);
+                if (border_routers_malicious_action == "symmetric_delay") {
+                    propagation_delay1 += malicious_delay;
+                    propagation_delay2 += malicious_delay;
+                } else if (border_routers_malicious_action == "asymmetric_delay") {
+                    propagation_delay1 += malicious_delay;
+                }
+
+                br1->AddToPropagationDelays(propagation_delay1);
+                br2->AddToPropagationDelays(propagation_delay2);
 
                 if (only_propagation_delay) {
                     br1->AddToTransmissionDelays(Time(0)); // transmission delay for one byte assuming 400 Gbps link
