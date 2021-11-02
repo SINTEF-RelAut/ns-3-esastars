@@ -575,7 +575,8 @@ void InitializeASesAttributes(const ns3::NodeContainer& AS_nodes, const YAML::No
     GetASesWithMaliciousBRs (AS_nodes, config, border_routers_malicious_action);
 
     ns3::Time malicious_delay = ns3::TimeStep(0);
-    if (config["border_router"]["delay"] && !only_propagation_delay){
+    std::string malicious_action = config["border_router"]["malicious_action"].as<std::string>();
+    if ((malicious_action == "symmetric_delay" || malicious_action == "asymmetric_delay") && !only_propagation_delay){
         malicious_delay = ns3::Time(config["border_router"]["delay"].as<std::string>());
     }
 
