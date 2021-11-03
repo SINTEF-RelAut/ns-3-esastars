@@ -406,7 +406,7 @@ namespace ns3 {
         if (std::abs(doff) > std::abs(global_cut_off.GetTimeStep())) {
 //            doff = doff > 0 ? std::abs(global_cut_off.GetTimeStep()) : -std::abs(global_cut_off.GetTimeStep());
 //            corr = goff + doff;
-            corr = doff;
+            corr = goff;
         }
 
         correct_local_time(corr, G * time_sync_period);
