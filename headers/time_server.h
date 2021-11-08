@@ -31,7 +31,7 @@ namespace ns3 {
                    Time list_of_ases_req_period, Time time_sync_period, uint32_t G,
                    uint32_t number_of_paths_to_use_for_global_sync, std::string read_disjoint_paths,
                    std::string set_of_disjoint_paths_directory, std::string reference_time_type,
-                   std::string server_type, Time minimum_malicious_offset):
+                   std::string server_type, Time minimum_malicious_offset, std::string path_selection):
                    SCIONHost(system_id, isd_number, as_number, local_address, latitude, longitude, AS),
                    parallel_scheduler(parallel_scheduler), max_initial_drift(max_initial_drift),
                    max_drift_per_day(max_drift_per_day), jitter_in_drift(jitter_in_drift),
@@ -41,7 +41,8 @@ namespace ns3 {
                    number_of_paths_to_use_for_global_sync(number_of_paths_to_use_for_global_sync),
                    read_disjoint_paths(READ_OR_WRITE_DISJOINT_PATHS_MAP[read_disjoint_paths]),
                    reference_time_type (REFERENCE_TIME_TYPE_MAP[reference_time_type]),
-                   server_type(TIME_SERVER_TYPE_MAP[server_type]), minimum_malicious_offset(minimum_malicious_offset) {
+                   server_type(TIME_SERVER_TYPE_MAP[server_type]), minimum_malicious_offset(minimum_malicious_offset),
+                   path_selection(path_selection){
 
             synchronization_round = 0;
 
@@ -114,12 +115,13 @@ namespace ns3 {
         TIME_SERVER_TYPE server_type;
 
         Time minimum_malicious_offset;
+        std::string  path_selection;
         int64_t constant_drift_per_day_in_ps;
         int64_t malicious_offset_in_ps;
 
         std::unordered_map<ia_t, std::multiset<int64_t>> poff;
 
-        std::unordered_map<ia_t, std::unordered_set<const PathSegment*>> set_of_most_disjoint_paths;
+        std::unordered_map<ia_t, std::unordered_set<const PathSegment*>> set_of_selected_paths;
 
         Time get_reference_time();
 
@@ -138,6 +140,12 @@ namespace ns3 {
         void modify_pkt_upon_send(SCIONPacket* packet) override;
 
         void receive_set_of_all_core_ases_from_path_server(SCIONPacket* packet);
+
+        void construct_set_of_selected_paths();
+
+        void construct_set_of_shortest_paths();
+
+        void construct_set_of_random_paths();
 
         void construct_set_of_most_disjoint_paths();
 

@@ -78,20 +78,37 @@ namespace ns3 {
                     read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::NO_R_NO_W) {
                     Simulator::Schedule(MilliSeconds(300),
                                         &RunParallelEvents<void (TimeServer::*)(), TimeServer*>,
-                                        local_address, &TimeServer::construct_set_of_most_disjoint_paths);
+                                        local_address, &TimeServer::construct_set_of_selected_paths);
                     if (read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::W) {
                         Simulator::Schedule(MilliSeconds(310),
                                             &RunParallelEvents<void (TimeServer::*)(), TimeServer*>,
                                             local_address, &TimeServer::write_set_of_disjoint_paths);
                     }
                 } else if (read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::R)  {
-                    if (set_of_most_disjoint_paths.empty()) {
+                    if (set_of_selected_paths.empty()) {
                         Simulator::Schedule(MilliSeconds(310),
                                             &RunParallelEvents<void (TimeServer::*)(), TimeServer*>,
                                             local_address, &TimeServer::read_set_of_disjoint_paths);
                     }
                 }
             }
+        }
+    }
+
+    void TimeServer::construct_set_of_selected_paths() {
+        if (path_selection == "disjoint") {
+            construct_set_of_most_disjoint_paths();
+            return;
+        }
+
+        if (path_selection == "short") {
+            construct_set_of_shortest_paths();
+            return;
+        }
+
+        if (path_selection == "random") {
+            construct_set_of_random_paths();
+            return;
         }
     }
 
@@ -102,21 +119,21 @@ namespace ns3 {
                 continue;
             }
 
-            set_of_most_disjoint_paths.insert(std::make_pair(dst_ia, std::unordered_set<const PathSegment*>()));
-            auto & set_of_most_disjoint_paths_per_dst_ia = set_of_most_disjoint_paths.at(dst_ia);
+            set_of_selected_paths.insert(std::make_pair(dst_ia, std::unordered_set<const PathSegment*>()));
+            auto & set_of_selected_paths_per_dst_ia = set_of_selected_paths.at(dst_ia);
 
             std::unordered_map<ia_t, uint32_t> number_of_paths_per_hop_ia;
             auto const & path_segments = *cached_core_path_segments.at(dst_ia)->at(ia_addr);
 
-            while (set_of_most_disjoint_paths_per_dst_ia.size() < number_of_paths_to_use_for_global_sync
-                   && set_of_most_disjoint_paths_per_dst_ia.size() < path_segments.size()) {
+            while (set_of_selected_paths_per_dst_ia.size() < number_of_paths_to_use_for_global_sync
+                   && set_of_selected_paths_per_dst_ia.size() < path_segments.size()) {
 
                 const PathSegment* best_path = NULL;
                 uint64_t best_path_score = std::numeric_limits<uint64_t>::max();
                 uint32_t best_path_len = std::numeric_limits<uint32_t>::max();
 
                 for (auto const & [path_len, path_seg] : path_segments) {
-                    if (set_of_most_disjoint_paths_per_dst_ia.find(path_seg) != set_of_most_disjoint_paths_per_dst_ia.end()) {
+                    if (set_of_selected_paths_per_dst_ia.find(path_seg) != set_of_selected_paths_per_dst_ia.end()) {
                         continue;
                     }
 
@@ -151,7 +168,7 @@ namespace ns3 {
                     break;
                 }
 
-                set_of_most_disjoint_paths_per_dst_ia.insert(best_path);
+                set_of_selected_paths_per_dst_ia.insert(best_path);
 
                 for (uint32_t  j = 1; j < best_path_len - 1; ++j) {
                     uint64_t hop = best_path->hops.at(j);
@@ -167,7 +184,52 @@ namespace ns3 {
         NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " FINISHED constructing disjoint paths");
     }
 
+    void TimeServer::construct_set_of_shortest_paths() {
+        NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " constructing shortest paths");
+        for (auto const & dst_ia : set_of_all_core_ases) {
+            if (dst_ia == ia_addr) {
+                continue;
+            }
 
+            set_of_selected_paths.insert(std::make_pair(dst_ia, std::unordered_set<const PathSegment*>()));
+            auto & set_of_selected_paths_per_dst_ia = set_of_selected_paths.at(dst_ia);
+
+            auto const & path_segments = *cached_core_path_segments.at(dst_ia)->at(ia_addr);
+            for (auto const & [path_len, path_seg] : path_segments) {
+                if (set_of_selected_paths_per_dst_ia.size() >= number_of_paths_to_use_for_global_sync) {
+                    break;
+                }
+                set_of_selected_paths_per_dst_ia.insert(path_seg);
+            }
+        }
+    }
+
+    void TimeServer::construct_set_of_random_paths() {
+        NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " constructing shortest paths");
+        for (auto const & dst_ia : set_of_all_core_ases) {
+            if (dst_ia == ia_addr) {
+                continue;
+            }
+
+            set_of_selected_paths.insert(std::make_pair(dst_ia, std::unordered_set<const PathSegment*>()));
+            auto & set_of_selected_paths_per_dst_ia = set_of_selected_paths.at(dst_ia);
+            auto const & path_segments = *cached_core_path_segments.at(dst_ia)->at(ia_addr);
+
+            std::vector<uint32_t> selected_indices;
+            for (uint32_t i = 0; i < path_segments.size(); ++i) {
+                selected_indices.push_back(i);
+            }
+
+            std::random_shuffle(selected_indices.begin(), selected_indices.end());
+
+            while (set_of_selected_paths_per_dst_ia.size() < number_of_paths_to_use_for_global_sync
+                   && set_of_selected_paths_per_dst_ia.size() < path_segments.size()) {
+                auto iter = path_segments.cbegin();
+                std::advance(iter, selected_indices.at(set_of_selected_paths_per_dst_ia.size()));
+                set_of_selected_paths_per_dst_ia.insert(iter->second);
+            }
+        }
+    }
 
     void TimeServer::read_set_of_disjoint_paths() {
         nlohmann::json set_of_disjoint_paths_json;
@@ -178,7 +240,7 @@ namespace ns3 {
         for (auto const & [dst_ia_str, path_segs_json] : set_of_disjoint_paths_json.items()) {
             ia_t dst_ia = std::stoi(dst_ia_str);
 
-            set_of_most_disjoint_paths.insert(std::make_pair(dst_ia, std::unordered_set<const PathSegment*>()));
+            set_of_selected_paths.insert(std::make_pair(dst_ia, std::unordered_set<const PathSegment*>()));
 
             for (auto const & path_seg_json : path_segs_json) {
                 PathSegment* path_seg = new PathSegment();
@@ -187,7 +249,7 @@ namespace ns3 {
                 path_seg->originator = path_seg_json["originator"];
                 path_seg->reverse = path_seg_json["reverse"];
                 path_seg->hops = path_seg_json["hops"].get<std::vector<uint64_t>>();
-                set_of_most_disjoint_paths.at(dst_ia).insert(path_seg);
+                set_of_selected_paths.at(dst_ia).insert(path_seg);
             }
         }
     }
@@ -195,7 +257,7 @@ namespace ns3 {
     void TimeServer::write_set_of_disjoint_paths() {
         nlohmann::json set_of_disjoint_paths_json;
 
-        for (auto const & [dst_ia, path_segs] : set_of_most_disjoint_paths) {
+        for (auto const & [dst_ia, path_segs] : set_of_selected_paths) {
             nlohmann::json path_segs_json;
             for (auto const & path_seg : path_segs) {
                 nlohmann::json path_seg_json;
@@ -443,7 +505,7 @@ namespace ns3 {
                 continue;
             }
 
-            for (auto const & path_seg : set_of_most_disjoint_paths.at(peer_ia)) {
+            for (auto const & path_seg : set_of_selected_paths.at(peer_ia)) {
                 NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " sent ntp req to " << GET_ISDN(peer_ia) << ":" << GET_ASN(peer_ia));
                 payload_type_t payload_type = payload_type_t::NTP_REQ;
 

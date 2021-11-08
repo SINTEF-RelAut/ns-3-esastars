@@ -392,7 +392,8 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::map<int32_t, u
                                                              config["time_service"]["set_of_disjoint_paths_directory"].as<std::string>(),
                                                              time_reference_types.at(node_counter),
                                                              time_server_types.at(node_counter),
-                                                             ns3::Time(config["time_service"]["malcious_response_minimum_offset"].as<std::string>()));
+                                                             ns3::Time(config["time_service"]["malcious_response_minimum_offset"].as<std::string>()),
+                                                             config["time_service"]["path_selection"].as<std::string>());
             AS_node->AddHost(time_server);
 
             if (only_propagation_delay) {
