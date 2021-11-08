@@ -220,7 +220,7 @@ namespace ns3 {
                 selected_indices.push_back(i);
             }
 
-            std::random_shuffle(selected_indices.begin(), selected_indices.end());
+            std::random_shuffle(selected_indices.begin(), selected_indices.end(), truly_random_generator);
 
             while (set_of_selected_paths_per_dst_ia.size() < number_of_paths_to_use_for_global_sync
                    && set_of_selected_paths_per_dst_ia.size() < path_segments.size()) {
