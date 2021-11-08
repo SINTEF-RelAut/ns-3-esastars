@@ -7,11 +7,12 @@
  * and helpers for iterating and printing various structures on the nodes.
  */
 
-#include "src/SCION/headers/utils.h"
-#include "../headers/beaconing/beacon_server.h"
-
 #include <set>
 #include <cmath>
+#include <random>
+
+#include "src/SCION/headers/utils.h"
+#include "src/SCION/headers/beaconing/beacon_server.h"
 
 /**
  * The jaccard distance measures the dissimilarity between two sets. This function considers the AS number and the
@@ -25,6 +26,16 @@
 
 namespace ns3 {
 
+    uint64_t truly_random_generator(uint64_t i) {
+        std::random_device rd;
+        std::uniform_int_distribution<uint16_t> dist(0, i);
+        return dist(rd);
+    }
+
+    uint64_t random_generator(uint64_t i) {
+        srand(1);
+        return (rand() % i);
+    }
 
     double GetMedian( std::multiset<int64_t>& data)
     {

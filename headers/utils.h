@@ -35,7 +35,9 @@ namespace ns3 {
 
 #define LOWER_32_BITS(input) ((uint32_t) ((input) & 0x00000000ffffffff))
 
+    uint64_t truly_random_generator(uint64_t i);
 
+    uint64_t random_generator(uint64_t i);
 
     double GetMedian( std::multiset<int64_t>& data);
 
@@ -121,4 +123,6 @@ void
 print_number_of_valid_beacon_entries_in_beacon_store (Ptr<SCION_AS> node, const std::map<uint16_t, int32_t>& index_to_AS_no);
 
 }
+
+
 #endif //SCION_BEACONING_SIMMULATOR_UTILS_H

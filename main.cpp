@@ -186,6 +186,7 @@ void SetTimeResolution(std::string time_res_str) {
 //    return rootNode;
 //}
 
+
 void GetASesWithMaliciousBRs (const ns3::NodeContainer& AS_nodes, const YAML::Node& config, std::vector<std::string>& border_routers_malicious_action) {
     if (!config["border_router"]) {
         return;
@@ -195,34 +196,31 @@ void GetASesWithMaliciousBRs (const ns3::NodeContainer& AS_nodes, const YAML::No
         return;
     }
 
-    std::set<uint16_t> ASes_with_malicious_br;
-
-    if (config["border_router"]["percent_of_ASes_with_malicious_br"].as<uint16_t>() != 0) {
-        for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
-            ASes_with_malicious_br.insert(i);
-        }
+    std::vector<uint16_t> indices;
+    for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+        indices.push_back(i);
     }
+
+    if (config["border_router"]["truly_random_malicious"].as<uint16_t>() == 1) {
+        std::random_shuffle(indices.begin(), indices.end(), ns3::truly_random_generator);
+    } else {
+        std::random_shuffle(indices.begin(), indices.end(), ns3::random_generator);
+    }
+
+    border_routers_malicious_action.resize(AS_nodes.GetN());
 
     uint16_t number_of_ASes_with_malicious_br = (uint16_t) std::floor(
             ((double ) config["border_router"]["percent_of_ASes_with_malicious_br"].as<uint16_t>() * (double ) AS_nodes.GetN()) / 100.0);
 
-    std::random_device rd;
 
-    while (ASes_with_malicious_br.size() > number_of_ASes_with_malicious_br) {
-        std::uniform_int_distribution<uint16_t> dist(0, ASes_with_malicious_br.size() - 1);
-        uint16_t random_index = dist(rd);
-        auto it = ASes_with_malicious_br.cbegin();
-        std::advance(it, random_index);
-        ASes_with_malicious_br.erase(it);
+    for (uint16_t i = 0; i < number_of_ASes_with_malicious_br; ++i) {
+        border_routers_malicious_action.at(indices.at(i)) = config["border_router"]["malicious_action"].as<std::string>();
     }
 
-    for (uint16_t i = 0; i < AS_nodes.GetN(); ++i) {
-        if (ASes_with_malicious_br.find(i) != ASes_with_malicious_br.end()) {
-            border_routers_malicious_action.push_back(config["border_router"]["malicious_action"].as<std::string>());
-        } else {
-            border_routers_malicious_action.push_back("no");
-        }
+    for (uint16_t i = number_of_ASes_with_malicious_br; i < AS_nodes.GetN(); ++i) {
+        border_routers_malicious_action.at(indices.at(i)) = "no";
     }
+
 }
 
 void GetMaliciousTimeRefAndTimeServer (rapidxml::xml_node<>* xml_root, const YAML::Node& config, std::vector<std::string>& time_reference_types,  std::vector<std::string>& time_server_types) {
@@ -232,23 +230,26 @@ void GetMaliciousTimeRefAndTimeServer (rapidxml::xml_node<>* xml_root, const YAM
 
     uint16_t number_of_ASes = 0;
 
-    std::set<uint16_t> malicious_time_references;
-    std::set<uint16_t> malicious_time_servers;
-
+    std::vector<uint16_t> indices_time_references;
+    std::vector<uint16_t> indices_time_servers;
 
     rapidxml::xml_node<>* cur_xml_node = xml_root->first_node("node");
     while (cur_xml_node) {
-        if (config["time_service"]["percent_of_malicious_time_references"].as<uint16_t>() != 0
-                && config["time_service"]["reference_clk"].as<std::string>() == "ON") {
-            malicious_time_references.insert(number_of_ASes);
-        }
-
-        if (config["time_service"]["percent_of_malicious_time_servers"].as<uint16_t>() != 0) {
-            malicious_time_servers.insert(number_of_ASes);
-        }
-
+        indices_time_references.push_back(number_of_ASes);
+        indices_time_servers.push_back(number_of_ASes);
         number_of_ASes++;
         cur_xml_node = cur_xml_node->next_sibling("node");
+    }
+
+    time_reference_types.resize(number_of_ASes);
+    time_server_types.resize(number_of_ASes);
+
+    if (config["time_service"]["truly_random_malicious"].as<uint16_t>() == 1) {
+        std::random_shuffle(indices_time_references.begin(), indices_time_references.end(), ns3::truly_random_generator);
+        std::random_shuffle(indices_time_servers.begin(), indices_time_servers.end(), ns3::truly_random_generator);
+    } else {
+        std::random_shuffle(indices_time_references.begin(), indices_time_references.end(), ns3::random_generator);
+        std::random_shuffle(indices_time_servers.begin(), indices_time_servers.end(), ns3::random_generator);
     }
 
     uint16_t number_of_malicious_time_references = (uint16_t) std::floor(
@@ -257,45 +258,27 @@ void GetMaliciousTimeRefAndTimeServer (rapidxml::xml_node<>* xml_root, const YAM
     uint16_t number_of_malicious_time_servers = (uint16_t) std::floor(
             ((double ) config["time_service"]["percent_of_malicious_time_servers"].as<uint16_t>() * (double ) number_of_ASes) / 100.0);
 
+    if (config["time_service"]["reference_clk"].as<std::string>() == "OFF") {
+        for (uint16_t i = 0; i < number_of_ASes; ++i) {
+            time_reference_types.at(i) = "OFF";
+        }
+    } else {
+        for (uint16_t i = 0; i < number_of_malicious_time_references; ++i) {
+            time_reference_types.at(indices_time_references.at(i)) = "MALICIOUS";
+        }
 
-    std::random_device rd;
-
-    while (malicious_time_references.size() > number_of_malicious_time_references) {
-        std::uniform_int_distribution<uint16_t> dist (0, malicious_time_references.size() - 1);
-        uint16_t random_index = dist(rd);
-        auto it = malicious_time_references.cbegin();
-        std::advance(it, random_index);
-        malicious_time_references.erase(it);
-    }
-
-
-    while (malicious_time_servers.size() > number_of_malicious_time_servers) {
-        std::uniform_int_distribution<uint16_t> dist(0, malicious_time_servers.size() - 1);
-        uint16_t random_index = dist(rd);
-        auto it = malicious_time_servers.cbegin();
-        std::advance(it, random_index);
-        malicious_time_servers.erase(it);
-    }
-
-    for (uint16_t i = 0; i < number_of_ASes; ++i) {
-        if (config["time_service"]["reference_clk"].as<std::string>() == "OFF") {
-            time_reference_types.push_back("OFF");
-        } else {
-            if (malicious_time_references.find(i) != malicious_time_references.end()) {
-                time_reference_types.push_back("MALICIOUS");
-            } else {
-                time_reference_types.push_back("ON");
-            }
+        for (uint16_t i = number_of_malicious_time_references; i < number_of_ASes; ++i) {
+            time_reference_types.at(indices_time_references.at(i)) = "ON";
         }
 
     }
 
-    for (uint16_t i = 0; i < number_of_ASes; ++i) {
-        if (malicious_time_servers.find(i) != malicious_time_servers.end()) {
-            time_server_types.push_back("MALICIOUS");
-        } else {
-            time_server_types.push_back("NORMAL");
-        }
+    for (uint16_t i = 0; i < number_of_malicious_time_servers; ++i) {
+        time_server_types.at(indices_time_servers.at(i)) = "MALICIOUS";
+    }
+
+    for (uint16_t i = number_of_malicious_time_servers; i < number_of_ASes; ++i) {
+        time_server_types.at(indices_time_servers.at(i)) = "NORMAL";
     }
 }
 
