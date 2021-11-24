@@ -628,6 +628,10 @@ namespace ns3 {
     void TimeServer::compare_offs_with_real_offs() {
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             Ptr<SCION_AS> node = dynamic_cast<SCION_AS *>(PeekPointer(nodes.Get(i)));
+            if (node->ia_addr == ia_addr) {
+                continue;
+            }
+
             if (poff.find(node->ia_addr) == poff.end()) {
                 std::cout << "NOT FOUND" << std::endl;
                 continue;
