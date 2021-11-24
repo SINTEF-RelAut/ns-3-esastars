@@ -54,7 +54,7 @@ namespace ns3 {
 
             std::random_device rd;
             std::uniform_int_distribution<int64_t> dist (-std::abs(max_drift_per_day.GetTimeStep()), std::abs(max_drift_per_day.GetTimeStep()));
-            constant_drift_per_day_in_ps = dist(rd);
+            constant_drift_per_day = dist(rd);
 
             if (REFERENCE_TIME_TYPE_MAP[reference_time_type] == REFERENCE_TIME_TYPE::MALICIOUS_REF
                || TIME_SERVER_TYPE_MAP[server_type] == TIME_SERVER_TYPE::MALICIOUS_SERVER) {
@@ -77,6 +77,8 @@ namespace ns3 {
         void ScheduleTimeSync();
         void ScheduleSnapShots();
         void AdvanceLocalTime() override;
+        int64_t GetConstantDriftPerDay();
+        int64_t GetDrift(Time duration);
     private:
         std::map<std::string, READ_OR_WRITE_DISJOINT_PATHS> READ_OR_WRITE_DISJOINT_PATHS_MAP
                 = {{"R", READ_OR_WRITE_DISJOINT_PATHS::R},
@@ -116,7 +118,7 @@ namespace ns3 {
 
         Time minimum_malicious_offset;
         std::string  path_selection;
-        int64_t constant_drift_per_day_in_ps;
+        int64_t constant_drift_per_day;
         int64_t malicious_offset_in_ps;
 
         std::unordered_map<ia_t, std::multiset<int64_t>> poff;
@@ -127,7 +129,7 @@ namespace ns3 {
 
         Time get_max_drift(Time duration);
 
-        int64_t get_drift(Time duration);
+
 
         void request_set_of_all_core_ases_from_path_server();
 
@@ -168,6 +170,8 @@ namespace ns3 {
         void process_received_packet(uint16_t local_if, SCIONPacket *packet, Time receive_time) override;
 
         void capture_snapshot();
+
+        void compare_offs_with_real_offs();
 
         void reset_time();
     };

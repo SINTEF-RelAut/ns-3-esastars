@@ -177,4 +177,8 @@ namespace ns3 {
 
 
     void SCIONCapableNode::modify_pkt_upon_send(SCIONPacket* packet) {}
+
+    Time SCIONCapableNode::GetLocalTime(void) const {
+        return local_time;
+    }
 }

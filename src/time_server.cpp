@@ -345,7 +345,7 @@ namespace ns3 {
             return;
         }
 
-        int64_t drift_int = get_drift(advance);
+        int64_t drift_int = GetDrift(advance);
 
         Time tmp_local_time = local_time;
 
@@ -384,7 +384,7 @@ namespace ns3 {
         return Simulator::Now();
     }
 
-    int64_t TimeServer::get_drift(Time duration) {
+    int64_t TimeServer::GetDrift(Time duration) {
         if (jitter_in_drift) {
             Time max_drift = get_max_drift(duration);
             std::random_device rd;
@@ -393,7 +393,7 @@ namespace ns3 {
             return random_drift_int;
         }
 
-        double drift = (((double) constant_drift_per_day_in_ps) * ((double) duration.GetTimeStep()))
+        double drift = (((double) constant_drift_per_day) * ((double) duration.GetTimeStep()))
                            / ((double) Days(1).GetTimeStep());
 
         return (int64_t) std::round(drift);
@@ -411,12 +411,26 @@ namespace ns3 {
         if (synchronization_round == 0) {
             send_ntp_req_to_peers();
             if (parallel_scheduler) {
+//****************************** Debug: To check the goffs are equal to the real offsets *******************************
+#ifdef NS3_ASSERT_ENABLE
+                std::cout << "assert is enabled" << std::endl;
+                Simulator::Schedule(Time(NTP_REQ_GLOBAL_SYNC_DIFF),
+                                    &RunParallelEvents<void (TimeServer::*)(), TimeServer*>,
+                                    local_address, &TimeServer::AdvanceLocalTime);
+                Simulator::Schedule(Time(NTP_REQ_GLOBAL_SYNC_DIFF),
+                                    &RunParallelEvents<void (TimeServer::*)(), TimeServer*>,
+                                    local_address, &TimeServer::compare_offs_with_real_offs);
+#endif
+//**********************************************************************************************************************
+
                 Simulator::Schedule(Time(NTP_REQ_GLOBAL_SYNC_DIFF),
                                     &RunParallelEvents<void (TimeServer::*)(), TimeServer*>,
                                     local_address, &TimeServer::continue_global_time_sync);
             }
 
+// ********************************* Debug: To print goffsets **********************************************************
 //            Simulator::Schedule(Time(NTP_REQ_GLOBAL_SYNC_DIFF), &TimeServer::continue_global_time_sync, this);
+// *********************************************************************************************************************
         } else {
             int64_t loff = get_reference_time().GetTimeStep() - local_time.GetTimeStep();
             correct_local_time(loff, time_sync_period);
@@ -458,17 +472,23 @@ namespace ns3 {
         int64_t goff = std::floor((*iter1 + *iter2) / 2);
         int64_t doff = loff - goff;
 
+//***************************** Debug: To print goffsets ***************************************************************
 //        std::cout << " ************************************* " << std::endl;
 //        std::cout << "goff: " << goff / 1000000000.0 <<
 //                   ", real_time_diff: " << (Simulator::Now().GetTimeStep() - local_time.GetTimeStep()) / 1000000000.0 << std::endl;
 //        for (auto const & an_off : off) {
 //            std::cout << an_off / 1000000000.0 << std::endl;
 //        }
+//**********************************************************************************************************************
 
         if (std::abs(doff) > std::abs(global_cut_off.GetTimeStep())) {
+//********************************************* Alg V1 & V2 ************************************************************
 //            doff = doff > 0 ? std::abs(global_cut_off.GetTimeStep()) : -std::abs(global_cut_off.GetTimeStep());
 //            corr = goff + doff;
+//**********************************************************************************************************************
+//********************************************* Alg V3 *****************************************************************
             corr = goff;
+//**********************************************************************************************************************
         }
 
         correct_local_time(corr, G * time_sync_period);
@@ -603,8 +623,31 @@ namespace ns3 {
         } else {
             std::cout << "AS " << isd_number << "-" << as_number << ": " << local_time << std::endl;
         }
+    }
+
+    void TimeServer::compare_offs_with_real_offs() {
+        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
+            Ptr<SCION_AS> node = dynamic_cast<SCION_AS *>(PeekPointer(nodes.Get(i)));
+            if (poff.find(node->ia_addr) == poff.end()) {
+                std::cout << "NOT FOUND" << std::endl;
+                continue;
+            }
+
+            Time remote_local_time = dynamic_cast<TimeServer *> (node->GetHost(local_address))->GetLocalTime();
+            int64_t time_diff = (remote_local_time - local_time).GetTimeStep();
+
+            int64_t remote_drift = dynamic_cast<TimeServer *> (node->GetHost(local_address))->GetDrift(Time(NTP_REQ_GLOBAL_SYNC_DIFF));
+            int64_t local_drift = GetDrift(Time(NTP_REQ_GLOBAL_SYNC_DIFF));
+
+            int64_t offset = *poff.at(ia_addr).begin();
+
+            int64_t upper_bound = std::abs(remote_drift) + std::abs(local_drift);
+
+            NS_ASSERT_MSG(std::abs(offset - time_diff) < upper_bound,
+                          "offset: " << TimeStep(offset) << ", real time diff" << TimeStep(time_diff));
 
 
+        }
     }
 
     void TimeServer::ScheduleListOfAllASesRequest() {
@@ -650,5 +693,9 @@ namespace ns3 {
                 Simulator::Schedule(t, &TimeServer::capture_snapshot, this);
             }
         }
+    }
+
+    int64_t TimeServer::GetConstantDriftPerDay() {
+        return constant_drift_per_day;
     }
 }

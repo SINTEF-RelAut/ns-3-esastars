@@ -47,6 +47,7 @@ namespace ns3 {
         void InitializeTransmissionQueues();
         void DestroySCIONPacket(SCIONPacket* packet);
         uint32_t GetNDevices (void) const;
+        Time GetLocalTime (void) const;
 
         virtual void AdvanceLocalTime();
     protected:
