@@ -21,7 +21,6 @@
 #include "ns3/map-scheduler.h"
 
 #include "src/SCION/headers/beaconing/beacon.h"
-#include "src/SCION/headers/local_scheduler.h"
 #include "src/SCION/headers/scion_packet.h"
 #include "src/SCION/headers/border_router.h"
 #include "src/SCION/headers/scion_host.h"
@@ -60,9 +59,6 @@ namespace ns3 {
         Time local_time;
         /** @brief Largest amount of bandwidth found on any border router link. */
         int32_t AS_max_bwd;
-
-        std::vector<LocalScheduler*> events; // a vector of (#interfaces +  #services + #hosts) schedulers
-        std::vector<LocalScheduler*> schedulers_to_run_next;
 
         std::vector<Time> latencies_between_hosts_and_path_server;
         std::vector<Time> latencies_between_interfaces_and_beacon_server;
@@ -118,13 +114,9 @@ namespace ns3 {
 
         void AdvanceTime (ns3::Time advance);
 
-        void ExecuteLocalScheduler();
-
         void AddHost(SCIONHost* host);
 
         BorderRouter* AddBR (double latitude, double longitude, Time processing_delay, Time processing_throughput_delay);
-
-        uint64_t GetFirstEventTime ();
 
         void AddToRemoteASInfo (uint16_t remote_if, SCION_AS* remote_as);
 
@@ -143,7 +135,6 @@ namespace ns3 {
 
         void connect_internal_nodes(bool only_propagation_delay, std::string border_routers_malicious_action, Time malicious_delay);
         void initialize_latencies(bool only_propagation_delay);
-        void initialize_schedulers();
 
     };
 }

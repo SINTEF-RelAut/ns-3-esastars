@@ -7,7 +7,6 @@
 
 #include "ns3/node.h"
 
-#include "src/SCION/headers/local_scheduler.h"
 #include "src/SCION/headers/scion_packet.h"
 
 
@@ -27,10 +26,6 @@ namespace ns3 {
                                             AS(AS)
                                             {
             ia_addr = (((uint32_t) isd_number) << 16) | ((uint32_t) as_number);
-            receive_scheduler_local_as = new LocalScheduler();
-            receive_scheduler_remote_as = new LocalScheduler();
-            process_scheduler = new LocalScheduler();
-            send_scheduler = new LocalScheduler();
             next_packet_id = 0;
             processing_queue_length = 0;
             local_time = TimeStep(0);
@@ -39,10 +34,6 @@ namespace ns3 {
         void AddToIFForwadingTable(uint16_t as_if, uint16_t local_if);
         void AddToAddressForwardingTable(host_addr_t addr, uint16_t local_if);
         void ScheduleReceive(uint16_t local_if, SCIONPacket* packet, Time propagation_delay);
-
-        std::pair<LocalScheduler*, LocalScheduler*> GetReceiveSchedulers();
-        LocalScheduler* GetSendScheduler();
-        LocalScheduler* GetProcessScheduler();
 
         host_addr_t GetLocalAddress () const;
 
@@ -70,11 +61,6 @@ namespace ns3 {
         double longitude;
 
         SCION_AS* AS;
-
-        LocalScheduler* receive_scheduler_local_as;
-        LocalScheduler* receive_scheduler_remote_as;
-        LocalScheduler* process_scheduler;
-        LocalScheduler* send_scheduler;
 
         // Queueing delay is modeled by the processing and send scheduling queues, but no drop function is implemented yet
         std::vector<Time> propagation_delays;

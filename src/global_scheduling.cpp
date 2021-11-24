@@ -20,58 +20,8 @@
 
 namespace ns3 {
     NS_LOG_COMPONENT_DEFINE("GlobalScheduling");
-    std::vector<Node*> nodes_to_run_next;
 
-
-    void ExecuteLocallyScheduledEvents (NodeContainer& nodes) {
-        auto start = std::chrono::system_clock::now();
-#pragma omp parallel for schedule(dynamic, 1)
-        for (uint32_t i = 0; i < nodes_to_run_next.size(); ++i) {
-            Ptr<SCION_AS> node = dynamic_cast<SCION_AS*>(nodes_to_run_next.at(i));
-            node->ExecuteLocalScheduler();
-        }
-        auto end = std::chrono::system_clock::now();
-        std::chrono::duration<double> elapsed_seconds = end-start;
-        NS_LOG_DEBUG("parallel time " << elapsed_seconds.count());
-
-        start = std::chrono::system_clock::now();
-        ScheduleNextEvent (nodes);
-        end = std::chrono::system_clock::now();
-        elapsed_seconds = end-start;
-        NS_LOG_DEBUG("serial time " << elapsed_seconds.count());
-
-    }
-
-    void ScheduleNextEvent (NodeContainer& nodes) {
-        uint64_t min_event_time = (uint64_t) std::numeric_limits<uint64_t>::max();
-        nodes_to_run_next.clear();
-        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-            Ptr<SCION_AS> node = DynamicCast<SCION_AS>(nodes.Get(i));
-            uint64_t event_time = node->GetFirstEventTime();
-            if (event_time == min_event_time) {
-                nodes_to_run_next.push_back(PeekPointer(node));
-            }
-            if (event_time < min_event_time) {
-                min_event_time = event_time;
-                nodes_to_run_next.clear();
-                nodes_to_run_next.push_back(PeekPointer(node));
-            }
-        }
-
-        if (min_event_time == std::numeric_limits<uint64_t>::max()) {
-            return;
-        }
-
-        Time advance = TimeStep(min_event_time) -  Simulator::Now();
-        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-            Ptr<SCION_AS> node = DynamicCast<SCION_AS>(nodes.Get(i));
-            node->AdvanceTime(advance);
-        }
-
-        Simulator::Schedule(advance, &ExecuteLocallyScheduledEvents, nodes);
-    }
-
-    void SchedulePeriodicEvents(YAML::Node& config, NodeContainer& nodes) {
+    void SchedulePeriodicEvents(YAML::Node& config) {
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             Ptr<SCION_AS> node = DynamicCast<SCION_AS>(nodes.Get(i));
 
@@ -87,16 +37,15 @@ namespace ns3 {
 
         }
 
-//        ScheduleNextEvent(nodes);
-
         if (config["beacon_service"]) {
             for (Time t = ns3::Seconds(0.0); t < Time(config["beacon_service"]["last_beaconing"].as<std::string>()); t += Time(config["beacon_service"]["period"].as<std::string>())) {
-                Simulator::Schedule(t + ns3::Seconds(1.0), &PeriodicBeaconingCheckPoint, nodes);
+                Simulator::Schedule(t + ns3::Seconds(1.0), &PeriodicBeaconingCheckPoint);
             }
         }
+
     }
 
-    void PeriodicBeaconingCheckPoint(NodeContainer& nodes) {
+    void PeriodicBeaconingCheckPoint() {
         std::cout << "################################## " << DynamicCast<SCION_AS>(nodes.Get(0))->GetBeaconServer()->GetCurrentTime() << " #########################################" << std::endl;
         uint32_t node_number = nodes.GetN();
 

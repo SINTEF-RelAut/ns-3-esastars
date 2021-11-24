@@ -33,13 +33,9 @@ namespace ns3 {
         }
     }
 
-    void ScheduleNextEvent (NodeContainer& nodes);
+    void SchedulePeriodicEvents(YAML::Node& config);
 
-    void ExecuteNonPeriodicEvents (ns3::NodeContainer& nodes, ns3::Time advance);
-
-    void SchedulePeriodicEvents(YAML::Node& config, NodeContainer& nodes);
-
-    void PeriodicBeaconingCheckPoint(ns3::NodeContainer& nodes);
+    void PeriodicBeaconingCheckPoint();
 }
 
 #endif //NS_3_BEACONING_SIMULATOR_GLOBAL_SCHEDULING_H

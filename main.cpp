@@ -127,13 +127,11 @@ int main(int argc, char *argv[]) {
     std::ofstream out(out_path);
     std::cout.rdbuf(out.rdbuf());
 
-
-
-    InstantiateASesFromTopo( xml_root, AS_no_to_index, index_to_AS_no, nodes, config);
-    InstantiateLinksFromTopo( xml_root, nodes, AS_no_to_index, config);
+    InstantiateASesFromTopo(xml_root, AS_no_to_index, index_to_AS_no, nodes, config);
+    InstantiateLinksFromTopo(xml_root, nodes, AS_no_to_index, config);
     InitializeASesAttributes(nodes, config);
 
-    ns3::SchedulePeriodicEvents(config, nodes);
+    ns3::SchedulePeriodicEvents(config);
     ns3::Simulator::Stop(simulation_end_time);
     ns3::Simulator::Run();
 

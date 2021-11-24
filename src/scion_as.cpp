@@ -21,7 +21,6 @@ namespace ns3 {
     SCION_AS::DoInitializations(uint32_t all_nodes, bool only_propagation_delay, std::string border_routers_malicious_action, Time malicious_delay) {
         connect_internal_nodes(only_propagation_delay,  border_routers_malicious_action, malicious_delay);
         initialize_latencies(only_propagation_delay);
-        initialize_schedulers();
 
         for (auto const & br : border_routers) {
             br->InitializeTransmissionQueues();
@@ -87,33 +86,6 @@ namespace ns3 {
 
     void SCION_AS::AdvanceTime (ns3::Time advance) {
         local_time += advance;
-    }
-
-    void SCION_AS::ExecuteLocalScheduler() {
-        for (auto const & scheduler : schedulers_to_run_next) {
-            scheduler->ProcessEvents();
-        }
-    }
-
-    uint64_t SCION_AS::GetFirstEventTime () {
-        uint64_t min_time = std::numeric_limits<uint64_t>::max();
-
-        schedulers_to_run_next.clear();
-
-        for (auto const & scheduler : events) {
-            uint64_t event_time = scheduler->GetFirstEventTime();
-            if (event_time == min_time) {
-                schedulers_to_run_next.push_back(scheduler);
-            }
-
-            if (event_time < min_time) {
-                min_time = event_time;
-                schedulers_to_run_next.clear();
-                schedulers_to_run_next.push_back(scheduler);
-            }
-        }
-
-        return min_time;
     }
 
     BeaconServer *
@@ -321,42 +293,6 @@ namespace ns3 {
                 h2->AddToAddressForwardingTable(h1->GetLocalAddress(), h2->GetNDevices() - 1);
             }
         }
-    }
-
-    void SCION_AS::initialize_schedulers() {
-        std::set<BorderRouter*> border_routers_set (border_routers.begin(), border_routers.end());
-        events.resize((border_routers_set.size() + hosts.size() + 1) * 4 + 1);
-
-        int i = 0;
-        for (auto const & br : border_routers_set) {
-            auto const & [receive_scheduler_local_as, receive_scheduler_remote_as] = br->GetReceiveSchedulers();
-            events.at(i) = receive_scheduler_local_as;
-            events.at(i + 1) = receive_scheduler_remote_as;
-            events.at(i + 2) = br->GetProcessScheduler();
-            events.at(i + 3) = br->GetSendScheduler();
-            i += 4;
-        }
-
-        int k = 0;
-        for (uint64_t j = border_routers_set.size() * 4; j < (border_routers_set.size() + hosts.size()) * 4; j += 4) {
-            SCIONHost* host = hosts.at(k);
-            auto const & [receive_scheduler_local_as, receive_scheduler_remote_as] = host->GetReceiveSchedulers();
-            events.at(j) = receive_scheduler_local_as;
-            events.at(j + 1) = receive_scheduler_remote_as;
-            events.at(j + 2) = hosts.at(k)->GetProcessScheduler();
-            events.at(j + 3) = hosts.at(k)->GetSendScheduler();
-            k++;
-        }
-
-        int l = (border_routers_set.size() + hosts.size()) * 4;
-
-        events.at(l) = pathServer->GetReceiveSchedulers().first;
-        events.at(l + 1) = pathServer->GetReceiveSchedulers().second;
-        events.at(l + 2) = pathServer->GetProcessScheduler();
-        events.at(l + 3) = pathServer->GetSendScheduler();
-
-        events.at(l + 4) = beaconServer->GetScheduler();
-
     }
 
     void SCION_AS::initialize_latencies(bool only_propagation_delay) {

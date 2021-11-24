@@ -18,7 +18,6 @@
 
 #include "src/SCION/headers/beaconing/beacon.h"
 #include "src/SCION/headers/scion_as.h"
-#include "src/SCION/headers/local_scheduler.h"
 #include "src/SCION/headers/externs.h"
 
 namespace ns3 {
@@ -52,11 +51,7 @@ namespace ns3 {
     public:
         BeaconServer(bool parallel_scheduler, beaconing_timing_params params) :
                      parallel_scheduler(parallel_scheduler), beaconing_period(params.first), expiration_period(params.second)
-        {
-            scheduler = new LocalScheduler();
-        }
-
-
+        {}
 
         // beacon store structures ***************************************************************************************************
         /** @brief Pointers to all the beacons indexable by their destination AS and their hop count.*/
@@ -138,7 +133,6 @@ namespace ns3 {
 
         void ScheduleBeaconing(Time last_beaconing_event_time);
 
-        LocalScheduler* GetScheduler();
     protected:
         bool parallel_scheduler;
 
@@ -153,7 +147,6 @@ namespace ns3 {
         /** @brief Expiration time of beacon. */
         uint16_t expiration_period;
 
-        LocalScheduler* scheduler;
 
         // helper structures ********************************************************************************************************
         /**

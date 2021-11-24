@@ -66,9 +66,6 @@ namespace ns3 {
         return local_address;
     }
 
-    std::pair<LocalScheduler*, LocalScheduler*> SCIONCapableNode::GetReceiveSchedulers() {return std::make_pair(receive_scheduler_local_as, receive_scheduler_remote_as);}
-    LocalScheduler* SCIONCapableNode::GetSendScheduler() {return send_scheduler;}
-    LocalScheduler* SCIONCapableNode::GetProcessScheduler() {return process_scheduler;}
 
     double SCIONCapableNode::GetLatitude() const {return latitude;}
     double SCIONCapableNode::GetLogitude() const {return longitude;}

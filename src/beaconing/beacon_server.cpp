@@ -369,6 +369,4 @@ namespace ns3 {
             }
         }
     }
-
-    LocalScheduler* BeaconServer::GetScheduler() {return scheduler;}
 } // namespace ns3
