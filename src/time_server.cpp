@@ -639,7 +639,7 @@ namespace ns3 {
             int64_t remote_drift = dynamic_cast<TimeServer *> (node->GetHost(local_address))->GetDrift(Time(NTP_REQ_GLOBAL_SYNC_DIFF));
             int64_t local_drift = GetDrift(Time(NTP_REQ_GLOBAL_SYNC_DIFF));
 
-            int64_t offset = *poff.at(ia_addr).begin();
+            int64_t offset = *poff.at(node->ia_addr).begin();
 
             int64_t upper_bound = std::abs(remote_drift) + std::abs(local_drift);
 
