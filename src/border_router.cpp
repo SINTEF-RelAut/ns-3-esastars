@@ -9,8 +9,8 @@
 namespace ns3 {
     NS_LOG_COMPONENT_DEFINE("BorderRouter");
     void BorderRouter::process_received_packet(uint16_t if_rcv, SCIONPacket *packet, Time receive_time) {
-        NS_LOG_DEBUG("packet received " << packet);
-        NS_LOG_DEBUG(isd_number<< ":" << as_number
+        NS_LOG_FUNCTION("packet received " << packet);
+        NS_LOG_FUNCTION(isd_number<< ":" << as_number
                      << " packet from " <<  GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia)
                      << " to " << GET_ISDN(packet->dst_ia) << ":" << GET_ASN(packet->dst_ia)
                      << ", currIF: " << packet->curr_inf << ", currHopF: " << packet->cur_hopf
@@ -31,7 +31,7 @@ namespace ns3 {
             NS_ASSERT(GET_HOP_AS(packet->path.at(packet->curr_inf)->hops.at(packet->cur_hopf)) == as_number);
 
             if (forwarding_table_to_addresses_inside_as.find(packet->dst_host) == forwarding_table_to_addresses_inside_as.end()) {
-                NS_LOG_DEBUG("Address not in the forwarding table");
+                NS_LOG_FUNCTION("Address not in the forwarding table");
                 return;
             }
 

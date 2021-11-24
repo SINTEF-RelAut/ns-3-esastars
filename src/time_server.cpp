@@ -21,7 +21,7 @@ namespace ns3 {
     void TimeServer::request_set_of_all_core_ases_from_path_server () {
         AdvanceLocalTime();
 
-        NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " sent req for all core ASes to PthSrv");
+        NS_LOG_FUNCTION("TimeSrv at " << isd_number << ":" << as_number << " sent req for all core ASes to PthSrv");
 
         payload_type_t payload_type = payload_type_t::REQ_FOR_LIST_OF_ALL_CORE_ASES;
         Payload payload;
@@ -34,27 +34,27 @@ namespace ns3 {
         SCIONHost::process_received_packet(local_if, packet, receive_time);
 
         if (packet->payload_type == payload_type_t::LIST_OF_ALL_CORE_ASES) {
-            NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " rcv all core ASes from PthSrv");
+            NS_LOG_FUNCTION("TimeSrv at " << isd_number << ":" << as_number << " rcv all core ASes from PthSrv");
             receive_set_of_all_core_ases_from_path_server(packet);
             packet->packet_originator->DestroySCIONPacket(packet);
             return;
         }
 
         if (packet->payload_type == payload_type_t::BROADCAST_LIST_OF_ALL_CORE_ASES){
-            NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " rcv all core ASes from other TimeSrv " << GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia));
+            NS_LOG_FUNCTION("TimeSrv at " << isd_number << ":" << as_number << " rcv all core ASes from other TimeSrv " << GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia));
             receive_set_of_all_core_ases_from_other_time_server(packet);
             packet->packet_originator->DestroySCIONPacket(packet);
             return;
         }
 
         if (packet->payload_type == payload_type_t::NTP_REQ) {
-            NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " rcv ntp req from " << GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia));
+            NS_LOG_FUNCTION("TimeSrv at " << isd_number << ":" << as_number << " rcv ntp req from " << GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia));
             receive_ntp_req_from_peer(packet, receive_time);
             return;
         }
 
         if (packet->payload_type == payload_type_t::NTP_RESP) {
-            NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " rcv ntp resp from " << GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia));
+            NS_LOG_FUNCTION("TimeSrv at " << isd_number << ":" << as_number << " rcv ntp resp from " << GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia));
             receive_ntp_res_from_peer(packet, receive_time);
             DestroySCIONPacket(packet);
             return;
@@ -113,7 +113,7 @@ namespace ns3 {
     }
 
     void TimeServer::construct_set_of_most_disjoint_paths () {
-        NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " constructing disjoint paths");
+        NS_LOG_FUNCTION("TimeSrv at " << isd_number << ":" << as_number << " constructing disjoint paths");
         for (auto const & dst_ia : set_of_all_core_ases) {
             if (dst_ia == ia_addr) {
                 continue;
@@ -181,11 +181,11 @@ namespace ns3 {
             }
         }
 
-        NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " FINISHED constructing disjoint paths");
+        NS_LOG_FUNCTION("TimeSrv at " << isd_number << ":" << as_number << " FINISHED constructing disjoint paths");
     }
 
     void TimeServer::construct_set_of_shortest_paths() {
-        NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " constructing shortest paths");
+        NS_LOG_FUNCTION("TimeSrv at " << isd_number << ":" << as_number << " constructing shortest paths");
         for (auto const & dst_ia : set_of_all_core_ases) {
             if (dst_ia == ia_addr) {
                 continue;
@@ -205,7 +205,7 @@ namespace ns3 {
     }
 
     void TimeServer::construct_set_of_random_paths() {
-        NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " constructing shortest paths");
+        NS_LOG_FUNCTION("TimeSrv at " << isd_number << ":" << as_number << " constructing shortest paths");
         for (auto const & dst_ia : set_of_all_core_ases) {
             if (dst_ia == ia_addr) {
                 continue;
@@ -301,7 +301,7 @@ namespace ns3 {
         }
 
         for (auto const & isd : all_isds) {
-            NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " send req for paths to isd " << isd);
+            NS_LOG_FUNCTION("TimeSrv at " << isd_number << ":" << as_number << " send req for paths to isd " << isd);
             if (isd == isd_number) {
                 send_request_for_path_segments(path_segment_type::CORE_SEG, 0, 0);
             } else {
@@ -324,7 +324,7 @@ namespace ns3 {
         }
 
         for (auto const & path : paths_to_neighbor_ases) {
-            NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " sent list of all ases to " << GET_HOP_ISD(path->hops.back()) << ":" << GET_HOP_AS(path->hops.back()));
+            NS_LOG_FUNCTION("TimeSrv at " << isd_number << ":" << as_number << " sent list of all ases to " << GET_HOP_ISD(path->hops.back()) << ":" << GET_HOP_AS(path->hops.back()));
             payload_type_t payload_type = payload_type_t::BROADCAST_LIST_OF_ALL_CORE_ASES;
 
             Payload payload;
@@ -352,13 +352,13 @@ namespace ns3 {
         local_time += advance;
         if (drift_int < 0) {
             local_time -= TimeStep(std::abs(drift_int));
-            NS_LOG_DEBUG( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << tmp_local_time
+            NS_LOG_FUNCTION( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << tmp_local_time
                                       << ", updated_local_time: " << local_time << ", last update: "
                                       << real_time_of_last_time_advance << ", advance: " << advance
                          << ", random_drift: -" << TimeStep(std::abs(drift_int)));
         } else {
             local_time += TimeStep(std::abs(drift_int));
-            NS_LOG_DEBUG( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << tmp_local_time
+            NS_LOG_FUNCTION( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << tmp_local_time
                                       << ", updated_local_time: " << local_time << ", last update: "
                                       << real_time_of_last_time_advance << ", advance: " << advance
                          << ", random_drift: +" << TimeStep(std::abs(drift_int)));
@@ -506,19 +506,19 @@ namespace ns3 {
 
         if (corr > 0) {
             local_time += TimeStep(final_corr_abs);
-            NS_LOG_DEBUG( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << tmp_local_time
+            NS_LOG_FUNCTION( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << tmp_local_time
                           << ", updated_local_time: " << local_time << ", final_corr: +" << TimeStep(final_corr_abs)
                           << ", max_drift: " << max_drift << ", corr: +" << TimeStep(std::abs(corr)) );
         } else {
             local_time -= TimeStep(final_corr_abs);
-            NS_LOG_DEBUG( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << tmp_local_time
+            NS_LOG_FUNCTION( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << tmp_local_time
                                       << ", updated_local_time: " << local_time << ", final_corr: -" << TimeStep(final_corr_abs)
                                       << ", max_drift: " << max_drift << ", corr: -" << TimeStep(std::abs(corr)) );
         }
     }
 
     void TimeServer::send_ntp_req_to_peers() {
-        NS_LOG_DEBUG( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << local_time);
+        NS_LOG_FUNCTION( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << local_time);
 
         for (auto const & peer_ia : set_of_all_core_ases) {
             if (peer_ia == ia_addr) {
@@ -526,7 +526,7 @@ namespace ns3 {
             }
 
             for (auto const & path_seg : set_of_selected_paths.at(peer_ia)) {
-                NS_LOG_DEBUG("TimeSrv at " << isd_number << ":" << as_number << " sent ntp req to " << GET_ISDN(peer_ia) << ":" << GET_ASN(peer_ia));
+                NS_LOG_FUNCTION("TimeSrv at " << isd_number << ":" << as_number << " sent ntp req to " << GET_ISDN(peer_ia) << ":" << GET_ASN(peer_ia));
                 payload_type_t payload_type = payload_type_t::NTP_REQ;
 
                 Payload payload;
@@ -555,7 +555,7 @@ namespace ns3 {
 
     void TimeServer::receive_ntp_req_from_peer(SCIONPacket *packet, Time receive_time) {
         int64_t t0 = packet->payload.ntp_req_or_resp.t0;
-        NS_LOG_DEBUG( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << local_time
+        NS_LOG_FUNCTION( "ia_addr: " << isd_number << "-" << as_number << ", local_time: " << local_time
                        << ", sender_ia: " << GET_ISDN(packet->src_ia) << "-" << GET_ASN(packet->src_ia)
                        << ", receive_time: " << receive_time
                        << ", t0: " << (t0 < 0 ? "-" : "+") << TimeStep(std::abs(t0)));
@@ -571,7 +571,7 @@ namespace ns3 {
         int64_t t1 = packet->payload.ntp_req_or_resp.t1;
         int64_t t2 = packet->payload.ntp_req_or_resp.t2;
 
-        NS_LOG_DEBUG("TimeServ at " << isd_number << ":" << as_number <<
+        NS_LOG_FUNCTION("TimeServ at " << isd_number << ":" << as_number <<
         " RCV NTP resp from peer " << GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia)
         << ", local_time: " << local_time
         << ", t0: " << (t0 < 0 ? "-" : "+") << TimeStep(std::abs(t0))

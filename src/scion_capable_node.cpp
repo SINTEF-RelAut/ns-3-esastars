@@ -37,7 +37,7 @@ namespace ns3 {
     }
 
     void SCIONCapableNode::schedule_for_send(uint16_t local_if, SCIONPacket* packet) {
-        NS_LOG_DEBUG(packet);
+        NS_LOG_FUNCTION(packet);
         transmission_queues_lengths.at(local_if) += packet->size;
         Time delay = transmission_delays.at(local_if) * transmission_queues_lengths.at(local_if) ;
         Simulator::Schedule(delay, &SCIONCapableNode::send,this, local_if, packet);
@@ -45,7 +45,7 @@ namespace ns3 {
 
     void SCIONCapableNode::send (uint16_t local_if, SCIONPacket* packet) {
         AdvanceLocalTime();
-        NS_LOG_DEBUG(packet);
+        NS_LOG_FUNCTION(packet);
         transmission_queues_lengths.at(local_if) -= packet->size;
         SCIONCapableNode* remote_node = std::get<0>(remote_nodes_info.at(local_if));
         uint16_t remote_if = std::get<1>(remote_nodes_info.at(local_if));
@@ -92,7 +92,7 @@ namespace ns3 {
     }
 
     void SCIONCapableNode::send_scion_packet(SCIONPacket* packet) {
-        NS_LOG_DEBUG("I am host " << isd_number << ":" << as_number << ":" << local_address << ". Packet sent to " << GET_ISDN(packet->dst_ia) << ":" << GET_ASN(packet->dst_ia) << ":" << packet->dst_host);
+        NS_LOG_FUNCTION("I am host " << isd_number << ":" << as_number << ":" << local_address << ". Packet sent to " << GET_ISDN(packet->dst_ia) << ":" << GET_ASN(packet->dst_ia) << ":" << packet->dst_host);
 
         uint16_t local_if_to_send;
         if (packet->dst_ia != ia_addr) {
@@ -100,7 +100,7 @@ namespace ns3 {
             NS_ASSERT(GET_HOP_ISD(hopf) == isd_number && GET_HOP_AS(hopf) == as_number);
             bool reverse = packet->path_reversed ^ packet->path.at(packet->curr_inf)->reverse;
 
-            NS_LOG_DEBUG( reverse << " " << packet->path_reversed << " " << packet->path.at(packet->curr_inf)->reverse);
+            NS_LOG_FUNCTION( reverse << " " << packet->path_reversed << " " << packet->path.at(packet->curr_inf)->reverse);
 
             uint16_t as_if_to_send;
             if (reverse) {
@@ -109,11 +109,11 @@ namespace ns3 {
                 as_if_to_send = GET_HOP_EG_IF(hopf);
             }
 
-            NS_LOG_DEBUG(" first hop field: isd: " << GET_HOP_ISD(packet->path.at(packet->curr_inf)->hops.at(packet->cur_hopf))
+            NS_LOG_FUNCTION(" first hop field: isd: " << GET_HOP_ISD(packet->path.at(packet->curr_inf)->hops.at(packet->cur_hopf))
             << ", as:" << GET_HOP_AS(packet->path.at(packet->curr_inf)->hops.at(packet->cur_hopf))
             << ", ing:" << GET_HOP_ING_IF(packet->path.at(packet->curr_inf)->hops.at(packet->cur_hopf))
             << ", eg:" << GET_HOP_EG_IF(packet->path.at(packet->curr_inf)->hops.at(packet->cur_hopf)));
-            NS_LOG_DEBUG("as_if_to_send: " << as_if_to_send);
+            NS_LOG_FUNCTION("as_if_to_send: " << as_if_to_send);
 
             local_if_to_send = forwarding_table_to_other_AS_ifaces.at(as_if_to_send);
         } else {

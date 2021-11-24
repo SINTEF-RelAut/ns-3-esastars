@@ -14,7 +14,7 @@ namespace ns3 {
     NS_LOG_COMPONENT_DEFINE("SCIONHost");
 
     void SCIONHost::receive_registered_path_segments (path_segment_type seg_type, ia_t src_ia, ia_t dst_ia, const reg_path_segs_to_one_as_t* path_segments) {
-        NS_LOG_DEBUG("I am host " << isd_number << ":" << as_number << ":" << local_address << ". Registered paths fetched: from " << src_ia << " " << GET_ISDN(src_ia) << ":" << GET_ASN(src_ia) << " to " << GET_ISDN(dst_ia) << ":" << GET_ASN(dst_ia) << " number of segments: " << path_segments->size());
+        NS_LOG_FUNCTION("I am host " << isd_number << ":" << as_number << ":" << local_address << ". Registered paths fetched: from " << src_ia << " " << GET_ISDN(src_ia) << ":" << GET_ASN(src_ia) << " to " << GET_ISDN(dst_ia) << ":" << GET_ASN(dst_ia) << " number of segments: " << path_segments->size());
 
         for (auto const & key_path_segment_pair : *path_segments) {
             PathSegment* path_segment = key_path_segment_pair.second;
@@ -165,7 +165,7 @@ namespace ns3 {
 
     void SCIONHost::process_received_packet(uint16_t local_if, SCIONPacket *packet, Time receive_time) {
         NS_ASSERT(packet->dst_ia == ia_addr && packet->dst_host == local_address);
-        NS_LOG_DEBUG("I am host " << isd_number << ":" << as_number << ":" << local_address << ". Packet received from " << GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia) << ":" << packet->src_host);
+        NS_LOG_FUNCTION("I am host " << isd_number << ":" << as_number << ":" << local_address << ". Packet received from " << GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia) << ":" << packet->src_host);
 
         SCIONCapableNode::process_received_packet(local_if, packet, receive_time);
 
@@ -182,7 +182,7 @@ namespace ns3 {
         if (packet->packet_originator == this) {
             NS_ASSERT(on_the_flight_packets.find(packet->id) != on_the_flight_packets.end());
             NS_ASSERT(&on_the_flight_packets.at(packet->id) == packet);
-            NS_LOG_DEBUG("I am host " << isd_number << ":" << as_number << ":" << local_address << ". Response received from " << GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia) << ":" << packet->src_host);
+            NS_LOG_FUNCTION("I am host " << isd_number << ":" << as_number << ":" << local_address << ". Response received from " << GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia) << ":" << packet->src_host);
 
             DestroySCIONPacket(packet);
             // The repose of a  previously-sent message has received; do whatever is necessary
