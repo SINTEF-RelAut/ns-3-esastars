@@ -18,7 +18,7 @@ namespace ns3 {
         omp_set_num_threads(NUM_CORE);
 #pragma omp parallel for schedule (dynamic)
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-            Ptr<SCION_AS> node = dynamic_cast<SCION_AS *>(PeekPointer(nodes.Get(i)));
+            SCION_AS* node = dynamic_cast<SCION_AS *>(PeekPointer(nodes.Get(i)));
             ((dynamic_cast<OBJ>(node->GetHost(host_addr)))->*mem_ptr)();
         }
     }
@@ -28,7 +28,7 @@ namespace ns3 {
         omp_set_num_threads(NUM_CORE);
 #pragma omp parallel for schedule (dynamic)
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-            Ptr<SCION_AS> node = dynamic_cast<SCION_AS *>(PeekPointer(nodes.Get(i)));
+            SCION_AS* node = dynamic_cast<SCION_AS *>(PeekPointer(nodes.Get(i)));
             ((node->GetBeaconServer())->*mem_ptr)();
         }
     }
