@@ -648,7 +648,8 @@ namespace ns3 {
             int64_t upper_bound = std::abs(remote_drift) + std::abs(local_drift);
 
             NS_ASSERT_MSG(std::abs(offset - time_diff) < upper_bound,
-                          "offset: " << TimeStep(offset) << ", real time diff" << TimeStep(time_diff));
+                          "offset: " << TimeStep(offset) << ", real time diff: " << TimeStep(time_diff)
+                          << ", upper bound: " << TimeStep(upper_bound));
 
 
         }
