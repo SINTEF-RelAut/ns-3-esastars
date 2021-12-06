@@ -46,6 +46,16 @@ void SetTimeResolution (std::string time_res_str);
 void InstantiateASesFromTopo( rapidxml::xml_node<>* xml_root,  std::map<int32_t, uint16_t>& AS_no_to_index,
                              std::map<uint16_t, int32_t>& index_to_AS_no, ns3::NodeContainer& AS_nodes, const YAML::Node & config);
 
+void InstantiatePathServers(const YAML::Node& config,
+                            std::map<int32_t, uint16_t>& AS_no_to_index,
+                            std::map<uint16_t,int32_t>& index_to_AS_no,
+                            ns3::NodeContainer& AS_nodes);
+
+void InstantiateTimeServers(const YAML::Node& config,
+                            std::map<int32_t, uint16_t>& AS_no_to_index,
+                            std::map<uint16_t,int32_t>& index_to_AS_no,
+                            ns3::NodeContainer& AS_nodes);
+
 void InstantiateLinksFromTopo ( rapidxml::xml_node<>* xml_root, ns3::NodeContainer& AS_nodes, std::map<int32_t, uint16_t>& AS_no_to_index, const YAML::Node& config);
 
 void InitializeASesAttributes(const ns3::NodeContainer& AS_nodes, const YAML::Node& config);
@@ -128,6 +138,15 @@ int main(int argc, char *argv[]) {
     std::cout.rdbuf(out.rdbuf());
 
     InstantiateASesFromTopo(xml_root, AS_no_to_index, index_to_AS_no, nodes, config);
+
+    if (config["path_service"]) {
+        InstantiatePathServers(config, AS_no_to_index, index_to_AS_no, nodes);
+    }
+
+    if(config["time_service"]) {
+        InstantiateTimeServers(config, AS_no_to_index, index_to_AS_no, nodes);
+    }
+
     InstantiateLinksFromTopo(xml_root, nodes, AS_no_to_index, config);
     InitializeASesAttributes(nodes, config);
 
@@ -185,100 +204,6 @@ void SetTimeResolution(std::string time_res_str) {
 //}
 
 
-void GetASesWithMaliciousBRs (const ns3::NodeContainer& AS_nodes, const YAML::Node& config, std::vector<std::string>& border_routers_malicious_action) {
-    if (!config["border_router"]) {
-        return;
-    }
-
-    if (!config["border_router"]["percent_of_ASes_with_malicious_br"]) {
-        return;
-    }
-
-    std::vector<uint16_t> indices;
-    for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
-        indices.push_back(i);
-    }
-
-    if (config["border_router"]["truly_random_malicious"].as<uint16_t>() == 1) {
-        std::random_shuffle(indices.begin(), indices.end(), ns3::truly_random_generator);
-    } else {
-        std::random_shuffle(indices.begin(), indices.end(), ns3::random_generator);
-    }
-
-    border_routers_malicious_action.resize(AS_nodes.GetN());
-
-    uint16_t number_of_ASes_with_malicious_br = (uint16_t) std::floor(
-            ((double ) config["border_router"]["percent_of_ASes_with_malicious_br"].as<uint16_t>() * (double ) AS_nodes.GetN()) / 100.0);
-
-
-    for (uint16_t i = 0; i < number_of_ASes_with_malicious_br; ++i) {
-        border_routers_malicious_action.at(indices.at(i)) = config["border_router"]["malicious_action"].as<std::string>();
-    }
-
-    for (uint16_t i = number_of_ASes_with_malicious_br; i < AS_nodes.GetN(); ++i) {
-        border_routers_malicious_action.at(indices.at(i)) = "no";
-    }
-
-}
-
-void GetMaliciousTimeRefAndTimeServer (rapidxml::xml_node<>* xml_root, const YAML::Node& config, std::vector<std::string>& time_reference_types,  std::vector<std::string>& time_server_types) {
-    if (!config["time_service"]) {
-        return;
-    }
-
-    uint16_t number_of_ASes = 0;
-
-    std::vector<uint16_t> indices_time_references;
-    std::vector<uint16_t> indices_time_servers;
-
-    rapidxml::xml_node<>* cur_xml_node = xml_root->first_node("node");
-    while (cur_xml_node) {
-        indices_time_references.push_back(number_of_ASes);
-        indices_time_servers.push_back(number_of_ASes);
-        number_of_ASes++;
-        cur_xml_node = cur_xml_node->next_sibling("node");
-    }
-
-    time_reference_types.resize(number_of_ASes);
-    time_server_types.resize(number_of_ASes);
-
-    if (config["time_service"]["truly_random_malicious"].as<uint16_t>() == 1) {
-        std::random_shuffle(indices_time_references.begin(), indices_time_references.end(), ns3::truly_random_generator);
-        std::random_shuffle(indices_time_servers.begin(), indices_time_servers.end(), ns3::truly_random_generator);
-    } else {
-        std::random_shuffle(indices_time_references.begin(), indices_time_references.end(), ns3::random_generator);
-        std::random_shuffle(indices_time_servers.begin(), indices_time_servers.end(), ns3::random_generator);
-    }
-
-    uint16_t number_of_malicious_time_references = (uint16_t) std::floor(
-            ((double ) config["time_service"]["percent_of_malicious_time_references"].as<uint16_t>() * (double ) number_of_ASes) / 100.0);
-
-    uint16_t number_of_malicious_time_servers = (uint16_t) std::floor(
-            ((double ) config["time_service"]["percent_of_malicious_time_servers"].as<uint16_t>() * (double ) number_of_ASes) / 100.0);
-
-    if (config["time_service"]["reference_clk"].as<std::string>() == "OFF") {
-        for (uint16_t i = 0; i < number_of_ASes; ++i) {
-            time_reference_types.at(i) = "OFF";
-        }
-    } else {
-        for (uint16_t i = 0; i < number_of_malicious_time_references; ++i) {
-            time_reference_types.at(indices_time_references.at(i)) = "MALICIOUS";
-        }
-
-        for (uint16_t i = number_of_malicious_time_references; i < number_of_ASes; ++i) {
-            time_reference_types.at(indices_time_references.at(i)) = "ON";
-        }
-
-    }
-
-    for (uint16_t i = 0; i < number_of_malicious_time_servers; ++i) {
-        time_server_types.at(indices_time_servers.at(i)) = "MALICIOUS";
-    }
-
-    for (uint16_t i = number_of_malicious_time_servers; i < number_of_ASes; ++i) {
-        time_server_types.at(indices_time_servers.at(i)) = "NORMAL";
-    }
-}
 
 void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::map<int32_t, uint16_t>& AS_no_to_index,
                              std::map<uint16_t,int32_t>& index_to_AS_no, ns3::NodeContainer& AS_nodes, const YAML::Node& config) {
@@ -290,11 +215,6 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::map<int32_t, u
     int16_t node_counter = 0;
 
     bool parallel_scheduler = true;
-
-    std::vector<std::string> time_reference_types;
-    std::vector<std::string> time_server_types;
-
-    GetMaliciousTimeRefAndTimeServer (xml_root, config, time_reference_types, time_server_types);
 
     rapidxml::xml_node<>* cur_xml_node = xml_root->first_node("node");
     while (cur_xml_node) {
@@ -343,47 +263,6 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::map<int32_t, u
         AS_node->SetBeaconServer(beaconing_policy);
         beaconing_policy->SetNode(PeekPointer(AS_node));
 
-        if (config["path_service"]) {
-            ns3::PathServer* path_server = new ns3::PathServer( 0, isd_number, node_counter, 1,0.0,  0.0, PeekPointer(AS_node));
-            AS_node->SetPathServer(path_server);
-
-            if (only_propagation_delay) {
-                path_server->SetProcessingDelay(ns3::Time(0), ns3::Time(0));
-            } else {
-                path_server->SetProcessingDelay(ns3::NanoSeconds(10), ns3::PicoSeconds(200));
-            }
-        }
-
-        if (config["time_service"]) {
-            ns3::SCIONHost* time_server = new ns3::TimeServer(0, isd_number, node_counter, 2,0.0, 0.0, PeekPointer(AS_node),
-                                                             parallel_scheduler,
-                                                             ns3::Time(config["time_service"]["max_initial_drift"].as<std::string>()),
-                                                             ns3::Time(config["time_service"]["max_drift_per_day"].as<std::string>()),
-                                                             config["time_service"]["jitter_in_drift"].as<uint32_t>(),
-                                                             config["time_service"]["max_drift_coefficient"].as<uint32_t>(),
-                                                             ns3::Time(config["time_service"]["global_cut_off"].as<std::string>()),
-                                                             ns3::Time(config["time_service"]["first_event"].as<std::string>()),
-                                                             ns3::Time(config["time_service"]["last_event"].as<std::string>()),
-                                                             ns3::Time(config["time_service"]["snapshot_period"].as<std::string>()),
-                                                             ns3::Time(config["time_service"]["list_of_ases_req_period"].as<std::string>()),
-                                                             ns3::Time(config["time_service"]["time_sync_period"].as<std::string>()),
-                                                             config["time_service"]["G"].as<uint32_t>(),
-                                                             config["time_service"]["number_of_paths_to_use_for_global_sync"].as<uint32_t>(),
-                                                             config["time_service"]["read_disjoint_paths"].as<std::string>(),
-                                                             config["time_service"]["set_of_disjoint_paths_directory"].as<std::string>(),
-                                                             time_reference_types.at(node_counter),
-                                                             time_server_types.at(node_counter),
-                                                             ns3::Time(config["time_service"]["malcious_response_minimum_offset"].as<std::string>()),
-                                                             config["time_service"]["path_selection"].as<std::string>());
-            AS_node->AddHost(time_server);
-
-            if (only_propagation_delay) {
-                time_server->SetProcessingDelay(ns3::Time(0), ns3::Time(0));
-            } else {
-                time_server->SetProcessingDelay(ns3::NanoSeconds(10), ns3::PicoSeconds(200));
-            }
-        }
-
         AS_nodes.Add(AS_node);
 
         as_to_isd_map.insert(std::make_pair(node_counter, isd_number));
@@ -395,6 +274,172 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::map<int32_t, u
 
         cur_xml_node = cur_xml_node->next_sibling("node");
         parallel_scheduler = false;
+    }
+}
+
+void InstantiatePathServers(const YAML::Node& config,
+                            std::map<int32_t, uint16_t>& AS_no_to_index,
+                            std::map<uint16_t,int32_t>& index_to_AS_no,
+                            ns3::NodeContainer& AS_nodes) {
+    bool only_propagation_delay = OnlyPropagationDelay(config);
+
+    for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+        ns3::SCION_AS *AS_node = dynamic_cast<ns3::SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+        int16_t node_counter = AS_no_to_index.at(AS_node->as_number);
+        uint16_t isd_number = AS_node->isd_number;
+        ns3::PathServer* path_server = new ns3::PathServer( 0, isd_number, node_counter, 1,0.0,  0.0, AS_node);
+        AS_node->SetPathServer(path_server);
+
+        if (only_propagation_delay) {
+            path_server->SetProcessingDelay(ns3::Time(0), ns3::Time(0));
+        } else {
+            path_server->SetProcessingDelay(ns3::NanoSeconds(10), ns3::PicoSeconds(200));
+        }
+    }
+}
+
+void GetMaliciousTimeRefAndTimeServer (ns3::NodeContainer& AS_nodes,
+                                       std::map<int32_t, uint16_t>& AS_no_to_index,
+                                       const YAML::Node& config,
+                                       std::vector<std::string>& time_reference_types,
+                                       std::vector<std::string>& time_server_types) {
+    uint16_t number_of_ASes = 0;
+
+    std::vector<uint16_t> indices_time_references;
+    std::vector<uint16_t> indices_time_servers;
+
+    for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+        ns3::SCION_AS *AS_node = dynamic_cast<ns3::SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+        int16_t node_counter = AS_no_to_index.at(AS_node->as_number);
+        indices_time_references.push_back(node_counter);
+        indices_time_servers.push_back(node_counter);
+    }
+
+    time_reference_types.resize(number_of_ASes);
+    time_server_types.resize(number_of_ASes);
+
+    if (config["time_service"]["truly_random_malicious"].as<uint16_t>() == 1) {
+        std::random_shuffle(indices_time_references.begin(), indices_time_references.end(), ns3::truly_random_generator);
+        std::random_shuffle(indices_time_servers.begin(), indices_time_servers.end(), ns3::truly_random_generator);
+    } else {
+        std::random_shuffle(indices_time_references.begin(), indices_time_references.end(), ns3::random_generator);
+        std::random_shuffle(indices_time_servers.begin(), indices_time_servers.end(), ns3::random_generator);
+    }
+
+    uint16_t number_of_malicious_time_references = (uint16_t) std::floor(
+            ((double ) config["time_service"]["percent_of_malicious_time_references"].as<uint16_t>() * (double ) number_of_ASes) / 100.0);
+
+    uint16_t number_of_malicious_time_servers = (uint16_t) std::floor(
+            ((double ) config["time_service"]["percent_of_malicious_time_servers"].as<uint16_t>() * (double ) number_of_ASes) / 100.0);
+
+    if (config["time_service"]["reference_clk"].as<std::string>() == "OFF") {
+        for (uint16_t i = 0; i < number_of_ASes; ++i) {
+            time_reference_types.at(i) = "OFF";
+        }
+    } else {
+        for (uint16_t i = 0; i < number_of_malicious_time_references; ++i) {
+            time_reference_types.at(indices_time_references.at(i)) = "MALICIOUS";
+        }
+
+        for (uint16_t i = number_of_malicious_time_references; i < number_of_ASes; ++i) {
+            time_reference_types.at(indices_time_references.at(i)) = "ON";
+        }
+
+    }
+
+    for (uint16_t i = 0; i < number_of_malicious_time_servers; ++i) {
+        time_server_types.at(indices_time_servers.at(i)) = "MALICIOUS";
+    }
+
+    for (uint16_t i = number_of_malicious_time_servers; i < number_of_ASes; ++i) {
+        time_server_types.at(indices_time_servers.at(i)) = "NORMAL";
+    }
+}
+
+void GetSnapShotTypes(ns3::NodeContainer& AS_nodes,
+                      std::map<int32_t, uint16_t>& AS_no_to_index,
+                      const YAML::Node& config,
+                      std::vector<std::string>& snapshot_types) {
+
+    uint32_t printing_instance = 0;
+    for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+        if (config["time_service"]["snapshot_type"].as<std::string>() == "PRINT_OFFSET_DIFF") {
+            if (i == printing_instance) {
+                snapshot_types.push_back("PRINT_OFFSET_DIFF");
+            } else {
+                snapshot_types.push_back("OFF");
+            }
+        } else {
+            snapshot_types.push_back(config["time_service"]["snapshot_type"].as<std::string>());
+        }
+    }
+}
+
+void GetAlgVersions (ns3::NodeContainer& AS_nodes,
+                     std::map<int32_t, uint16_t>& AS_no_to_index,
+                     const YAML::Node& config,
+                     std::vector<std::string>& alg_versions,
+                     const std::vector<std::string>& snapshot_types) {
+    for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+        if (snapshot_types.at(i) == "OFF") {
+            alg_versions.push_back(config["time_service"]["alg_version_non_printing_instances"].as<std::string>());
+        } else {
+            alg_versions.push_back(config["time_service"]["alg_version_printing_instances"].as<std::string>());
+        }
+    }
+}
+
+void InstantiateTimeServers(const YAML::Node& config,
+                            std::map<int32_t, uint16_t>& AS_no_to_index,
+                            std::map<uint16_t,int32_t>& index_to_AS_no,
+                            ns3::NodeContainer& AS_nodes) {
+
+    std::vector<std::string> time_reference_types;
+    std::vector<std::string> time_server_types;
+    std::vector<std::string> snapshot_types;
+    std::vector<std::string> alg_versions;
+
+    GetMaliciousTimeRefAndTimeServer (AS_nodes, AS_no_to_index, config, time_reference_types, time_server_types);
+    GetSnapShotTypes(AS_nodes, AS_no_to_index, config, snapshot_types);
+    GetAlgVersions(AS_nodes, AS_no_to_index, config, alg_versions, snapshot_types);
+
+    bool only_propagation_delay = OnlyPropagationDelay(config);
+
+    for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+        ns3::SCION_AS *AS_node = dynamic_cast<ns3::SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+        int16_t node_counter = AS_no_to_index.at(AS_node->as_number);
+        uint16_t isd_number = AS_node->isd_number;
+        bool parallel_scheduler = (node_counter == 0);
+
+        ns3::SCIONHost* time_server = new ns3::TimeServer(0, isd_number, node_counter, 2, 0.0, 0.0, AS_node,
+                                                          parallel_scheduler,
+                                                          ns3::Time(config["time_service"]["max_initial_drift"].as<std::string>()),
+                                                          ns3::Time(config["time_service"]["max_drift_per_day"].as<std::string>()),
+                                                          config["time_service"]["jitter_in_drift"].as<uint32_t>(),
+                                                          config["time_service"]["max_drift_coefficient"].as<uint32_t>(),
+                                                          ns3::Time(config["time_service"]["global_cut_off"].as<std::string>()),
+                                                          ns3::Time(config["time_service"]["first_event"].as<std::string>()),
+                                                          ns3::Time(config["time_service"]["last_event"].as<std::string>()),
+                                                          ns3::Time(config["time_service"]["snapshot_period"].as<std::string>()),
+                                                          ns3::Time(config["time_service"]["list_of_ases_req_period"].as<std::string>()),
+                                                          ns3::Time(config["time_service"]["time_sync_period"].as<std::string>()),
+                                                          config["time_service"]["G"].as<uint32_t>(),
+                                                          config["time_service"]["number_of_paths_to_use_for_global_sync"].as<uint32_t>(),
+                                                          config["time_service"]["read_disjoint_paths"].as<std::string>(),
+                                                          config["time_service"]["set_of_disjoint_paths_directory"].as<std::string>(),
+                                                          time_reference_types.at(node_counter),
+                                                          time_server_types.at(node_counter),
+                                                          snapshot_types[node_counter],
+                                                          alg_versions[node_counter],
+                                                          ns3::Time(config["time_service"]["malcious_response_minimum_offset"].as<std::string>()),
+                                                          config["time_service"]["path_selection"].as<std::string>());
+        AS_node->AddHost(time_server);
+
+        if (only_propagation_delay) {
+            time_server->SetProcessingDelay(ns3::Time(0), ns3::Time(0));
+        } else {
+            time_server->SetProcessingDelay(ns3::NanoSeconds(10), ns3::PicoSeconds(200));
+        }
     }
 }
 
@@ -549,6 +594,44 @@ void InstantiateLinksFromTopo (rapidxml::xml_node<>* xml_root, ns3::NodeContaine
     }
 }
 
+
+void GetASesWithMaliciousBRs (const ns3::NodeContainer& AS_nodes, const YAML::Node& config, std::vector<std::string>& border_routers_malicious_action) {
+    if (!config["border_router"]) {
+        return;
+    }
+
+    if (!config["border_router"]["percent_of_ASes_with_malicious_br"]) {
+        return;
+    }
+
+    std::vector<uint16_t> indices;
+    for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+        indices.push_back(i);
+    }
+
+    if (config["border_router"]["truly_random_malicious"].as<uint16_t>() == 1) {
+        std::random_shuffle(indices.begin(), indices.end(), ns3::truly_random_generator);
+    } else {
+        std::random_shuffle(indices.begin(), indices.end(), ns3::random_generator);
+    }
+
+    border_routers_malicious_action.resize(AS_nodes.GetN());
+
+    uint16_t number_of_ASes_with_malicious_br = (uint16_t) std::floor(
+            ((double ) config["border_router"]["percent_of_ASes_with_malicious_br"].as<uint16_t>() * (double ) AS_nodes.GetN()) / 100.0);
+
+
+    for (uint16_t i = 0; i < number_of_ASes_with_malicious_br; ++i) {
+        border_routers_malicious_action.at(indices.at(i)) = config["border_router"]["malicious_action"].as<std::string>();
+    }
+
+    for (uint16_t i = number_of_ASes_with_malicious_br; i < AS_nodes.GetN(); ++i) {
+        border_routers_malicious_action.at(indices.at(i)) = "no";
+    }
+
+}
+
+
 void InitializeASesAttributes(const ns3::NodeContainer& AS_nodes, const YAML::Node& config ) {
 
     bool only_propagation_delay = OnlyPropagationDelay(config);
@@ -578,4 +661,3 @@ bool OnlyPropagationDelay(const YAML::Node& config) {
 
     return false;
 }
-

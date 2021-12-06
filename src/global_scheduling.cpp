@@ -31,8 +31,8 @@ namespace ns3 {
 
             if (config["time_service"]) {
                 dynamic_cast<TimeServer*>( node->GetHost(2))->ScheduleListOfAllASesRequest();
-                dynamic_cast<TimeServer*>( node->GetHost(2))->ScheduleTimeSync();
                 dynamic_cast<TimeServer*>( node->GetHost(2))->ScheduleSnapShots();
+                dynamic_cast<TimeServer*>( node->GetHost(2))->ScheduleTimeSync();
             }
 
         }

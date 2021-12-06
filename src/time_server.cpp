@@ -408,26 +408,13 @@ namespace ns3 {
     void TimeServer::trigger_core_time_sync_algo() {
         AdvanceLocalTime();
 
-        if (synchronization_round == 0) {
+        if (synchronization_round == 0 && alg_v != LOCAL_SYNC) {
             send_ntp_req_to_peers();
             if (parallel_scheduler) {
-//****************************** Debug: To check the goffs are equal to the real offsets *******************************
-#ifdef NS3_ASSERT_ENABLE
-                std::cout << "assert is enabled" << std::endl;
-                Simulator::Schedule(Time(NTP_REQ_GLOBAL_SYNC_DIFF),
-                                    &RunParallelEvents<void (TimeServer::*)(), TimeServer*>,
-                                    local_address, &TimeServer::AdvanceLocalTime);
-                Simulator::Schedule(Time(NTP_REQ_GLOBAL_SYNC_DIFF),
-                                    &RunParallelEvents<void (TimeServer::*)(), TimeServer*>,
-                                    local_address, &TimeServer::compare_offs_with_real_offs);
-#endif
-//**********************************************************************************************************************
-
                 Simulator::Schedule(Time(NTP_REQ_GLOBAL_SYNC_DIFF),
                                     &RunParallelEvents<void (TimeServer::*)(), TimeServer*>,
                                     local_address, &TimeServer::continue_global_time_sync);
             }
-
 // ********************************* Debug: To print goffsets **********************************************************
 //            Simulator::Schedule(Time(NTP_REQ_GLOBAL_SYNC_DIFF), &TimeServer::continue_global_time_sync, this);
 // *********************************************************************************************************************
@@ -482,16 +469,19 @@ namespace ns3 {
 //**********************************************************************************************************************
 
         if (std::abs(doff) > std::abs(global_cut_off.GetTimeStep())) {
-//********************************************* Alg V1 & V2 ************************************************************
-//            doff = doff > 0 ? std::abs(global_cut_off.GetTimeStep()) : -std::abs(global_cut_off.GetTimeStep());
-//            corr = goff + doff;
-//**********************************************************************************************************************
-//********************************************* Alg V3 *****************************************************************
-            corr = goff;
-//**********************************************************************************************************************
+            if (alg_v == ALG_V::V1 || alg_v == ALG_V::V2) {
+              doff = doff > 0 ? std::abs(global_cut_off.GetTimeStep()) : -std::abs(global_cut_off.GetTimeStep());
+              corr = goff + doff;
+            } else if (alg_v == ALG_V::V3) {
+                corr = goff;
+            }
         }
 
-        correct_local_time(corr, G * time_sync_period);
+        if (alg_v == ALG_V::V1) {
+            correct_local_time(corr, time_sync_period);
+        } else if (alg_v == ALG_V::V2 || alg_v == ALG_V::V3) {
+            correct_local_time(corr, G * time_sync_period);
+        }
 
         poff.clear();
     }
@@ -611,7 +601,7 @@ namespace ns3 {
 
     }
 
-    void TimeServer::capture_snapshot() {
+    void TimeServer::capture_local_snapshot() {
         AdvanceLocalTime();
 
         if (parallel_scheduler) {
@@ -625,7 +615,12 @@ namespace ns3 {
         }
     }
 
-    void TimeServer::compare_offs_with_real_offs() {
+    void TimeServer::capture_offset_diff() {
+        AdvanceLocalTime();
+
+        std::cout << "##################################### Snapshot at " << Simulator::Now().GetTimeStep() << " ##################################" << std::endl;
+        std::cout << "poff_size: " << std::endl;
+
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             SCION_AS* node = dynamic_cast<SCION_AS *>(PeekPointer(nodes.Get(i)));
             if (node->ia_addr == ia_addr) {
@@ -637,6 +632,33 @@ namespace ns3 {
                 continue;
             }
 
+            dynamic_cast<TimeServer *> (node->GetHost(local_address))->AdvanceLocalTime();
+            Time remote_local_time = dynamic_cast<TimeServer *> (node->GetHost(local_address))->GetLocalTime();
+            int64_t time_diff = (remote_local_time - local_time).GetTimeStep();
+
+            for (auto const & offset : poff.at(node->ia_addr)) {
+                int64_t diff = offset - time_diff;
+                std::cout << diff << "\t";
+            }
+
+            std::cout << std::endl;
+        }
+    }
+
+    void TimeServer::compare_offs_with_real_offs() {
+        AdvanceLocalTime();
+        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
+            SCION_AS* node = dynamic_cast<SCION_AS *>(PeekPointer(nodes.Get(i)));
+            if (node->ia_addr == ia_addr) {
+                continue;
+            }
+
+            if (poff.find(node->ia_addr) == poff.end()) {
+                std::cout << "NOT FOUND" << std::endl;
+                continue;
+            }
+
+            dynamic_cast<TimeServer *> (node->GetHost(local_address))->AdvanceLocalTime();
             Time remote_local_time = dynamic_cast<TimeServer *> (node->GetHost(local_address))->GetLocalTime();
             int64_t time_diff = (remote_local_time - local_time).GetTimeStep();
 
@@ -684,18 +706,37 @@ namespace ns3 {
     }
 
     void TimeServer::ScheduleSnapShots() {
-        Simulator::Schedule(first_event, &TimeServer::capture_snapshot, this);
+        if (snapshot_type == SNAPSHOT_TYPE::SNAPSHOT_OFF) {
+            return;
+        }
+
+        if (snapshot_type == SNAPSHOT_TYPE::LOCAL_SNAPSHOT) {
+            Simulator::Schedule(first_event, &TimeServer::capture_local_snapshot, this);
+        }
+
         for (Time t = first_event; t < last_event; t += snapshot_period) {
             Time diff_with_first_event = t - first_event;
             if (diff_with_first_event.GetTimeStep() % time_sync_period.GetTimeStep() == 0) {
                 if ((diff_with_first_event.GetTimeStep() / time_sync_period.GetTimeStep()) % G == 0) {
-                    Simulator::Schedule(t + Time(NTP_REQ_GLOBAL_SYNC_DIFF) + TimeStep(1),
-                                        &TimeServer::capture_snapshot, this);
+                    if (snapshot_type == SNAPSHOT_TYPE::LOCAL_SNAPSHOT) {
+                        Simulator::Schedule(t + Time(NTP_REQ_GLOBAL_SYNC_DIFF) + TimeStep(1),
+                                            &TimeServer::capture_local_snapshot, this);
+                    } else if (snapshot_type == SNAPSHOT_TYPE::PRINT_OFFSET_DIFF) {
+                        Simulator::Schedule(t + Time(NTP_REQ_GLOBAL_SYNC_DIFF),
+                                            &TimeServer::capture_offset_diff, this);
+                    } else if (snapshot_type == SNAPSHOT_TYPE::ASSERT_OFFSET_DIFF) {
+                        Simulator::Schedule(t + Time(NTP_REQ_GLOBAL_SYNC_DIFF),
+                                            &TimeServer::compare_offs_with_real_offs, this);
+                    }
                 } else {
-                    Simulator::Schedule(t + TimeStep(1), &TimeServer::capture_snapshot, this);
+                    if (snapshot_type == SNAPSHOT_TYPE::LOCAL_SNAPSHOT) {
+                        Simulator::Schedule(t + TimeStep(1), &TimeServer::capture_local_snapshot, this);
+                    }
                 }
             } else {
-                Simulator::Schedule(t, &TimeServer::capture_snapshot, this);
+                if (snapshot_type == SNAPSHOT_TYPE::LOCAL_SNAPSHOT) {
+                    Simulator::Schedule(t, &TimeServer::capture_local_snapshot, this);
+                }
             }
         }
     }
