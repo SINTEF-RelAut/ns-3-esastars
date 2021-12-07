@@ -619,7 +619,7 @@ namespace ns3 {
         AdvanceLocalTime();
 
         std::cout << "##################################### Snapshot at " << Simulator::Now().GetTimeStep() << " ##################################" << std::endl;
-        std::cout << "poff_size: " << std::endl;
+        std::cout << "poff_size: " << poff.size() << std::endl;
 
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             SCION_AS* node = dynamic_cast<SCION_AS *>(PeekPointer(nodes.Get(i)));

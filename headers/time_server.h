@@ -33,7 +33,7 @@ namespace ns3 {
                    Time global_cut_off, Time first_event, Time last_event, Time snapshot_period,
                    Time list_of_ases_req_period, Time time_sync_period, uint32_t G,
                    uint32_t number_of_paths_to_use_for_global_sync, std::string read_disjoint_paths,
-                   std::string set_of_disjoint_paths_directory, std::string reference_time_type,
+                   std::string time_service_output_path, std::string reference_time_type,
                    std::string server_type, std::string snapshot_type, std::string alg_v, Time minimum_malicious_offset,
                    std::string path_selection):
                    SCIONHost(system_id, isd_number, as_number, local_address, latitude, longitude, AS),
@@ -55,7 +55,8 @@ namespace ns3 {
             real_time_of_last_time_advance = TimeStep(0);
             set_of_all_core_ases.insert(ia_addr);
 
-            set_of_disjoint_paths_file = set_of_disjoint_paths_directory + "set_of_disjoint_path_TS_" + std::to_string(ia_addr) + ".json";
+            set_of_disjoint_paths_file = time_service_output_path + "set_of_disjoint_path_TS_" + std::to_string(ia_addr) + ".json";
+
 
             std::random_device rd;
             std::uniform_int_distribution<int64_t> dist (-std::abs(max_drift_per_day.GetTimeStep()), std::abs(max_drift_per_day.GetTimeStep()));

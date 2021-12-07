@@ -378,7 +378,9 @@ void GetTimeServiceSnapShotTypes(const ns3::NodeContainer& AS_nodes,
                                  const YAML::Node& config,
                                  std::vector<std::string>& snapshot_types) {
 
-    uint32_t printing_instance = 0;
+    std::random_device rd;
+    std::uniform_int_distribution<uint16_t> dist (0, AS_nodes.GetN() - 1);
+    uint32_t printing_instance = dist(rd);
     for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
         if (config["time_service"]["snapshot_type"].as<std::string>() == "PRINT_OFFSET_DIFF") {
             if (i == printing_instance) {
@@ -443,7 +445,7 @@ void InstantiateTimeServers(const YAML::Node& config,
                                     config["time_service"]["G"].as<uint32_t>(),
                                     config["time_service"]["number_of_paths_to_use_for_global_sync"].as<uint32_t>(),
                                     config["time_service"]["read_disjoint_paths"].as<std::string>(),
-                                    config["time_service"]["set_of_disjoint_paths_directory"].as<std::string>(),
+                                    config["time_service"]["time_service_output_path"].as<std::string>(),
                                     time_reference_types.at(alias_as_no),
                                     time_server_types.at(alias_as_no),
                                     snapshot_types.at(alias_as_no),
