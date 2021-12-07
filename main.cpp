@@ -210,7 +210,6 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root, std::map<int32_t, u
     ns3::Time beaconing_period = ns3::Time(config["beacon_service"]["period"].as<std::string>());
     ns3::Time last_beaconing_event_time = ns3::Time(config["beacon_service"]["last_beaconing"].as<std::string>());
     uint16_t expiration_period = ns3::Time(config["beacon_service"]["expiration_period"].as<std::string>()).ToInteger(ns3::Time::MIN);
-    bool only_propagation_delay = OnlyPropagationDelay(config);
 
     int16_t node_counter = 0;
 
