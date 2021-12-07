@@ -421,7 +421,7 @@ void InstantiateTimeServers(const YAML::Node& config,
 
     for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
         ns3::SCION_AS *AS_node = dynamic_cast<ns3::SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
-        int16_t alias_as_no = AS_node->as_number;
+        uint16_t alias_as_no = AS_node->as_number;
         assert(alias_as_no == i);
         uint16_t isd_number = AS_node->isd_number;
         bool parallel_scheduler = (alias_as_no == 0);
