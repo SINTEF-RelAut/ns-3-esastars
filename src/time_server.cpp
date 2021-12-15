@@ -625,7 +625,6 @@ namespace ns3 {
         int32_t F = std::floor((N - 1) / 3);
 
         int64_t loff = get_reference_time().GetTimeStep() - local_time.GetTimeStep();
-        int64_t corr = loff;
 
         std::multiset<int64_t> off;
         off.insert(loff);
@@ -662,7 +661,6 @@ namespace ns3 {
         std::advance(iter2, N - 1 - F);
 
         int64_t goff = std::floor((*iter1 + *iter2) / 2);
-        int64_t doff = loff - goff;
 
         std::cout << "goff: " << goff << ", loff: " << loff << std::endl;
     }
