@@ -621,6 +621,15 @@ namespace ns3 {
         std::cout << "##################################### Snapshot at " << Simulator::Now().GetTimeStep() << " ##################################" << std::endl;
         std::cout << "poff_size: " << poff.size() << std::endl;
 
+        int32_t N = nodes.GetN();
+        int32_t F = std::floor((N - 1) / 3);
+
+        int64_t loff = get_reference_time().GetTimeStep() - local_time.GetTimeStep();
+        int64_t corr = loff;
+
+        std::multiset<int64_t> off;
+        off.insert(loff);
+
         for (uint32_t i = 0; i < nodes.GetN(); ++i) {
             SCION_AS* node = dynamic_cast<SCION_AS *>(PeekPointer(nodes.Get(i)));
             if (node->ia_addr == ia_addr) {
@@ -636,6 +645,9 @@ namespace ns3 {
             Time remote_local_time = dynamic_cast<TimeServer *> (node->GetHost(local_address))->GetLocalTime();
             int64_t time_diff = (remote_local_time - local_time).GetTimeStep();
 
+            int64_t median_off = (int64_t) std::round(GetMedian(poff.at(node->ia_addr)));
+            off.insert(median_off);
+
             for (auto const & offset : poff.at(node->ia_addr)) {
                 int64_t diff = offset - time_diff;
                 std::cout << diff << "\t";
@@ -643,6 +655,16 @@ namespace ns3 {
 
             std::cout << std::endl;
         }
+
+        auto iter1 = off.cbegin();
+        auto iter2 = off.cbegin();
+        std::advance(iter1, F);
+        std::advance(iter2, N - 1 - F);
+
+        int64_t goff = std::floor((*iter1 + *iter2) / 2);
+        int64_t doff = loff - goff;
+
+        std::cout << "goff: " << goff << ", loff: " << loff << std::endl;
     }
 
     void TimeServer::compare_offs_with_real_offs() {
