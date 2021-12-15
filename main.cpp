@@ -376,14 +376,15 @@ void GetMaliciousTimeRefAndTimeServer (const ns3::NodeContainer& AS_nodes,
 
 void GetTimeServiceSnapShotTypes(const ns3::NodeContainer& AS_nodes,
                                  const YAML::Node& config,
-                                 std::vector<std::string>& snapshot_types) {
+                                 std::vector<std::string>& snapshot_types,
+                                 uint16_t& global_scheduler_and_printer) {
 
     std::random_device rd;
     std::uniform_int_distribution<uint16_t> dist (0, AS_nodes.GetN() - 1);
-    uint32_t printing_instance = dist(rd);
+    global_scheduler_and_printer = dist(rd);
     for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
         if (config["time_service"]["snapshot_type"].as<std::string>() == "PRINT_OFFSET_DIFF") {
-            if (i == printing_instance) {
+            if (i == global_scheduler_and_printer) {
                 snapshot_types.push_back("PRINT_OFFSET_DIFF");
             } else {
                 snapshot_types.push_back("OFF");
@@ -414,9 +415,10 @@ void InstantiateTimeServers(const YAML::Node& config,
     std::vector<std::string> time_server_types;
     std::vector<std::string> snapshot_types;
     std::vector<std::string> alg_versions;
+    uint16_t global_scheduler_and_printer;
 
     GetMaliciousTimeRefAndTimeServer (AS_nodes, config, time_reference_types, time_server_types);
-    GetTimeServiceSnapShotTypes(AS_nodes, config, snapshot_types);
+    GetTimeServiceSnapShotTypes(AS_nodes, config, snapshot_types, global_scheduler_and_printer);
     GetTimeServiceAlgVersions(AS_nodes, config, alg_versions, snapshot_types);
 
     bool only_propagation_delay = OnlyPropagationDelay(config);
@@ -426,7 +428,7 @@ void InstantiateTimeServers(const YAML::Node& config,
         uint16_t alias_as_no = AS_node->as_number;
         assert(alias_as_no == i);
         uint16_t isd_number = AS_node->isd_number;
-        bool parallel_scheduler = (alias_as_no == 0);
+        bool parallel_scheduler = (alias_as_no == global_scheduler_and_printer);
 
         ns3::SCIONHost* time_server =
                 new ns3::TimeServer(0, isd_number, alias_as_no, 2,
