@@ -15,31 +15,31 @@
 
 namespace ns3 {
 
-    void DiversityAgeBased::DoInitializations(uint32_t all_nodes) {
-        sent_beacons.resize (node->GetNDevices ());
-        sent_beacons_cnt.resize(all_nodes);
+    void DiversityAgeBased::DoInitializations(uint32_t num_ASes) {
+        sent_beacons.resize (AS->GetNDevices ());
+        sent_beacons_cnt.resize(num_ASes);
 
-        for (uint32_t i = 0; i < node->GetNDevices (); ++i)
+        for (uint32_t i = 0; i < AS->GetNDevices (); ++i)
         {
             sent_beacons.at (i) = new std::unordered_map<Beacon *, std::pair<float, uint16_t>> ();
         }
 
-        for (uint16_t i = 0; i < (uint16_t) all_nodes; ++i) {
+        for (uint16_t i = 0; i < (uint16_t) num_ASes; ++i) {
             sent_beacons_cnt.at(i) = new std::unordered_map<uint16_t, uint16_t> ();
-            for (auto const & neighbor_ifaces_pair : node->interfaces_per_neighbor_as) {
+            for (auto const & neighbor_ifaces_pair : AS->interfaces_per_neighbor_as) {
                 uint16_t neighbor = neighbor_ifaces_pair.first;
                 sent_beacons_cnt.at(i)->insert(std::make_pair(neighbor, 0));
             }
         }
 
-        for (uint32_t i = 0; i < node->neighbors.size (); ++i)
+        for (uint32_t i = 0; i < AS->neighbors.size (); ++i)
         {
-            uint16_t neighbor_as_no = node->neighbors.at(i).first;
+            uint16_t neighbor_as_no = AS->neighbors.at(i).first;
             links_jointnesses_on_sent_paths.insert (std::make_pair (
                     neighbor_as_no, std::vector<std::unordered_map<uint32_t, uint32_t> *> ()));
-            links_jointnesses_on_sent_paths.at (neighbor_as_no).resize (all_nodes);
-            links_jointnesses_on_received_paths.resize(all_nodes);
-            for (uint32_t j = 0; j < all_nodes; ++j)
+            links_jointnesses_on_sent_paths.at (neighbor_as_no).resize (num_ASes);
+            links_jointnesses_on_received_paths.resize(num_ASes);
+            for (uint32_t j = 0; j < num_ASes; ++j)
             {
                 links_jointnesses_on_sent_paths.at (neighbor_as_no).at (j) =
                         new std::unordered_map<uint32_t, uint32_t> ();
@@ -54,16 +54,16 @@ namespace ns3 {
 
     void
     DiversityAgeBased::DisseminateBeacons(neighbour_relation relation) {
-        uint32_t neighbors_cnt = node->neighbors.size();
+        uint32_t neighbors_cnt = AS->neighbors.size();
         omp_set_num_threads(NUM_CORE);
 #pragma omp parallel for
         for (uint32_t i = 0; i < neighbors_cnt; ++i) { // Per neighbor AS
 
-            if (node->neighbors.at(i).second != relation) {
+            if (AS->neighbors.at(i).second != relation) {
                 continue;
             }
 
-            uint16_t remote_as_no = node->neighbors.at(i).first;
+            uint16_t remote_as_no = AS->neighbors.at(i).first;
             for (auto const &dst_as_beacons_pair : beacon_store) { // Per destination AS
                 uint16_t dst_as_no = dst_as_beacons_pair.first;
                 const beacons_with_same_dst_as &beacons_to_the_dst_as = dst_as_beacons_pair.second;
@@ -160,10 +160,10 @@ namespace ns3 {
         uint16_t max_score_iface = 0;
 
         uint16_t remote_ingress_if_no;
-        SCION_AS* remote_as = node->GetRemoteAsInfo(
-                node->interfaces_per_neighbor_as.at(remote_as_no).at(0)).second;
+        SCION_AS* remote_as = AS->GetRemoteAsInfo(
+                AS->interfaces_per_neighbor_as.at(remote_as_no).at(0)).second;
 
-        uint32_t min_no_paths_to_send = (20 * node->interfaces_per_neighbor_as.at(remote_as_no).size()) / remote_as->interfaces_coordinates.size();
+        uint32_t min_no_paths_to_send = (20 * AS->interfaces_per_neighbor_as.at(remote_as_no).size()) / remote_as->interfaces_coordinates.size();
 
         for (auto const &len_beacons_pair : beacons_to_the_dst_as) {
             auto const &beacons = len_beacons_pair.second;
@@ -184,7 +184,7 @@ namespace ns3 {
                     continue;
                 }
 
-                auto const &interfaces = node->interfaces_per_neighbor_as.at(remote_as_no);
+                auto const &interfaces = AS->interfaces_per_neighbor_as.at(remote_as_no);
                 for (auto const &self_egress_if_no : interfaces) {
                     ld raw_score = 0.0;
                     ld score = 0.0;
@@ -235,10 +235,10 @@ namespace ns3 {
             } else {
                 valid_candidates.erase(std::make_pair(max_score_beacon, max_score_iface));
 
-                remote_ingress_if_no = node->GetRemoteAsInfo(max_score_iface).first;
+                remote_ingress_if_no = AS->GetRemoteAsInfo(max_score_iface).first;
 
                 ld latency = max_score_beacon->static_info_extension.at(static_info_type_t::LATENCY) +
-                             node->latencies_between_interfaces.at(LOWER_16_BITS(max_score_beacon->the_path.back())).at(
+                        AS->latencies_between_interfaces.at(LOWER_16_BITS(max_score_beacon->the_path.back())).at(
                                      max_score_iface);
 
                 static_info_extension_t static_info_extension;
@@ -341,7 +341,7 @@ namespace ns3 {
             }
         }
 
-        uint32_t link = (((uint32_t) node->as_number) << 16) | ((uint32_t) self_egress_if_no);
+        uint32_t link = (((uint32_t) AS->as_number) << 16) | ((uint32_t) self_egress_if_no);
         if (links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as_no)->find(link) ==
             links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as_no)->end()) {
             links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as_no)->insert(std::make_pair(link, 0));
@@ -392,7 +392,7 @@ namespace ns3 {
             }
         }
 
-        uint32_t link = (((uint32_t) node->as_number) << 16) | ((uint32_t) egress_if_no);
+        uint32_t link = (((uint32_t) AS->as_number) << 16) | ((uint32_t) egress_if_no);
         if (links_jointnesses_on_sent_paths.at(remote_as).at(dst_as)->find(link) !=
             links_jointnesses_on_sent_paths.at(remote_as).at(dst_as)->end()) {
             jointness *= (add_one + 1.0 * links_jointnesses_on_sent_paths.at(remote_as).at(dst_as)->at(link));
@@ -440,15 +440,15 @@ namespace ns3 {
 
     void
     DiversityAgeBased::remove_invalid_sent_beacons(Beacon* the_beacon, uint16_t dst_as) {
-        for (uint32_t i = 0; i < node->GetNDevices(); ++i) {
-            uint16_t remote_as_no = node->interface_to_neighbor_map.at(i);
+        for (uint32_t i = 0; i < AS->GetNDevices(); ++i) {
+            uint16_t remote_as_no = AS->interface_to_neighbor_map.at(i);
             if (sent_beacons.at(i)->find(the_beacon) == sent_beacons.at(i)->end()) {
                 continue;
             }
 
             if (sent_beacons.at(i)->at(the_beacon).second <= next_period) {
                 sent_beacons.at(i)->erase(the_beacon);
-                sent_beacons_cnt.at(dst_as)->at(node->interface_to_neighbor_map.at(i))--;
+                sent_beacons_cnt.at(dst_as)->at(AS->interface_to_neighbor_map.at(i))--;
                 dec_links_jointnesses_on_sent_paths(the_beacon, dst_as, remote_as_no, i);
             }
 
@@ -467,7 +467,7 @@ namespace ns3 {
             }
         }
 
-        uint32_t link = (((uint32_t) node->as_number) << 16) | ((uint32_t) self_egress_if);
+        uint32_t link = (((uint32_t) AS->as_number) << 16) | ((uint32_t) self_egress_if);
 
         links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as)->at(link) = links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as)->at(link) - 1;
         if (links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as)->at(link) == 0) {

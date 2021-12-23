@@ -22,7 +22,7 @@ namespace ns3 {
 
         std::vector<std::vector<std::multimap<ld, Beacon*> > > beacons_per_dst_per_ing_if_sorted_by_latency;
 
-        void DoInitializations(uint32_t all_nodes) override;
+        void DoInitializations(uint32_t num_ASes) override;
 
         void
         DisseminateBeacons(neighbour_relation relation) override;

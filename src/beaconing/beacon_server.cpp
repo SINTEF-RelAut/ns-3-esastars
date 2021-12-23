@@ -16,26 +16,26 @@
 #include "src/SCION/headers/path_server.h"
 
 namespace ns3 {
-    void BeaconServer::SetNode(SCION_AS* the_node) {
-        this->node = the_node;
+    void BeaconServer::SetNode(SCION_AS* AS) {
+        this->AS = AS;
     }
 
     void
     BeaconServer::InitiateBeacons(neighbour_relation relation) {
-        uint32_t neighbors_cnt = node->neighbors.size();
+        uint32_t neighbors_cnt = AS->neighbors.size();
         omp_set_num_threads(NUM_CORE);
 
 #pragma omp parallel for
         for (uint32_t i = 0; i < neighbors_cnt; ++i) {
-            if (node->neighbors.at(i).second != relation) {
+            if (AS->neighbors.at(i).second != relation) {
                 continue;
             }
 
-            uint16_t remote_as_no = node->neighbors.at(i).first;
-            const auto &interfaces = node->interfaces_per_neighbor_as.at(remote_as_no);
+            uint16_t remote_as_no = AS->neighbors.at(i).first;
+            const auto &interfaces = AS->interfaces_per_neighbor_as.at(remote_as_no);
             for (auto const &self_egress_if_no : interfaces) {
                 std::pair<uint16_t, SCION_AS*>
-                        remote_as_if_pair = node->GetRemoteAsInfo(self_egress_if_no);
+                        remote_as_if_pair = AS->GetRemoteAsInfo(self_egress_if_no);
 
                 uint16_t remote_ingress_if_no = remote_as_if_pair.first;
                 SCION_AS* remote_as = remote_as_if_pair.second;
@@ -62,7 +62,7 @@ namespace ns3 {
         uint16_t next_expiration_time;
 
         uint64_t link_info;
-        link_info = (((uint64_t) node->as_number) << 48) | (((uint64_t) self_egress_if_no) << 32) |
+        link_info = (((uint64_t) AS->as_number) << 48) | (((uint64_t) self_egress_if_no) << 32) |
                     (((uint64_t) remote_as_no) << 16) | ((uint64_t) remote_ingress_if_no);
 
         if (selected_beacon == NULL) {
@@ -76,19 +76,19 @@ namespace ns3 {
             new_isd_path = selected_beacon->the_isd_path;
         }
 
-        key = key + std::string((char *) &node->as_number, 2) +
+        key = key + std::string((char *) &AS->as_number, 2) +
               std::string((char *) &self_egress_if_no, 2);
         new_path.push_back(link_info);
 
-        if (new_isd_path.size() == 0 || new_isd_path.back() != node->isd_number) {
-            new_isd_path.push_back(node->isd_number);
+        if (new_isd_path.size() == 0 || new_isd_path.back() != AS->isd_number) {
+            new_isd_path.push_back(AS->isd_number);
         }
 
         Beacon to_disseminate_beacon(static_info_extension, 0, 0, next_initiation_time,
                                      next_expiration_time, true, false, new_path, key, new_isd_path);
 
         IncrementControlPlaneBytesSent(to_disseminate_beacon, self_egress_if_no);
-        remote_as->ReceiveBeacon(to_disseminate_beacon, node->as_number, self_egress_if_no, remote_ingress_if_no);
+        remote_as->ReceiveBeacon(to_disseminate_beacon, AS->as_number, self_egress_if_no, remote_ingress_if_no);
     }
 
     void
@@ -256,7 +256,7 @@ namespace ns3 {
 
 
         bytes_sent_per_interface_per_period.insert (
-                std::make_pair (now, std::vector<uint32_t> (node->GetNDevices (), 0)));
+                std::make_pair (now, std::vector<uint32_t> (AS->GetNDevices (), 0)));
     }
 
     const uint16_t
@@ -268,7 +268,7 @@ namespace ns3 {
         for (Time t = Seconds(0); t < last_beaconing_event_time; t += beaconing_period) {
             Simulator::Schedule(t, &BeaconServer::UpdateTimeAndStats, this);
 
-            if (dynamic_cast<SCION_Core_AS*>(node) != NULL) {
+            if (dynamic_cast<SCION_Core_AS*>(AS) != NULL) {
                 Simulator::Schedule(t, &BeaconServer::DisseminateBeacons, this, neighbour_relation::CORE);
 
                 Simulator::Schedule(t, &BeaconServer::InitiateBeacons, this, neighbour_relation::CORE);
@@ -278,8 +278,8 @@ namespace ns3 {
             }
 
             if (parallel_scheduler) {
-                if (node->GetPathServer() != NULL) {
-                    Simulator::Schedule(t + node->latency_between_path_server_and_beacon_server,
+                if (AS->GetPathServer() != NULL) {
+                    Simulator::Schedule(t + AS->latency_between_path_server_and_beacon_server,
                                         &RunParallelEvents<void (BeaconServer::*)()>,
                                         &BeaconServer::RegisterToLocalPathServer);
                 }
@@ -297,10 +297,10 @@ namespace ns3 {
                 PathSegment pathSegment;
                 the_beacon->ExtractPathSegment(pathSegment);
 
-                if (dynamic_cast<SCION_Core_AS*>(node) != NULL) {
-                    node->GetPathServer()->RegisterCorePathSegment(pathSegment, key);
+                if (dynamic_cast<SCION_Core_AS*>(AS) != NULL) {
+                    AS->GetPathServer()->RegisterCorePathSegment(pathSegment, key);
                 } else {
-                    node->GetPathServer()->RegisterUpPathSegment(pathSegment, key);
+                    AS->GetPathServer()->RegisterUpPathSegment(pathSegment, key);
                 }
             }
         }

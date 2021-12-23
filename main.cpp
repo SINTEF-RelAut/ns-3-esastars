@@ -24,6 +24,7 @@
 #include "src/SCION/headers/beaconing/scionlab_algo.h"
 #include "src/SCION/headers/beaconing/diversity_age_based.h"
 #include "src/SCION/headers/beaconing/latency_optimized_beaconing.h"
+#include "src/SCION/headers/beaconing/green_beaconing.h"
 #include "src/SCION/headers/scion_as.h"
 #include "src/SCION/headers/scion_core_as.h"
 #include "src/SCION/headers/global_scheduling.h"
@@ -72,6 +73,7 @@ void InstantiateLinksFromTopo (rapidxml::xml_node<>* xml_root,
                                const YAML::Node& config);
 
 void InitializeASesAttributes(const ns3::NodeContainer& AS_nodes,
+                              std::map<int32_t, uint16_t>& real_to_alias_as_no,
                               const YAML::Node& config);
 
 bool OnlyPropagationDelay(const YAML::Node& config);
@@ -162,7 +164,7 @@ int main(int argc, char *argv[]) {
     }
 
     InstantiateLinksFromTopo(xml_root, nodes, real_to_alias_as_no, config);
-    InitializeASesAttributes(nodes, config);
+    InitializeASesAttributes(nodes, real_to_alias_as_no, config);
 
     ns3::SchedulePeriodicEvents(config);
     ns3::Simulator::Stop(simulation_end_time);
@@ -241,21 +243,25 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root,
             isd_number = std::stoi(p.getProperty("isd"));
         }
 
-        ns3::beaconing_timing_params params = std::make_pair(beaconing_period, expiration_period);
+        ns3::beaconing_timing_params timing_params = std::make_pair(beaconing_period, expiration_period);
         std::string type = "core"; //p.getProperty("type");
 
         std::string beaconing_policy_str = config["beacon_service"]["policy"].as<std::string>();
         ns3::BeaconServer* beaconing_policy;
         if (beaconing_policy_str == "baseline") {
-            beaconing_policy = (ns3::BeaconServer*) new ns3::Baseline(parallel_scheduler, params);
+            beaconing_policy = (ns3::BeaconServer*) new ns3::Baseline(parallel_scheduler, timing_params);
         } else if (beaconing_policy_str == "diversity_age_based") {
-            beaconing_policy = (ns3::BeaconServer *) new ns3::DiversityAgeBased(parallel_scheduler, params);
+            beaconing_policy = (ns3::BeaconServer *) new ns3::DiversityAgeBased(parallel_scheduler, timing_params);
+        } else if (beaconing_policy_str == "green_beaconing") {
+            ns3::ld dirty_energy_ratio = std::stod(p.getProperty("dirty_energy_ratio"));
+            ns3::ld sun_energy_ratio = std::stod(p.getProperty("sun_energy_ratio"));
+            beaconing_policy = (ns3::BeaconServer *) new ns3::GreenBeaconing(parallel_scheduler, timing_params, dirty_energy_ratio, sun_energy_ratio);
         } else if (beaconing_policy_str == "latency_optimized") {
-            beaconing_policy = (ns3::BeaconServer *) new ns3::LatencyOptimized(parallel_scheduler, params);
+            beaconing_policy = (ns3::BeaconServer *) new ns3::LatencyOptimized(parallel_scheduler, timing_params);
         } else if (beaconing_policy_str == "scionlab") {
-            beaconing_policy = (ns3::BeaconServer *) new ns3::SCIONLAB(parallel_scheduler, params);
+            beaconing_policy = (ns3::BeaconServer *) new ns3::SCIONLAB(parallel_scheduler, timing_params);
         } else {
-            beaconing_policy = (ns3::BeaconServer*) new ns3::Baseline(parallel_scheduler, params);
+            beaconing_policy = (ns3::BeaconServer*) new ns3::Baseline(parallel_scheduler, timing_params);
         }
 
         ns3::Ptr<ns3::SCION_AS> AS_node;
@@ -640,7 +646,7 @@ void GetASesWithMaliciousBRs (const ns3::NodeContainer& AS_nodes,
 }
 
 
-void InitializeASesAttributes(const ns3::NodeContainer& AS_nodes, const YAML::Node& config ) {
+void InitializeASesAttributes(const ns3::NodeContainer& AS_nodes, std::map<int32_t, uint16_t>& real_to_alias_as_no, const YAML::Node& config ) {
 
     bool only_propagation_delay = OnlyPropagationDelay(config);
 
@@ -657,6 +663,10 @@ void InitializeASesAttributes(const ns3::NodeContainer& AS_nodes, const YAML::No
         ns3::SCION_AS *AS_node = dynamic_cast<ns3::SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
         AS_node->DoInitializations(AS_nodes.GetN(),only_propagation_delay,
                                    border_routers_malicious_action.at(i), malicious_delay);
+    }
+
+    if (config["beacon_service"]["policy"].as<std::string>() == "green_beaconing") {
+        ns3::ReadBr2BrEnergy(AS_nodes, real_to_alias_as_no, config);
     }
 }
 

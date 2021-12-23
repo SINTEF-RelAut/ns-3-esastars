@@ -11,13 +11,13 @@
 #include "src/SCION/headers/utils.h"
 
 namespace ns3 {
-    void LatencyOptimized::DoInitializations(uint32_t all_nodes) {
-        beacons_per_dst_per_ing_if_sorted_by_latency.resize(all_nodes);
+    void LatencyOptimized::DoInitializations(uint32_t num_ASes) {
+        beacons_per_dst_per_ing_if_sorted_by_latency.resize(num_ASes);
 
-        for (uint32_t i = 0;i < all_nodes; ++i ) {
+        for (uint32_t i = 0;i < num_ASes; ++i ) {
             beacons_per_dst_per_ing_if_sorted_by_latency.at(i) = std::vector<std::multimap<ld, Beacon*>>();
-            beacons_per_dst_per_ing_if_sorted_by_latency.at(i).resize(node->GetNDevices());
-            for (uint32_t j = 0; j < node->GetNDevices(); ++j) {
+            beacons_per_dst_per_ing_if_sorted_by_latency.at(i).resize(AS->GetNDevices());
+            for (uint32_t j = 0; j < AS->GetNDevices(); ++j) {
                 beacons_per_dst_per_ing_if_sorted_by_latency.at(i).at(j) = std::multimap<ld, Beacon*>();
             }
         }
@@ -76,16 +76,16 @@ namespace ns3 {
 
     void
     LatencyOptimized::DisseminateBeacons(neighbour_relation relation) {
-        uint32_t neighbors_cnt = node->neighbors.size();
+        uint32_t neighbors_cnt = AS->neighbors.size();
         omp_set_num_threads(NUM_CORE);
 #pragma omp parallel for
         for (uint32_t i = 0; i < neighbors_cnt; ++i) { // Per neighbor AS
 
-            if (node->neighbors.at(i).second != relation) {
+            if (AS->neighbors.at(i).second != relation) {
                 continue;
             }
 
-            uint16_t remote_as_no = node->neighbors.at(i).first;
+            uint16_t remote_as_no = AS->neighbors.at(i).first;
             for (auto const &dst_as_beacons_pair : beacon_store) { // Per destination AS
                 uint16_t dst_as_no = dst_as_beacons_pair.first;
                 const beacons_with_same_dst_as &beacons_to_the_dst_as = dst_as_beacons_pair.second;
@@ -140,10 +140,10 @@ namespace ns3 {
                     continue;
                 }
 
-                auto const &interfaces = node->interfaces_per_neighbor_as.at(remote_as_no);
+                auto const &interfaces = AS->interfaces_per_neighbor_as.at(remote_as_no);
                 for (auto const &self_egress_if_no : interfaces) {
                     ld  latency = the_beacon->static_info_extension.at(static_info_type_t::LATENCY) +
-                                  node->latencies_between_interfaces.at(LOWER_16_BITS(the_beacon->the_path.back())).at(self_egress_if_no);
+                                  AS->latencies_between_interfaces.at(LOWER_16_BITS(the_beacon->the_path.back())).at(self_egress_if_no);
 
                     if (beacon_cnt == 0) {
                         valid_candidates.insert(std::make_pair(self_egress_if_no, std::multimap<ld, Beacon*>()));
@@ -171,8 +171,8 @@ namespace ns3 {
                 ld latency = latency_beacon_pair.first;
                 Beacon *the_beacon = latency_beacon_pair.second;
 
-                uint16_t remote_ingress_if_no = node->GetRemoteAsInfo(self_egress_if_no).first;
-                SCION_AS* remote_as = node->GetRemoteAsInfo(self_egress_if_no).second;
+                uint16_t remote_ingress_if_no = AS->GetRemoteAsInfo(self_egress_if_no).first;
+                SCION_AS* remote_as = AS->GetRemoteAsInfo(self_egress_if_no).second;
 
                 static_info_extension_t static_info_extension;
                 static_info_extension.insert(std::make_pair(static_info_type_t::LATENCY, latency));

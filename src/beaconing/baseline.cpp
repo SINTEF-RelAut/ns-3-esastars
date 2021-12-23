@@ -13,26 +13,26 @@
 
 namespace ns3 {
 
-    void Baseline::DoInitializations(uint32_t all_nodes) {}
+    void Baseline::DoInitializations(uint32_t num_ASes) {}
 
 
     void Baseline::create_initial_static_info_extension(static_info_extension_t& static_info_extension, uint16_t self_egress_if_no) {
         static_info_extension.insert(std::make_pair(static_info_type_t::LATENCY, 0));
-        static_info_extension.insert(std::make_pair(static_info_type_t::BW, node->inter_as_bwds.at(self_egress_if_no)));
+        static_info_extension.insert(std::make_pair(static_info_type_t::BW, AS->inter_as_bwds.at(self_egress_if_no)));
     }
 
     void
     Baseline::DisseminateBeacons(neighbour_relation relation) {
-        uint32_t neighbors_cnt = node->neighbors.size();
+        uint32_t neighbors_cnt = AS->neighbors.size();
         omp_set_num_threads(NUM_CORE);
 #pragma omp parallel for
         for (uint32_t i = 0; i < neighbors_cnt; ++i) {
-            if (node->neighbors.at(i).second != relation) {
+            if (AS->neighbors.at(i).second != relation) {
                 continue;
             }
 
-            uint16_t &remote_as_no = node->neighbors.at(i).first;
-            const std::vector<uint16_t> &interfaces = node->interfaces_per_neighbor_as.at(remote_as_no);
+            uint16_t &remote_as_no = AS->neighbors.at(i).first;
+            const std::vector<uint16_t> &interfaces = AS->interfaces_per_neighbor_as.at(remote_as_no);
 
             for (auto const &dst_as_beacons_pair : beacon_store) {
                 const uint16_t &dst_as_no = dst_as_beacons_pair.first;
@@ -78,19 +78,19 @@ namespace ns3 {
                         // Iterate over all the valid interfaces of this remote AS and send the beacons
                         for (auto const &egress_interface_no : interfaces) {
                             std::pair<uint16_t, SCION_AS*>
-                                    remote_as_if_pair = node->GetRemoteAsInfo(egress_interface_no);
+                                    remote_as_if_pair = AS->GetRemoteAsInfo(egress_interface_no);
 
                             uint16_t remote_ingress_if_no = remote_as_if_pair.first;
                             SCION_AS* remote_as = remote_as_if_pair.second;
 
                             ld latency = the_beacon->static_info_extension.at(static_info_type_t::LATENCY) +
-                                         node->latencies_between_interfaces
+                                    AS->latencies_between_interfaces
                                                  .at(LOWER_16_BITS(the_beacon->the_path.back()))
                                                  .at(egress_interface_no);
                             ld bwd =
                                     the_beacon->static_info_extension.at(static_info_type_t::BW)
-                                    > (ld) node->inter_as_bwds.at(egress_interface_no)
-                                    ? (ld) node->inter_as_bwds.at(egress_interface_no)
+                                    > (ld) AS->inter_as_bwds.at(egress_interface_no)
+                                    ? (ld) AS->inter_as_bwds.at(egress_interface_no)
                                     : the_beacon->static_info_extension.at(static_info_type_t::BW);
 
                             static_info_extension_t static_info_extension;

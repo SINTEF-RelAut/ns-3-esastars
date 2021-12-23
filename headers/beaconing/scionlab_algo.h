@@ -20,7 +20,7 @@ namespace ns3 {
         void
         DisseminateBeacons (neighbour_relation relation) override;
 
-        void DoInitializations(uint32_t all_nodes) override;
+        void DoInitializations(uint32_t num_ASes) override;
 
         void
         InsertToStrategyMetaData (Beacon* the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no) override;

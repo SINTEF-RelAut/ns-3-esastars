@@ -25,7 +25,7 @@ namespace ns3 {
         DiversityAgeBased (bool parallel_scheduler, beaconing_timing_params params) :
         BeaconServer(parallel_scheduler, params){}
 
-        void DoInitializations(uint32_t all_nodes) override;
+        void DoInitializations(uint32_t num_ASes) override;
 
         void
         DisseminateBeacons(neighbour_relation relation) override;

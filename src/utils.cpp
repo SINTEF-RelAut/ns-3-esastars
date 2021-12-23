@@ -46,6 +46,17 @@ namespace ns3 {
         return median;
     }
 
+
+    std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
+        std::stringstream ss(s);
+        std::string item;
+        while(std::getline(ss, item, delim)) {
+            elems.push_back(item);
+        }
+        return elems;
+    }
+
+
     ld link_level_jaccard_distance_between_two_paths(Beacon *beacon1, Beacon *beacon2) {
         std::set<uint32_t> set_of_links_on_path1;
         int32_t intersection = 0;

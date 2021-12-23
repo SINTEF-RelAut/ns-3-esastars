@@ -44,9 +44,9 @@ namespace ns3 {
 
         std::unordered_map<uint16_t, std::vector<uint32_t>> bytes_sent_per_interface_per_period;
 
-        void SetNode(SCION_AS* node);
+        void SetNode(SCION_AS* AS);
 
-        virtual void DoInitializations(uint32_t all_nodes) = 0;
+        virtual void DoInitializations(uint32_t num_ASes) = 0;
 
         void
         InitiateBeacons(neighbour_relation relation);
@@ -88,7 +88,7 @@ namespace ns3 {
 
     protected:
         bool parallel_scheduler;
-        SCION_AS* node;
+        SCION_AS* AS;
         uint16_t now;
         uint16_t next_period;
         Time beaconing_period;

@@ -35,5 +35,13 @@ namespace ns3 {
 
     void FindMinLatencyToDNSRootServers(ns3::NodeContainer &nodes, std::map<int32_t, uint16_t> &ASes,
                                         std::map<uint16_t, int32_t> &index_to_AS_no);
+
+    void PrintPathPollutionIndex(ns3::NodeContainer& nodes, std::map<uint16_t, int32_t>& index_to_AS_no);
+
+    void PrintLeastPollutingPaths(ns3::NodeContainer& nodes, std::map<uint16_t, int32_t>& index_to_AS_no, std::string beaconing_policy_str);
+
+    void PrintBestPerHopPollutionIndexes(ns3::NodeContainer& nodes, std::map<uint16_t, int32_t>& index_to_AS_no);
+
+    void PrintTransitTrafficBaseline(ns3::NodeContainer& nodes, std::map<uint16_t, int32_t>& index_to_AS_no);
 }
 #endif //NS_3_BEACONING_SIMULATOR_POST_SIMULATION_EVALUATIONS_H
