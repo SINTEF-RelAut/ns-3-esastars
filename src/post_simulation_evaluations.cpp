@@ -20,7 +20,7 @@
 #include "src/SCION/headers/beaconing/scionlab_algo.h"
 #include "src/SCION/headers/scion_as.h"
 #include "src/SCION/headers/scion_core_as.h"
-#include "src/SCION/headers/beaconing/criteria_matching.h"
+#include "src/SCION/headers/beaconing/diversity_age_based.h"
 #include "src/SCION/headers/beaconing/latency_optimized_beaconing.h"
 #include "src/SCION/headers/global_scheduling.h"
 #include "src/SCION/headers/post_simulation_evaluations.h"
@@ -165,8 +165,8 @@ namespace ns3 {
                                                                                                          probe_long,
                                                                                                          first_br_coordinates.first,
                                                                                                          first_br_coordinates.second);
-                            if (the_beacon->latency_stat + latency_from_probe_to_first_hop < min_latency_to_dst_as) {
-                                min_latency_to_dst_as = the_beacon->latency_stat + latency_from_probe_to_first_hop;
+                            if (the_beacon->static_info_extension.at(static_info_type_t::LATENCY) + latency_from_probe_to_first_hop < min_latency_to_dst_as) {
+                                min_latency_to_dst_as = the_beacon->static_info_extension.at(static_info_type_t::LATENCY) + latency_from_probe_to_first_hop;
                                 last_br = SECOND_UPPER_16_BITS(the_beacon->the_path.at(0));
                                 selected_path = &the_beacon->the_path;
                             }
@@ -324,9 +324,9 @@ namespace ns3 {
                             hop_cnt++;
                         }
                         std::cout << "; ";
-                        std::cout << "latency = " << the_beacon->latency_stat;
+                        std::cout << "latency = " << the_beacon->static_info_extension.at(static_info_type_t::LATENCY);
                         std::cout << "; ";
-                        std::cout << "BWD = " << the_beacon->bwd_stat;
+                        std::cout << "BWD = " << the_beacon->static_info_extension.at(static_info_type_t::BW);
                         std::cout << std::endl;
                     }
 
@@ -415,9 +415,9 @@ namespace ns3 {
                 float min_latency = std::numeric_limits<float>::max();
                 for (auto const &len_beacons_pair : the_node->GetBeaconServer()->beacon_store.at(j)) {
                     for (auto const &the_beacon : len_beacons_pair.second) {
-                        assert(the_beacon->the_path.size() != 1 || the_beacon->latency_stat == (float) 0);
-                        if (the_beacon->latency_stat < min_latency) {
-                            min_latency = the_beacon->latency_stat;
+                        assert(the_beacon->the_path.size() != 1 || the_beacon->static_info_extension.at(static_info_type_t::LATENCY) == (float) 0);
+                        if (the_beacon->static_info_extension.at(static_info_type_t::LATENCY) < min_latency) {
+                            min_latency = the_beacon->static_info_extension.at(static_info_type_t::LATENCY);
                         }
                     }
                 }

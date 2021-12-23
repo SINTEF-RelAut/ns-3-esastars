@@ -2,13 +2,6 @@
  * @file main.cpp
  * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
  * @date 2020
- *
- * This script takes the beaconing_period, expiration_period, simulator_time and the topology
- * to use as command line arguments. It will automatically instantiate nodes as Core or Leaf ASes
- * depending on the "type" property given in the xml file. This, together with the "rel" property on the links,
- * is used to infer over which interfaces the node needs to propagate beacons. All the nodes will instantiate
- * the baseline beaconing beaconServer when using this script. For criteria matching use the other script.
- * @see criteria_matching_sim
  */
 
 #include <istream>
@@ -29,7 +22,7 @@
 #include "src/SCION/headers/beaconing/beacon_server.h"
 #include "src/SCION/headers/beaconing/baseline.h"
 #include "src/SCION/headers/beaconing/scionlab_algo.h"
-#include "src/SCION/headers/beaconing/criteria_matching.h"
+#include "src/SCION/headers/beaconing/diversity_age_based.h"
 #include "src/SCION/headers/beaconing/latency_optimized_beaconing.h"
 #include "src/SCION/headers/scion_as.h"
 #include "src/SCION/headers/scion_core_as.h"
@@ -255,15 +248,8 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root,
         ns3::BeaconServer* beaconing_policy;
         if (beaconing_policy_str == "baseline") {
             beaconing_policy = (ns3::BeaconServer*) new ns3::Baseline(parallel_scheduler, params);
-        } else if (beaconing_policy_str == "criteria_matching") {
-            ns3::ld latency_coef = 0.0; //std::stod(p.getProperty("latency_coef"));
-            ns3::ld bandwidth_coef = 0.0; //std::stod(p.getProperty("bandwidth_coef"));
-            ns3::ld AS_level_diversity_coef = 0.0; // std::stod(p.getProperty("AS_level_diversity_coef"));
-            ns3::ld link_level_diversity_coef = 1.0; //std::stod(p.getProperty("link_level_diversity_coef"));
-
-            ns3::coefficients coefs = std::make_tuple(latency_coef, bandwidth_coef, AS_level_diversity_coef,
-                                                      link_level_diversity_coef);
-            beaconing_policy = (ns3::BeaconServer *) new ns3::CriteriaMatching(parallel_scheduler, params, coefs);
+        } else if (beaconing_policy_str == "diversity_age_based") {
+            beaconing_policy = (ns3::BeaconServer *) new ns3::DiversityAgeBased(parallel_scheduler, params);
         } else if (beaconing_policy_str == "latency_optimized") {
             beaconing_policy = (ns3::BeaconServer *) new ns3::LatencyOptimized(parallel_scheduler, params);
         } else if (beaconing_policy_str == "scionlab") {
@@ -275,7 +261,7 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root,
         ns3::Ptr<ns3::SCION_AS> AS_node;
         if(type == "core"){
             AS_node = ns3::CreateObject<ns3::SCION_Core_AS>(isd_number, alias_as_no, 0, ns3::Time(0));
-        } else if(type =="non-core"){
+        } else if(type == "non-core"){
             AS_node = ns3::CreateObject<ns3::SCION_AS>(isd_number, alias_as_no, 0, ns3::Time(0));
         } else {
             std::cerr << "Incompatible AS_node type!" << std::endl;

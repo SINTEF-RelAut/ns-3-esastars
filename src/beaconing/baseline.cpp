@@ -3,31 +3,24 @@
  * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
  * @date 2020
  * @see baseline.h
- *
- * @brief Implements the member functions of the baseline beaconServer.
  */
 #include <omp.h>
-#include "src/SCION/headers/utils.h"
-#include "src/SCION/headers/beaconing/baseline.h"
 
 #include "ns3/point-to-point-channel.h"
 
+#include "src/SCION/headers/utils.h"
+#include "src/SCION/headers/beaconing/baseline.h"
+
 namespace ns3 {
 
-    void Baseline::DoInitializations(uint32_t all_nodes) {
+    void Baseline::DoInitializations(uint32_t all_nodes) {}
 
+
+    void Baseline::create_initial_static_info_extension(static_info_extension_t& static_info_extension, uint16_t self_egress_if_no) {
+        static_info_extension.insert(std::make_pair(static_info_type_t::LATENCY, 0));
+        static_info_extension.insert(std::make_pair(static_info_type_t::BW, node->inter_as_bwds.at(self_egress_if_no)));
     }
 
-/**
- * Iterates over all the beacons for all the neighbours of the node. If the beacon is valid, its dissemination towards
- * this neighbour does not create a loop in the path and the neighbour is not the same AS which originated the beacon
- * it is sent over the interfaces towards this neighbour until the maximum number of beacons to send per neighbour has
- * been reached.
- *
- * @see GenerateBeaconAndSend
- * @param valid_interfaces The interfaces along which to disseminate beacons for this type of node.
- * @param node The node which is disseminating beacons.
- */
     void
     Baseline::DisseminateBeacons(neighbour_relation relation) {
         uint32_t neighbors_cnt = node->neighbors.size();
@@ -90,20 +83,23 @@ namespace ns3 {
                             uint16_t remote_ingress_if_no = remote_as_if_pair.first;
                             SCION_AS* remote_as = remote_as_if_pair.second;
 
-                            ld latency = the_beacon->latency_stat +
+                            ld latency = the_beacon->static_info_extension.at(static_info_type_t::LATENCY) +
                                          node->latencies_between_interfaces
                                                  .at(LOWER_16_BITS(the_beacon->the_path.back()))
                                                  .at(egress_interface_no);
                             ld bwd =
-                                    the_beacon->bwd_stat > (ld) node->inter_as_bwds.at(
-                                            egress_interface_no)
-                                    ? (ld) node->inter_as_bwds.at(
-                                            egress_interface_no)
-                                    : the_beacon->bwd_stat;
+                                    the_beacon->static_info_extension.at(static_info_type_t::BW)
+                                    > (ld) node->inter_as_bwds.at(egress_interface_no)
+                                    ? (ld) node->inter_as_bwds.at(egress_interface_no)
+                                    : the_beacon->static_info_extension.at(static_info_type_t::BW);
+
+                            static_info_extension_t static_info_extension;
+                            static_info_extension.insert(std::make_pair(static_info_type_t::LATENCY, latency));
+                            static_info_extension.insert(std::make_pair(static_info_type_t::BW, bwd));
 
                             GenerateBeaconAndSend(the_beacon, egress_interface_no,
                                                   remote_ingress_if_no,
-                                                  remote_as, latency, bwd);
+                                                  remote_as, static_info_extension);
                         }
                     }
                 }
@@ -111,17 +107,7 @@ namespace ns3 {
         }
     }
 
-/**
- * @param key Beacon key.
- * @param dst_as The AS number of the node which originated the beacon.
- * @param old_beacon The previous beacon.
- * @param self_egress_if_no The interface number on which to send the beacon.
- * @param remote_ingress_if_no The interface number where the beacon will be received on the remote_as.
- * @param node The node sending the beacon.
- * @param remote_as The node receiving the beacon.
- * @param latency The new beacon latency.
- * @param bwd The new beacon bandwidth stat.
- */
+
     std::tuple<bool, bool, bool, Beacon *>
     Baseline::ImportPolicy(Beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
                            uint16_t self_ingress_if_no, uint16_t now) {

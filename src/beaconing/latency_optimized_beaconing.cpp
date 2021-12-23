@@ -3,7 +3,6 @@
  * @authors Seyedali Tabaeiaghdaei
  * @date 2021
  * @see latency_optimized_beaconing.h
- * @brief Implements the specialized functions for the latency optimized beaconing beaconServer.
  */
 
 #include <cassert>
@@ -22,6 +21,10 @@ namespace ns3 {
                 beacons_per_dst_per_ing_if_sorted_by_latency.at(i).at(j) = std::multimap<ld, Beacon*>();
             }
         }
+    }
+
+    void LatencyOptimized::create_initial_static_info_extension(static_info_extension_t& static_info_extension, uint16_t self_egress_if_no) {
+        static_info_extension.insert(std::make_pair(static_info_type_t::LATENCY, 0));
     }
 
     std::tuple<bool, bool, bool, Beacon*>
@@ -46,7 +49,7 @@ namespace ns3 {
             return std::tuple<bool, bool, bool, Beacon*>(true, false, false, NULL);
         }
 
-        ld latency = the_beacon.latency_stat;
+        ld latency = the_beacon.static_info_extension.at(static_info_type_t::LATENCY);
 
         std::multimap<ld, Beacon*>::reverse_iterator highest_previous_latency_iterator = beacons_per_dst_per_ing_if_sorted_by_latency.at(dst_as).at(self_ingress_if_no).rbegin();
         ld highest_previous_latency = highest_previous_latency_iterator->first;
@@ -91,7 +94,7 @@ namespace ns3 {
                     continue;
                 }
 
-                std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS*, ld, ld> > selected_beacons =
+                std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS*, static_info_extension_t> > selected_beacons =
                         select_beacons_to_disseminate_per_dst_per_nbr(remote_as_no, dst_as_no, beacons_to_the_dst_as);
 
                 for (auto const &the_tuple_pair : selected_beacons) {
@@ -99,24 +102,22 @@ namespace ns3 {
                     uint16_t remote_ingress_if_no;
                     uint16_t self_egress_if_no;
                     SCION_AS* remote_as;
-                    ld latency;
-                    ld bwd;
+                    static_info_extension_t static_info_extension;
 
-                    std::tie(the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as, latency,
-                             bwd) = the_tuple_pair.second;
+                    std::tie(the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as, static_info_extension) = the_tuple_pair.second;
 
                     GenerateBeaconAndSend(the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as,
-                                          latency, bwd);
+                                          static_info_extension);
 
                 }
             }
         }
     }
 
-    std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS*, ld, ld> >
+    std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS*, static_info_extension_t> >
     LatencyOptimized::select_beacons_to_disseminate_per_dst_per_nbr(uint16_t remote_as_no, uint16_t dst_as_no,
                                                                   const beacons_with_same_dst_as &beacons_to_the_dst_as) {
-        std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS*, ld, ld> > latency_map_to_beacon_and_metadata;
+        std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS*, static_info_extension_t> > latency_map_to_beacon_and_metadata;
         std::map<uint16_t, std::multimap<ld, Beacon*> > valid_candidates;
 
         int beacon_cnt = 0;
@@ -141,7 +142,7 @@ namespace ns3 {
 
                 auto const &interfaces = node->interfaces_per_neighbor_as.at(remote_as_no);
                 for (auto const &self_egress_if_no : interfaces) {
-                    ld  latency = the_beacon->latency_stat +
+                    ld  latency = the_beacon->static_info_extension.at(static_info_type_t::LATENCY) +
                                   node->latencies_between_interfaces.at(LOWER_16_BITS(the_beacon->the_path.back())).at(self_egress_if_no);
 
                     if (beacon_cnt == 0) {
@@ -173,14 +174,13 @@ namespace ns3 {
                 uint16_t remote_ingress_if_no = node->GetRemoteAsInfo(self_egress_if_no).first;
                 SCION_AS* remote_as = node->GetRemoteAsInfo(self_egress_if_no).second;
 
-                ld bwd = the_beacon->bwd_stat > (ld) node->inter_as_bwds.at(self_egress_if_no)
-                         ? (ld) node->inter_as_bwds.at(self_egress_if_no)
-                         : the_beacon->bwd_stat;
+                static_info_extension_t static_info_extension;
+                static_info_extension.insert(std::make_pair(static_info_type_t::LATENCY, latency));
 
                 latency_map_to_beacon_and_metadata.insert(
-                        std::make_pair(latency, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS*, ld, ld>
+                        std::make_pair(latency, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS*, static_info_extension_t>
                                 (the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as,
-                                 latency, bwd)));
+                                 static_info_extension)));
 
             }
         }
@@ -189,7 +189,7 @@ namespace ns3 {
     }
 
     void LatencyOptimized::insert_to_beacons_per_dst_sorted_by_latency(uint16_t dst_as, Beacon* the_beacon) {
-        ld  latency = the_beacon->latency_stat;
+        ld latency = the_beacon->static_info_extension.at(static_info_type_t::LATENCY);
         uint16_t self_ingress_if = LOWER_16_BITS(the_beacon->the_path.back());
 
         beacons_per_dst_per_ing_if_sorted_by_latency.at(dst_as).at(self_ingress_if).insert(std::make_pair(latency, the_beacon));
@@ -197,7 +197,7 @@ namespace ns3 {
     }
 
     void LatencyOptimized::delete_from_beacons_per_dst_sorted_by_latency(uint16_t dst_as, Beacon* the_beacon) {
-        ld  latency = the_beacon->latency_stat;
+        ld latency = the_beacon->static_info_extension.at(static_info_type_t::LATENCY);
         uint16_t self_ingress_if = LOWER_16_BITS(the_beacon->the_path.back());
 
         std::multimap<ld, Beacon*>::iterator iterator = beacons_per_dst_per_ing_if_sorted_by_latency.at(dst_as).at(self_ingress_if).begin();

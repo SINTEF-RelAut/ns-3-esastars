@@ -1,15 +1,13 @@
 /**
- * @file beaconing_strategy.cpp
+ * @file beacon_server.cpp
  * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
  * @date 2020
- * @see beaconing_strategy.h
- * @brief Implements the member functions of the BeaconServer.
+ * @see beacon_server.h
  */
 
 #include <omp.h>
 
 #include "ns3/point-to-point-net-device.h"
-
 
 #include "src/SCION/headers/beaconing/beacon_server.h"
 #include "src/SCION/headers/utils.h"
@@ -22,11 +20,6 @@ namespace ns3 {
         this->node = the_node;
     }
 
-/**
- * @see GenerateBeaconAndSend
- * @param valid_interfaces The interfaces along to initiate the beacons.
- * @param node The node from where to initiate the beacons
- */
     void
     BeaconServer::InitiateBeacons(neighbour_relation relation) {
         uint32_t neighbors_cnt = node->neighbors.size();
@@ -47,51 +40,18 @@ namespace ns3 {
                 uint16_t remote_ingress_if_no = remote_as_if_pair.first;
                 SCION_AS* remote_as = remote_as_if_pair.second;
 
+                static_info_extension_t static_info_extension;
+                create_initial_static_info_extension(static_info_extension, self_egress_if_no);
+
                 GenerateBeaconAndSend(
-                        NULL, self_egress_if_no, remote_ingress_if_no, remote_as, 0,
-                        node->inter_as_bwds.at(self_egress_if_no));
+                        NULL, self_egress_if_no, remote_ingress_if_no, remote_as, static_info_extension);
             }
         }
     }
 
-
-/**
- * - Updates the structures keeping track of how many bytes were sent over each interface during one period. => This is done every time
- * no matter if the beacon will be discarded by the remote AS and therefore not written into its beacon store. The reason is that in the
- * real deployment, the beacon must in any case reach the remote AS before it can run its import policy to decide to discard it or not.
- * - Determines if the beacon needs to be disseminated immediately by checking if the source AS number is already present in the
- * remote ASes counter structures.
- * - Checks if this exact beacon has already been sent in a previous beaconing period by searching for the beacon key in the remote
- * ASes path_map. If it is known, simply updates the initiation and expiration times and returns.
- * - Checks if the remote AS is already storing to many beacons from the source AS that originated the beacon. If this is the case
- * the full beacon store is handled and the function returns.
- *
- * Note that if the remote_as would discard this beacon after running its import policy, it is not created to save simulator memory.
- *
- * - Generates the new beacon by appending the nodes AS information and sets the initiation and expiration times.
- * The beacon gets written directly into the remote ASes beacon store and the path_map. It also triggers
- * the update of any additional beacon store structure a specialized beaconServer might need.
- * - Finally, it schedules the processing of the received beacons in case they need to be disseminated immediately.
- *
- * @see HandleFullBeaconStore
- * @see UpdateSpecializedBeaconStore
- * @see ProcessReceivedBeacons
- *
- * @param old_beacon Either the beacon on which to base the new beacon on, or NULL if this node is initiating a beacon.
- * @param self_egress_if_no The interface number on which to send the beacon.
- * @param remote_ingress_if_no The remote ingress interface number of the receiving AS.
- * @param node The node which is sending the beacon.
- * @param remote_as The node which is receiving the beacon.
- * @param latency The beacon latency (expected to be the old beacon latency aggregated with the intra AS latency or zero)
- * @param bwd The beacon bandwidth (expected to be min{old_beacon_bwd, traversed_intra_as_bwd} or the inter AS bandwidth at the egress interface))
- * @param immediate Flag which indicates if the beacon was marked to be disseminated immediately. In the real deployment this flag would be on the
- * beacon. This extra bit is currently _not_ included in the beacon header size.
- * @param latency_for_immediate The intra AS latency the beacon traversed, used for the proper scheduling timing.
- */
-
    void BeaconServer::GenerateBeaconAndSend(Beacon *selected_beacon, uint16_t self_egress_if_no,
                                             uint16_t remote_ingress_if_no, SCION_AS* remote_as,
-                                            ld latency, ld bwd)
+                                            static_info_extension_t static_info_extension)
     {
         std::string key;
         uint16_t remote_as_no = remote_as->as_number;
@@ -124,25 +84,13 @@ namespace ns3 {
             new_isd_path.push_back(node->isd_number);
         }
 
-        Beacon to_disseminate_beacon((float) latency, (float) bwd, 0, 0, next_initiation_time,
+        Beacon to_disseminate_beacon(static_info_extension, 0, 0, next_initiation_time,
                                      next_expiration_time, true, false, new_path, key, new_isd_path);
 
         IncrementControlPlaneBytesSent(to_disseminate_beacon, self_egress_if_no);
         remote_as->ReceiveBeacon(to_disseminate_beacon, node->as_number, self_egress_if_no, remote_ingress_if_no);
     }
 
-
-
-/**
- * For reasons of scalability, we do not use ns3s native scheduler functions (e.g. send). Instead the beacons that have
- * been sent are directly written into the remote ASes beacon store with the 'new' bit set to true and the 'valid' bit set to false
- * such that they will not be disseminated in the same period. Before the next period starts, this functions responsibility
- * is to set the valid bit of the beacons received in the last period, such that they are disseminated in this period.
- * It also invalidates beacons that have expired.
- *
- * @see AdjustBeaconValidity
- * @param node The node on which to update the beacon store.
- */
     void
     BeaconServer::UpdateStatePeriodic() {
         auto const &beacons = path_map_to_beacon;
@@ -158,17 +106,6 @@ namespace ns3 {
         }
     }
 
-/**
- * Updates the node time with the current simulator times.
- * - If the beacon is new: Sets the new property to false, increments the nodes valid beacon count for
- * the beacons source AS, sets the validity bit of the beacon to true and updates the beacons initiation
- * and expiration time.
- * - If the beacon is expired and valid: Sets the validity bit to false, and decreases the nodes
- * valid beacon counters as well as the counters for the next beaconing round.
- *
- * @param the_beacon The beacon for which to adjust the validity.
- * @param node The node holding the beacon.
- */
     void
     BeaconServer::UpdateBeaconState(Beacon *the_beacon) {
         uint16_t dst_as = UPPER_16_BITS (the_beacon->the_path.at(0));
@@ -203,7 +140,6 @@ namespace ns3 {
             }
         }
     }
-
 
 
     void BeaconServer::InsertBeacon (Beacon& received_beacon, uint16_t dst_as, uint16_t sender_as, uint16_t remote_egress_if, uint16_t local_ingress_if, bool path_exists, bool existing_path_valid, Beacon* beacon_to_replace)

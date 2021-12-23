@@ -1,15 +1,11 @@
 /**
- * @file criteria_matching.h
+ * @file diversity_age_based.h
  * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
  * @date 2020
- * @see beaconing_strategy.h
- * @brief Defines a specialized beaconing beaconServer that uses criteria matching
- * (related to bandwidth/latency/disjointness of paths) to choose which
- * beacons to disseminate.
  */
 
-#ifndef SCION_BEACONING_SIMMULATOR_CRITERIA_MATCHING_H
-#define SCION_BEACONING_SIMMULATOR_CRITERIA_MATCHING_H
+#ifndef SCION_BEACONING_SIMULATOR_CRITERIA_MATCHING_H
+#define SCION_BEACONING_SIMULATOR_CRITERIA_MATCHING_H
 
 #include "src/SCION/headers/beaconing/beacon_server.h"
 
@@ -23,50 +19,17 @@ namespace ns3 {
 #define SCALING_FACTOR 0.95
 #define SCORE_THRESHOLD 0.9
 
-
-/**
- * @brief Holds 0:latency_coef, 1:bandwidth_coef, 2:AS_level_diversity_coef, 3:link_level_diversity_coef
- *
- * Used to reduce the number of parameters we need to pass into the CreateObject constructor wrapper.
- *
- * Expected order:
- * - latency_coef
- * - bandwidth_coef
- * - AS_level_diversity_coef
- * - link_level_diversity_coef
- */
-
-typedef std::tuple<ld, ld, ld, ld> coefficients;
-
-    class CriteriaMatching : public BeaconServer {
+    class DiversityAgeBased : public BeaconServer {
     public:
 
-        CriteriaMatching (bool parallel_scheduler, beaconing_timing_params params, coefficients coefs) :
-        BeaconServer(parallel_scheduler, params){
-            std::tie(latency_coef, bandwidth_coef, AS_level_diversity_coef, link_level_diversity_coef) = coefs;
-        }
-
-        /** @brief AS latency preference coefficient. */
-        ld latency_coef;
-        /** @brief AS bandwidth preference coefficient. */
-        ld bandwidth_coef;
-        /** @brief AS AS-level path-diversity preference coefficient. */
-        ld AS_level_diversity_coef;
-        /** @brief AS link-level path-diversity preference coefficient. */
-        ld link_level_diversity_coef;
+        DiversityAgeBased (bool parallel_scheduler, beaconing_timing_params params) :
+        BeaconServer(parallel_scheduler, params){}
 
         void DoInitializations(uint32_t all_nodes) override;
-        /**
-         * @brief Disseminates highest scoring beacons towards multiple interfaces of the appropriate neighbours until the limit for
-         * sending beacons with the same originating source AS to one neighbour is reached.
-         */
+
         void
         DisseminateBeacons(neighbour_relation relation) override;
 
-        /**
-        * @brief Evicts the lowest scored beacon for the beacons originating AS if the score of the new beacon is larger
-        * than the lowest scored matching beacon found in the remote ASes beacon store.
-        */
 
         std::tuple<bool, bool, bool, Beacon*>
         ImportPolicy (Beacon& the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
@@ -79,24 +42,14 @@ typedef std::tuple<ld, ld, ld, ld> coefficients;
         DeleteFromStrategyMetaData (Beacon* the_beacon) override;
 
     protected:
-
-
         void
         MetaDataUpdatePeriodic (Beacon* the_beacon, bool invalidated) override;
 
     private:
-
-
-        /** @brief
-         * holds a history of sent beacons;
-         * For each interface we keep a map from disseminated beacons pointers in self beacon store to the disseminated beacon's raw score and expiration time
-         * */
         std::vector<std::unordered_map<Beacon *, std::pair<float, uint16_t>> *> sent_beacons;
 
         std::vector<std::unordered_map<uint16_t, uint16_t>* > sent_beacons_cnt;
-        /** @brief
-        * holds repetition counter of every link on the path from a source AS to a destination AS
-        * */
+
         std::unordered_map<uint16_t, std::vector<std::unordered_map<uint32_t, uint32_t> *>>
                 links_jointnesses_on_sent_paths;
 
@@ -119,7 +72,7 @@ typedef std::tuple<ld, ld, ld, ld> coefficients;
 
         bool path_not_sent_before(uint16_t remote_as, uint16_t self_egress_if_no, Beacon *the_beacon);
 
-        std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS*, ld, ld> >
+        std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS*, static_info_extension_t> >
         select_beacons_to_disseminate_per_dst_per_nbr(uint16_t remote_as_no, uint16_t dst_as_no,
                                                       const beacons_with_same_dst_as &beacons_to_the_dst_as);
 
@@ -134,6 +87,8 @@ typedef std::tuple<ld, ld, ld, ld> coefficients;
         inline ld
         calculate_import_raw_score (Beacon& the_beacon);
 
+        void create_initial_static_info_extension(static_info_extension_t& static_info_extension, uint16_t self_egress_if_no) override;
+
     };
 }
-#endif //SCION_BEACONING_SIMMULATOR_CRITERIA_MATCHING_H
+#endif //SCION_BEACONING_SIMULATOR_CRITERIA_MATCHING_H
