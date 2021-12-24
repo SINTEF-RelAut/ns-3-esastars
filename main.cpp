@@ -115,8 +115,8 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    if (!config["beacon_server"]
-    && !(config["path_server"])
+    if (!config["beacon_service"]
+    && !(config["path_service"])
     && !(config["border_router"])) {
         std::cerr << "No simulation is possible." << std::endl;
         return 1;
