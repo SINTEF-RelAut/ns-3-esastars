@@ -17,8 +17,21 @@
 
 namespace ns3 {
 
+    void SCION_AS::DoInitializations(uint32_t num_ASes) {
+        initialize_latencies(true);
+
+        AS_max_bwd = 0;
+        for (auto const curr_bwd : inter_as_bwds) {
+            if (curr_bwd > AS_max_bwd) {
+                AS_max_bwd = curr_bwd;
+            }
+        }
+
+        beaconServer->DoInitializations(num_ASes);
+    }
+
     void
-    SCION_AS::DoInitializations(uint32_t all_nodes, bool only_propagation_delay, std::string border_routers_malicious_action, Time malicious_delay) {
+    SCION_AS::DoInitializations(uint32_t num_ASes, bool only_propagation_delay, std::string border_routers_malicious_action, Time malicious_delay) {
         connect_internal_nodes(only_propagation_delay,  border_routers_malicious_action, malicious_delay);
         initialize_latencies(only_propagation_delay);
 
@@ -30,9 +43,7 @@ namespace ns3 {
             host->InitializeTransmissionQueues();
         }
 
-        if (pathServer != NULL) {
-            pathServer->InitializeTransmissionQueues();
-        }
+        pathServer->InitializeTransmissionQueues();
 
         AS_max_bwd = 0;
         for (auto const curr_bwd : inter_as_bwds) {
@@ -41,7 +52,7 @@ namespace ns3 {
             }
         }
 
-        beaconServer->DoInitializations(all_nodes);
+        beaconServer->DoInitializations(num_ASes);
     }
 
     std::pair<uint16_t, SCION_AS*>

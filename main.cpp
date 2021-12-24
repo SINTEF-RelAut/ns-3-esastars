@@ -650,21 +650,25 @@ void InitializeASesAttributes(const ns3::NodeContainer& AS_nodes, std::map<int32
 
     bool only_propagation_delay = OnlyPropagationDelay(config);
 
-    std::vector<std::string> border_routers_malicious_action;
-    GetASesWithMaliciousBRs (AS_nodes, config, border_routers_malicious_action);
-
-    ns3::Time malicious_delay = ns3::TimeStep(0);
     if (config["border_router"]) {
+        std::vector<std::string> border_routers_malicious_action;
+        GetASesWithMaliciousBRs (AS_nodes, config, border_routers_malicious_action);
+        ns3::Time malicious_delay = ns3::TimeStep(0);
         std::string malicious_action = config["border_router"]["malicious_action"].as<std::string>();
         if ((malicious_action == "symmetric_delay" || malicious_action == "asymmetric_delay") && !only_propagation_delay){
             malicious_delay = ns3::Time(config["border_router"]["delay"].as<std::string>());
         }
-    }
 
-    for (uint64_t i = 0; i < AS_nodes.GetN(); ++i) {
-        ns3::SCION_AS *AS_node = dynamic_cast<ns3::SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
-        AS_node->DoInitializations(AS_nodes.GetN(),only_propagation_delay,
-                                   border_routers_malicious_action.at(i), malicious_delay);
+        for (uint64_t i = 0; i < AS_nodes.GetN(); ++i) {
+            ns3::SCION_AS *AS_node = dynamic_cast<ns3::SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+            AS_node->DoInitializations(AS_nodes.GetN(), only_propagation_delay,
+                                       border_routers_malicious_action.at(i), malicious_delay);
+        }
+    } else {
+        for (uint64_t i = 0; i < AS_nodes.GetN(); ++i) {
+            ns3::SCION_AS *AS_node = dynamic_cast<ns3::SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+            AS_node->DoInitializations(AS_nodes.GetN());
+        }
     }
 
     if (config["beacon_service"]["policy"].as<std::string>() == "green_beaconing") {
