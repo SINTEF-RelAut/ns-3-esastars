@@ -140,7 +140,6 @@ namespace ns3 {
         the_br->SetProcessingDelay(processing_delay, processing_throughput_delay);
 
         border_routers.push_back(the_br);
-        interfaces_coordinates.push_back(std::pair<ld, ld>(latitude, longitude));
 
         return the_br;
     }

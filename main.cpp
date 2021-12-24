@@ -503,7 +503,10 @@ void InstantiateLinksFromTopo (rapidxml::xml_node<>* xml_root,
         helper.Install(from_AS, to_AS);
 
         to_AS->AddToRemoteASInfo(from_AS->GetNDevices() - 1, ns3::PeekPointer(from_AS));
+        to_AS->interfaces_coordinates.push_back(std::pair<ns3::ld, ns3::ld>(latitude, longitude));
+
         from_AS->AddToRemoteASInfo(to_AS->GetNDevices() - 1, ns3::PeekPointer(to_AS));
+        from_AS->interfaces_coordinates.push_back(std::pair<ns3::ld, ns3::ld>(latitude, longitude));
 
         if (config["border_router"]) {
             ns3::Time to_propagation_delay, from_propagation_delay;
