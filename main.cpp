@@ -654,9 +654,11 @@ void InitializeASesAttributes(const ns3::NodeContainer& AS_nodes, std::map<int32
     GetASesWithMaliciousBRs (AS_nodes, config, border_routers_malicious_action);
 
     ns3::Time malicious_delay = ns3::TimeStep(0);
-    std::string malicious_action = config["border_router"]["malicious_action"].as<std::string>();
-    if ((malicious_action == "symmetric_delay" || malicious_action == "asymmetric_delay") && !only_propagation_delay){
-        malicious_delay = ns3::Time(config["border_router"]["delay"].as<std::string>());
+    if (config["border_router"]) {
+        std::string malicious_action = config["border_router"]["malicious_action"].as<std::string>();
+        if ((malicious_action == "symmetric_delay" || malicious_action == "asymmetric_delay") && !only_propagation_delay){
+            malicious_delay = ns3::Time(config["border_router"]["delay"].as<std::string>());
+        }
     }
 
     for (uint64_t i = 0; i < AS_nodes.GetN(); ++i) {
