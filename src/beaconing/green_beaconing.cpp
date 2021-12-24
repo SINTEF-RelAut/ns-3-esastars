@@ -6,7 +6,7 @@
  */
 
 #include <omp.h>
-#include <yaml-cpp/yaml.h>
+
 
 #include "ns3/point-to-point-channel.h"
 

@@ -8,6 +8,7 @@
 #define NS_3_BEACONING_SIMULATOR_GREEN_BEACONING_H
 
 #include <cmath>
+#include <yaml-cpp/yaml.h>
 
 #include "src/SCION/headers/beaconing/beacon_server.h"
 #include "src/SCION/headers/utils.h"
@@ -62,6 +63,13 @@ class GreenBeaconing : public BeaconServer
     void create_initial_static_info_extension(static_info_extension_t& static_info_extension, uint16_t self_egress_if_no) override;
 
     friend void ReadBr2BrEnergy(ns3::NodeContainer AS_nodes, std::map<int32_t, uint16_t> real_to_alias_as_no, const YAML::Node& config);
+
+    friend void PrintPathPollutionIndex(ns3::NodeContainer& AS_nodes, std::map<uint16_t, int32_t>& alias_to_real_as_no);
+
+    friend void PrintLeastPollutingPaths(ns3::NodeContainer& AS_nodes, std::map<uint16_t, int32_t>& alias_to_real_as_no, std::string beaconing_policy_str);
+
+    friend void PrintBestPerHopPollutionIndexes(NodeContainer& AS_nodes, std::map<uint16_t, int32_t>& alias_to_real_as_no);
+
 };
 
     void ReadBr2BrEnergy(NodeContainer AS_nodes, std::map<int32_t, uint16_t> real_to_alias_as_no, const YAML::Node& config);
