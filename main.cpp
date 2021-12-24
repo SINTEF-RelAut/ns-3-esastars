@@ -275,7 +275,7 @@ void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root,
         }
 
         AS_node->SetBeaconServer(beaconing_policy);
-        beaconing_policy->SetNode(PeekPointer(AS_node));
+        beaconing_policy->SetAS(PeekPointer(AS_node));
 
         AS_nodes.Add(AS_node);
 

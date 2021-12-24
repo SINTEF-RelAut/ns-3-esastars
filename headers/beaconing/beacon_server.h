@@ -44,7 +44,7 @@ namespace ns3 {
 
         std::unordered_map<uint16_t, std::vector<uint32_t>> bytes_sent_per_interface_per_period;
 
-        void SetNode(SCION_AS* AS);
+        void SetAS(SCION_AS* AS);
 
         virtual void DoInitializations(uint32_t num_ASes) = 0;
 

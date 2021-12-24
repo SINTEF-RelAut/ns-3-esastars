@@ -16,9 +16,11 @@
 #include "src/SCION/headers/path_server.h"
 
 namespace ns3 {
-    void BeaconServer::SetNode(SCION_AS* AS) {
+    void BeaconServer::SetAS(SCION_AS* AS) {
         this->AS = AS;
     }
+
+    void BeaconServer::create_initial_static_info_extension(static_info_extension_t& static_info_extension, uint16_t self_egress_if_no) {}
 
     void
     BeaconServer::InitiateBeacons(neighbour_relation relation) {
