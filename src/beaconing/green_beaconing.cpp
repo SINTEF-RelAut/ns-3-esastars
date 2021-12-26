@@ -125,7 +125,12 @@ namespace ns3 {
         std::multimap<ld, std::tuple<Beacon*, uint16_t, uint16_t, SCION_AS*, static_info_extension_t> > pollution_index_map_to_beacon_and_metadata;
         std::map<uint16_t, std::multimap<ld, Beacon*> > valid_candidates;
 
-        int beacon_cnt = 0;
+
+        auto const &interfaces = AS->interfaces_per_neighbor_as.at(remote_as_no);
+        for (auto const &self_egress_if_no : interfaces) {
+           valid_candidates.insert(std::make_pair(self_egress_if_no, std::multimap<ld, Beacon*>()));
+        }
+
         for (auto const &len_beacons_pair : beacons_to_the_dst_as) {
             auto const &beacons = len_beacons_pair.second;
             for (auto const &the_beacon : beacons) {
@@ -150,14 +155,11 @@ namespace ns3 {
                     ld pollution_index = the_beacon->static_info_extension.at(static_info_type_t::CO2) +
                                           calculate_pollution_between_border_routers (LOWER_16_BITS(the_beacon->the_path.back()),
                                                                                       self_egress_if_no);
-                    if (beacon_cnt == 0) {
-                        valid_candidates.insert(std::make_pair(self_egress_if_no, std::multimap<ld, Beacon*>()));
-                    }
+
 
                     valid_candidates.at(self_egress_if_no).insert(std::make_pair(pollution_index, the_beacon));
                 }
             }
-            beacon_cnt++;
         }
 
         for (auto const & iface_to_pollution_beacon_pair : valid_candidates) {
