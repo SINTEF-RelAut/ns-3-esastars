@@ -53,7 +53,7 @@ namespace ns3 {
 
    void BeaconServer::GenerateBeaconAndSend(Beacon *selected_beacon, uint16_t self_egress_if_no,
                                             uint16_t remote_ingress_if_no, SCION_AS* remote_as,
-                                            static_info_extension_t static_info_extension)
+                                            static_info_extension_t& static_info_extension)
     {
         std::string key;
         uint16_t remote_as_no = remote_as->as_number;

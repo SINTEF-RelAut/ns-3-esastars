@@ -48,7 +48,7 @@ struct Beacon
 
     isd_path the_isd_path;
 
-    Beacon (static_info_extension_t static_info_extension, uint16_t i, uint16_t e, uint16_t nxt_i, uint16_t nxt_e, bool n,
+    Beacon (static_info_extension_t& static_info_extension, uint16_t i, uint16_t e, uint16_t nxt_i, uint16_t nxt_e, bool n,
             bool v, path p, std::string k, isd_path isdp)
         : static_info_extension(static_info_extension),
           initiation_time (i),

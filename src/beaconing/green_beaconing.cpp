@@ -81,7 +81,7 @@ namespace ns3 {
 
     void
     GreenBeaconing::DisseminateBeacons(neighbour_relation relation) {
-        uint32_t neighbors_cnt = AS->neighbors.size();
+	uint32_t neighbors_cnt = AS->neighbors.size();    
         omp_set_num_threads(NUM_CORE);
 #pragma omp parallel for
         for (uint32_t i = 0; i < neighbors_cnt; ++i) { // Per neighbor AS
@@ -94,13 +94,12 @@ namespace ns3 {
             for (auto const &dst_as_beacons_pair : beacon_store) { // Per destination AS
                 uint16_t dst_as_no = dst_as_beacons_pair.first;
                 const beacons_with_same_dst_as &beacons_to_the_dst_as = dst_as_beacons_pair.second;
-
                 if (remote_as_no == dst_as_no) {
                     continue;
                 }
 
-                std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS*, static_info_extension_t> > selected_beacons =
-                        select_beacons_to_disseminate_per_dst_per_nbr(remote_as_no, dst_as_no, beacons_to_the_dst_as);
+                std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS*, static_info_extension_t> > selected_beacons;
+                select_beacons_to_disseminate_per_dst_per_nbr(remote_as_no, dst_as_no, beacons_to_the_dst_as, selected_beacons);
 
                 for (auto const &the_tuple_pair : selected_beacons) {
                     Beacon *the_beacon;
@@ -119,10 +118,10 @@ namespace ns3 {
         }
     }
 
-    std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS*, static_info_extension_t> >
+    void
     GreenBeaconing::select_beacons_to_disseminate_per_dst_per_nbr(uint16_t remote_as_no, uint16_t dst_as_no,
-                                                                  const beacons_with_same_dst_as &beacons_to_the_dst_as) {
-        std::multimap<ld, std::tuple<Beacon*, uint16_t, uint16_t, SCION_AS*, static_info_extension_t> > pollution_index_map_to_beacon_and_metadata;
+                                                                  const beacons_with_same_dst_as &beacons_to_the_dst_as,
+								  std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS*, static_info_extension_t> >& pollution_index_map_to_beacon_and_metadata) {
         std::map<uint16_t, std::multimap<ld, Beacon*> > valid_candidates;
 
 
@@ -195,7 +194,6 @@ namespace ns3 {
 
         }
 
-        return pollution_index_map_to_beacon_and_metadata;
     }
 
     void GreenBeaconing::insert_to_beacons_per_dst_sorted_by_pollution(uint16_t dst_as, Beacon* the_beacon) {

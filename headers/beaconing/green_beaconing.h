@@ -56,9 +56,9 @@ class GreenBeaconing : public BeaconServer
 
     void delete_from_beacons_per_dst_sorted_by_pollution(uint16_t dst_as, Beacon* beacon);
 
-    std::multimap<ld, std::tuple<Beacon*, uint16_t, uint16_t, SCION_AS*, static_info_extension_t> >
-    select_beacons_to_disseminate_per_dst_per_nbr(uint16_t remote_as_no, uint16_t dst_as_no,
-                                                  const beacons_with_same_dst_as &beacons_to_the_dst_as);
+    void select_beacons_to_disseminate_per_dst_per_nbr(uint16_t remote_as_no, uint16_t dst_as_no,
+                                                  const beacons_with_same_dst_as &beacons_to_the_dst_as,
+						  std::multimap<ld, std::tuple<Beacon*, uint16_t, uint16_t, SCION_AS*, static_info_extension_t> >& pollution_index_map_to_beacon_and_metadata);
 
     void create_initial_static_info_extension(static_info_extension_t& static_info_extension, uint16_t self_egress_if_no) override;
 

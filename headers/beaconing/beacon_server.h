@@ -99,7 +99,7 @@ namespace ns3 {
         void UpdateBeaconState(Beacon* the_beacon);
 
         void GenerateBeaconAndSend(Beacon* selected_beacon, uint16_t self_egress_if_no,
-                                   uint16_t remote_ingress_if_no, SCION_AS* remote_as, static_info_extension_t static_info_extension);
+                                   uint16_t remote_ingress_if_no, SCION_AS* remote_as, static_info_extension_t& static_info_extension);
         void RegisterToLocalPathServer();
 
         virtual void MetaDataUpdatePeriodic(Beacon* the_beacon, bool invalidated) = 0;
