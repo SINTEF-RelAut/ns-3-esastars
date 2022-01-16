@@ -370,10 +370,12 @@ void GetTimeServiceSnapShotTypes(const ns3::NodeContainer& AS_nodes,
                                  const YAML::Node& config,
                                  std::vector<std::string>& snapshot_types,
                                  uint16_t& global_scheduler_and_printer) {
-
-    std::random_device rd;
-    std::uniform_int_distribution<uint16_t> dist (0, AS_nodes.GetN() - 1);
-    global_scheduler_and_printer = dist(rd);
+    global_scheduler_and_printer = 0;
+    if (config["time_service"]["snapshot_type"].as<std::string>() == "PRINT_OFFSET_DIFF") {
+    	std::random_device rd;
+    	std::uniform_int_distribution<uint16_t> dist (0, AS_nodes.GetN() - 1);
+    	global_scheduler_and_printer = dist(rd);
+    }
     for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
         if (config["time_service"]["snapshot_type"].as<std::string>() == "PRINT_OFFSET_DIFF") {
             if (i == global_scheduler_and_printer) {
@@ -382,6 +384,7 @@ void GetTimeServiceSnapShotTypes(const ns3::NodeContainer& AS_nodes,
                 snapshot_types.push_back("OFF");
             }
         } else {
+	    	
             snapshot_types.push_back(config["time_service"]["snapshot_type"].as<std::string>());
         }
     }

@@ -731,7 +731,7 @@ namespace ns3 {
         }
 
         if (snapshot_type == SNAPSHOT_TYPE::LOCAL_SNAPSHOT) {
-            Simulator::Schedule(first_event, &TimeServer::capture_local_snapshot, this);
+            Simulator::Schedule(first_event + TimeStep(1), &TimeServer::capture_local_snapshot, this);
         }
 
         for (Time t = first_event; t < last_event; t += snapshot_period) {
