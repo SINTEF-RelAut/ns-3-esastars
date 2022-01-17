@@ -32,12 +32,12 @@ namespace ns3 {
     void DoFinalEvaluations(YAML::Node& config, NodeContainer &AS_nodes, std::map<int32_t, uint16_t> &real_to_alias_as_no,
                             std::map<uint16_t, int32_t> &alias_to_real_as_no) {
 
-        Time beaconing_period = Time(config["beacon_service"]["period"].as<std::string>());
-        Time last_beaconing_event_time = Time(config["beacon_service"]["last_beaconing"].as<std::string>());
+//        Time beaconing_period = Time(config["beacon_service"]["period"].as<std::string>());
+//        Time last_beaconing_event_time = Time(config["beacon_service"]["last_beaconing"].as<std::string>());
 //        uint16_t expiration_period = Time(config["beacon_service"]["expiration_period"].as<std::string>()).ToInteger(Time::MIN);
 
-        PrintPathPollutionIndex(AS_nodes, alias_to_real_as_no);
-        PrintLeastPollutingPaths(AS_nodes, alias_to_real_as_no, config["beacon_service"]["policy"].as<std::string>());
+//        PrintPathPollutionIndex(AS_nodes, alias_to_real_as_no);
+//        PrintLeastPollutingPaths(AS_nodes, alias_to_real_as_no, config["beacon_service"]["policy"].as<std::string>());
 
 //    PrintTrafficSentFromCollectorsPerDstPerPeriod(AS_nodes, real_to_alias_as_no, alias_to_real_as_no, expiration_period,  beaconing_period,  last_beaconing_event_time);
 //    PrintPathNoDistribution (AS_nodes);

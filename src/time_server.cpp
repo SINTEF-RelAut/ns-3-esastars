@@ -96,6 +96,7 @@ namespace ns3 {
     }
 
     void TimeServer::construct_set_of_selected_paths() {
+        set_of_selected_paths.clear();    
         if (path_selection == "disjoint") {
             construct_set_of_most_disjoint_paths();
             return;
@@ -132,7 +133,11 @@ namespace ns3 {
                 uint64_t best_path_score = std::numeric_limits<uint64_t>::max();
                 uint32_t best_path_len = std::numeric_limits<uint32_t>::max();
 
+                uint32_t min_len = path_segments.begin()->first;
                 for (auto const & [path_len, path_seg] : path_segments) {
+                    if (min_len == 2 && path_len > 2) {
+                        break;
+                    }                    
                     if (set_of_selected_paths_per_dst_ia.find(path_seg) != set_of_selected_paths_per_dst_ia.end()) {
                         continue;
                     }
@@ -195,7 +200,11 @@ namespace ns3 {
             auto & set_of_selected_paths_per_dst_ia = set_of_selected_paths.at(dst_ia);
 
             auto const & path_segments = *cached_core_path_segments.at(dst_ia)->at(ia_addr);
+	    uint32_t min_len = path_segments.begin()->first;
             for (auto const & [path_len, path_seg] : path_segments) {
+		if (min_len == 2 && path_len > 2) {
+		    break;
+		}
                 if (set_of_selected_paths_per_dst_ia.size() >= number_of_paths_to_use_for_global_sync) {
                     break;
                 }
@@ -214,6 +223,7 @@ namespace ns3 {
             set_of_selected_paths.insert(std::make_pair(dst_ia, std::unordered_set<const PathSegment*>()));
             auto & set_of_selected_paths_per_dst_ia = set_of_selected_paths.at(dst_ia);
             auto const & path_segments = *cached_core_path_segments.at(dst_ia)->at(ia_addr);
+            uint32_t min_len = path_segments.begin()->first;
 
             std::vector<uint32_t> selected_indices;
             for (uint32_t i = 0; i < path_segments.size(); ++i) {
@@ -222,10 +232,20 @@ namespace ns3 {
 
             std::random_shuffle(selected_indices.begin(), selected_indices.end(), truly_random_generator);
 
+	    uint32_t i = 0;
             while (set_of_selected_paths_per_dst_ia.size() < number_of_paths_to_use_for_global_sync
                    && set_of_selected_paths_per_dst_ia.size() < path_segments.size()) {
                 auto iter = path_segments.cbegin();
-                std::advance(iter, selected_indices.at(set_of_selected_paths_per_dst_ia.size()));
+                std::advance(iter, i);
+		i++;
+
+		if (i >= path_segments.size()) {
+                    break;
+		} 
+
+		if (iter->second->hops.size() > 2 && min_len == 2) {
+                    continue;
+		}
                 set_of_selected_paths_per_dst_ia.insert(iter->second);
             }
         }
