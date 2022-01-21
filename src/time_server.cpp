@@ -232,14 +232,14 @@ namespace ns3 {
 
             std::random_shuffle(selected_indices.begin(), selected_indices.end(), truly_random_generator);
 
-	    uint32_t i = 0;
+	    uint32_t j = 0;
             while (set_of_selected_paths_per_dst_ia.size() < number_of_paths_to_use_for_global_sync
                    && set_of_selected_paths_per_dst_ia.size() < path_segments.size()) {
                 auto iter = path_segments.cbegin();
-                std::advance(iter, i);
-		i++;
+                std::advance(iter, selected_indices.at(j));
+		j++;
 
-		if (i >= path_segments.size()) {
+		if (j >= path_segments.size()) {
                     break;
 		} 
 
@@ -504,6 +504,10 @@ namespace ns3 {
         }
 
         poff.clear();
+
+	if (path_selection == "random") {
+	    construct_set_of_selected_paths();
+	}
     }
 
     void TimeServer::correct_local_time (int64_t corr, Time duration) {
@@ -631,7 +635,7 @@ namespace ns3 {
         if (reference_time_type == REFERENCE_TIME_TYPE::MALICIOUS_REF) {
             std::cout << "AS m " << isd_number << "-" << as_number << ": " << local_time << std::endl;
         } else {
-            std::cout << "AS " << isd_number << "-" << as_number << ": " << local_time << std::endl;
+            std::cout << "AS " << isd_number << "-" << as_number << ", degree " << AS->interfaces_per_neighbor_as.size()  << ": " << local_time << std::endl;
         }
     }
 
