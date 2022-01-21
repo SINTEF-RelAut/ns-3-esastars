@@ -184,7 +184,7 @@ namespace ns3 {
 
         void continue_global_time_sync();
 
-        void correct_local_time (int64_t corr, Time duration);
+        void correct_local_time (int64_t corr, Time duration, double coefficient);
 
         void process_received_packet(uint16_t local_if, SCIONPacket *packet, Time receive_time) override;
 
