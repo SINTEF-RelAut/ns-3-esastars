@@ -329,11 +329,11 @@ void GetMaliciousTimeRefAndTimeServer (const ns3::NodeContainer& AS_nodes,
     time_server_types.resize(number_of_ASes);
 
     if (config["time_service"]["truly_random_malicious"].as<uint16_t>() == 1) {
-        std::random_shuffle(indices_time_references.begin(), indices_time_references.end(), ns3::truly_random_generator);
-        std::random_shuffle(indices_time_servers.begin(), indices_time_servers.end(), ns3::truly_random_generator);
+        std::shuffle(indices_time_references.begin(), indices_time_references.end(), ns3::truly_random_generator);
+        std::shuffle(indices_time_servers.begin(), indices_time_servers.end(), ns3::truly_random_generator);
     } else {
-        std::random_shuffle(indices_time_references.begin(), indices_time_references.end(), ns3::random_generator);
-        std::random_shuffle(indices_time_servers.begin(), indices_time_servers.end(), ns3::random_generator);
+        std::shuffle(indices_time_references.begin(), indices_time_references.end(), ns3::random_generator);
+        std::shuffle(indices_time_servers.begin(), indices_time_servers.end(), ns3::random_generator);
     }
 
     uint16_t number_of_malicious_time_references = (uint16_t) std::floor(
@@ -630,9 +630,9 @@ void GetASesWithMaliciousBRs (const ns3::NodeContainer& AS_nodes,
     }
 
     if (config["border_router"]["truly_random_malicious"].as<uint16_t>() == 1) {
-        std::random_shuffle(indices.begin(), indices.end(), ns3::truly_random_generator);
+        std::shuffle(indices.begin(), indices.end(), ns3::truly_random_generator);
     } else {
-        std::random_shuffle(indices.begin(), indices.end(), ns3::random_generator);
+        std::shuffle(indices.begin(), indices.end(), ns3::random_generator);
     }
 
     border_routers_malicious_action.resize(AS_nodes.GetN());
