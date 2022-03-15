@@ -29,32 +29,20 @@
 
 namespace ns3 {
 
-    void DoFinalEvaluations(YAML::Node& config, NodeContainer &AS_nodes, std::map<int32_t, uint16_t> &real_to_alias_as_no,
-                            std::map<uint16_t, int32_t> &alias_to_real_as_no) {
+    void PostSimulationEvaluations::DoFinalEvaluations() {
+        if (!config["post_eval"]) {
+            return;
+        }
 
-//        Time beaconing_period = Time(config["beacon_service"]["period"].as<std::string>());
-//        Time last_beaconing_event_time = Time(config["beacon_service"]["last_beaconing"].as<std::string>());
-//        uint16_t expiration_period = Time(config["beacon_service"]["expiration_period"].as<std::string>()).ToInteger(Time::MIN);
-
-//        PrintPathPollutionIndex(AS_nodes, alias_to_real_as_no);
-//        PrintLeastPollutingPaths(AS_nodes, alias_to_real_as_no, config["beacon_service"]["policy"].as<std::string>());
-
-//    PrintTrafficSentFromCollectorsPerDstPerPeriod(AS_nodes, real_to_alias_as_no, alias_to_real_as_no, expiration_period,  beaconing_period,  last_beaconing_event_time);
-//    PrintPathNoDistribution (AS_nodes);
-//    PrintMinimumLatencyDist(AS_nodes);
-//    Evaluate_S_T_Connectivity(AS_nodes);
-//    PrintAllDiscoveredPaths(AS_nodes, real_to_alias_as_no, alias_to_real_as_no);
-//    FindMinLatencyToDNSRootServers(AS_nodes, real_to_alias_as_no, alias_to_real_as_no);
-//    PrintConsumedBWAtEachPeriod(AS_nodes, beaconing_period, last_beaconing_event_time);
-//    PrintDistributionOfPathsWithSpecificHopCount(AS_nodes);
-
-//    PrintPathQualities(AS_nodes);
+        const YAML::Node& evals = config["post_eval"];
+        for (auto it = evals.begin(); it != evals.end(); ++it) {
+            const YAML::Node& eval = *it;
+            std::string func = eval["func"].as<std::string>();
+            ((this)->*function_name_to_function.at(func))();
+        }
     }
 
-    void PrintTrafficSentFromCollectorsPerDstPerPeriod(NodeContainer &AS_nodes, std::map<int32_t, uint16_t> &real_to_alias_as_no,
-                                                       std::map<uint16_t, int32_t> &alias_to_real_as_no,
-                                                       uint16_t expiration_period, Time beaconing_period,
-                                                       Time last_beaconing_event_time) {
+    void PostSimulationEvaluations::PrintTrafficSentFromCollectorsPerDstPerPeriod() {
         std::cout
                 << "####################################### Traffic sent from each collector #######################################"
                 << std::endl;
@@ -84,8 +72,7 @@ namespace ns3 {
         }
     }
 
-    void FindMinLatencyToDNSRootServers(NodeContainer &AS_nodes, std::map<int32_t, uint16_t> &real_to_alias_as_no,
-                                        std::map<uint16_t, int32_t> &alias_to_real_as_no) {
+    void PostSimulationEvaluations::FindMinLatencyToDNSRootServers() {
         std::string probes_file = "/cluster/scratch/tabaeias/atlas_probes.xml";
         std::ifstream fin_probes(probes_file.c_str());
         std::ostringstream probes_sstr;
@@ -293,8 +280,7 @@ namespace ns3 {
         }
     }
 
-    void PrintAllDiscoveredPaths(NodeContainer &AS_nodes, std::map<int32_t, uint16_t> &real_to_alias_as_no,
-                                 std::map<uint16_t, int32_t> &alias_to_real_as_no) {
+    void PostSimulationEvaluations::PrintAllDiscoveredPaths() {
         std::cout
                 << "################################################ Paths Information ##############################################################"
                 << std::endl;
@@ -340,8 +326,7 @@ namespace ns3 {
         }
     }
 
-    void PrintConsumedBWAtEachPeriod(NodeContainer &AS_nodes, Time beaconing_period,
-                                     Time last_beaconing_event_time) {
+    void PostSimulationEvaluations::PrintConsumedBWAtEachPeriod() {
         for (Time t = Seconds(0.0); t < last_beaconing_event_time; t += beaconing_period) {
             std::cout << "####################################### frequencies of consumed bandwidth at Time "
                       << t
@@ -369,7 +354,7 @@ namespace ns3 {
         }
     }
 
-    void PrintDistributionOfPathsWithSpecificHopCount(NodeContainer &AS_nodes) {
+    void PostSimulationEvaluations::PrintDistributionOfPathsWithSpecificHopCount() {
         for (uint32_t path_length = 1; path_length <= 4; ++path_length) {
             std::cout
                     << "######################################### frequencies of path counts per destination AS with hop count: "
@@ -406,7 +391,7 @@ namespace ns3 {
         }
     }
 
-    void PrintMinimumLatencyDist(NodeContainer &AS_nodes) {
+    void PostSimulationEvaluations::PrintMinimumLatencyDist() {
         std::cout
                 << "###################################################### MINIMUM LATENCY####################################"
                 << std::endl;
@@ -445,7 +430,7 @@ namespace ns3 {
         }
     }
 
-    void PrintPathNoDistribution(NodeContainer &AS_nodes) {
+    void PostSimulationEvaluations::PrintPathNoDistribution() {
         std::cout
                 << "############################################# Path No Distribution ##################################"
                 << std::endl;
@@ -474,7 +459,7 @@ namespace ns3 {
     }
 
 
-    void PrintPathPollutionIndex(NodeContainer& AS_nodes, std::map<uint16_t, int32_t>& alias_to_real_as_no) {
+    void PostSimulationEvaluations::PrintPathPollutionIndex() {
         int x = 5;
         std::map<double, uint32_t> min_distribution;
         std::map<double, uint32_t> mean_distribution;
@@ -602,69 +587,8 @@ namespace ns3 {
         }
     }
 
-    void sort_beacons_by_pollution_by_latency(NodeContainer& AS_nodes, SCION_AS* AS1, SCION_AS* AS2, std::string beaconing_policy_str,
-                                              std::map<double, std::map<double, std::set<Beacon*>>>& sorted_beacons_by_pollution_by_latency) {
-        if (beaconing_policy_str == "green_beaconing") {
-            std::vector<std::multimap<ld, Beacon*>> &sorted_beacons_per_ing_if = ((GreenBeaconing*)AS1->GetBeaconServer())->beacons_per_dst_per_ing_if_sorted_by_pollution.at(AS2->as_number);
-            for (auto const & sorted_beacons : sorted_beacons_per_ing_if) {
-                for (auto const &[pollution, beacon]: sorted_beacons) {
-                    sorted_beacons_by_pollution_by_latency.insert(
-                            std::make_pair(pollution, std::map<double, std::set<Beacon *>>()));
 
-                        double latency = beacon->static_info_extension.at(static_info_type_t::LATENCY);
-                        if (sorted_beacons_by_pollution_by_latency.at(pollution).find(latency) ==
-                            sorted_beacons_by_pollution_by_latency.at(pollution).end()) {
-                            sorted_beacons_by_pollution_by_latency.at(pollution).insert(
-                                    std::make_pair(latency, std::set<Beacon *>()));
-                        }
-                        sorted_beacons_by_pollution_by_latency.at(pollution).at(latency).insert(beacon);
-
-                }
-            }
-        } /*else if (beaconing_policy_str == "baseline") {
-            auto const & beacons_from_AS1_to_AS2 = AS1->GetBeaconServer()->beacon_store.at(AS2->as_number);
-            for (auto const & [length, beacons] : beacons_from_AS1_to_AS2) {
-                for (auto const & beacon : beacons) {
-                    double pollution = 0;
-                    bool first_hop = true;
-                    uint64_t previous_hop = 0;
-                    for (uint64_t hop : beacon->the_path) {
-                        if (first_hop) {
-                            previous_hop = hop;
-                            first_hop = false;
-                            continue;
-                        }
-
-                        uint16_t ingress_if = LOWER_16_BITS(previous_hop);
-                        uint16_t egress_if = SECOND_UPPER_16_BITS(hop);
-                        assert(SECOND_LOWER_16_BITS(previous_hop) == UPPER_16_BITS(hop));
-                        uint16_t as_hop_nr = UPPER_16_BITS(hop);
-                        SCION_AS* as_hop = dynamic_cast<SCION_AS*>(PeekPointer(AS_nodes.Get(as_hop_nr)));
-
-
-                        pollution += (double) (as_hop->intra_as_energies.at(ingress_if).at(egress_if) * as_hop->dirty_energy_ratio * 700 / 3.6e6);
-
-                        previous_hop = hop;
-                    }
-                    double latency = (double) beacon->static_info_extension.at(static_info_type_t::LATENCY);
-
-                    if (sorted_beacons_by_pollution_by_latency.find(pollution) == sorted_beacons_by_pollution_by_latency.end()) {
-                        sorted_beacons_by_pollution_by_latency.insert(std::make_pair(pollution, std::map<double, std::set<Beacon*>>()));
-                    }
-
-                    if (sorted_beacons_by_pollution_by_latency.at(pollution).find(latency) == sorted_beacons_by_pollution_by_latency.at(pollution).end()) {
-                        sorted_beacons_by_pollution_by_latency.at(pollution).insert(std::make_pair(latency, std::set<Beacon*> ()));
-                    }
-
-                    sorted_beacons_by_pollution_by_latency.at(pollution).at(latency).insert(beacon);
-                }
-            }
-        }*/
-
-
-    }
-
-    void PrintLeastPollutingPaths(NodeContainer& AS_nodes, std::map<uint16_t, int32_t>& alias_to_real_as_no, std::string beaconing_policy_str) {
+    void PostSimulationEvaluations::PrintLeastPollutingPaths() {
         std::ifstream bgp_paths_file("/cluster/scratch/tabaeias/BGP_path_and_pollution.txt");
         std::string  line;
 
@@ -796,7 +720,7 @@ namespace ns3 {
         }
     }
 
-    void PrintBestPerHopPollutionIndexes(NodeContainer& AS_nodes, std::map<uint16_t, int32_t>& alias_to_real_as_no) {
+    void PostSimulationEvaluations::PrintBestPerHopPollutionIndexes() {
         std::cout << "############################################### BestPerHopLatencyAndPollutionIndexes ########################################################################" << std::endl;
         for (uint32_t i = 0; i < AS_nodes.GetN (); ++i)
         {
@@ -826,4 +750,68 @@ namespace ns3 {
         }
     }
 
+    void sort_beacons_by_pollution_by_latency(NodeContainer& AS_nodes, SCION_AS* AS1, SCION_AS* AS2, std::string beaconing_policy_str,
+                                              std::map<double, std::map<double, std::set<Beacon*>>>& sorted_beacons_by_pollution_by_latency) {
+        if (beaconing_policy_str == "green_beaconing") {
+            std::vector<std::multimap<ld, Beacon*>> &sorted_beacons_per_ing_if = ((GreenBeaconing*)AS1->GetBeaconServer())->beacons_per_dst_per_ing_if_sorted_by_pollution.at(AS2->as_number);
+            for (auto const & sorted_beacons : sorted_beacons_per_ing_if) {
+                for (auto const &[pollution, beacon]: sorted_beacons) {
+                    sorted_beacons_by_pollution_by_latency.insert(
+                            std::make_pair(pollution, std::map<double, std::set<Beacon *>>()));
+
+                    double latency = beacon->static_info_extension.at(static_info_type_t::LATENCY);
+                    if (sorted_beacons_by_pollution_by_latency.at(pollution).find(latency) ==
+                        sorted_beacons_by_pollution_by_latency.at(pollution).end()) {
+                        sorted_beacons_by_pollution_by_latency.at(pollution).insert(
+                                std::make_pair(latency, std::set<Beacon *>()));
+                    }
+                    sorted_beacons_by_pollution_by_latency.at(pollution).at(latency).insert(beacon);
+
+                }
+            }
+        } /*else if (beaconing_policy_str == "baseline") {
+            auto const & beacons_from_AS1_to_AS2 = AS1->GetBeaconServer()->beacon_store.at(AS2->as_number);
+            for (auto const & [length, beacons] : beacons_from_AS1_to_AS2) {
+                for (auto const & beacon : beacons) {
+                    double pollution = 0;
+                    bool first_hop = true;
+                    uint64_t previous_hop = 0;
+                    for (uint64_t hop : beacon->the_path) {
+                        if (first_hop) {
+                            previous_hop = hop;
+                            first_hop = false;
+                            continue;
+                        }
+
+                        uint16_t ingress_if = LOWER_16_BITS(previous_hop);
+                        uint16_t egress_if = SECOND_UPPER_16_BITS(hop);
+                        assert(SECOND_LOWER_16_BITS(previous_hop) == UPPER_16_BITS(hop));
+                        uint16_t as_hop_nr = UPPER_16_BITS(hop);
+                        SCION_AS* as_hop = dynamic_cast<SCION_AS*>(PeekPointer(AS_nodes.Get(as_hop_nr)));
+
+
+                        pollution += (double) (as_hop->intra_as_energies.at(ingress_if).at(egress_if) * as_hop->dirty_energy_ratio * 700 / 3.6e6);
+
+                        previous_hop = hop;
+                    }
+                    double latency = (double) beacon->static_info_extension.at(static_info_type_t::LATENCY);
+
+                    if (sorted_beacons_by_pollution_by_latency.find(pollution) == sorted_beacons_by_pollution_by_latency.end()) {
+                        sorted_beacons_by_pollution_by_latency.insert(std::make_pair(pollution, std::map<double, std::set<Beacon*>>()));
+                    }
+
+                    if (sorted_beacons_by_pollution_by_latency.at(pollution).find(latency) == sorted_beacons_by_pollution_by_latency.at(pollution).end()) {
+                        sorted_beacons_by_pollution_by_latency.at(pollution).insert(std::make_pair(latency, std::set<Beacon*> ()));
+                    }
+
+                    sorted_beacons_by_pollution_by_latency.at(pollution).at(latency).insert(beacon);
+                }
+            }
+        }*/
+
+
+    }
+
+
 }
+

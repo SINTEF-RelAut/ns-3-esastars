@@ -170,7 +170,10 @@ int main(int argc, char *argv[]) {
     ns3::Simulator::Stop(simulation_end_time);
     ns3::Simulator::Run();
 
-    ns3::DoFinalEvaluations(config, nodes, real_to_alias_as_no, alias_to_real_as_no);
+    ns3::PostSimulationEvaluations* eval = new
+            ns3::PostSimulationEvaluations (config, nodes, real_to_alias_as_no, alias_to_real_as_no);
+
+    eval->DoFinalEvaluations();
 
     ns3::Simulator::Destroy();
 

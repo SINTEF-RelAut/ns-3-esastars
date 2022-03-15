@@ -70,6 +70,7 @@ class GreenBeaconing : public BeaconServer
 
     friend void PrintBestPerHopPollutionIndexes(NodeContainer& AS_nodes, std::map<uint16_t, int32_t>& alias_to_real_as_no);
 
+    friend class PostSimulationEvaluations;
 };
 
     void ReadBr2BrEnergy(NodeContainer AS_nodes, std::map<int32_t, uint16_t> real_to_alias_as_no, const YAML::Node& config);
