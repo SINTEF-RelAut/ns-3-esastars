@@ -22,6 +22,7 @@
 #include "src/SCION/headers/border_router.h"
 #include "src/SCION/headers/scion_host.h"
 #include "src/SCION/headers/path_server.h"
+#include "post_simulation_evaluations.h"
 
 
 namespace ns3 {
@@ -93,6 +94,9 @@ namespace ns3 {
         BorderRouter* AddBR (double latitude, double longitude, Time processing_delay, Time processing_throughput_delay);
 
         void AddToRemoteASInfo (uint16_t remote_if, SCION_AS* remote_as);
+
+//        friend class PostSimulationEvaluations;
+//        friend void PostSimulationEvaluations::InvestigateAffectedTimeServers();
 
     protected:
         BeaconServer* beaconServer;

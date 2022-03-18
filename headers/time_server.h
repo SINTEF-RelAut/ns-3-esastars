@@ -85,7 +85,11 @@ namespace ns3 {
         void AdvanceLocalTime() override;
         int64_t GetConstantDriftPerDay();
         int64_t GetDrift(Time duration);
+
+        friend class PostSimulationEvaluations;
     private:
+        bool affected_by_malicious_ases = false;
+
         std::map<std::string, READ_OR_WRITE_DISJOINT_PATHS> READ_OR_WRITE_DISJOINT_PATHS_MAP
                 = {{"R", READ_OR_WRITE_DISJOINT_PATHS::R},
                    {"W", READ_OR_WRITE_DISJOINT_PATHS::W},

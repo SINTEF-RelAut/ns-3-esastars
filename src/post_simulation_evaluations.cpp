@@ -26,6 +26,7 @@
 #include "src/SCION/headers/global_scheduling.h"
 #include "src/SCION/headers/post_simulation_evaluations.h"
 #include "build/ns3/green_beaconing.h"
+#include "src/SCION/headers/time_server.h"
 
 namespace ns3 {
 
@@ -458,7 +459,6 @@ namespace ns3 {
         }
     }
 
-
     void PostSimulationEvaluations::PrintPathPollutionIndex() {
         int x = 5;
         std::map<double, uint32_t> min_distribution;
@@ -586,7 +586,6 @@ namespace ns3 {
             std::cout << entry.first << "\t" << (double) entry.second / cumulative_counter << std::endl;
         }
     }
-
 
     void PostSimulationEvaluations::PrintLeastPollutingPaths() {
         std::ifstream bgp_paths_file("/cluster/scratch/tabaeias/BGP_path_and_pollution.txt");
@@ -749,6 +748,141 @@ namespace ns3 {
             }
         }
     }
+
+    void PostSimulationEvaluations::InvestigateAffectedTimeServers() {
+        std::cout << "########################### InvestigateAffectedTimeServers #####################################" << std::endl;
+        std::vector<std::string> path_selections = {"one_random", "five_random"};
+
+        std::unordered_set<ia_t> inherently_malicious_ases;
+        std::set<ia_t> benign_ases;
+        uint32_t num_all_ases = AS_nodes.GetN();
+
+        for (uint32_t i = 0; i < num_all_ases; ++i) {
+            ia_t ia_addr = dynamic_cast<SCION_AS*>(PeekPointer(AS_nodes.Get(i)))->ia_addr;
+            benign_ases.insert(ia_addr);
+        }
+
+        uint32_t malicious_incremental_step = std::ceil(num_all_ases / 100);
+
+        for (std::string const & path_selection : path_selections) {
+            if (path_selection == "one_random") {
+                std::cout << "******************************** one random ********************************"
+                          << std::endl;
+            }
+
+            if (path_selection == "five_random") {
+                std::cout << "******************************** five random ********************************"
+                          << std::endl;
+            }
+
+#pragma omp parallel for
+            for (uint32_t i = 0; i < num_all_ases; ++i) {
+                SCION_AS* scion_as = dynamic_cast<SCION_AS*>(PeekPointer(AS_nodes.Get(i)));
+                TimeServer* time_server = dynamic_cast<TimeServer*>(scion_as->GetHost(2));
+
+                if (path_selection == "one_random") {
+                    time_server->path_selection = "random";
+                    time_server->number_of_paths_to_use_for_global_sync = 1;
+                }
+
+                if (path_selection == "five_random") {
+                    time_server->path_selection = "random";
+                    time_server->number_of_paths_to_use_for_global_sync = 5;
+                }
+
+                time_server->construct_set_of_selected_paths();
+            }
+
+            for (uint32_t rpt = 0; rpt < 2; ++rpt) {
+                benign_ases.insert(inherently_malicious_ases.begin(), inherently_malicious_ases.end());
+                inherently_malicious_ases.clear();
+
+                for (uint32_t num_inherent_malicious = 0; num_inherent_malicious < std::floor(num_all_ases / 3); num_inherent_malicious += malicious_incremental_step) {
+                    std::set<ia_t> new_inherently_malicious;
+                    std::unordered_set<ia_t> inherently_and_transitive_malicious;
+                    std::set<ia_t> new_benign;
+
+                    std::sample(benign_ases.begin(), benign_ases.end(),
+                                std::inserter(new_inherently_malicious, new_inherently_malicious.begin()),
+                                malicious_incremental_step, std::random_device{});
+
+                    std::set_difference(std::make_move_iterator(benign_ases.begin()),
+                                        std::make_move_iterator(benign_ases.end()),
+                                        new_inherently_malicious.begin(), new_inherently_malicious.end(),
+                                        std::inserter(new_benign, new_benign.end()));
+
+                    benign_ases.swap(new_benign);
+                    inherently_malicious_ases.insert(new_inherently_malicious.begin(), new_inherently_malicious.end());
+
+                    inherently_and_transitive_malicious.insert(inherently_malicious_ases.begin(), inherently_malicious_ases.end());
+
+                    uint32_t dx = 0;
+                    do {
+                        dx = 0;
+#pragma omp parallel for
+                        for (uint32_t i = 0; i < num_all_ases; ++i) {
+                            SCION_AS *scion_as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+
+                            if (inherently_and_transitive_malicious.find(scion_as->ia_addr) != inherently_and_transitive_malicious.end()) {
+                                continue;
+                            }
+
+                            uint32_t number_of_affected_dst = 0;
+                            TimeServer *time_server = dynamic_cast<TimeServer *>(scion_as->GetHost(2));
+
+                            for (auto const &[dst_ia, selected_paths_to_dst]: time_server->set_of_selected_paths) {
+                                uint32_t number_of_affected_paths = 0;
+                                for (auto const &path_seg: selected_paths_to_dst) {
+                                    uint32_t path_len = path_seg->hops.size();
+                                    for (uint32_t j = 1; j < (uint32_t) path_len; ++j) {
+                                        uint64_t hop = path_seg->hops.at(j);
+                                        ia_t hop_ia = GET_HOP_IA(hop);
+                                        if (inherently_and_transitive_malicious.find(hop_ia) != inherently_and_transitive_malicious.end()) {
+                                            number_of_affected_paths++;
+                                            break;
+                                        }
+                                    }
+                                    if ((double) number_of_affected_paths >=
+                                        (double) time_server->number_of_paths_to_use_for_global_sync / 2) {
+                                        number_of_affected_dst++;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if ((double) number_of_affected_dst >= (double) num_all_ases / 3) {
+                                time_server->affected_by_malicious_ases = true;
+                            }
+                        }
+
+                        for (uint32_t i = 0; i < num_all_ases; ++i) {
+                            SCION_AS *scion_as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+
+                            if (inherently_and_transitive_malicious.find(scion_as->ia_addr) != inherently_and_transitive_malicious.end()) {
+                                continue;
+                            }
+
+                            TimeServer *time_server = dynamic_cast<TimeServer *>(scion_as->GetHost(2));
+
+                            if (time_server->affected_by_malicious_ases) {
+                                inherently_and_transitive_malicious.insert(scion_as->ia_addr);
+                                dx++;
+                            }
+                        }
+                    } while (dx != 0);
+
+                    std::cout << num_inherent_malicious << "\t" << inherently_and_transitive_malicious.size() << std::endl;
+
+                    for (uint32_t i = 0; i < num_all_ases; ++i) {
+                        SCION_AS *scion_as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+                        TimeServer *time_server = dynamic_cast<TimeServer *>(scion_as->GetHost(2));
+                        time_server->affected_by_malicious_ases = false;
+                    }
+                }
+            }
+        }
+    }
+
 
     void sort_beacons_by_pollution_by_latency(NodeContainer& AS_nodes, SCION_AS* AS1, SCION_AS* AS2, std::string beaconing_policy_str,
                                               std::map<double, std::map<double, std::set<Beacon*>>>& sorted_beacons_by_pollution_by_latency) {
