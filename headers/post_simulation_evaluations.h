@@ -6,6 +6,7 @@
 #define NS_3_BEACONING_SIMULATOR_POST_SIMULATION_EVALUATIONS_H
 
 #include <yaml-cpp/yaml.h>
+#include "beaconing/beacon.h"
 
 
 namespace ns3 {
