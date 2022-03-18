@@ -332,11 +332,11 @@ void GetMaliciousTimeRefAndTimeServer (const ns3::NodeContainer& AS_nodes,
     time_server_types.resize(number_of_ASes);
 
     if (config["time_service"]["truly_random_malicious"].as<uint16_t>() == 1) {
-        std::shuffle(indices_time_references.begin(), indices_time_references.end(), ns3::truly_random_generator);
-        std::shuffle(indices_time_servers.begin(), indices_time_servers.end(), ns3::truly_random_generator);
+        std::shuffle(indices_time_references.begin(), indices_time_references.end(), std::random_device{});
+        std::shuffle(indices_time_servers.begin(), indices_time_servers.end(), std::random_device{});
     } else {
-        std::shuffle(indices_time_references.begin(), indices_time_references.end(), ns3::random_generator);
-        std::shuffle(indices_time_servers.begin(), indices_time_servers.end(), ns3::random_generator);
+        std::shuffle(indices_time_references.begin(), indices_time_references.end(), std::mt19937{});
+        std::shuffle(indices_time_servers.begin(), indices_time_servers.end(), std::mt19937{});
     }
 
     uint16_t number_of_malicious_time_references = (uint16_t) std::floor(
