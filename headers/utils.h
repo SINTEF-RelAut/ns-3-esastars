@@ -28,10 +28,6 @@ namespace ns3 {
 
 #define LOWER_32_BITS(input) ((uint32_t) ((input) & 0x00000000ffffffff))
 
-uint64_t truly_random_generator(uint64_t i);
-
-uint64_t random_generator(uint64_t i);
-
 double GetMedian( std::multiset<int64_t>& data);
 
 std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems);

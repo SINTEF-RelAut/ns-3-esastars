@@ -633,9 +633,9 @@ void GetASesWithMaliciousBRs (const ns3::NodeContainer& AS_nodes,
     }
 
     if (config["border_router"]["truly_random_malicious"].as<uint16_t>() == 1) {
-        std::shuffle(indices.begin(), indices.end(), ns3::truly_random_generator);
+        std::shuffle(indices.begin(), indices.end(), std::random_device{});
     } else {
-        std::shuffle(indices.begin(), indices.end(), ns3::random_generator);
+        std::shuffle(indices.begin(), indices.end(), std::mt19937{});
     }
 
     border_routers_malicious_action.resize(AS_nodes.GetN());

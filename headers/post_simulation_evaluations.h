@@ -41,6 +41,7 @@ namespace ns3 {
              REGISTER_FUN(PrintLeastPollutingPaths)
              REGISTER_FUN(PrintBestPerHopPollutionIndexes)
              REGISTER_FUN(PrintTransitTrafficBaseline)
+             REGISTER_FUN(InvestigateAffectedTimeServers)
 
         }
 
