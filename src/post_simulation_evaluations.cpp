@@ -793,11 +793,11 @@ namespace ns3 {
                 time_server->construct_set_of_selected_paths();
             }
 
-            for (uint32_t rpt = 0; rpt < 2; ++rpt) {
+            for (uint32_t rpt = 0; rpt < 20; ++rpt) {
                 benign_ases.insert(inherently_malicious_ases.begin(), inherently_malicious_ases.end());
                 inherently_malicious_ases.clear();
 
-                for (uint32_t num_inherent_malicious = 0; num_inherent_malicious < std::floor(num_all_ases / 3); num_inherent_malicious += malicious_incremental_step) {
+                for (uint32_t num_inherent_malicious = malicious_incremental_step; num_inherent_malicious < std::floor(num_all_ases / 3); num_inherent_malicious += malicious_incremental_step) {
                     std::set<ia_t> new_inherently_malicious;
                     std::unordered_set<ia_t> inherently_and_transitive_malicious;
                     std::set<ia_t> new_benign;
