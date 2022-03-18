@@ -7,6 +7,7 @@
 
 #include <yaml-cpp/yaml.h>
 #include "beaconing/beacon.h"
+#include "scion_as.h"
 
 
 namespace ns3 {
