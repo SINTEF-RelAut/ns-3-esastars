@@ -32,15 +32,15 @@ namespace ns3 {
              REGISTER_FUN(PrintAllDiscoveredPaths)
              REGISTER_FUN(PrintDistributionOfPathsWithSpecificHopCount)
              REGISTER_FUN(PrintConsumedBWAtEachPeriod)
-             REGISTER_FUN(PrintPathQualities)
-             REGISTER_FUN(Evaluate_S_T_Connectivity)
+//             REGISTER_FUN(PrintPathQualities)
+//             REGISTER_FUN(Evaluate_S_T_Connectivity)
              REGISTER_FUN(PrintMinimumLatencyDist)
              REGISTER_FUN(PrintPathNoDistribution)
              REGISTER_FUN(FindMinLatencyToDNSRootServers)
              REGISTER_FUN(PrintPathPollutionIndex)
              REGISTER_FUN(PrintLeastPollutingPaths)
              REGISTER_FUN(PrintBestPerHopPollutionIndexes)
-             REGISTER_FUN(PrintTransitTrafficBaseline)
+//             REGISTER_FUN(PrintTransitTrafficBaseline)
              REGISTER_FUN(InvestigateAffectedTimeServers)
 
         }
