@@ -810,9 +810,11 @@ namespace ns3 {
 
                     inherently_and_transitive_malicious.insert(inherently_malicious_ases.begin(), inherently_malicious_ases.end());
 
-                    uint32_t dx = 0;
-                    do {
-                        dx = 0;
+                    assert(num_inherent_malicious == inherently_and_transitive_malicious.size());
+
+                    bool C = false;
+                    while (true) {
+                        C = false;
 #pragma omp parallel for
                         for (uint32_t i = 0; i < num_all_ases; ++i) {
                             SCION_AS *scion_as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
@@ -845,6 +847,8 @@ namespace ns3 {
                                 }
                             }
 
+                            assert(number_of_affected_dst >= num_inherent_malicious - 1);
+
                             if (3 * number_of_affected_dst + 1 > num_all_ases) {
                                 time_server->affected_by_malicious_ases = true;
                             }
@@ -861,18 +865,15 @@ namespace ns3 {
 
                             if (time_server->affected_by_malicious_ases) {
                                 inherently_and_transitive_malicious.insert(scion_as->ia_addr);
-                                dx++;
+                                time_server->affected_by_malicious_ases = false;
+                                C = true;
                             }
                         }
-                    } while (dx != 0);
-
-                    std::cout << num_inherent_malicious << "\t" << inherently_and_transitive_malicious.size() << std::endl;
-
-                    for (uint32_t i = 0; i < num_all_ases; ++i) {
-                        SCION_AS *scion_as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
-                        TimeServer *time_server = dynamic_cast<TimeServer *>(scion_as->GetHost(2));
-                        time_server->affected_by_malicious_ases = false;
+                        if (!C) {
+                            break;
+                        }
                     }
+                    std::cout << num_inherent_malicious << "\t" << inherently_and_transitive_malicious.size() << std::endl;
                 }
             }
         }
