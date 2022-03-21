@@ -38,7 +38,7 @@ def build(bld):
                      'headers/beaconing/green_beaconing.h',
                      'headers/post_simulation_evaluations.h',
                      'headers/schedule_periodic_events.h',
-                     'src/SCION/headers/run_parallel_events.h',
+                     'headers/run_parallel_events.h',
                      'headers/path_server.h',
                      'headers/path_segment.h',
                      'headers/scion_packet.h',
