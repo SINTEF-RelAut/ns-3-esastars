@@ -789,7 +789,7 @@ namespace ns3 {
                 inherently_malicious_ases.clear();
 
                 for (uint32_t num_inherent_malicious = malicious_incremental_step;
-                     num_inherent_malicious <= std::ceil(num_all_ases / 3) + 1;
+                     num_inherent_malicious <= std::ceil(num_all_ases / 3) + malicious_incremental_step;
                      num_inherent_malicious += malicious_incremental_step) {
 
                     std::set<ia_t> new_inherently_malicious;
@@ -828,7 +828,8 @@ namespace ns3 {
                                 uint32_t number_of_affected_paths = 0;
                                 for (auto const &path_seg: selected_paths_to_dst) {
                                     uint32_t path_len = path_seg->hops.size();
-                                    for (uint32_t j = 1; j < (uint32_t) path_len; ++j) {
+                                    assert(GET_HOP_IA(path_seg->hops.at(0)) == scion_as->ia_addr);
+                                    for (uint32_t j = 1; j < path_len; ++j) {
                                         uint64_t hop = path_seg->hops.at(j);
                                         ia_t hop_ia = GET_HOP_IA(hop);
                                         if (inherently_and_transitive_malicious.find(hop_ia) != inherently_and_transitive_malicious.end()) {
@@ -836,15 +837,15 @@ namespace ns3 {
                                             break;
                                         }
                                     }
-                                    if ((double) number_of_affected_paths >=
-                                        std::floor(time_server->number_of_paths_to_use_for_global_sync / 2)) {
+                                    if (number_of_affected_paths * 2 >=
+                                            time_server->number_of_paths_to_use_for_global_sync) {
                                         number_of_affected_dst++;
                                         break;
                                     }
                                 }
                             }
 
-                            if ((double) number_of_affected_dst >= std::floor(num_all_ases / 3)) {
+                            if (3 * number_of_affected_dst + 1 > num_all_ases) {
                                 time_server->affected_by_malicious_ases = true;
                             }
                         }
