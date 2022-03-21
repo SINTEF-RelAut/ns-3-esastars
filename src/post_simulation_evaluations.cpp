@@ -23,7 +23,7 @@
 #include "src/SCION/headers/scion_core_as.h"
 #include "src/SCION/headers/beaconing/diversity_age_based.h"
 #include "src/SCION/headers/beaconing/latency_optimized_beaconing.h"
-#include "src/SCION/headers/global_scheduling.h"
+#include "src/SCION/headers/schedule_periodic_events.h"
 #include "src/SCION/headers/post_simulation_evaluations.h"
 #include "build/ns3/green_beaconing.h"
 #include "src/SCION/headers/time_server.h"

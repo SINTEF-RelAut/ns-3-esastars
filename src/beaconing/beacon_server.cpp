@@ -12,8 +12,8 @@
 #include "src/SCION/headers/beaconing/beacon_server.h"
 #include "src/SCION/headers/utils.h"
 #include "src/SCION/headers/scion_core_as.h"
-#include "src/SCION/headers/global_scheduling.h"
 #include "src/SCION/headers/path_server.h"
+#include "src/SCION/headers/run_parallel_events.h"
 
 namespace ns3 {
     void BeaconServer::SetAS(SCION_AS* AS) {

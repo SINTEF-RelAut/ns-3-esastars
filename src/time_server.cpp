@@ -7,12 +7,13 @@
 
 #include "ns3/log.h"
 
-#include "src/SCION/headers/global_scheduling.h"
+#include "src/SCION/headers/schedule_periodic_events.h"
 #include "src/SCION/headers/time_server.h"
 #include "src/SCION/headers/scion_core_as.h"
 #include "src/SCION/headers/utils.h"
 #include "src/SCION/headers/externs.h"
 #include "src/SCION/headers/json.hpp"
+#include "src/SCION/headers/run_parallel_events.h"
 
 namespace ns3 {
     NS_LOG_COMPONENT_DEFINE("TimeServer");

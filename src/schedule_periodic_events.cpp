@@ -14,7 +14,7 @@
 
 #include "src/SCION/headers/scion_as.h"
 #include "src/SCION/headers/beaconing/beacon_server.h"
-#include "src/SCION/headers/global_scheduling.h"
+#include "src/SCION/headers/schedule_periodic_events.h"
 #include "src/SCION/headers/scion_host.h"
 #include "src/SCION/headers/time_server.h"
 

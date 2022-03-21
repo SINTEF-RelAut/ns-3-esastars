@@ -1,12 +1,12 @@
 //
-// Created by seyedali on 17.07.21.
+// Created by Seyedali Tabaeiaghdaei on 21.03.22.
 //
 
-#ifndef NS_3_BEACONING_SIMULATOR_GLOBAL_SCHEDULING_H
-#define NS_3_BEACONING_SIMULATOR_GLOBAL_SCHEDULING_H
+#ifndef NS_3_BEACONING_SIMULATOR_RUN_PARALLEL_EVENTS_H
+#define NS_3_BEACONING_SIMULATOR_RUN_PARALLEL_EVENTS_H
 
 #include <yaml-cpp/yaml.h>
-
+#include <omp.h>
 #include "src/SCION/headers/externs.h"
 #include "src/SCION/headers/scion_packet.h"
 #include "src/SCION/headers/scion_as.h"
@@ -32,10 +32,5 @@ namespace ns3 {
             ((node->GetBeaconServer())->*mem_ptr)();
         }
     }
-
-    void SchedulePeriodicEvents(YAML::Node& config);
-
-    void PeriodicBeaconingCheckPoint();
 }
-
-#endif //NS_3_BEACONING_SIMULATOR_GLOBAL_SCHEDULING_H
+#endif //NS_3_BEACONING_SIMULATOR_RUN_PARALLEL_EVENTS_H

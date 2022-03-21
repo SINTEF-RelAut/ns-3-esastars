@@ -27,7 +27,7 @@
 #include "src/SCION/headers/beaconing/green_beaconing.h"
 #include "src/SCION/headers/scion_as.h"
 #include "src/SCION/headers/scion_core_as.h"
-#include "src/SCION/headers/global_scheduling.h"
+#include "src/SCION/headers/schedule_periodic_events.h"
 #include "src/SCION/headers/path_server.h"
 #include "src/SCION/headers/scion_host.h"
 #include "src/SCION/headers/time_server.h"
