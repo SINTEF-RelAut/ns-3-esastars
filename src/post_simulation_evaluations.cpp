@@ -751,7 +751,10 @@ namespace ns3 {
 
     void PostSimulationEvaluations::InvestigateAffectedTimeServers() {
         std::cout << "########################### InvestigateAffectedTimeServers #####################################" << std::endl;
-        std::vector<std::string> path_selections = {"one_random", "five_random"};
+        std::vector<std::pair<std::string, uint32_t>> path_selections =
+                {std::make_pair("random", 1), std::make_pair("short", 1),
+                 std::make_pair("random", 5), std::make_pair("short", 5),
+                 std::make_pair("disjoint", 5)};
 
         std::unordered_set<ia_t> inherently_malicious_ases;
         std::set<ia_t> benign_ases;
@@ -764,31 +767,19 @@ namespace ns3 {
 
         uint32_t malicious_incremental_step = std::ceil(num_all_ases / 100);
 
-        for (std::string const & path_selection : path_selections) {
-            if (path_selection == "one_random") {
-                std::cout << "******************************** one random ********************************"
-                          << std::endl;
-            }
-
-            if (path_selection == "five_random") {
-                std::cout << "******************************** five random ********************************"
-                          << std::endl;
-            }
+        for (auto const & path_selection : path_selections) {
+                std::cout << "******************************** "
+                << path_selection.second << " " << path_selection.first
+                << " ********************************"
+                << std::endl;
 
 #pragma omp parallel for
             for (uint32_t i = 0; i < num_all_ases; ++i) {
                 SCION_AS* scion_as = dynamic_cast<SCION_AS*>(PeekPointer(AS_nodes.Get(i)));
                 TimeServer* time_server = dynamic_cast<TimeServer*>(scion_as->GetHost(2));
 
-                if (path_selection == "one_random") {
-                    time_server->path_selection = "random";
-                    time_server->number_of_paths_to_use_for_global_sync = 1;
-                }
-
-                if (path_selection == "five_random") {
-                    time_server->path_selection = "random";
-                    time_server->number_of_paths_to_use_for_global_sync = 5;
-                }
+                time_server->path_selection = path_selection.first;
+                time_server->number_of_paths_to_use_for_global_sync = path_selection.second;
 
                 time_server->construct_set_of_selected_paths();
             }
@@ -797,7 +788,10 @@ namespace ns3 {
                 benign_ases.insert(inherently_malicious_ases.begin(), inherently_malicious_ases.end());
                 inherently_malicious_ases.clear();
 
-                for (uint32_t num_inherent_malicious = malicious_incremental_step; num_inherent_malicious < std::floor(num_all_ases / 3); num_inherent_malicious += malicious_incremental_step) {
+                for (uint32_t num_inherent_malicious = malicious_incremental_step;
+                     num_inherent_malicious <= std::ceil(num_all_ases / 3) + 1;
+                     num_inherent_malicious += malicious_incremental_step) {
+
                     std::set<ia_t> new_inherently_malicious;
                     std::unordered_set<ia_t> inherently_and_transitive_malicious;
                     std::set<ia_t> new_benign;
@@ -843,14 +837,14 @@ namespace ns3 {
                                         }
                                     }
                                     if ((double) number_of_affected_paths >=
-                                        (double) time_server->number_of_paths_to_use_for_global_sync / 2) {
+                                        std::floor(time_server->number_of_paths_to_use_for_global_sync / 2)) {
                                         number_of_affected_dst++;
                                         break;
                                     }
                                 }
                             }
 
-                            if ((double) number_of_affected_dst >= (double) num_all_ases / 3) {
+                            if ((double) number_of_affected_dst >= std::floor(num_all_ases / 3)) {
                                 time_server->affected_by_malicious_ases = true;
                             }
                         }
