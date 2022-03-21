@@ -826,11 +826,16 @@ namespace ns3 {
                             uint32_t number_of_affected_dst = 0;
                             TimeServer *time_server = dynamic_cast<TimeServer *>(scion_as->GetHost(2));
 
+                            assert(time_server->set_of_selected_paths.size() >= AS_nodes.GetN() - 1);
+
                             for (auto const &[dst_ia, selected_paths_to_dst]: time_server->set_of_selected_paths) {
                                 uint32_t number_of_affected_paths = 0;
                                 for (auto const &path_seg: selected_paths_to_dst) {
                                     uint32_t path_len = path_seg->hops.size();
+
                                     assert(GET_HOP_IA(path_seg->hops.at(0)) == scion_as->ia_addr);
+                                    assert(GET_HOP_IA(path_seg->hops.at(path_len - 1)) == dst_ia);
+
                                     for (uint32_t j = 1; j < path_len; ++j) {
                                         uint64_t hop = path_seg->hops.at(j);
                                         ia_t hop_ia = GET_HOP_IA(hop);
