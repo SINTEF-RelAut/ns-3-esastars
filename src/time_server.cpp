@@ -140,7 +140,7 @@ namespace ns3 {
                 uint64_t best_path_score = std::numeric_limits<uint64_t>::max();
                 uint32_t best_path_len = std::numeric_limits<uint32_t>::max();
 
-                uint32_t min_len = path_segments.begin()->first;
+//                uint32_t min_len = path_segments.begin()->first;
                 for (auto const &[path_len, path_seg]: path_segments) {
 //                    if (min_len == 2 && path_len > 2) {
 //                        break;
@@ -207,7 +207,7 @@ namespace ns3 {
             auto &set_of_selected_paths_per_dst_ia = set_of_selected_paths.at(dst_ia);
 
             auto const &path_segments = *cached_core_path_segments.at(dst_ia)->at(ia_addr);
-            uint32_t min_len = path_segments.begin()->first;
+//            uint32_t min_len = path_segments.begin()->first;
             for (auto const &[path_len, path_seg]: path_segments) {
 //                if (min_len == 2 && path_len > 2) {
 //                    break;
@@ -230,7 +230,7 @@ namespace ns3 {
             set_of_selected_paths.insert(std::make_pair(dst_ia, std::unordered_set<const PathSegment *>()));
             auto &set_of_selected_paths_per_dst_ia = set_of_selected_paths.at(dst_ia);
             auto const &path_segments = *cached_core_path_segments.at(dst_ia)->at(ia_addr);
-            uint32_t min_len = path_segments.begin()->first;
+//            uint32_t min_len = path_segments.begin()->first;
 
             std::vector<uint32_t> selected_indices;
             for (uint32_t i = 0; i < path_segments.size(); ++i) {
