@@ -244,16 +244,15 @@ namespace ns3 {
                    && set_of_selected_paths_per_dst_ia.size() < path_segments.size()) {
                 auto iter = path_segments.cbegin();
                 std::advance(iter, selected_indices.at(j));
-                j++;
 
+                if (!(iter->second->hops.size() > 2 && min_len == 2)) {
+                    set_of_selected_paths_per_dst_ia.insert(iter->second);
+                }
+
+                j++;
                 if (j >= path_segments.size()) {
                     break;
                 }
-
-                if (iter->second->hops.size() > 2 && min_len == 2) {
-                    continue;
-                }
-                set_of_selected_paths_per_dst_ia.insert(iter->second);
             }
         }
     }
