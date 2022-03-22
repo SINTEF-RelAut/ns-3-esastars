@@ -756,6 +756,7 @@ namespace ns3 {
                  std::make_pair("random", 5), std::make_pair("short", 5),
                  std::make_pair("disjoint", 5)};
 
+        std::vector<std::map<uint32_t, std::unordered_set<ia_t>>> pre_calculated_inherently_malicious_ases;
         std::unordered_set<ia_t> inherently_malicious_ases;
         std::set<ia_t> benign_ases;
         uint32_t num_all_ases = AS_nodes.GetN();
@@ -766,6 +767,36 @@ namespace ns3 {
         }
 
         uint32_t malicious_incremental_step = std::ceil(num_all_ases / 100);
+
+        for (uint32_t rpt = 0; rpt < 20; ++rpt) {
+            std::map<uint32_t, std::unordered_set<ia_t>> num_inherent_malicious_to_malicious;
+            pre_calculated_inherently_malicious_ases.push_back(num_inherent_malicious_to_malicious);
+
+            benign_ases.insert(inherently_malicious_ases.begin(), inherently_malicious_ases.end());
+            inherently_malicious_ases.clear();
+
+            for (uint32_t num_inherent_malicious = malicious_incremental_step;
+                 num_inherent_malicious <= std::ceil(num_all_ases / 3) + malicious_incremental_step;
+                 num_inherent_malicious += malicious_incremental_step) {
+
+                    std::set<ia_t> new_inherently_malicious;
+                    std::set<ia_t> new_benign;
+
+                    std::sample(benign_ases.begin(), benign_ases.end(),
+                                std::inserter(new_inherently_malicious, new_inherently_malicious.begin()),
+                                malicious_incremental_step, std::random_device{});
+
+                    std::set_difference(std::make_move_iterator(benign_ases.begin()),
+                                        std::make_move_iterator(benign_ases.end()),
+                                        new_inherently_malicious.begin(), new_inherently_malicious.end(),
+                                        std::inserter(new_benign, new_benign.end()));
+
+                    benign_ases.swap(new_benign);
+                    inherently_malicious_ases.insert(new_inherently_malicious.begin(), new_inherently_malicious.end());
+
+                    pre_calculated_inherently_malicious_ases.at(rpt).insert(std::make_pair(num_inherent_malicious, inherently_malicious_ases));
+                }
+        }
 
         for (auto const & path_selection : path_selections) {
                 std::cout << "******************************** "
@@ -785,33 +816,9 @@ namespace ns3 {
             }
 
             for (uint32_t rpt = 0; rpt < 20; ++rpt) {
-                benign_ases.insert(inherently_malicious_ases.begin(), inherently_malicious_ases.end());
-                inherently_malicious_ases.clear();
-
-                for (uint32_t num_inherent_malicious = malicious_incremental_step;
-                     num_inherent_malicious <= std::ceil(num_all_ases / 3) + malicious_incremental_step;
-                     num_inherent_malicious += malicious_incremental_step) {
-
-                    std::set<ia_t> new_inherently_malicious;
-                    std::unordered_set<ia_t> inherently_and_transitive_malicious;
-                    std::set<ia_t> new_benign;
-
-                    std::sample(benign_ases.begin(), benign_ases.end(),
-                                std::inserter(new_inherently_malicious, new_inherently_malicious.begin()),
-                                malicious_incremental_step, std::random_device{});
-
-                    std::set_difference(std::make_move_iterator(benign_ases.begin()),
-                                        std::make_move_iterator(benign_ases.end()),
-                                        new_inherently_malicious.begin(), new_inherently_malicious.end(),
-                                        std::inserter(new_benign, new_benign.end()));
-
-                    benign_ases.swap(new_benign);
-                    inherently_malicious_ases.insert(new_inherently_malicious.begin(), new_inherently_malicious.end());
-
-                    inherently_and_transitive_malicious.insert(inherently_malicious_ases.begin(), inherently_malicious_ases.end());
-
-                    assert(num_inherent_malicious == inherently_and_transitive_malicious.size());
-
+                for (auto const & num_inherent_malicious_to_malicious : pre_calculated_inherently_malicious_ases.at(rpt)) {
+                    std::unordered_set<ia_t> inherently_and_transitive_malicious = num_inherent_malicious_to_malicious.second;
+                    uint32_t num_inherent_malicious = num_inherent_malicious_to_malicious.first;
                     bool C = false;
                     while (true) {
                         C = false;
