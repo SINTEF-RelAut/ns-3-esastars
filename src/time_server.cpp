@@ -142,9 +142,9 @@ namespace ns3 {
 
                 uint32_t min_len = path_segments.begin()->first;
                 for (auto const &[path_len, path_seg]: path_segments) {
-                    if (min_len == 2 && path_len > 2) {
-                        break;
-                    }
+//                    if (min_len == 2 && path_len > 2) {
+//                        break;
+//                    }
                     if (set_of_selected_paths_per_dst_ia.find(path_seg) != set_of_selected_paths_per_dst_ia.end()) {
                         continue;
                     }
@@ -209,9 +209,9 @@ namespace ns3 {
             auto const &path_segments = *cached_core_path_segments.at(dst_ia)->at(ia_addr);
             uint32_t min_len = path_segments.begin()->first;
             for (auto const &[path_len, path_seg]: path_segments) {
-                if (min_len == 2 && path_len > 2) {
-                    break;
-                }
+//                if (min_len == 2 && path_len > 2) {
+//                    break;
+//                }
                 if (set_of_selected_paths_per_dst_ia.size() >= number_of_paths_to_use_for_global_sync) {
                     break;
                 }
@@ -245,9 +245,9 @@ namespace ns3 {
                 auto iter = path_segments.cbegin();
                 std::advance(iter, selected_indices.at(j));
 
-                if (!(iter->second->hops.size() > 2 && min_len == 2)) {
+//                if (!(iter->second->hops.size() > 2 && min_len == 2)) {
                     set_of_selected_paths_per_dst_ia.insert(iter->second);
-                }
+//                }
 
                 j++;
                 if (j >= path_segments.size()) {
