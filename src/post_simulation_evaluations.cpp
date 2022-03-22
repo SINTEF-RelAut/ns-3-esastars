@@ -823,27 +823,14 @@ namespace ns3 {
                                 continue;
                             }
 
-                            uint32_t number_of_malicious_ases = 0;
                             uint32_t number_of_affected_dst = 0;
                             TimeServer *time_server = dynamic_cast<TimeServer *>(scion_as->GetHost(2));
 
                             assert(time_server->set_of_selected_paths.size() >= AS_nodes.GetN() - 1);
 
                             for (auto const &[dst_ia, selected_paths_to_dst]: time_server->set_of_selected_paths) {
+                                assert(selected_paths_to_dst.size() != 0);
 
-                                if (selected_paths_to_dst.size() != time_server->number_of_paths_to_use_for_global_sync) {
-                                    #pragma omp critical
-                                    std::cout << "src: " << scion_as->ia_addr << ", dst: "
-                                    << dst_ia  << ", available paths: "
-                                    << time_server->cached_core_path_segments.at(dst_ia)->at(scion_as->ia_addr)->size()
-                                    <<   ", sel paths no: " << time_server->set_of_selected_paths.at(dst_ia).size()
-                                    << ", should be: " << time_server->number_of_paths_to_use_for_global_sync << std::endl;
-                                }
-                                assert(selected_paths_to_dst.size() == time_server->number_of_paths_to_use_for_global_sync);
-
-                                if (inherently_and_transitive_malicious.find(dst_ia) != inherently_and_transitive_malicious.end()) {
-                                    number_of_malicious_ases++;
-                                }
                                 uint32_t number_of_affected_paths = 0;
                                 for (auto const &path_seg: selected_paths_to_dst) {
                                     uint32_t path_len = path_seg->hops.size();
@@ -866,19 +853,13 @@ namespace ns3 {
                                         number_of_affected_paths++;
                                     }
                                 }
-                                assert (inherently_and_transitive_malicious.find(dst_ia) == inherently_and_transitive_malicious.end() || number_of_affected_paths == time_server->number_of_paths_to_use_for_global_sync);
-                                if (number_of_affected_paths * 2 >=
-                                    time_server->number_of_paths_to_use_for_global_sync) {
+                                assert (inherently_and_transitive_malicious.find(dst_ia) == inherently_and_transitive_malicious.end() || number_of_affected_paths == selected_paths_to_dst.size());
+                                if (number_of_affected_paths * 2 >= selected_paths_to_dst.size()) {
                                     number_of_affected_dst++;
                                 }
                             }
 
-                            if (number_of_affected_dst < inherently_and_transitive_malicious.size() - 1) {
-                                std::cout << "affected: " << number_of_affected_dst << " malicious: " << inherently_and_transitive_malicious.size() << std::endl;
-                            }
-
-                            assert(number_of_malicious_ases >= inherently_and_transitive_malicious.size() - 1);
-                            assert(number_of_affected_dst >= num_inherent_malicious - 1);
+                            assert(number_of_affected_dst >= num_inherent_malicious);
 
                             if (3 * number_of_affected_dst + 1 > num_all_ases) {
                                 time_server->affected_by_malicious_ases = true;
