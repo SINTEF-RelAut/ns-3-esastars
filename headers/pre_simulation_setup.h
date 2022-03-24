@@ -36,7 +36,7 @@
 #include "src/SCION/headers/user_defined_events.h"
 
 namespace ns3 {
-    void SetTimeResolution (std::string time_res_str);
+    void SetTimeResolution (const std::string& time_res_str);
 
 //rapidxml::xml_node<>* SetupTopologyFile (std::string topology_name);
 
