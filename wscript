@@ -14,7 +14,7 @@ def build(bld):
                    'src/beaconing/green_beaconing.cpp',
                    'src/post_simulation_evaluations.cpp',
                    'src/schedule_periodic_events.cpp',
-                   'src/user_defined_events.cpp'
+                   'src/user_defined_events.cpp',
                    'src/path_server.cpp',
                    'src/path_segment.cpp',
                    'src/scion_packet.cpp',
