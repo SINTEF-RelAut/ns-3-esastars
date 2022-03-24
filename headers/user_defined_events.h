@@ -79,6 +79,7 @@ public:
 
         if (!config["events_file"]) {
             this->~UserDefinedEvents();
+            return;
         }
 
         construct_func_map();
