@@ -67,7 +67,7 @@ namespace ns3 {
             std::string func_name = (std::string) event["type"];
             std::vector<std::string> args_v;
 
-            for (int i = 0; i < event["args"].size(); ++i) {
+            for (uint32_t i = 0; i < event["args"].size(); ++i) {
                 args_v.push_back((std::string) event["args"][i]);
             }
 
