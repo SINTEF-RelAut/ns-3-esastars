@@ -14,6 +14,7 @@ def build(bld):
                    'src/beaconing/green_beaconing.cpp',
                    'src/post_simulation_evaluations.cpp',
                    'src/schedule_periodic_events.cpp',
+                   'src/user_defined_events.cpp'
                    'src/path_server.cpp',
                    'src/path_segment.cpp',
                    'src/scion_packet.cpp',
@@ -39,6 +40,7 @@ def build(bld):
                      'headers/post_simulation_evaluations.h',
                      'headers/schedule_periodic_events.h',
                      'headers/run_parallel_events.h',
+                     'headers/user_defined_events.h',
                      'headers/path_server.h',
                      'headers/path_segment.h',
                      'headers/scion_packet.h',

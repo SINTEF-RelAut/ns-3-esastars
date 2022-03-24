@@ -23,6 +23,7 @@
 #include "src/SCION/headers/scion_host.h"
 #include "src/SCION/headers/path_server.h"
 #include "post_simulation_evaluations.h"
+#include "src/SCION/headers/user_defined_events.h"
 
 
 namespace ns3 {
@@ -97,6 +98,7 @@ namespace ns3 {
 
 //        friend class PostSimulationEvaluations;
 //        friend void PostSimulationEvaluations::InvestigateAffectedTimeServers();
+        friend class UserDefinedEvents;
 
     protected:
         BeaconServer* beaconServer;

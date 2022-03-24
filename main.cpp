@@ -32,6 +32,7 @@
 #include "src/SCION/headers/scion_host.h"
 #include "src/SCION/headers/time_server.h"
 #include "src/SCION/headers/externs.h"
+#include "src/SCION/headers/user_defined_events.h"
 
 void SetTimeResolution (std::string time_res_str);
 
@@ -167,6 +168,8 @@ int main(int argc, char *argv[]) {
     InitializeASesAttributes(nodes, real_to_alias_as_no, config);
 
     ns3::SchedulePeriodicEvents(config);
+    ns3::UserDefinedEvents user_defined_events(config, nodes, real_to_alias_as_no, alias_to_real_as_no);
+
     ns3::Simulator::Stop(simulation_end_time);
     ns3::Simulator::Run();
 

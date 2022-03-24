@@ -12,6 +12,7 @@
 #include "ns3/nstime.h"
 
 #include "src/SCION/headers/scion_host.h"
+#include "src/SCION/headers/user_defined_events.h"
 
 namespace ns3 {
 
@@ -87,6 +88,7 @@ namespace ns3 {
         int64_t GetDrift(Time duration);
 
         friend class PostSimulationEvaluations;
+        friend class UserDefinedEvents;
     private:
         bool affected_by_malicious_ases = false;
 
