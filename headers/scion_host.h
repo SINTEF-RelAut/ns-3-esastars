@@ -41,8 +41,6 @@ namespace ns3 {
 
 
         void cache_path_segment (path_segment_type seg_type, ia_t src_ia, ia_t dst_ia, PathSegment* path_seg);
-
-        void find_path_and_send(SCIONPacket* packet, uint16_t count);
     };
 }
 

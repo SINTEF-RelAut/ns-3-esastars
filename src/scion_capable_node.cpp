@@ -123,9 +123,11 @@ namespace ns3 {
         schedule_for_send(local_if_to_send, packet);
     }
 
-    SCIONPacket * SCIONCapableNode::create_scion_packet(Payload payload, payload_type_t payload_type, ia_t dst_ia,
+    SCIONPacket * SCIONCapableNode::create_scion_packet(const Payload& payload, payload_type_t payload_type, ia_t dst_ia,
                                                         host_addr_t dst_host,
-                                                        int32_t payload_size) {
+                                                        int32_t payload_size,
+                                                        const std::vector<const PathSegment*>& the_path,
+                                                        const std::vector<uint8_t>& shortcut_hopfs) {
         on_the_flight_packets.insert(std::make_pair(next_packet_id, SCIONPacket(this, next_packet_id)));
         SCIONPacket* packet = &on_the_flight_packets.at(next_packet_id);
         next_packet_id++;
@@ -135,6 +137,8 @@ namespace ns3 {
         packet->src_host = local_address;
         packet->dst_host = dst_host;
 
+        packet->path = the_path;
+        packet->shortcut_hopfs = shortcut_hopfs;
         packet->path_reversed = false;
         packet->curr_inf = 0;
         packet->cur_hopf = 0;

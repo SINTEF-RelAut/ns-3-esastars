@@ -196,27 +196,26 @@ namespace ns3 {
         Payload payload;
         payload_type_t payload_type = payload_type_t::EMPTY;
 
-        SCIONPacket* packet = create_scion_packet(payload, payload_type, dst_ia, dst_host, 0);
+
         if (dst_ia == ia_addr) {
+            SCIONPacket* packet = create_scion_packet(payload, payload_type, dst_ia, dst_host, 0);
             send_scion_packet(packet);
         } else {
-            find_path_and_send(packet, 0);
-        }
-    }
+            std::vector<const PathSegment*> the_path;
+            std::vector<uint8_t> shortcuts;
 
-    void SCIONHost::find_path_and_send(SCIONPacket* packet, uint16_t count) {
-        search_in_cached_segments(packet->dst_ia, packet->path, packet->shortcut_hopfs);
+            search_in_cached_segments(dst_ia, the_path, shortcuts);
 
-        if (packet->path.size() != 0) {
-            send_scion_packet(packet);
-        }
-
-        if (packet->path.size() == 0 && count == 0) {
-            request_for_path_segments(packet->dst_ia);
-        }
-
-        if (packet->path.size() == 0 && count < 3)  {
-            Simulator::Schedule(MilliSeconds(300), &SCIONHost::find_path_and_send, this, packet, (count + 1));
+            if (the_path.size() != 0) {
+                SCIONPacket* packet = create_scion_packet(payload, payload_type, dst_ia, dst_host, 0,
+                                                          the_path, shortcuts);
+                send_scion_packet(packet);
+            } else {
+                request_for_path_segments(dst_ia);
+                Simulator::Schedule(MilliSeconds(300),
+                                    &SCIONHost::SendArbitraryPacket,
+                                    this, dst_ia, dst_host);
+            }
         }
     }
 

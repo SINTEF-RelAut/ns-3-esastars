@@ -358,10 +358,12 @@ namespace ns3 {
             Payload payload;
             payload.list_of_all_ases.set_of_all_ases = &set_of_all_core_ases;
 
-            SCIONPacket *packet = create_scion_packet(payload, payload_type, GET_HOP_IA(path->hops.back()), 2,
-                                                      set_of_all_core_ases.size() * 8);
+            std::vector<const PathSegment*> the_path;
+            the_path.push_back(path);
 
-            packet->path.push_back(path);
+            SCIONPacket *packet = create_scion_packet(payload, payload_type, GET_HOP_IA(path->hops.back()), 2,
+                                                      set_of_all_core_ases.size() * 8,
+                                                      the_path);
 
             send_scion_packet(packet);
         }
@@ -559,9 +561,12 @@ namespace ns3 {
                 Payload payload;
                 payload.ntp_req_or_resp.t0 = local_time.GetTimeStep();
 
-                SCIONPacket *packet = create_scion_packet(payload, payload_type, peer_ia, 2, 8 + 48 /* udp + ntp*/);
+                std::vector<const PathSegment*> the_path;
+                the_path.push_back(path_seg);
 
-                packet->path.push_back(path_seg);
+                SCIONPacket *packet = create_scion_packet(payload, payload_type, peer_ia, 2,
+                                                          8 + 48 /* udp + ntp*/,
+                                                          the_path);
 
                 send_scion_packet(packet);
             }

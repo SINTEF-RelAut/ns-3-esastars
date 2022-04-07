@@ -91,8 +91,11 @@ namespace ns3 {
 
         void send_scion_packet(SCIONPacket* packet);
         SCIONPacket *
-        create_scion_packet(Payload payload, payload_type_t payload_type, ia_t dst_ia, host_addr_t dst_host,
-                            int32_t payload_size);
+        create_scion_packet(const Payload& payload, payload_type_t payload_type, ia_t dst_ia,
+                                              host_addr_t dst_host,
+                                              int32_t payload_size,
+                                              const std::vector<const PathSegment*>& the_path = std::vector<const PathSegment*>(),
+                                              const std::vector<uint8_t>& shortcut_hopfs = std::vector<uint8_t>());
 
         void return_scion_packet(SCIONPacket* packet);
 
