@@ -22,7 +22,7 @@ class GreenBeaconing : public BeaconServer
 {
   public:
     GreenBeaconing (bool parallel_scheduler, beaconing_timing_params params, float dirty_energy_ratio, float sun_energy_ratio)
-    : BeaconServer(parallel_scheduler, params), dirty_energy_ratio(dirty_energy_ratio), sun_energy_ratio(sun_energy_ratio) {}
+    : BeaconServer(parallel_scheduler, params, dirty_energy_ratio, sun_energy_ratio) {}
 
     std::vector<std::vector<std::multimap<ld, Beacon*> > > beacons_per_dst_per_ing_if_sorted_by_pollution;
 
@@ -46,10 +46,6 @@ class GreenBeaconing : public BeaconServer
     MetaDataUpdatePeriodic (Beacon* the_beacon, bool invalidated) override;
 
   private:
-    std::vector<std::vector<ld>> intra_as_energies;
-    float dirty_energy_ratio;
-    float sun_energy_ratio;
-
     ld calculate_pollution_between_border_routers (uint16_t ingress_if, uint16_t egress_if);
 
     void insert_to_beacons_per_dst_sorted_by_pollution(uint16_t dst_as, Beacon* beacon);
