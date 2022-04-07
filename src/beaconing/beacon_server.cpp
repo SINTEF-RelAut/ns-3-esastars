@@ -53,7 +53,9 @@ namespace ns3 {
 
    void BeaconServer::GenerateBeaconAndSend(Beacon *selected_beacon, uint16_t self_egress_if_no,
                                             uint16_t remote_ingress_if_no, SCION_AS* remote_as,
-                                            static_info_extension_t& static_info_extension)
+                                            static_info_extension_t& static_info_extension,
+                                            const optimization_target_t* optimization_target,
+                                            beacon_direction_t beacon_direction)
     {
         std::string key;
         uint16_t remote_as_no = remote_as->as_number;
@@ -86,8 +88,9 @@ namespace ns3 {
             new_isd_path.push_back(AS->isd_number);
         }
 
-        Beacon to_disseminate_beacon(static_info_extension, 0, 0, next_initiation_time,
-                                     next_expiration_time, true, false, new_path, key, new_isd_path);
+        Beacon to_disseminate_beacon(static_info_extension, optimization_target, beacon_direction,
+                                     0, 0, next_initiation_time,next_expiration_time,
+                                     true, false, new_path, key, new_isd_path);
 
         IncrementControlPlaneBytesSent(to_disseminate_beacon, self_egress_if_no);
         remote_as->ReceiveBeacon(to_disseminate_beacon, AS->as_number, self_egress_if_no, remote_ingress_if_no);

@@ -36,6 +36,13 @@ namespace ns3 {
                      parallel_scheduler(parallel_scheduler), beaconing_period(params.first), expiration_period(params.second)
         {}
 
+        BeaconServer(bool parallel_scheduler, beaconing_timing_params params,
+                     float dirty_energy_ratio, float sun_energy_ratio) : BeaconServer(parallel_scheduler, params)
+        {
+            this->dirty_energy_ratio = dirty_energy_ratio;
+            this->sun_energy_ratio = sun_energy_ratio;
+        }
+
         std::unordered_map<uint16_t, beacons_with_same_dst_as> beacon_store;
 
         std::unordered_map<std::string, Beacon*> path_map_to_beacon;
@@ -94,12 +101,20 @@ namespace ns3 {
         Time beaconing_period;
         uint16_t expiration_period;
 
+        std::vector<std::vector<ld>> intra_as_energies;
+        float dirty_energy_ratio;
+        float sun_energy_ratio;
+
         std::unordered_map<uint16_t, uint16_t> next_round_valid_beacons_count_per_dst_as;
 
         void UpdateBeaconState(Beacon* the_beacon);
 
-        void GenerateBeaconAndSend(Beacon* selected_beacon, uint16_t self_egress_if_no,
-                                   uint16_t remote_ingress_if_no, SCION_AS* remote_as, static_info_extension_t& static_info_extension);
+        void GenerateBeaconAndSend(Beacon *selected_beacon, uint16_t self_egress_if_no,
+                                   uint16_t remote_ingress_if_no, SCION_AS* remote_as,
+                                   static_info_extension_t& static_info_extension,
+                                   const optimization_target_t* optimization_target = NULL,
+                                   beacon_direction_t beacon_direction = beacon_direction_t::PUSH_BASED);
+
         void RegisterToLocalPathServer();
 
         virtual void MetaDataUpdatePeriodic(Beacon* the_beacon, bool invalidated) = 0;
