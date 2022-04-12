@@ -5,17 +5,16 @@
  * @date 2020
  */
 
-#include <set>
 #include <cmath>
 #include <random>
+#include <set>
 
-#include "src/SCION/headers/utils.h"
 #include "src/SCION/headers/beaconing/beacon_server.h"
+#include "src/SCION/headers/utils.h"
 
 namespace ns3 {
 
-    double GetMedian( std::multiset<int64_t>& data)
-    {
+    double GetMedian(std::multiset<int64_t> &data) {
         if (data.empty())
             throw std::length_error("Cannot calculate median value for empty dataset");
 
@@ -28,24 +27,21 @@ namespace ns3 {
         // Middle or average of two middle values
         if (n % 2 == 0) {
             const auto iter2 = iter--;
-            median = double(*iter + *iter2) / 2;    // data[n/2 - 1] AND data[n/2]
-        }
-        else {
+            median = double(*iter + *iter2) / 2; // data[n/2 - 1] AND data[n/2]
+        } else {
             median = *iter;
         }
         return median;
     }
 
-
     std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
         std::stringstream ss(s);
         std::string item;
-        while(std::getline(ss, item, delim)) {
+        while (std::getline(ss, item, delim)) {
             elems.push_back(item);
         }
         return elems;
     }
-
 
     ld link_level_jaccard_distance_between_two_paths(Beacon *beacon1, Beacon *beacon2) {
         std::set<uint32_t> set_of_links_on_path1;
@@ -56,8 +52,7 @@ namespace ns3 {
         }
 
         for (auto const &link_info : beacon2->the_path) {
-            if (set_of_links_on_path1.find(UPPER_32_BITS(link_info)) !=
-                set_of_links_on_path1.end()) {
+            if (set_of_links_on_path1.find(UPPER_32_BITS(link_info)) != set_of_links_on_path1.end()) {
                 intersection++;
             } else {
                 set_of_links_on_path1.insert(UPPER_32_BITS(link_info));
@@ -92,7 +87,6 @@ namespace ns3 {
         return latency;
     }
 
-
     ld calculate_great_circle_distance(ld lat1_deg, ld long1_deg, ld lat2_deg, ld long2_deg) {
         ld lat1 = lat1_deg * (M_PI) / 180;
         ld long1 = long1_deg * (M_PI) / 180;
@@ -103,9 +97,7 @@ namespace ns3 {
         ld dlong = long2 - long1;
         ld dlat = lat2 - lat1;
 
-        ld distance =
-                6371 * 2 *
-                asin(sqrt(pow(sin(dlat / 2), 2) + cos(lat1) * cos(lat2) * pow(sin(dlong / 2), 2)));
+        ld distance = 6371 * 2 * asin(sqrt(pow(sin(dlat / 2), 2) + cos(lat1) * cos(lat2) * pow(sin(dlong / 2), 2)));
 
         return distance;
     }
@@ -158,7 +150,7 @@ namespace ns3 {
     }
 
     void print_consumed_bw_structure(Ptr<SCION_AS> node, const std::map<uint16_t, int32_t> &index_to_AS_no) {
-        for (auto const &el : node->GetBeaconServer()->bytes_sent_per_interface_per_period) {
+        for (auto const &el : node->GetBeaconServer()->GetBytesSentPerInterfacePerPeriod()) {
             auto const &vector = el.second;
             std::cerr << "\nNode: " << index_to_AS_no.at(node->as_number) << " at time 0." << std::endl;
             for (auto const &element : vector) {
@@ -170,18 +162,20 @@ namespace ns3 {
     void print_beacon_store(Ptr<SCION_AS> the_node, const std::map<uint16_t, int32_t> &index_to_AS_no) {
         std::cout << "From: " << index_to_AS_no.at(the_node->as_number) << std::endl;
 
-        for (auto const &dst_as_beacons_pair : the_node->GetBeaconServer()->beacon_store) {
+        for (auto const &dst_as_beacons_pair : the_node->GetBeaconServer()->GetBeaconStore()) {
             uint16_t dst_as = dst_as_beacons_pair.first;
             auto const &same_dst_as_beacons = dst_as_beacons_pair.second;
 
-            std::cout << "\t" << "To: " << index_to_AS_no.at(dst_as) << std::endl;
+            std::cout << "\t"
+                      << "To: " << index_to_AS_no.at(dst_as) << std::endl;
 
             for (auto const &beacons_from_same_nbr : same_dst_as_beacons) {
                 for (auto const &the_beacon : beacons_from_same_nbr.second) {
                     if (!the_beacon->is_valid) {
                         continue;
                     }
-                    std::cout << "\t" << "\t";
+                    std::cout << "\t"
+                              << "\t";
                     uint32_t hop_cnt = 0;
                     std::vector<link_information>::reverse_iterator hop = the_beacon->the_path.rbegin();
                     for (; hop != the_beacon->the_path.rend(); ++hop) {
@@ -198,13 +192,12 @@ namespace ns3 {
                     std::cout << "BWD = " << the_beacon->static_info_extension.at(static_info_type_t::BW);
                     std::cout << std::endl;
                 }
-
             }
         }
     }
 
     void print_valid_beacon_counter(Ptr<SCION_AS> node, const std::map<uint16_t, int32_t> &index_to_AS_no,
-                               const std::unordered_map<uint16_t, uint64_t> &counter) {
+                                    const std::unordered_map<uint16_t, uint64_t> &counter) {
         std::cerr << "On Node: " << index_to_AS_no.at(node->as_number) << std::endl;
         std::cerr << "Src_AS:Count\n";
         for (auto const &src_as_count_pair : counter) {
@@ -216,9 +209,9 @@ namespace ns3 {
     }
 
     void print_number_of_valid_beacon_entries_in_beacon_store(Ptr<SCION_AS> node,
-                                                         const std::map<uint16_t, int32_t> &index_to_AS_no) {
+                                                              const std::map<uint16_t, int32_t> &index_to_AS_no) {
         std::cerr << "Beacon Store on Node: " << index_to_AS_no.at(node->as_number) << std::endl;
-        for (auto const &src_as_beacons_pair : node->GetBeaconServer()->beacon_store) {
+        for (auto const &src_as_beacons_pair : node->GetBeaconServer()->GetBeaconStore()) {
             auto const &src_as = src_as_beacons_pair.first;
             auto const &beacons = src_as_beacons_pair.second;
 
@@ -237,4 +230,4 @@ namespace ns3 {
         }
         std::cerr << std::endl;
     }
-}
+} // namespace ns3

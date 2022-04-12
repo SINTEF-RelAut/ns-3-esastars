@@ -5,30 +5,30 @@
  * @see scionlab_algo.h
  */
 
-#include <omp.h>
-#include "src/SCION/headers/utils.h"
 #include "src/SCION/headers/beaconing/scionlab_algo.h"
 #include "ns3/point-to-point-channel.h"
+#include "src/SCION/headers/utils.h"
+#include <omp.h>
 
 namespace ns3 {
     void SCIONLAB::DoInitializations(uint32_t num_ASes) {}
 
-    void SCIONLAB::create_initial_static_info_extension(static_info_extension_t& static_info_extension, uint16_t self_egress_if_no) {
+    void SCIONLAB::create_initial_static_info_extension(static_info_extension_t &static_info_extension,
+                                                        uint16_t self_egress_if_no,
+                                                        const optimization_target_t *optimization_target) {
         static_info_extension.insert(std::make_pair(static_info_type_t::LATENCY, 0));
         static_info_extension.insert(std::make_pair(static_info_type_t::BW, AS->inter_as_bwds.at(self_egress_if_no)));
     }
 
-    void
-    SCIONLAB::DisseminateBeacons (neighbour_relation relation)
-    {
-        uint32_t neighbors_cnt = AS->neighbors.size ();
-        std::vector<Beacon*> valid_candidates;
+    void SCIONLAB::disseminate_beacons(neighbour_relation relation) {
+        uint32_t neighbors_cnt = AS->neighbors.size();
+        std::vector<Beacon *> valid_candidates;
 
         for (auto const &dst_as_beacons_pair : beacon_store) {
-            auto const & equal_dst_as_beacons = dst_as_beacons_pair.second;
+            auto const &equal_dst_as_beacons = dst_as_beacons_pair.second;
 
-            std::vector<Beacon*> rest_of_beacons;
-            std::vector<Beacon*> selected_beacons_per_dst;
+            std::vector<Beacon *> rest_of_beacons;
+            std::vector<Beacon *> selected_beacons_per_dst;
 
             for (auto const &len_beacons_pair : equal_dst_as_beacons) { // for each length
                 if (rest_of_beacons.size() + selected_beacons_per_dst.size() >= MAX_SET_SIZE) {
@@ -54,8 +54,6 @@ namespace ns3 {
                 }
             }
 
-
-
             if (rest_of_beacons.size() + selected_beacons_per_dst.size() == MAX_BEACONS_TO_SEND) {
                 valid_candidates.push_back(rest_of_beacons.at(0));
                 continue;
@@ -65,19 +63,19 @@ namespace ns3 {
                 continue;
             }
 
-            std::pair<Beacon*, int32_t> diversity_wr_to_selected = SelectMostDiverse(selected_beacons_per_dst, selected_beacons_per_dst.at(0));
-
-            std::pair<Beacon*, int32_t> diversity_wr_to_rest = SelectMostDiverse(rest_of_beacons, selected_beacons_per_dst.at(0));
+            std::pair<Beacon *, int32_t> diversity_wr_to_selected =
+                    select_most_diverse(selected_beacons_per_dst, selected_beacons_per_dst.at(0));
+            std::pair<Beacon *, int32_t> diversity_wr_to_rest =
+                    select_most_diverse(rest_of_beacons, selected_beacons_per_dst.at(0));
 
             if (diversity_wr_to_rest.second > diversity_wr_to_selected.second) {
                 valid_candidates.push_back(diversity_wr_to_rest.first);
             } else {
                 valid_candidates.push_back(rest_of_beacons.at(0));
             }
-
         }
 
-        omp_set_num_threads (NUM_CORE);
+        omp_set_num_threads(NUM_CORE);
 #pragma omp parallel for
         for (uint32_t i = 0; i < neighbors_cnt; ++i) {
             if (AS->neighbors.at(i).second != relation) {
@@ -87,7 +85,7 @@ namespace ns3 {
             uint16_t &remote_as_no = AS->neighbors.at(i).first;
             const std::vector<uint16_t> &interfaces = AS->interfaces_per_neighbor_as.at(remote_as_no);
 
-            for (auto const & the_beacon : valid_candidates) {
+            for (auto const &the_beacon : valid_candidates) {
                 uint16_t dst_as_no = UPPER_16_BITS(the_beacon->the_path.at(0));
 
                 if (remote_as_no == dst_as_no) {
@@ -124,90 +122,63 @@ namespace ns3 {
 
                 // Iterate over all the valid interfaces of this remote AS and send the beacons
                 for (auto const &egress_interface_no : interfaces) {
-                    std::pair<uint16_t, SCION_AS*>
-                            remote_as_if_pair = AS->GetRemoteAsInfo(egress_interface_no);
+                    std::pair<uint16_t, SCION_AS *> remote_as_if_pair = AS->GetRemoteAsInfo(egress_interface_no);
 
                     uint16_t remote_ingress_if_no = remote_as_if_pair.first;
-                    SCION_AS* remote_as = remote_as_if_pair.second;
+                    SCION_AS *remote_as = remote_as_if_pair.second;
 
                     ld latency = the_beacon->static_info_extension.at(static_info_type_t::LATENCY) +
-                            AS->latencies_between_interfaces
-                                         .at(LOWER_16_BITS(the_beacon->the_path.back()))
+                                 AS->latencies_between_interfaces.at(LOWER_16_BITS(the_beacon->the_path.back()))
                                          .at(egress_interface_no);
-                    ld bwd =
-                            the_beacon->static_info_extension.at(static_info_type_t::BW)
-                            > (ld) AS->inter_as_bwds.at(egress_interface_no)
-                            ? (ld) AS->inter_as_bwds.at(egress_interface_no)
-                            : the_beacon->static_info_extension.at(static_info_type_t::BW) ;
+                    ld bwd = the_beacon->static_info_extension.at(static_info_type_t::BW) >
+                                             (ld) AS->inter_as_bwds.at(egress_interface_no)
+                                     ? (ld) AS->inter_as_bwds.at(egress_interface_no)
+                                     : the_beacon->static_info_extension.at(static_info_type_t::BW);
 
                     static_info_extension_t static_info_extension;
                     static_info_extension.insert(std::make_pair(static_info_type_t::LATENCY, latency));
                     static_info_extension.insert(std::make_pair(static_info_type_t::BW, bwd));
 
-                    GenerateBeaconAndSend(the_beacon, egress_interface_no,
-                                          remote_ingress_if_no,
-                                          remote_as, static_info_extension);
+                    generate_beacon_and_send(the_beacon, egress_interface_no, remote_ingress_if_no, remote_as,
+                                             static_info_extension);
                 }
-
-
             }
         }
     }
 
-
-    std::tuple<bool, bool, bool, Beacon*>
-    SCIONLAB::ImportPolicy(Beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
-                           uint16_t self_ingress_if_no, uint16_t now)
-    {
+    std::tuple<bool, bool, bool, Beacon *, ld>
+    SCIONLAB::alg_specific_import_policy(Beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
+                                         uint16_t self_ingress_if_no, uint16_t now) {
         uint16_t dst_as = UPPER_16_BITS(the_beacon.the_path.at(0));
 
-        if (path_map_to_beacon.find(the_beacon.key) != path_map_to_beacon.end()) {
-            Beacon* existing_beacon = path_map_to_beacon.at(the_beacon.key);
-            if (!existing_beacon->is_valid){
-                return std::tuple<bool, bool, bool, Beacon*>(true, true, false, existing_beacon);
-            }
-            return std::tuple<bool, bool, bool, Beacon*>(true, true, true, existing_beacon);
-        }
-
-        if (the_beacon.the_path.size() == 1) {
-            return std::tuple<bool, bool, bool, Beacon*>(true, false, false, NULL);
-        }
-
         if (next_round_valid_beacons_count_per_dst_as.find(dst_as) == next_round_valid_beacons_count_per_dst_as.end()) {
-            return std::tuple<bool, bool, bool, Beacon*>(true, false, false, NULL);
+            return std::tuple<bool, bool, bool, Beacon *, ld>(true, false, false, NULL, 0);
         }
 
         if (this->next_round_valid_beacons_count_per_dst_as.at(dst_as) < MAX_BEACONS_TO_STORE) {
-            return std::tuple<bool, bool, bool, Beacon*>(true, false, false, NULL);
+            return std::tuple<bool, bool, bool, Beacon *, ld>(true, false, false, NULL, 0);
         }
 
-        return std::tuple<bool, bool, bool, Beacon*>(false, false, false, NULL);
+        return std::tuple<bool, bool, bool, Beacon *, ld>(false, false, false, NULL, 0);
     }
 
-    void
-    SCIONLAB::InsertToStrategyMetaData (Beacon* the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no){}
+    void SCIONLAB::insert_to_algorithm_data_structures(Beacon *the_beacon, uint16_t sender_as,
+                                                       uint16_t remote_egress_if_no, uint16_t self_ingress_if_no) {}
 
-    void
-    SCIONLAB::DeleteFromStrategyMetaData (Beacon* the_beacon) {}
+    void SCIONLAB::delete_from_algorithm_data_structures(Beacon *the_beacon, ld replacement_key) {}
 
+    void SCIONLAB::update_algorithm_data_structures_periodic(Beacon *the_beacon, bool invalidated) {}
 
-    void
-    SCIONLAB::MetaDataUpdatePeriodic (Beacon* the_beacon, bool invalidated)
-    {
-    }
-
-
-    std::pair<Beacon*, int32_t>
-    SCIONLAB::SelectMostDiverse (std::vector<Beacon*>& beacons, Beacon* the_beacon) {
+    std::pair<Beacon *, int32_t> SCIONLAB::select_most_diverse(std::vector<Beacon *> &beacons, Beacon *the_beacon) {
         if (beacons.size() == 0) {
             return std::make_pair(the_beacon, -1);
         }
-        Beacon* diverse = NULL;
+        Beacon *diverse = NULL;
         int32_t max_diversity = -1;
         uint32_t min_len = std::numeric_limits<uint32_t>::max();
 
-        for (auto const & other_beacon : beacons) {
-            int32_t diversity = Diversity(the_beacon, other_beacon);
+        for (auto const &other_beacon : beacons) {
+            int32_t diversity = calc_diversity(the_beacon, other_beacon);
             uint32_t l = other_beacon->the_path.size();
 
             if (diversity > max_diversity || (diversity == max_diversity && min_len > l)) {
@@ -216,12 +187,10 @@ namespace ns3 {
                 max_diversity = diversity;
             }
         }
-
         return std::make_pair(diverse, max_diversity);
     }
 
-    int32_t
-    SCIONLAB::Diversity (Beacon* beacon1, Beacon* beacon2) {
+    int32_t SCIONLAB::calc_diversity(Beacon *beacon1, Beacon *beacon2) {
         int32_t diff = 0;
 
         for (uint64_t link_info : beacon1->the_path) {
@@ -240,4 +209,3 @@ namespace ns3 {
     }
 
 } // namespace ns3
-

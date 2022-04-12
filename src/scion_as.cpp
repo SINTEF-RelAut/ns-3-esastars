@@ -11,9 +11,9 @@
 
 #include "src/SCION/headers/beaconing/beacon_server.h"
 #include "src/SCION/headers/path_server.h"
+#include "src/SCION/headers/scion_as.h"
 #include "src/SCION/headers/scion_host.h"
 #include "src/SCION/headers/utils.h"
-#include "src/SCION/headers/scion_as.h"
 
 namespace ns3 {
 
@@ -30,16 +30,16 @@ namespace ns3 {
         beaconServer->DoInitializations(num_ASes);
     }
 
-    void
-    SCION_AS::DoInitializations(uint32_t num_ASes, bool only_propagation_delay, std::string border_routers_malicious_action, Time malicious_delay) {
-        connect_internal_nodes(only_propagation_delay,  border_routers_malicious_action, malicious_delay);
+    void SCION_AS::DoInitializations(uint32_t num_ASes, bool only_propagation_delay,
+                                     std::string border_routers_malicious_action, Time malicious_delay) {
+        connect_internal_nodes(only_propagation_delay, border_routers_malicious_action, malicious_delay);
         initialize_latencies(only_propagation_delay);
 
-        for (auto const & br : border_routers) {
+        for (auto const &br : border_routers) {
             br->InitializeTransmissionQueues();
         }
 
-        for (auto const & host : hosts) {
+        for (auto const &host : hosts) {
             host->InitializeTransmissionQueues();
         }
 
@@ -55,69 +55,25 @@ namespace ns3 {
         beaconServer->DoInitializations(num_ASes);
     }
 
-    std::pair<uint16_t, SCION_AS*>
-    SCION_AS::GetRemoteAsInfo(uint16_t egress_interface_no) {
+    std::pair<uint16_t, SCION_AS *> SCION_AS::GetRemoteAsInfo(uint16_t egress_interface_no) {
         return remote_as_info.at(egress_interface_no);
     }
 
-    std::pair<ld, ld>
-    SCION_AS::calculate_final_diversity_scores(Beacon *the_beacon) {
-        ld AS_level_diversity_score = 0;
-        ld link_level_diversity_score = 0;
-        int32_t counter = 0;
-
-        uint16_t dst_as = UPPER_16_BITS (the_beacon->the_path.at(0));
-        auto const &equal_dst_as_beacons = beaconServer->beacon_store.at(dst_as);
-        for (auto const &len_beacons_pair : equal_dst_as_beacons) {
-            auto const &beacons = len_beacons_pair.second;
-            for (auto const &curr_beacon : beacons) {
-                if (curr_beacon != the_beacon) {
-                    AS_level_diversity_score +=
-                            AS_level_jaccard_distance_between_two_paths(the_beacon,
-                                                                        curr_beacon);
-                    link_level_diversity_score +=
-                            link_level_jaccard_distance_between_two_paths(the_beacon,
-                                                                          curr_beacon);
-                    counter++;
-                }
-            }
-        }
-
-        return (std::make_pair(AS_level_diversity_score / counter, link_level_diversity_score / counter));
-    }
-
-    void
-    SCION_AS::ReceiveBeacon(Beacon &received_beacon, uint16_t sender_as, uint16_t remote_if, uint16_t local_if) {
+    void SCION_AS::ReceiveBeacon(Beacon &received_beacon, uint16_t sender_as, uint16_t remote_if, uint16_t local_if) {
         beaconServer->ReceiveBeacon(received_beacon, sender_as, remote_if, local_if);
     }
 
+    void SCION_AS::SetBeaconServer(BeaconServer *the_beaconServer) { this->beaconServer = the_beaconServer; }
 
-    void
-    SCION_AS::SetBeaconServer(BeaconServer *the_beaconServer) {
-        this->beaconServer = the_beaconServer;
-    }
+    void SCION_AS::AdvanceTime(ns3::Time advance) { local_time += advance; }
 
-    void SCION_AS::AdvanceTime (ns3::Time advance) {
-        local_time += advance;
-    }
+    BeaconServer *SCION_AS::GetBeaconServer() { return this->beaconServer; }
 
-    BeaconServer *
-    SCION_AS::GetBeaconServer() {
-        return this->beaconServer;
-    }
+    PathServer *SCION_AS::GetPathServer() { return this->pathServer; }
 
-    PathServer*
-    SCION_AS::GetPathServer() {
-        return this->pathServer;
-    }
+    void SCION_AS::SetPathServer(PathServer *the_pathServer) { this->pathServer = the_pathServer; }
 
-    void
-    SCION_AS::SetPathServer(PathServer* the_pathServer) {
-        this->pathServer = the_pathServer;
-    }
-
-    SCIONCapableNode *
-    SCION_AS::GetHost(host_addr_t host_addr) {
+    SCIONCapableNode *SCION_AS::GetHost(host_addr_t host_addr) {
         if (host_addr == 1) {
             return GetPathServer();
         }
@@ -125,17 +81,13 @@ namespace ns3 {
         return ((SCIONCapableNode *) hosts.at(host_addr - 2));
     }
 
-    uint32_t SCION_AS::GetNHosts() {
-        return hosts.size();
-    }
+    uint32_t SCION_AS::GetNHosts() { return hosts.size(); }
 
-    void
-    SCION_AS::AddHost(SCIONHost* host) {
-        hosts.push_back(host);
-    }
+    void SCION_AS::AddHost(SCIONHost *host) { hosts.push_back(host); }
 
-    BorderRouter* SCION_AS::AddBR(double latitude, double longitude, Time processing_delay, Time processing_throughput_delay) {
-        BorderRouter* the_br = new BorderRouter(0,  isd_number,  as_number,  0, latitude,  longitude, this);
+    BorderRouter *SCION_AS::AddBR(double latitude, double longitude, Time processing_delay,
+                                  Time processing_throughput_delay) {
+        BorderRouter *the_br = new BorderRouter(0, isd_number, as_number, 0, latitude, longitude, this);
 
         the_br->SetProcessingDelay(processing_delay, processing_throughput_delay);
 
@@ -144,27 +96,30 @@ namespace ns3 {
         return the_br;
     }
 
-    void SCION_AS::connect_internal_nodes(bool only_propagation_delay, std::string border_routers_malicious_action, Time malicious_delay) {
-        std::map<BorderRouter*, std::set<uint16_t>> border_router_to_if;
+    void SCION_AS::connect_internal_nodes(bool only_propagation_delay, std::string border_routers_malicious_action,
+                                          Time malicious_delay) {
+        std::map<BorderRouter *, std::set<uint16_t>> border_router_to_if;
 
         for (uint16_t i = 0; i < GetNDevices(); ++i) {
-            BorderRouter* br = border_routers.at(i);
+            BorderRouter *br = border_routers.at(i);
             if (border_router_to_if.find(br) == border_router_to_if.end()) {
                 border_router_to_if.insert(std::make_pair(br, std::set<uint16_t>()));
             }
             border_router_to_if.at(br).insert(i);
         }
 
-        std::set<BorderRouter*> border_routers_set (border_routers.begin(), border_routers.end());
-        std::vector<BorderRouter*> border_routers_vec (border_routers_set.begin(), border_routers_set.end());
+        std::set<BorderRouter *> border_routers_set(border_routers.begin(), border_routers.end());
+        std::vector<BorderRouter *> border_routers_vec(border_routers_set.begin(), border_routers_set.end());
 
         // Connect border routers to border routers
         for (uint32_t i = 0; i < border_routers_vec.size() - 1; ++i) {
-            BorderRouter* br1 = border_routers_vec.at(i);
+            BorderRouter *br1 = border_routers_vec.at(i);
             for (uint32_t j = i + 1; j < border_routers_vec.size(); ++j) {
-                BorderRouter* br2 = border_routers_vec.at(j);
+                BorderRouter *br2 = border_routers_vec.at(j);
 
-                Time propagation_delay1 = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) br1->GetLatitude(), (ld) br1->GetLogitude(), (ld) br2->GetLatitude(), (ld) br2->GetLogitude())));
+                Time propagation_delay1 = NanoSeconds((int64_t) floor(
+                        1e6 * calculate_great_circle_latency((ld) br1->GetLatitude(), (ld) br1->GetLogitude(),
+                                                             (ld) br2->GetLatitude(), (ld) br2->GetLogitude())));
                 Time propagation_delay2 = propagation_delay1;
 
                 if (border_routers_malicious_action == "symmetric_delay") {
@@ -181,7 +136,8 @@ namespace ns3 {
                     br1->AddToTransmissionDelays(Time(0)); // transmission delay for one byte assuming 400 Gbps link
                     br2->AddToTransmissionDelays(Time(0));
                 } else {
-                    br1->AddToTransmissionDelays(PicoSeconds(20)); // transmission delay for one byte assuming 400 Gbps link
+                    br1->AddToTransmissionDelays(
+                            PicoSeconds(20)); // transmission delay for one byte assuming 400 Gbps link
                     br2->AddToTransmissionDelays(PicoSeconds(20));
                 }
 
@@ -200,11 +156,13 @@ namespace ns3 {
 
         // Connect border routers to hosts
         for (uint32_t i = 0; i < border_routers_vec.size(); ++i) {
-            BorderRouter* br = border_routers_vec.at(i);
+            BorderRouter *br = border_routers_vec.at(i);
             for (uint32_t j = 0; j < hosts.size(); ++j) {
-                SCIONHost* host = hosts.at(j);
+                SCIONHost *host = hosts.at(j);
 
-                Time propagation_delay = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) br->GetLatitude(), (ld) br->GetLogitude(), (ld) host->GetLatitude(), (ld) host->GetLogitude())));
+                Time propagation_delay = NanoSeconds((int64_t) floor(
+                        1e6 * calculate_great_circle_latency((ld) br->GetLatitude(), (ld) br->GetLogitude(),
+                                                             (ld) host->GetLatitude(), (ld) host->GetLogitude())));
 
                 br->AddToPropagationDelays(propagation_delay);
                 host->AddToPropagationDelays(propagation_delay);
@@ -230,9 +188,12 @@ namespace ns3 {
 
         // Connect border routers to path server
         for (uint32_t i = 0; i < border_routers_vec.size(); ++i) {
-            BorderRouter* br = border_routers_vec.at(i);
+            BorderRouter *br = border_routers_vec.at(i);
 
-            Time propagation_delay = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) br->GetLatitude(), (ld) br->GetLogitude(), (ld) pathServer->GetLatitude(), (ld) pathServer->GetLogitude())));
+            Time propagation_delay = NanoSeconds(
+                    (int64_t) floor(1e6 * calculate_great_circle_latency((ld) br->GetLatitude(), (ld) br->GetLogitude(),
+                                                                         (ld) pathServer->GetLatitude(),
+                                                                         (ld) pathServer->GetLogitude())));
 
             br->AddToPropagationDelays(propagation_delay);
             pathServer->AddToPropagationDelays(propagation_delay);
@@ -257,9 +218,12 @@ namespace ns3 {
 
         // Connect hosts to local path server
         for (uint32_t i = 0; i < hosts.size(); ++i) {
-            SCIONHost* host = hosts.at(i);
+            SCIONHost *host = hosts.at(i);
 
-            Time propagation_delay = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) host->GetLatitude(), (ld) host->GetLogitude(), (ld) pathServer->GetLatitude(), (ld) pathServer->GetLogitude())));
+            Time propagation_delay = NanoSeconds((int64_t) floor(
+                    1e6 * calculate_great_circle_latency((ld) host->GetLatitude(), (ld) host->GetLogitude(),
+                                                         (ld) pathServer->GetLatitude(),
+                                                         (ld) pathServer->GetLogitude())));
 
             host->AddToPropagationDelays(propagation_delay);
             pathServer->AddToPropagationDelays(propagation_delay);
@@ -281,11 +245,13 @@ namespace ns3 {
 
         // Connect hosts to each other
         for (uint32_t i = 0; i < hosts.size() - 1; ++i) {
-            SCIONHost* h1 = hosts.at(i);
+            SCIONHost *h1 = hosts.at(i);
             for (uint32_t j = i + 1; j < hosts.size(); ++j) {
-                SCIONHost* h2 = hosts.at(j);
+                SCIONHost *h2 = hosts.at(j);
 
-                Time propagation_delay = NanoSeconds((int64_t) floor(1e6 * calculate_great_circle_latency((ld) h1->GetLatitude(), (ld) h1->GetLogitude(), (ld) h2->GetLatitude(), (ld) h2->GetLogitude())));
+                Time propagation_delay = NanoSeconds((int64_t) floor(
+                        1e6 * calculate_great_circle_latency((ld) h1->GetLatitude(), (ld) h1->GetLogitude(),
+                                                             (ld) h2->GetLatitude(), (ld) h2->GetLogitude())));
 
                 h1->AddToPropagationDelays(propagation_delay);
                 h2->AddToPropagationDelays(propagation_delay);
@@ -333,7 +299,7 @@ namespace ns3 {
         }
     }
 
-    void SCION_AS::AddToRemoteASInfo (uint16_t remote_if, SCION_AS* remote_as) {
+    void SCION_AS::AddToRemoteASInfo(uint16_t remote_if, SCION_AS *remote_as) {
         remote_as_info.push_back(std::make_pair(remote_if, remote_as));
     }
-}
+} // namespace ns3

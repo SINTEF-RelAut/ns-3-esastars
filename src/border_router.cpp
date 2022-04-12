@@ -2,7 +2,6 @@
 // Created by seyedali on 28.07.21.
 //
 
-
 #include "src/SCION/headers/border_router.h"
 #include "src/SCION/headers/scion_packet.h"
 
@@ -10,15 +9,16 @@ namespace ns3 {
     NS_LOG_COMPONENT_DEFINE("BorderRouter");
     void BorderRouter::process_received_packet(uint16_t if_rcv, SCIONPacket *packet, Time receive_time) {
         NS_LOG_FUNCTION("packet received " << packet);
-        NS_LOG_FUNCTION(isd_number<< ":" << as_number
-                     << " packet from " <<  GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia)
-                     << " to " << GET_ISDN(packet->dst_ia) << ":" << GET_ASN(packet->dst_ia)
-                     << ", currIF: " << packet->curr_inf << ", currHopF: " << packet->cur_hopf
-                     << ", path segments: " << packet->path.size()
-                     << ", current hop field: isd: " << GET_HOP_ISD(packet->path.at(packet->curr_inf)->hops.at(packet->cur_hopf))
-                     << ", as:" << GET_HOP_AS(packet->path.at(packet->curr_inf)->hops.at(packet->cur_hopf))
-                     << ", ing:" << GET_HOP_ING_IF(packet->path.at(packet->curr_inf)->hops.at(packet->cur_hopf))
-                     << ", eg:" << GET_HOP_EG_IF(packet->path.at(packet->curr_inf)->hops.at(packet->cur_hopf)));
+        NS_LOG_FUNCTION(
+                isd_number << ":" << as_number << " packet from " << GET_ISDN(packet->src_ia) << ":"
+                           << GET_ASN(packet->src_ia) << " to " << GET_ISDN(packet->dst_ia) << ":"
+                           << GET_ASN(packet->dst_ia) << ", currIF: " << packet->curr_inf
+                           << ", currHopF: " << packet->cur_hopf << ", path segments: " << packet->path.size()
+                           << ", current hop field: isd: "
+                           << GET_HOP_ISD(packet->path.at(packet->curr_inf)->hops.at(packet->cur_hopf))
+                           << ", as:" << GET_HOP_AS(packet->path.at(packet->curr_inf)->hops.at(packet->cur_hopf))
+                           << ", ing:" << GET_HOP_ING_IF(packet->path.at(packet->curr_inf)->hops.at(packet->cur_hopf))
+                           << ", eg:" << GET_HOP_EG_IF(packet->path.at(packet->curr_inf)->hops.at(packet->cur_hopf)));
 
         SCIONCapableNode::process_received_packet(if_rcv, packet, Time());
 
@@ -30,7 +30,8 @@ namespace ns3 {
             NS_ASSERT(GET_HOP_ISD(packet->path.at(packet->curr_inf)->hops.at(packet->cur_hopf)) == isd_number);
             NS_ASSERT(GET_HOP_AS(packet->path.at(packet->curr_inf)->hops.at(packet->cur_hopf)) == as_number);
 
-            if (forwarding_table_to_addresses_inside_as.find(packet->dst_host) == forwarding_table_to_addresses_inside_as.end()) {
+            if (forwarding_table_to_addresses_inside_as.find(packet->dst_host) ==
+                forwarding_table_to_addresses_inside_as.end()) {
                 NS_LOG_FUNCTION("Address not in the forwarding table");
                 return;
             }
@@ -47,7 +48,8 @@ namespace ns3 {
             if (packet->path_reversed && packet->cur_hopf == 0) {
                 packet->curr_inf--;
                 packet->cur_hopf = packet->path.at(packet->curr_inf)->hops.size() - 1;
-            } else if (!packet->path_reversed && packet->cur_hopf == packet->path.at(packet->curr_inf)->hops.size() - 1) {
+            } else if (!packet->path_reversed &&
+                       packet->cur_hopf == packet->path.at(packet->curr_inf)->hops.size() - 1) {
                 packet->curr_inf++;
                 packet->cur_hopf = 0;
             } else if (packet->shortcut_hopfs.size() == 2 && packet->path.size() == 2) {
@@ -85,7 +87,6 @@ namespace ns3 {
             }
         }
 
-
         NS_ASSERT(packet->cur_hopf >= 0);
         NS_ASSERT(packet->cur_hopf < packet->path.at(packet->curr_inf)->hops.size());
 
@@ -93,5 +94,4 @@ namespace ns3 {
         schedule_for_send(local_if_to_send, packet);
     }
 
-
-}
+} // namespace ns3

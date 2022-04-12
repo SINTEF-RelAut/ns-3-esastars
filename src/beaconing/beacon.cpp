@@ -5,8 +5,8 @@
  */
 
 #include "src/SCION/headers/beaconing/beacon.h"
-#include "src/SCION/headers/utils.h"
 #include "src/SCION/headers/externs.h"
+#include "src/SCION/headers/utils.h"
 namespace ns3 {
     void Beacon::ExtractPathSegment(PathSegment &pathSegment) {
         pathSegment.initiation_time = next_initiation_time;
@@ -16,7 +16,7 @@ namespace ns3 {
 
         uint64_t previous_hop = 0;
         bool last_hop = true;
-        for(std::vector<uint64_t>::reverse_iterator hop = the_path.rbegin(); hop != the_path.rend(); ++hop) {
+        for (std::vector<uint64_t>::reverse_iterator hop = the_path.rbegin(); hop != the_path.rend(); ++hop) {
             uint16_t ingress = 0;
             uint16_t egress = 0;
             uint16_t as = 0;
@@ -33,7 +33,8 @@ namespace ns3 {
 
             uint16_t isd = as_to_isd_map.at(as);
             previous_hop = *hop;
-            uint64_t hop_field = (((uint64_t) isd) << 48) | (((uint64_t) as) << 32) | (((uint64_t) ingress) << 16) | ((uint64_t) egress);
+            uint64_t hop_field = (((uint64_t) isd) << 48) | (((uint64_t) as) << 32) | (((uint64_t) ingress) << 16) |
+                                 ((uint64_t) egress);
             pathSegment.hops.push_back(hop_field);
         }
 
@@ -42,7 +43,8 @@ namespace ns3 {
         uint16_t as = UPPER_16_BITS(previous_hop);
         uint16_t isd = as_to_isd_map.at(as);
 
-        uint64_t hop_field = (((uint64_t) isd) << 48) | (((uint64_t) as) << 32) | (((uint64_t) ingress) << 16) | ((uint64_t) egress);
+        uint64_t hop_field =
+                (((uint64_t) isd) << 48) | (((uint64_t) as) << 32) | (((uint64_t) ingress) << 16) | ((uint64_t) egress);
         pathSegment.hops.push_back(hop_field);
     }
-}
+} // namespace ns3

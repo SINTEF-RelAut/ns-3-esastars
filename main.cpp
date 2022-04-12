@@ -9,19 +9,19 @@
 #include <set>
 #include <yaml-cpp/yaml.h>
 
-#include "ns3/ptr.h"
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
-#include "ns3/point-to-point-helper.h"
 #include "ns3/nstime.h"
+#include "ns3/point-to-point-helper.h"
+#include "ns3/ptr.h"
 
 #include "src/SCION/headers/pre_simulation_setup.h"
 
-#include "src/SCION/headers/post_simulation_evaluations.h"
-#include "src/SCION/headers/utils.h"
-#include "src/SCION/headers/schedule_periodic_events.h"
 #include "src/SCION/headers/externs.h"
+#include "src/SCION/headers/post_simulation_evaluations.h"
+#include "src/SCION/headers/schedule_periodic_events.h"
 #include "src/SCION/headers/user_defined_events.h"
+#include "src/SCION/headers/utils.h"
 
 using namespace ns3;
 
@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    YAML::Node config = YAML::LoadFile(std::string (argv[1]));
+    YAML::Node config = YAML::LoadFile(std::string(argv[1]));
 
     if (!config["time_resolution"]) {
         std::cerr << "Please specify simulator's time resolution." << std::endl;
@@ -61,9 +61,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    if (!config["beacon_service"]
-    && !(config["path_service"])
-    && !(config["border_router"])) {
+    if (!config["beacon_service"] && !(config["path_service"]) && !(config["border_router"])) {
         std::cerr << "No simulation is possible." << std::endl;
         return 1;
     }
@@ -105,8 +103,8 @@ int main(int argc, char *argv[]) {
         InstantiatePathServers(config, nodes);
     }
 
-    if(config["time_service"]) {
-        InstantiateTimeServers(config,  nodes);
+    if (config["time_service"]) {
+        InstantiateTimeServers(config, nodes);
     }
 
     InstantiateLinksFromTopo(xml_root, nodes, real_to_alias_as_no, config);
@@ -118,8 +116,8 @@ int main(int argc, char *argv[]) {
     Simulator::Stop(simulation_end_time);
     Simulator::Run();
 
-    PostSimulationEvaluations* eval = new
-            PostSimulationEvaluations (config, nodes, real_to_alias_as_no, alias_to_real_as_no);
+    PostSimulationEvaluations *eval =
+            new PostSimulationEvaluations(config, nodes, real_to_alias_as_no, alias_to_real_as_no);
 
     eval->DoFinalEvaluations();
 

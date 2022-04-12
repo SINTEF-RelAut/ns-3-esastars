@@ -5,8 +5,8 @@
 #ifndef NS_3_BEACONING_SIMULATOR_SCION_PACKET_H
 #define NS_3_BEACONING_SIMULATOR_SCION_PACKET_H
 
-#include <unordered_set>
 #include <ns3/node.h>
+#include <unordered_set>
 
 #include "ns3/nstime.h"
 #include "ns3/object.h"
@@ -20,8 +20,15 @@ namespace ns3 {
     class SCIONCapableNode;
 
     enum payload_type_t {
-            EMPTY = 0, PATH_REQ_FROM_HOST = 1, REG_PATHS_FROM_LOCAL_PS = 2, REG_PATHS_FROM_REMOTE_PS = 3,
-            REQ_FOR_LIST_OF_ALL_CORE_ASES = 4, LIST_OF_ALL_CORE_ASES = 5, BROADCAST_LIST_OF_ALL_CORE_ASES = 6, NTP_REQ = 7, NTP_RESP = 8
+        EMPTY = 0,
+        PATH_REQ_FROM_HOST = 1,
+        REG_PATHS_FROM_LOCAL_PS = 2,
+        REG_PATHS_FROM_REMOTE_PS = 3,
+        REQ_FOR_LIST_OF_ALL_CORE_ASES = 4,
+        LIST_OF_ALL_CORE_ASES = 5,
+        BROADCAST_LIST_OF_ALL_CORE_ASES = 6,
+        NTP_REQ = 7,
+        NTP_RESP = 8
     };
 
     struct PathReqFromHost {
@@ -30,18 +37,17 @@ namespace ns3 {
     };
 
     struct RegPathsFromLocalPS {
-        const reg_path_segs_to_one_as_t* registered_path_segments;
+        const reg_path_segs_to_one_as_t *registered_path_segments;
         ia_t src_ia, dst_ia;
         path_segment_type seg_type;
-
     };
 
     struct ListOfAllASes {
-        std::set<ia_t>* set_of_all_ases;
+        std::set<ia_t> *set_of_all_ases;
     };
 
     struct NTPReqOrResp {
-        int64_t t0, t1 , t2, t3;
+        int64_t t0, t1, t2, t3;
     };
 
     union Payload {
@@ -55,9 +61,9 @@ namespace ns3 {
     public:
         Time timestamp;
 
-        SCIONCapableNode* const packet_originator; // This field is used for memory management of packets
+        SCIONCapableNode *const packet_originator; // This field is used for memory management of packets
 
-        std::vector<const PathSegment*> path;
+        std::vector<const PathSegment *> path;
 
         Payload payload;
 
@@ -78,12 +84,9 @@ namespace ns3 {
 
         bool path_reversed;
 
-        SCIONPacket(SCIONCapableNode* const packet_originator, packet_id_t id) :  packet_originator(packet_originator), id(id) {}
-
+        SCIONPacket(SCIONCapableNode *const packet_originator, packet_id_t id)
+            : packet_originator(packet_originator), id(id) {}
     };
 
-
-
-
-}
+} // namespace ns3
 #endif //NS_3_BEACONING_SIMULATOR_SCION_PACKET_H

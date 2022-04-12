@@ -7,81 +7,84 @@
 
 #include <omp.h>
 
-
 #include "ns3/point-to-point-channel.h"
 
 #include "src/SCION/headers/beaconing/green_beaconing.h"
 #include "src/SCION/headers/utils.h"
 
-
 namespace ns3 {
     void GreenBeaconing::DoInitializations(uint32_t num_ASes) {
         beacons_per_dst_per_ing_if_sorted_by_pollution.resize(num_ASes);
 
-        for (uint32_t i = 0; i < num_ASes; ++i ) {
-            beacons_per_dst_per_ing_if_sorted_by_pollution.at(i) = std::vector<std::multimap<ld, Beacon*>>();
+        for (uint32_t i = 0; i < num_ASes; ++i) {
+            beacons_per_dst_per_ing_if_sorted_by_pollution.at(i) = std::vector<std::multimap<ld, Beacon *>>();
             beacons_per_dst_per_ing_if_sorted_by_pollution.at(i).resize(AS->GetNDevices());
             for (uint32_t j = 0; j < AS->GetNDevices(); ++j) {
-                beacons_per_dst_per_ing_if_sorted_by_pollution.at(i).at(j) = std::multimap<ld, Beacon*>();
+                beacons_per_dst_per_ing_if_sorted_by_pollution.at(i).at(j) = std::multimap<ld, Beacon *>();
             }
         }
     }
 
-    void GreenBeaconing::create_initial_static_info_extension(static_info_extension_t& static_info_extension, uint16_t self_egress_if_no) {
+    const std::vector<std::vector<std::multimap<ld, Beacon *>>> &GreenBeaconing::GetBeaconsSortedByPollution() const {
+        return beacons_per_dst_per_ing_if_sorted_by_pollution;
+    }
+
+    void GreenBeaconing::create_initial_static_info_extension(static_info_extension_t &static_info_extension,
+                                                              uint16_t self_egress_if_no,
+                                                              const optimization_target_t *optimization_target) {
         static_info_extension.insert(std::make_pair(static_info_type_t::LATENCY, 0));
         static_info_extension.insert(std::make_pair(static_info_type_t::CO2, 0));
     }
 
-    std::tuple<bool, bool, bool, Beacon*>
-    GreenBeaconing::ImportPolicy (Beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
-                                  uint16_t self_ingress_if_no, uint16_t now)
-    {
+    std::tuple<bool, bool, bool, Beacon *, ld>
+    GreenBeaconing::alg_specific_import_policy(Beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
+                                               uint16_t self_ingress_if_no, uint16_t now) {
         uint16_t dst_as = UPPER_16_BITS(the_beacon.the_path.at(0));
 
-        if (path_map_to_beacon.find(the_beacon.key) != path_map_to_beacon.end()) {
-            Beacon* existing_beacon = path_map_to_beacon.at(the_beacon.key);
-            if (!existing_beacon->is_valid){
-                return std::tuple<bool, bool, bool, Beacon*>(true, true, false, existing_beacon);
-            }
-            return std::tuple<bool, bool, bool, Beacon*>(true, true, true, existing_beacon);
+        if (beacons_per_dst_per_ing_if_sorted_by_pollution.at(dst_as).at(self_ingress_if_no).size() <
+            MAX_BEACONS_TO_STORE_PER_IFACE) {
+            return std::tuple<bool, bool, bool, Beacon *, ld>(true, false, false, NULL, 0);
         }
 
-        if (the_beacon.the_path.size() == 1) {
-            return std::tuple<bool, bool, bool, Beacon*>(true, false, false, NULL);
-        }
+        ld pollution_index = the_beacon.static_info_extension.at(static_info_type_t::CO2);
 
-        if (beacons_per_dst_per_ing_if_sorted_by_pollution.at(dst_as).at(self_ingress_if_no).size() < MAX_BEACONS_TO_STORE_PER_IFACE) {
-            return std::tuple<bool, bool, bool, Beacon*>(true, false, false, NULL);
-        }
-
-        ld  pollution_index = the_beacon.static_info_extension.at(static_info_type_t::CO2);
-
-        std::multimap<ld, Beacon*>::reverse_iterator highest_previous_pollution_iterator = beacons_per_dst_per_ing_if_sorted_by_pollution.at(dst_as).at(self_ingress_if_no).rbegin();
+        std::multimap<ld, Beacon *>::reverse_iterator highest_previous_pollution_iterator =
+                beacons_per_dst_per_ing_if_sorted_by_pollution.at(dst_as).at(self_ingress_if_no).rbegin();
         ld highest_previous_pollution = highest_previous_pollution_iterator->first;
         if (highest_previous_pollution > pollution_index) {
-            Beacon* to_be_removed_beacon = highest_previous_pollution_iterator->second;
-            return std::tuple<bool, bool, bool, Beacon*> (true, false, false, to_be_removed_beacon);
+            Beacon *to_be_removed_beacon = highest_previous_pollution_iterator->second;
+            return std::tuple<bool, bool, bool, Beacon *, ld>(true, false, false, to_be_removed_beacon,
+                                                              highest_previous_pollution);
         }
-        return std::tuple<bool, bool, bool, Beacon*> (false, false, false, NULL);
+        return std::tuple<bool, bool, bool, Beacon *, ld>(false, false, false, NULL, 0);
     }
 
-    void
-    GreenBeaconing::DeleteFromStrategyMetaData (Beacon* the_beacon)
-    {
+    void GreenBeaconing::delete_from_algorithm_data_structures(Beacon *the_beacon, ld replacement_key) {
         uint16_t dst_as = UPPER_16_BITS(the_beacon->the_path.at(0));
-        delete_from_beacons_per_dst_sorted_by_pollution(dst_as, the_beacon);
+        uint16_t self_ingress_if = LOWER_16_BITS(the_beacon->the_path.back());
+        auto &beacon_container = beacons_per_dst_per_ing_if_sorted_by_pollution.at(dst_as).at(self_ingress_if);
+        for (auto it = beacon_container.lower_bound(replacement_key);
+             it != beacon_container.upper_bound(replacement_key); ++it) {
+            if (it->second == the_beacon) {
+                beacon_container.erase(it--);
+                break;
+            }
+        }
     }
 
-    void
-    GreenBeaconing::InsertToStrategyMetaData (Beacon* the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no, uint16_t self_ingress_if_no)
-    {
+    void GreenBeaconing::insert_to_algorithm_data_structures(Beacon *the_beacon, uint16_t sender_as,
+                                                             uint16_t remote_egress_if_no,
+                                                             uint16_t self_ingress_if_no) {
         uint16_t dst_as = UPPER_16_BITS(the_beacon->the_path.at(0));
-        insert_to_beacons_per_dst_sorted_by_pollution(dst_as,  the_beacon);
+        uint16_t self_ingress_if = LOWER_16_BITS(the_beacon->the_path.back());
+        ld pollution_index = the_beacon->static_info_extension.at(static_info_type_t::CO2);
+        beacons_per_dst_per_ing_if_sorted_by_pollution.at(dst_as)
+                .at(self_ingress_if)
+                .insert(std::make_pair(pollution_index, the_beacon));
     }
 
-    void
-    GreenBeaconing::DisseminateBeacons(neighbour_relation relation) {
-	uint32_t neighbors_cnt = AS->neighbors.size();    
+    void GreenBeaconing::disseminate_beacons(neighbour_relation relation) {
+        uint32_t neighbors_cnt = AS->neighbors.size();
         omp_set_num_threads(NUM_CORE);
 #pragma omp parallel for
         for (uint32_t i = 0; i < neighbors_cnt; ++i) { // Per neighbor AS
@@ -98,36 +101,37 @@ namespace ns3 {
                     continue;
                 }
 
-                std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS*, static_info_extension_t> > selected_beacons;
-                select_beacons_to_disseminate_per_dst_per_nbr(remote_as_no, dst_as_no, beacons_to_the_dst_as, selected_beacons);
+                std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>>
+                        selected_beacons;
+                select_beacons_to_disseminate_per_dst_per_nbr(remote_as_no, dst_as_no, beacons_to_the_dst_as,
+                                                              selected_beacons);
 
                 for (auto const &the_tuple_pair : selected_beacons) {
                     Beacon *the_beacon;
                     uint16_t remote_ingress_if_no;
                     uint16_t self_egress_if_no;
-                    SCION_AS* remote_as;
+                    SCION_AS *remote_as;
                     static_info_extension_t static_info_extension;
 
-                    std::tie(the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as, static_info_extension) = the_tuple_pair.second;
+                    std::tie(the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as, static_info_extension) =
+                            the_tuple_pair.second;
 
-                    GenerateBeaconAndSend(the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as,
-                                          static_info_extension);
-
+                    generate_beacon_and_send(the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as,
+                                             static_info_extension);
                 }
             }
         }
     }
 
-    void
-    GreenBeaconing::select_beacons_to_disseminate_per_dst_per_nbr(uint16_t remote_as_no, uint16_t dst_as_no,
-                                                                  const beacons_with_same_dst_as &beacons_to_the_dst_as,
-								  std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS*, static_info_extension_t> >& pollution_index_map_to_beacon_and_metadata) {
-        std::map<uint16_t, std::multimap<ld, Beacon*> > valid_candidates;
-
+    void GreenBeaconing::select_beacons_to_disseminate_per_dst_per_nbr(
+            uint16_t remote_as_no, uint16_t dst_as_no, const beacons_with_same_dst_as &beacons_to_the_dst_as,
+            std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>>
+                    &pollution_index_map_to_beacon_and_metadata) {
+        std::map<uint16_t, std::multimap<ld, Beacon *>> valid_candidates;
 
         auto const &interfaces = AS->interfaces_per_neighbor_as.at(remote_as_no);
         for (auto const &self_egress_if_no : interfaces) {
-           valid_candidates.insert(std::make_pair(self_egress_if_no, std::multimap<ld, Beacon*>()));
+            valid_candidates.insert(std::make_pair(self_egress_if_no, std::multimap<ld, Beacon *>()));
         }
 
         for (auto const &len_beacons_pair : beacons_to_the_dst_as) {
@@ -152,16 +156,14 @@ namespace ns3 {
                 auto const &interfaces = AS->interfaces_per_neighbor_as.at(remote_as_no);
                 for (auto const &self_egress_if_no : interfaces) {
                     ld pollution_index = the_beacon->static_info_extension.at(static_info_type_t::CO2) +
-                                          calculate_pollution_between_border_routers (LOWER_16_BITS(the_beacon->the_path.back()),
-                                                                                      self_egress_if_no);
-
-
+                                         calculate_pollution_between_border_routers(
+                                                 LOWER_16_BITS(the_beacon->the_path.back()), self_egress_if_no);
                     valid_candidates.at(self_egress_if_no).insert(std::make_pair(pollution_index, the_beacon));
                 }
             }
         }
 
-        for (auto const & iface_to_pollution_beacon_pair : valid_candidates) {
+        for (auto const &iface_to_pollution_beacon_pair : valid_candidates) {
             uint16_t self_egress_if_no = iface_to_pollution_beacon_pair.first;
             int no_beacons_per_iface = 0;
             for (auto const &pollution_beacon_pair : iface_to_pollution_beacon_pair.second) {
@@ -174,71 +176,48 @@ namespace ns3 {
                 Beacon *the_beacon = pollution_beacon_pair.second;
 
                 uint16_t remote_ingress_if_no = AS->GetRemoteAsInfo(self_egress_if_no).first;
-                SCION_AS* remote_as = AS->GetRemoteAsInfo(self_egress_if_no).second;
+                SCION_AS *remote_as = AS->GetRemoteAsInfo(self_egress_if_no).second;
 
                 ld latency = the_beacon->static_info_extension.at(static_info_type_t::LATENCY) +
-                        AS->latencies_between_interfaces.at(LOWER_16_BITS(the_beacon->the_path.back())).at(
-                                     self_egress_if_no);
+                             AS->latencies_between_interfaces.at(LOWER_16_BITS(the_beacon->the_path.back()))
+                                     .at(self_egress_if_no);
 
                 static_info_extension_t static_info_extension;
                 static_info_extension.insert(std::make_pair(static_info_type_t::LATENCY, latency));
                 static_info_extension.insert(std::make_pair(static_info_type_t::CO2, pollution_index));
 
-                pollution_index_map_to_beacon_and_metadata.insert(std::make_pair(pollution_index,
-                                                                                 std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>
-                                                                                         (the_beacon, self_egress_if_no,
-                                                                                          remote_ingress_if_no,
-                                                                                          remote_as,
-                                                                                          static_info_extension)));
-            }
-
-        }
-
-    }
-
-    void GreenBeaconing::insert_to_beacons_per_dst_sorted_by_pollution(uint16_t dst_as, Beacon* the_beacon) {
-        ld pollution_index = the_beacon->static_info_extension.at(static_info_type_t::CO2);
-        uint16_t self_ingress_if = LOWER_16_BITS(the_beacon->the_path.back());
-
-        beacons_per_dst_per_ing_if_sorted_by_pollution.at(dst_as).at(self_ingress_if).insert(std::make_pair(pollution_index, the_beacon));
-    }
-
-    void GreenBeaconing::delete_from_beacons_per_dst_sorted_by_pollution(uint16_t dst_as, Beacon* the_beacon) {
-        ld pollution_index = the_beacon->static_info_extension.at(static_info_type_t::CO2);
-        uint16_t self_ingress_if = LOWER_16_BITS(the_beacon->the_path.back());
-
-        std::multimap<ld, Beacon*>::iterator iterator = beacons_per_dst_per_ing_if_sorted_by_pollution.at(dst_as).at(self_ingress_if).begin();
-
-        for (; iterator != beacons_per_dst_per_ing_if_sorted_by_pollution.at(dst_as).at(self_ingress_if).end(); ++iterator){
-            if (iterator->first == pollution_index && iterator->second == the_beacon) {
-                beacons_per_dst_per_ing_if_sorted_by_pollution.at(dst_as).at(self_ingress_if).erase(iterator);
+                pollution_index_map_to_beacon_and_metadata.insert(std::make_pair(
+                        pollution_index, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>(
+                                                 the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as,
+                                                 static_info_extension)));
             }
         }
     }
 
     ld GreenBeaconing::calculate_pollution_between_border_routers(uint16_t ingress_if, uint16_t egress_if) {
         ld energy_resource_carbon_intensity = dirty_energy_ratio * 700 / 3.6e6; // gr/Joule
-        ld  path_energy_intensity = intra_as_energies.at(ingress_if).at(egress_if);
+        ld path_energy_intensity = intra_as_energies.at(ingress_if).at(egress_if);
 
-        ld  pollution = path_energy_intensity * energy_resource_carbon_intensity;
+        ld pollution = path_energy_intensity * energy_resource_carbon_intensity;
 
         return pollution;
     }
 
-
-    void GreenBeaconing::MetaDataUpdatePeriodic(Beacon* the_beacon, bool invalidated) {
+    void GreenBeaconing::update_algorithm_data_structures_periodic(Beacon *the_beacon, bool invalidated) {
         uint16_t dst_as = UPPER_16_BITS(the_beacon->the_path.at(0));
         if (invalidated) {
-            delete_from_beacons_per_dst_sorted_by_pollution(dst_as, the_beacon);
+            delete_from_algorithm_data_structures(the_beacon,
+                                                  the_beacon->static_info_extension.at(static_info_type_t::CO2));
         }
     }
 
-    void ReadBr2BrEnergy(NodeContainer AS_nodes, std::map<int32_t, uint16_t> real_to_alias_as_no, const YAML::Node& config) {
+    void ReadBr2BrEnergy(NodeContainer AS_nodes, std::map<int32_t, uint16_t> real_to_alias_as_no,
+                         const YAML::Node &config) {
         std::ifstream energy_file(config["beacon_service"]["br_br_energy_file"].as<std::string>());
-        std::string  line;
+        std::string line;
 
         int counter = 0;
-        while(getline(energy_file, line)){
+        while (getline(energy_file, line)) {
             std::vector<std::string> fields;
             fields = split(line, '\t', fields);
 
@@ -258,12 +237,12 @@ namespace ns3 {
             }
 
             uint16_t index = real_to_alias_as_no.at(as_no);
-            SCION_AS* as = dynamic_cast<SCION_AS*>(PeekPointer(AS_nodes.Get(index)));
+            SCION_AS *as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(index)));
             assert(as->as_number == index);
 
-            GreenBeaconing* green_beaconing_policy = dynamic_cast<GreenBeaconing*>(as->GetBeaconServer());
+            GreenBeaconing *green_beaconing_policy = dynamic_cast<GreenBeaconing *>(as->GetBeaconServer());
 
-            if (green_beaconing_policy->intra_as_energies.size() == 0){
+            if (green_beaconing_policy->intra_as_energies.size() == 0) {
                 green_beaconing_policy->intra_as_energies.resize(as->GetNDevices());
                 for (uint32_t i = 0; i < as->GetNDevices(); ++i) {
                     green_beaconing_policy->intra_as_energies.at(i).resize(as->GetNDevices());
@@ -292,12 +271,14 @@ namespace ns3 {
         std::cout << counter << std::endl;
 
         for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
-            SCION_AS* as = dynamic_cast<SCION_AS*>(PeekPointer(AS_nodes.Get(i)));
-            for (uint32_t j = 0; j < dynamic_cast<GreenBeaconing*>(as->GetBeaconServer())->intra_as_energies.size(); ++j) {
-                for (uint32_t k = 0; k < dynamic_cast<GreenBeaconing*>(as->GetBeaconServer())->intra_as_energies.at(j).size(); ++k) {
-                    assert(dynamic_cast<GreenBeaconing*>(as->GetBeaconServer())->intra_as_energies.at(j).at(k) != 0);
+            SCION_AS *as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+            for (uint32_t j = 0; j < dynamic_cast<GreenBeaconing *>(as->GetBeaconServer())->intra_as_energies.size();
+                 ++j) {
+                for (uint32_t k = 0;
+                     k < dynamic_cast<GreenBeaconing *>(as->GetBeaconServer())->intra_as_energies.at(j).size(); ++k) {
+                    assert(dynamic_cast<GreenBeaconing *>(as->GetBeaconServer())->intra_as_energies.at(j).at(k) != 0);
                 }
             }
         }
     }
-}
+} // namespace ns3

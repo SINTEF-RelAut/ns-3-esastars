@@ -2,22 +2,20 @@
 // Created by seyedali on 30.08.21.
 //
 
-
 #include <omp.h>
 
 #include "ns3/log.h"
 
-#include "src/SCION/headers/schedule_periodic_events.h"
-#include "src/SCION/headers/time_server.h"
-#include "src/SCION/headers/scion_core_as.h"
-#include "src/SCION/headers/utils.h"
 #include "src/SCION/headers/externs.h"
 #include "src/SCION/headers/json.hpp"
 #include "src/SCION/headers/run_parallel_events.h"
+#include "src/SCION/headers/schedule_periodic_events.h"
+#include "src/SCION/headers/scion_core_as.h"
+#include "src/SCION/headers/time_server.h"
+#include "src/SCION/headers/utils.h"
 
 namespace ns3 {
     NS_LOG_COMPONENT_DEFINE("TimeServer");
-
 
     void TimeServer::request_set_of_all_core_ases_from_path_server() {
         AdvanceLocalTime();
@@ -50,17 +48,15 @@ namespace ns3 {
         }
 
         if (packet->payload_type == payload_type_t::NTP_REQ) {
-            NS_LOG_FUNCTION(
-                    "TimeSrv at " << isd_number << ":" << as_number << " rcv ntp req from " << GET_ISDN(packet->src_ia)
-                                  << ":" << GET_ASN(packet->src_ia));
+            NS_LOG_FUNCTION("TimeSrv at " << isd_number << ":" << as_number << " rcv ntp req from "
+                                          << GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia));
             receive_ntp_req_from_peer(packet, receive_time);
             return;
         }
 
         if (packet->payload_type == payload_type_t::NTP_RESP) {
-            NS_LOG_FUNCTION(
-                    "TimeSrv at " << isd_number << ":" << as_number << " rcv ntp resp from " << GET_ISDN(packet->src_ia)
-                                  << ":" << GET_ASN(packet->src_ia));
+            NS_LOG_FUNCTION("TimeSrv at " << isd_number << ":" << as_number << " rcv ntp resp from "
+                                          << GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia));
             receive_ntp_res_from_peer(packet, receive_time);
             DestroySCIONPacket(packet);
             return;
@@ -83,18 +79,15 @@ namespace ns3 {
             if (parallel_scheduler) {
                 if (read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::W ||
                     read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::NO_R_NO_W) {
-                    Simulator::Schedule(MilliSeconds(300),
-                                        &RunParallelEvents<void (TimeServer::*)(), TimeServer *>,
+                    Simulator::Schedule(MilliSeconds(300), &RunParallelEvents<void (TimeServer::*)(), TimeServer *>,
                                         local_address, &TimeServer::construct_set_of_selected_paths);
                     if (read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::W) {
-                        Simulator::Schedule(MilliSeconds(310),
-                                            &RunParallelEvents<void (TimeServer::*)(), TimeServer *>,
+                        Simulator::Schedule(MilliSeconds(310), &RunParallelEvents<void (TimeServer::*)(), TimeServer *>,
                                             local_address, &TimeServer::write_set_of_disjoint_paths);
                     }
                 } else if (read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::R) {
                     if (set_of_selected_paths.empty()) {
-                        Simulator::Schedule(MilliSeconds(310),
-                                            &RunParallelEvents<void (TimeServer::*)(), TimeServer *>,
+                        Simulator::Schedule(MilliSeconds(310), &RunParallelEvents<void (TimeServer::*)(), TimeServer *>,
                                             local_address, &TimeServer::read_set_of_disjoint_paths);
                     }
                 }
@@ -122,7 +115,7 @@ namespace ns3 {
 
     void TimeServer::construct_set_of_most_disjoint_paths() {
         NS_LOG_FUNCTION("TimeSrv at " << isd_number << ":" << as_number << " constructing disjoint paths");
-        for (auto const &dst_ia: set_of_all_core_ases) {
+        for (auto const &dst_ia : set_of_all_core_ases) {
             if (dst_ia == ia_addr) {
                 continue;
             }
@@ -133,15 +126,14 @@ namespace ns3 {
             std::unordered_map<ia_t, uint32_t> number_of_paths_per_hop_ia;
             auto const &path_segments = *cached_core_path_segments.at(dst_ia)->at(ia_addr);
 
-            while (set_of_selected_paths_per_dst_ia.size() < number_of_paths_to_use_for_global_sync
-                   && set_of_selected_paths_per_dst_ia.size() < path_segments.size()) {
-
+            while (set_of_selected_paths_per_dst_ia.size() < number_of_paths_to_use_for_global_sync &&
+                   set_of_selected_paths_per_dst_ia.size() < path_segments.size()) {
                 const PathSegment *best_path = NULL;
                 uint64_t best_path_score = std::numeric_limits<uint64_t>::max();
                 uint32_t best_path_len = std::numeric_limits<uint32_t>::max();
 
                 uint32_t min_len = path_segments.begin()->first;
-                for (auto const &[path_len, path_seg]: path_segments) {
+                for (auto const &[path_len, path_seg] : path_segments) {
                     if (min_len == 2 && path_len > 2) {
                         break;
                     }
@@ -198,7 +190,7 @@ namespace ns3 {
 
     void TimeServer::construct_set_of_shortest_paths() {
         NS_LOG_FUNCTION("TimeSrv at " << isd_number << ":" << as_number << " constructing shortest paths");
-        for (auto const &dst_ia: set_of_all_core_ases) {
+        for (auto const &dst_ia : set_of_all_core_ases) {
             if (dst_ia == ia_addr) {
                 continue;
             }
@@ -208,7 +200,7 @@ namespace ns3 {
 
             auto const &path_segments = *cached_core_path_segments.at(dst_ia)->at(ia_addr);
             uint32_t min_len = path_segments.begin()->first;
-            for (auto const &[path_len, path_seg]: path_segments) {
+            for (auto const &[path_len, path_seg] : path_segments) {
                 if (min_len == 2 && path_len > 2) {
                     break;
                 }
@@ -222,7 +214,7 @@ namespace ns3 {
 
     void TimeServer::construct_set_of_random_paths() {
         NS_LOG_FUNCTION("TimeSrv at " << isd_number << ":" << as_number << " constructing shortest paths");
-        for (auto const &dst_ia: set_of_all_core_ases) {
+        for (auto const &dst_ia : set_of_all_core_ases) {
             if (dst_ia == ia_addr) {
                 continue;
             }
@@ -240,8 +232,8 @@ namespace ns3 {
             std::shuffle(selected_indices.begin(), selected_indices.end(), std::random_device{});
 
             uint32_t j = 0;
-            while (set_of_selected_paths_per_dst_ia.size() < number_of_paths_to_use_for_global_sync
-                   && set_of_selected_paths_per_dst_ia.size() < path_segments.size()) {
+            while (set_of_selected_paths_per_dst_ia.size() < number_of_paths_to_use_for_global_sync &&
+                   set_of_selected_paths_per_dst_ia.size() < path_segments.size()) {
                 auto iter = path_segments.cbegin();
                 std::advance(iter, selected_indices.at(j));
 
@@ -263,12 +255,12 @@ namespace ns3 {
         disjoint_paths_file >> set_of_disjoint_paths_json;
         disjoint_paths_file.close();
 
-        for (auto const &[dst_ia_str, path_segs_json]: set_of_disjoint_paths_json.items()) {
+        for (auto const &[dst_ia_str, path_segs_json] : set_of_disjoint_paths_json.items()) {
             ia_t dst_ia = std::stoi(dst_ia_str);
 
             set_of_selected_paths.insert(std::make_pair(dst_ia, std::unordered_set<const PathSegment *>()));
 
-            for (auto const &path_seg_json: path_segs_json) {
+            for (auto const &path_seg_json : path_segs_json) {
                 PathSegment *path_seg = new PathSegment();
                 path_seg->initiation_time = path_seg_json["initiation_time"];
                 path_seg->expiration_time = path_seg_json["expiration_time"];
@@ -283,9 +275,9 @@ namespace ns3 {
     void TimeServer::write_set_of_disjoint_paths() {
         nlohmann::json set_of_disjoint_paths_json;
 
-        for (auto const &[dst_ia, path_segs]: set_of_selected_paths) {
+        for (auto const &[dst_ia, path_segs] : set_of_selected_paths) {
             nlohmann::json path_segs_json;
-            for (auto const &path_seg: path_segs) {
+            for (auto const &path_seg : path_segs) {
                 nlohmann::json path_seg_json;
                 path_seg_json["initiation_time"] = 0;
                 path_seg_json["expiration_time"] = 0xFFFF;
@@ -319,7 +311,7 @@ namespace ns3 {
     void TimeServer::request_for_paths_to_all_core_ases() {
         std::set<uint16_t> all_isds;
 
-        for (auto const &isd_as: set_of_all_core_ases) {
+        for (auto const &isd_as : set_of_all_core_ases) {
             if (isd_as == ia_addr) {
                 continue;
             }
@@ -327,7 +319,7 @@ namespace ns3 {
             all_isds.insert(GET_ISDN(isd_as));
         }
 
-        for (auto const &isd: all_isds) {
+        for (auto const &isd : all_isds) {
             NS_LOG_FUNCTION("TimeSrv at " << isd_number << ":" << as_number << " send req for paths to isd " << isd);
             if (isd == isd_number) {
                 send_request_for_path_segments(path_segment_type::CORE_SEG, 0, 0);
@@ -340,8 +332,8 @@ namespace ns3 {
     void TimeServer::send_set_of_all_core_ases_to_neighbors() {
         std::set<const PathSegment *> paths_to_neighbor_ases;
 
-        for (auto const &dst_ia_cached_paths_pair: cached_core_path_segments) {
-            for (auto const &[exp_time, path_seg]: *dst_ia_cached_paths_pair.second->at(ia_addr)) {
+        for (auto const &dst_ia_cached_paths_pair : cached_core_path_segments) {
+            for (auto const &[exp_time, path_seg] : *dst_ia_cached_paths_pair.second->at(ia_addr)) {
                 if (exp_time > local_time.GetMinutes()) {
                     if (path_seg->hops.size() == 2) {
                         paths_to_neighbor_ases.insert(path_seg);
@@ -350,7 +342,7 @@ namespace ns3 {
             }
         }
 
-        for (auto const &path: paths_to_neighbor_ases) {
+        for (auto const &path : paths_to_neighbor_ases) {
             NS_LOG_FUNCTION("TimeSrv at " << isd_number << ":" << as_number << " sent list of all ases to "
                                           << GET_HOP_ISD(path->hops.back()) << ":" << GET_HOP_AS(path->hops.back()));
             payload_type_t payload_type = payload_type_t::BROADCAST_LIST_OF_ALL_CORE_ASES;
@@ -358,12 +350,11 @@ namespace ns3 {
             Payload payload;
             payload.list_of_all_ases.set_of_all_ases = &set_of_all_core_ases;
 
-            std::vector<const PathSegment*> the_path;
+            std::vector<const PathSegment *> the_path;
             the_path.push_back(path);
 
             SCIONPacket *packet = create_scion_packet(payload, payload_type, GET_HOP_IA(path->hops.back()), 2,
-                                                      set_of_all_core_ases.size() * 8,
-                                                      the_path);
+                                                      set_of_all_core_ases.size() * 8, the_path);
 
             send_scion_packet(packet);
         }
@@ -395,7 +386,6 @@ namespace ns3 {
                                         << ", random_drift: +" << TimeStep(std::abs(drift_int)));
         }
 
-
         real_time_of_last_time_advance = Simulator::Now();
     }
 
@@ -424,15 +414,15 @@ namespace ns3 {
             return random_drift_int;
         }
 
-        double drift = (((double) constant_drift_per_day) * ((double) duration.GetTimeStep()))
-                       / ((double) Days(1).GetTimeStep());
+        double drift = (((double) constant_drift_per_day) * ((double) duration.GetTimeStep())) /
+                       ((double) Days(1).GetTimeStep());
 
         return (int64_t) std::round(drift);
     }
 
     Time TimeServer::get_max_drift(Time duration) {
-        double max_drift = (((double) max_drift_per_day.GetTimeStep()) * ((double) duration.GetTimeStep()))
-                           / ((double) Days(1).GetTimeStep());
+        double max_drift = (((double) max_drift_per_day.GetTimeStep()) * ((double) duration.GetTimeStep())) /
+                           ((double) Days(1).GetTimeStep());
         return TimeStep((uint64_t) std::round(max_drift));
     }
 
@@ -449,12 +439,12 @@ namespace ns3 {
             send_ntp_req_to_peers();
             if (parallel_scheduler) {
                 Simulator::Schedule(Time(NTP_REQ_GLOBAL_SYNC_DIFF),
-                                    &RunParallelEvents<void (TimeServer::*)(), TimeServer *>,
-                                    local_address, &TimeServer::continue_global_time_sync);
+                                    &RunParallelEvents<void (TimeServer::*)(), TimeServer *>, local_address,
+                                    &TimeServer::continue_global_time_sync);
             }
-// ********************************* Debug: To print goffsets **********************************************************
-//            Simulator::Schedule(Time(NTP_REQ_GLOBAL_SYNC_DIFF), &TimeServer::continue_global_time_sync, this);
-// *********************************************************************************************************************
+            // ********************************* Debug: To print goffsets **********************************************************
+            //            Simulator::Schedule(Time(NTP_REQ_GLOBAL_SYNC_DIFF), &TimeServer::continue_global_time_sync, this);
+            // *********************************************************************************************************************
         }
         synchronization_round = (synchronization_round + 1) % G;
     }
@@ -472,7 +462,7 @@ namespace ns3 {
         std::multiset<int64_t> off;
         off.insert(loff);
 
-        for (auto const &peer_ia: set_of_all_core_ases) {
+        for (auto const &peer_ia : set_of_all_core_ases) {
             if (peer_ia == ia_addr) {
                 continue;
             }
@@ -493,14 +483,14 @@ namespace ns3 {
         int64_t goff = std::floor((*iter1 + *iter2) / 2);
         int64_t doff = loff - goff;
 
-//***************************** Debug: To print goffsets ***************************************************************
-//        std::cout << " ************************************* " << std::endl;
-//        std::cout << "goff: " << goff / 1000000000.0 <<
-//                   ", real_time_diff: " << (Simulator::Now().GetTimeStep() - local_time.GetTimeStep()) / 1000000000.0 << std::endl;
-//        for (auto const & an_off : off) {
-//            std::cout << an_off / 1000000000.0 << std::endl;
-//        }
-//**********************************************************************************************************************
+        //***************************** Debug: To print goffsets ***************************************************************
+        //        std::cout << " ************************************* " << std::endl;
+        //        std::cout << "goff: " << goff / 1000000000.0 <<
+        //                   ", real_time_diff: " << (Simulator::Now().GetTimeStep() - local_time.GetTimeStep()) / 1000000000.0 << std::endl;
+        //        for (auto const & an_off : off) {
+        //            std::cout << an_off / 1000000000.0 << std::endl;
+        //        }
+        //**********************************************************************************************************************
 
         if (std::abs(doff) > std::abs(global_cut_off.GetTimeStep())) {
             if (alg_v == ALG_V::V1 || alg_v == ALG_V::V2) {
@@ -533,40 +523,38 @@ namespace ns3 {
             local_time += TimeStep(final_corr_abs);
             NS_LOG_FUNCTION("ia_addr: " << isd_number << "-" << as_number << ", local_time: " << tmp_local_time
                                         << ", updated_local_time: " << local_time << ", final_corr: +"
-                                        << TimeStep(final_corr_abs)
-                                        << ", max_drift: " << max_drift << ", corr: +" << TimeStep(std::abs(corr)));
+                                        << TimeStep(final_corr_abs) << ", max_drift: " << max_drift << ", corr: +"
+                                        << TimeStep(std::abs(corr)));
         } else {
             local_time -= TimeStep(final_corr_abs);
             NS_LOG_FUNCTION("ia_addr: " << isd_number << "-" << as_number << ", local_time: " << tmp_local_time
                                         << ", updated_local_time: " << local_time << ", final_corr: -"
-                                        << TimeStep(final_corr_abs)
-                                        << ", max_drift: " << max_drift << ", corr: -" << TimeStep(std::abs(corr)));
+                                        << TimeStep(final_corr_abs) << ", max_drift: " << max_drift << ", corr: -"
+                                        << TimeStep(std::abs(corr)));
         }
     }
 
     void TimeServer::send_ntp_req_to_peers() {
         NS_LOG_FUNCTION("ia_addr: " << isd_number << "-" << as_number << ", local_time: " << local_time);
 
-        for (auto const &peer_ia: set_of_all_core_ases) {
+        for (auto const &peer_ia : set_of_all_core_ases) {
             if (peer_ia == ia_addr) {
                 continue;
             }
 
-            for (auto const &path_seg: set_of_selected_paths.at(peer_ia)) {
-                NS_LOG_FUNCTION(
-                        "TimeSrv at " << isd_number << ":" << as_number << " sent ntp req to " << GET_ISDN(peer_ia)
-                                      << ":" << GET_ASN(peer_ia));
+            for (auto const &path_seg : set_of_selected_paths.at(peer_ia)) {
+                NS_LOG_FUNCTION("TimeSrv at " << isd_number << ":" << as_number << " sent ntp req to "
+                                              << GET_ISDN(peer_ia) << ":" << GET_ASN(peer_ia));
                 payload_type_t payload_type = payload_type_t::NTP_REQ;
 
                 Payload payload;
                 payload.ntp_req_or_resp.t0 = local_time.GetTimeStep();
 
-                std::vector<const PathSegment*> the_path;
+                std::vector<const PathSegment *> the_path;
                 the_path.push_back(path_seg);
 
-                SCIONPacket *packet = create_scion_packet(payload, payload_type, peer_ia, 2,
-                                                          8 + 48 /* udp + ntp*/,
-                                                          the_path);
+                SCIONPacket *packet =
+                        create_scion_packet(payload, payload_type, peer_ia, 2, 8 + 48 /* udp + ntp*/, the_path);
 
                 send_scion_packet(packet);
             }
@@ -589,8 +577,8 @@ namespace ns3 {
         int64_t t0 = packet->payload.ntp_req_or_resp.t0;
         NS_LOG_FUNCTION("ia_addr: " << isd_number << "-" << as_number << ", local_time: " << local_time
                                     << ", sender_ia: " << GET_ISDN(packet->src_ia) << "-" << GET_ASN(packet->src_ia)
-                                    << ", receive_time: " << receive_time
-                                    << ", t0: " << (t0 < 0 ? "-" : "+") << TimeStep(std::abs(t0)));
+                                    << ", receive_time: " << receive_time << ", t0: " << (t0 < 0 ? "-" : "+")
+                                    << TimeStep(std::abs(t0)));
 
         packet->payload_type = payload_type_t::NTP_RESP;
         packet->payload.ntp_req_or_resp.t1 = receive_time.GetTimeStep();
@@ -603,24 +591,22 @@ namespace ns3 {
         int64_t t1 = packet->payload.ntp_req_or_resp.t1;
         int64_t t2 = packet->payload.ntp_req_or_resp.t2;
 
-        NS_LOG_FUNCTION("TimeServ at " << isd_number << ":" << as_number <<
-                                       " RCV NTP resp from peer " << GET_ISDN(packet->src_ia) << ":"
-                                       << GET_ASN(packet->src_ia)
-                                       << ", local_time: " << local_time
-                                       << ", t0: " << (t0 < 0 ? "-" : "+") << TimeStep(std::abs(t0))
-                                       << ", t1: " << (t1 < 0 ? "-" : "+") << TimeStep(std::abs(t1))
-                                       << ", t2: " << (t2 < 0 ? "-" : "+") << TimeStep(std::abs(t2))
-                                       << ", t3: " << receive_time);
+        NS_LOG_FUNCTION("TimeServ at " << isd_number << ":" << as_number << " RCV NTP resp from peer "
+                                       << GET_ISDN(packet->src_ia) << ":" << GET_ASN(packet->src_ia)
+                                       << ", local_time: " << local_time << ", t0: " << (t0 < 0 ? "-" : "+")
+                                       << TimeStep(std::abs(t0)) << ", t1: " << (t1 < 0 ? "-" : "+")
+                                       << TimeStep(std::abs(t1)) << ", t2: " << (t2 < 0 ? "-" : "+")
+                                       << TimeStep(std::abs(t2)) << ", t3: " << receive_time);
 
         int64_t poff_tmp = ((packet->payload.ntp_req_or_resp.t1 - packet->payload.ntp_req_or_resp.t0) +
-                            (packet->payload.ntp_req_or_resp.t2 - receive_time.GetTimeStep())) / 2;
+                            (packet->payload.ntp_req_or_resp.t2 - receive_time.GetTimeStep())) /
+                           2;
 
         if (poff.find(packet->src_ia) == poff.end()) {
             poff.insert(std::make_pair(packet->src_ia, std::multiset<int64_t>()));
         }
 
         poff.at(packet->src_ia).insert(poff_tmp);
-
     }
 
     void TimeServer::reset_time() {
@@ -642,7 +628,6 @@ namespace ns3 {
         } else {
             local_time += TimeStep(std::abs(random_drift_int));
         }
-
     }
 
     void TimeServer::capture_local_snapshot() {
@@ -687,14 +672,14 @@ namespace ns3 {
                 continue;
             }
 
-            dynamic_cast<TimeServer *> (node->GetHost(local_address))->AdvanceLocalTime();
-            Time remote_local_time = dynamic_cast<TimeServer *> (node->GetHost(local_address))->GetLocalTime();
+            dynamic_cast<TimeServer *>(node->GetHost(local_address))->AdvanceLocalTime();
+            Time remote_local_time = dynamic_cast<TimeServer *>(node->GetHost(local_address))->GetLocalTime();
             int64_t time_diff = (remote_local_time - local_time).GetTimeStep();
 
             int64_t median_off = (int64_t) std::round(GetMedian(poff.at(node->ia_addr)));
             off.insert(median_off);
 
-            for (auto const &offset: poff.at(node->ia_addr)) {
+            for (auto const &offset : poff.at(node->ia_addr)) {
                 int64_t diff = offset - time_diff;
                 std::cout << diff << "\t";
             }
@@ -725,12 +710,12 @@ namespace ns3 {
                 continue;
             }
 
-            dynamic_cast<TimeServer *> (node->GetHost(local_address))->AdvanceLocalTime();
-            Time remote_local_time = dynamic_cast<TimeServer *> (node->GetHost(local_address))->GetLocalTime();
+            dynamic_cast<TimeServer *>(node->GetHost(local_address))->AdvanceLocalTime();
+            Time remote_local_time = dynamic_cast<TimeServer *>(node->GetHost(local_address))->GetLocalTime();
             int64_t time_diff = (remote_local_time - local_time).GetTimeStep();
 
-            int64_t remote_drift = dynamic_cast<TimeServer *> (node->GetHost(local_address))->GetDrift(
-                    Time(NTP_REQ_GLOBAL_SYNC_DIFF));
+            int64_t remote_drift =
+                    dynamic_cast<TimeServer *>(node->GetHost(local_address))->GetDrift(Time(NTP_REQ_GLOBAL_SYNC_DIFF));
             int64_t local_drift = GetDrift(Time(NTP_REQ_GLOBAL_SYNC_DIFF));
 
             int64_t offset = *poff.at(node->ia_addr).begin();
@@ -740,8 +725,6 @@ namespace ns3 {
             NS_ASSERT_MSG(std::abs(offset - time_diff) < upper_bound,
                           "offset: " << TimeStep(offset) << ", real time diff: " << TimeStep(time_diff)
                                      << ", upper bound: " << TimeStep(upper_bound));
-
-
         }
     }
 
@@ -760,7 +743,6 @@ namespace ns3 {
                 }
             }
         }
-
     }
 
     void TimeServer::ScheduleTimeSync() {
@@ -790,8 +772,7 @@ namespace ns3 {
                         Simulator::Schedule(t + Time(NTP_REQ_GLOBAL_SYNC_DIFF) + TimeStep(1),
                                             &TimeServer::capture_local_snapshot, this);
                     } else if (snapshot_type == SNAPSHOT_TYPE::PRINT_OFFSET_DIFF) {
-                        Simulator::Schedule(t + Time(NTP_REQ_GLOBAL_SYNC_DIFF),
-                                            &TimeServer::capture_offset_diff, this);
+                        Simulator::Schedule(t + Time(NTP_REQ_GLOBAL_SYNC_DIFF), &TimeServer::capture_offset_diff, this);
                     } else if (snapshot_type == SNAPSHOT_TYPE::ASSERT_OFFSET_DIFF) {
                         Simulator::Schedule(t + Time(NTP_REQ_GLOBAL_SYNC_DIFF),
                                             &TimeServer::compare_offs_with_real_offs, this);
@@ -809,7 +790,5 @@ namespace ns3 {
         }
     }
 
-    int64_t TimeServer::GetConstantDriftPerDay() {
-        return constant_drift_per_day;
-    }
-}
+    int64_t TimeServer::GetConstantDriftPerDay() { return constant_drift_per_day; }
+} // namespace ns3

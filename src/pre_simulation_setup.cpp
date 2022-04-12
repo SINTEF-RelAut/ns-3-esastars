@@ -5,7 +5,7 @@
 #include "src/SCION/headers/pre_simulation_setup.h"
 
 namespace ns3 {
-    void SetTimeResolution(const std::string& time_res_str) {
+    void SetTimeResolution(const std::string &time_res_str) {
         if (time_res_str == "FS") {
             Time::SetResolution(Time::FS);
         } else if (time_res_str == "PS") {
@@ -23,45 +23,42 @@ namespace ns3 {
         }
     }
 
+    //rapidxml::xml_node<>* SetupTopologyFile (std::string topology_name) {
+    //    std::string file = "/home/tabaeias/ns-3_beaconing_simulator/topology/" + std::string(topology_name) + ".xml";
+    //    std::ifstream* fin = new std::ifstream(file.c_str());
+    //    std::ostringstream* sstr = new std::ostringstream();
+    //    *sstr << fin->rdbuf();
+    //
+    //    sstr->flush();
+    //    fin->close();
+    //
+    //    std::string xmlData = sstr->str();
+    //    rapidxml::xml_document<>* doc = new rapidxml::xml_document<>();
+    //    doc->parse<0>(&xmlData[0]);
+    //
+    //    rapidxml::xml_node<> *rootNode = doc->first_node("topology");
+    //
+    //    if (!rootNode) {
+    //        std::cerr << "Empty topology!" << std::endl;
+    //        exit(1);
+    //    }
+    //
+    //    return rootNode;
+    //}
 
-//rapidxml::xml_node<>* SetupTopologyFile (std::string topology_name) {
-//    std::string file = "/home/tabaeias/ns-3_beaconing_simulator/topology/" + std::string(topology_name) + ".xml";
-//    std::ifstream* fin = new std::ifstream(file.c_str());
-//    std::ostringstream* sstr = new std::ostringstream();
-//    *sstr << fin->rdbuf();
-//
-//    sstr->flush();
-//    fin->close();
-//
-//    std::string xmlData = sstr->str();
-//    rapidxml::xml_document<>* doc = new rapidxml::xml_document<>();
-//    doc->parse<0>(&xmlData[0]);
-//
-//    rapidxml::xml_node<> *rootNode = doc->first_node("topology");
-//
-//    if (!rootNode) {
-//        std::cerr << "Empty topology!" << std::endl;
-//        exit(1);
-//    }
-//
-//    return rootNode;
-//}
-
-    void InstantiateASesFromTopo(rapidxml::xml_node<>* xml_root,
-                                 std::map<int32_t, uint16_t>& real_to_alias_as_no,
-                                 std::map<uint16_t,int32_t>& alias_to_real_as_no,
-                                 NodeContainer& AS_nodes,
-                                 const YAML::Node& config) {
-
+    void InstantiateASesFromTopo(rapidxml::xml_node<> *xml_root, std::map<int32_t, uint16_t> &real_to_alias_as_no,
+                                 std::map<uint16_t, int32_t> &alias_to_real_as_no, NodeContainer &AS_nodes,
+                                 const YAML::Node &config) {
         Time beaconing_period = Time(config["beacon_service"]["period"].as<std::string>());
         Time last_beaconing_event_time = Time(config["beacon_service"]["last_beaconing"].as<std::string>());
-        uint16_t expiration_period = Time(config["beacon_service"]["expiration_period"].as<std::string>()).ToInteger(Time::MIN);
+        uint16_t expiration_period =
+                Time(config["beacon_service"]["expiration_period"].as<std::string>()).ToInteger(Time::MIN);
 
         int16_t alias_as_no = 0;
 
         bool parallel_scheduler = true;
 
-        rapidxml::xml_node<>* cur_xml_node = xml_root->first_node("node");
+        rapidxml::xml_node<> *cur_xml_node = xml_root->first_node("node");
         while (cur_xml_node) {
             int32_t real_as_no = std::stoi(getAttribute(cur_xml_node, "id"));
             PropertyContainer p = parseProperties(cur_xml_node);
@@ -75,27 +72,28 @@ namespace ns3 {
             std::string type = "core"; //p.getProperty("type");
 
             std::string beaconing_policy_str = config["beacon_service"]["policy"].as<std::string>();
-            BeaconServer* beaconing_policy;
+            BeaconServer *beaconing_policy;
             if (beaconing_policy_str == "baseline") {
-                beaconing_policy = (BeaconServer*) new Baseline(parallel_scheduler, timing_params);
+                beaconing_policy = (BeaconServer *) new Baseline(parallel_scheduler, timing_params);
             } else if (beaconing_policy_str == "diversity_age_based") {
                 beaconing_policy = (BeaconServer *) new DiversityAgeBased(parallel_scheduler, timing_params);
             } else if (beaconing_policy_str == "green_beaconing") {
                 ld dirty_energy_ratio = std::stod(p.getProperty("dirty_energy_ratio"));
                 ld sun_energy_ratio = std::stod(p.getProperty("sun_energy_ratio"));
-                beaconing_policy = (BeaconServer *) new GreenBeaconing(parallel_scheduler, timing_params, dirty_energy_ratio, sun_energy_ratio);
+                beaconing_policy = (BeaconServer *) new GreenBeaconing(parallel_scheduler, timing_params,
+                                                                       dirty_energy_ratio, sun_energy_ratio);
             } else if (beaconing_policy_str == "latency_optimized") {
                 beaconing_policy = (BeaconServer *) new LatencyOptimized(parallel_scheduler, timing_params);
             } else if (beaconing_policy_str == "scionlab") {
                 beaconing_policy = (BeaconServer *) new SCIONLAB(parallel_scheduler, timing_params);
             } else {
-                beaconing_policy = (BeaconServer*) new Baseline(parallel_scheduler, timing_params);
+                beaconing_policy = (BeaconServer *) new Baseline(parallel_scheduler, timing_params);
             }
 
             Ptr<SCION_AS> AS_node;
-            if(type == "core"){
+            if (type == "core") {
                 AS_node = CreateObject<SCION_Core_AS>(isd_number, alias_as_no, 0, Time(0));
-            } else if(type == "non-core"){
+            } else if (type == "non-core") {
                 AS_node = CreateObject<SCION_AS>(isd_number, alias_as_no, 0, Time(0));
             } else {
                 std::cerr << "Incompatible AS_node type!" << std::endl;
@@ -119,15 +117,12 @@ namespace ns3 {
         }
     }
 
-    void InstantiatePathServers(const YAML::Node& config,
-                                const NodeContainer& AS_nodes) {
+    void InstantiatePathServers(const YAML::Node &config, const NodeContainer &AS_nodes) {
         bool only_propagation_delay = OnlyPropagationDelay(config);
 
         for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
             SCION_AS *AS_node = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
-            PathServer *path_server = new PathServer( 0, AS_node->isd_number,
-                                                                AS_node->as_number, 1,
-                                                                0.0,  0.0, AS_node);
+            PathServer *path_server = new PathServer(0, AS_node->isd_number, AS_node->as_number, 1, 0.0, 0.0, AS_node);
             AS_node->SetPathServer(path_server);
 
             if (only_propagation_delay) {
@@ -138,11 +133,9 @@ namespace ns3 {
         }
     }
 
-    void GetMaliciousTimeRefAndTimeServer (const NodeContainer& AS_nodes,
-                                           const YAML::Node& config,
-                                           std::vector<std::string>& time_reference_types,
-                                           std::vector<std::string>& time_server_types) {
-
+    void GetMaliciousTimeRefAndTimeServer(const NodeContainer &AS_nodes, const YAML::Node &config,
+                                          std::vector<std::string> &time_reference_types,
+                                          std::vector<std::string> &time_server_types) {
         std::vector<uint16_t> indices_time_references;
         std::vector<uint16_t> indices_time_servers;
 
@@ -165,10 +158,14 @@ namespace ns3 {
         }
 
         uint16_t number_of_malicious_time_references = (uint16_t) std::floor(
-                ((double ) config["time_service"]["percent_of_malicious_time_references"].as<uint16_t>() * (double ) number_of_ASes) / 100.0);
+                ((double) config["time_service"]["percent_of_malicious_time_references"].as<uint16_t>() *
+                 (double) number_of_ASes) /
+                100.0);
 
         uint16_t number_of_malicious_time_servers = (uint16_t) std::floor(
-                ((double ) config["time_service"]["percent_of_malicious_time_servers"].as<uint16_t>() * (double ) number_of_ASes) / 100.0);
+                ((double) config["time_service"]["percent_of_malicious_time_servers"].as<uint16_t>() *
+                 (double) number_of_ASes) /
+                100.0);
 
         if (config["time_service"]["reference_clk"].as<std::string>() == "OFF") {
             for (uint16_t i = 0; i < number_of_ASes; ++i) {
@@ -182,7 +179,6 @@ namespace ns3 {
             for (uint16_t i = number_of_malicious_time_references; i < number_of_ASes; ++i) {
                 time_reference_types.at(indices_time_references.at(i)) = "ON";
             }
-
         }
 
         for (uint16_t i = 0; i < number_of_malicious_time_servers; ++i) {
@@ -194,14 +190,12 @@ namespace ns3 {
         }
     }
 
-    void GetTimeServiceSnapShotTypes(const NodeContainer& AS_nodes,
-                                     const YAML::Node& config,
-                                     std::vector<std::string>& snapshot_types,
-                                     uint16_t& global_scheduler_and_printer) {
+    void GetTimeServiceSnapShotTypes(const NodeContainer &AS_nodes, const YAML::Node &config,
+                                     std::vector<std::string> &snapshot_types, uint16_t &global_scheduler_and_printer) {
         global_scheduler_and_printer = 0;
         if (config["time_service"]["snapshot_type"].as<std::string>() == "PRINT_OFFSET_DIFF") {
             std::random_device rd;
-            std::uniform_int_distribution<uint16_t> dist (0, AS_nodes.GetN() - 1);
+            std::uniform_int_distribution<uint16_t> dist(0, AS_nodes.GetN() - 1);
             global_scheduler_and_printer = dist(rd);
         }
         for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
@@ -212,16 +206,14 @@ namespace ns3 {
                     snapshot_types.push_back("OFF");
                 }
             } else {
-
                 snapshot_types.push_back(config["time_service"]["snapshot_type"].as<std::string>());
             }
         }
     }
 
-    void GetTimeServiceAlgVersions (const NodeContainer& AS_nodes,
-                                    const YAML::Node& config,
-                                    std::vector<std::string>& alg_versions,
-                                    const std::vector<std::string>& snapshot_types) {
+    void GetTimeServiceAlgVersions(const NodeContainer &AS_nodes, const YAML::Node &config,
+                                   std::vector<std::string> &alg_versions,
+                                   const std::vector<std::string> &snapshot_types) {
         for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
             if (snapshot_types.at(i) == "OFF") {
                 alg_versions.push_back(config["time_service"]["alg_version_non_printing_instances"].as<std::string>());
@@ -231,16 +223,14 @@ namespace ns3 {
         }
     }
 
-    void InstantiateTimeServers(const YAML::Node& config,
-                                const NodeContainer& AS_nodes) {
-
+    void InstantiateTimeServers(const YAML::Node &config, const NodeContainer &AS_nodes) {
         std::vector<std::string> time_reference_types;
         std::vector<std::string> time_server_types;
         std::vector<std::string> snapshot_types;
         std::vector<std::string> alg_versions;
         uint16_t global_scheduler_and_printer;
 
-        GetMaliciousTimeRefAndTimeServer (AS_nodes, config, time_reference_types, time_server_types);
+        GetMaliciousTimeRefAndTimeServer(AS_nodes, config, time_reference_types, time_server_types);
         GetTimeServiceSnapShotTypes(AS_nodes, config, snapshot_types, global_scheduler_and_printer);
         GetTimeServiceAlgVersions(AS_nodes, config, alg_versions, snapshot_types);
 
@@ -253,30 +243,26 @@ namespace ns3 {
             uint16_t isd_number = AS_node->isd_number;
             bool parallel_scheduler = (alias_as_no == global_scheduler_and_printer);
 
-            SCIONHost* time_server =
-                    new TimeServer(0, isd_number, alias_as_no, 2,
-                                        0.0, 0.0, AS_node,
-                                        parallel_scheduler,
-                                        Time(config["time_service"]["max_initial_drift"].as<std::string>()),
-                                        Time(config["time_service"]["max_drift_per_day"].as<std::string>()),
-                                        config["time_service"]["jitter_in_drift"].as<uint32_t>(),
-                                        config["time_service"]["max_drift_coefficient"].as<uint32_t>(),
-                                        Time(config["time_service"]["global_cut_off"].as<std::string>()),
-                                        Time(config["time_service"]["first_event"].as<std::string>()),
-                                        Time(config["time_service"]["last_event"].as<std::string>()),
-                                        Time(config["time_service"]["snapshot_period"].as<std::string>()),
-                                        Time(config["time_service"]["list_of_ases_req_period"].as<std::string>()),
-                                        Time(config["time_service"]["time_sync_period"].as<std::string>()),
-                                        config["time_service"]["G"].as<uint32_t>(),
-                                        config["time_service"]["number_of_paths_to_use_for_global_sync"].as<uint32_t>(),
-                                        config["time_service"]["read_disjoint_paths"].as<std::string>(),
-                                        config["time_service"]["time_service_output_path"].as<std::string>(),
-                                        time_reference_types.at(alias_as_no),
-                                        time_server_types.at(alias_as_no),
-                                        snapshot_types.at(alias_as_no),
-                                        alg_versions.at(alias_as_no),
-                                        Time(config["time_service"]["malcious_response_minimum_offset"].as<std::string>()),
-                                        config["time_service"]["path_selection"].as<std::string>());
+            SCIONHost *time_server =
+                    new TimeServer(0, isd_number, alias_as_no, 2, 0.0, 0.0, AS_node, parallel_scheduler,
+                                   Time(config["time_service"]["max_initial_drift"].as<std::string>()),
+                                   Time(config["time_service"]["max_drift_per_day"].as<std::string>()),
+                                   config["time_service"]["jitter_in_drift"].as<uint32_t>(),
+                                   config["time_service"]["max_drift_coefficient"].as<uint32_t>(),
+                                   Time(config["time_service"]["global_cut_off"].as<std::string>()),
+                                   Time(config["time_service"]["first_event"].as<std::string>()),
+                                   Time(config["time_service"]["last_event"].as<std::string>()),
+                                   Time(config["time_service"]["snapshot_period"].as<std::string>()),
+                                   Time(config["time_service"]["list_of_ases_req_period"].as<std::string>()),
+                                   Time(config["time_service"]["time_sync_period"].as<std::string>()),
+                                   config["time_service"]["G"].as<uint32_t>(),
+                                   config["time_service"]["number_of_paths_to_use_for_global_sync"].as<uint32_t>(),
+                                   config["time_service"]["read_disjoint_paths"].as<std::string>(),
+                                   config["time_service"]["time_service_output_path"].as<std::string>(),
+                                   time_reference_types.at(alias_as_no), time_server_types.at(alias_as_no),
+                                   snapshot_types.at(alias_as_no), alg_versions.at(alias_as_no),
+                                   Time(config["time_service"]["malcious_response_minimum_offset"].as<std::string>()),
+                                   config["time_service"]["path_selection"].as<std::string>());
 
             AS_node->AddHost(time_server);
 
@@ -288,10 +274,8 @@ namespace ns3 {
         }
     }
 
-    void InstantiateLinksFromTopo (rapidxml::xml_node<>* xml_root,
-                                   NodeContainer& AS_nodes, const std::map<int32_t, uint16_t>& real_to_alias_as_no,
-                                   const YAML::Node& config){
-
+    void InstantiateLinksFromTopo(rapidxml::xml_node<> *xml_root, NodeContainer &AS_nodes,
+                                  const std::map<int32_t, uint16_t> &real_to_alias_as_no, const YAML::Node &config) {
         bool only_propagation_delay = OnlyPropagationDelay(config);
 
         rapidxml::xml_node<> *curr_xml_node = xml_root->first_node("link");
@@ -307,7 +291,7 @@ namespace ns3 {
             std::string rel = "core"; //p.getProperty("rel");
             neighbour_relation relation;
 
-// Check for the 3 possibilities in CAIDA topology
+            // Check for the 3 possibilities in CAIDA topology
             if (rel == "peer") {
                 relation = neighbour_relation::PEER;
             } else if (rel == "core") {
@@ -345,7 +329,8 @@ namespace ns3 {
                 Time to_processing_delay, from_processing_delay;
                 Time to_processing_throughput_delay, from_processing_throughput_delay;
 
-                to_propagation_delay = NanoSeconds(5); // Assuming 1m fiber optic between neighboring devices in the same location
+                to_propagation_delay =
+                        NanoSeconds(5); // Assuming 1m fiber optic between neighboring devices in the same location
                 from_propagation_delay = NanoSeconds(5);
 
                 if (only_propagation_delay) {
@@ -358,7 +343,7 @@ namespace ns3 {
                     to_processing_throughput_delay = Time(0);
                     from_processing_throughput_delay = Time(0);
                 } else {
-                    to_transmission_delay = PicoSeconds(20);//Per byte transmission delay assuming 400 Gbps link
+                    to_transmission_delay = PicoSeconds(20); //Per byte transmission delay assuming 400 Gbps link
                     from_transmission_delay = PicoSeconds(20);
 
                     to_processing_delay = NanoSeconds(10);
@@ -368,10 +353,10 @@ namespace ns3 {
                     from_processing_throughput_delay = PicoSeconds(200);
                 }
 
-                BorderRouter *to_br = to_AS->AddBR(latitude, longitude, to_processing_delay,
-                                                        to_processing_throughput_delay);
-                BorderRouter *from_br = from_AS->AddBR(latitude, longitude, from_processing_delay,
-                                                            from_processing_throughput_delay);
+                BorderRouter *to_br =
+                        to_AS->AddBR(latitude, longitude, to_processing_delay, to_processing_throughput_delay);
+                BorderRouter *from_br =
+                        from_AS->AddBR(latitude, longitude, from_processing_delay, from_processing_throughput_delay);
 
                 to_br->AddToPropagationDelays(to_propagation_delay);
                 to_br->AddToTransmissionDelays(to_transmission_delay);
@@ -382,7 +367,8 @@ namespace ns3 {
                 to_br->AddToIFForwadingTable(to_AS->GetNDevices() - 1, to_br->GetNDevices() - 1);
                 from_br->AddToIFForwadingTable(from_AS->GetNDevices() - 1, from_br->GetNDevices() - 1);
 
-                to_br->AddToRemoteNodesInfo(from_br, from_br->GetNDevices() - 1, from_AS->isd_number, from_AS->as_number);
+                to_br->AddToRemoteNodesInfo(from_br, from_br->GetNDevices() - 1, from_AS->isd_number,
+                                            from_AS->as_number);
                 from_br->AddToRemoteNodesInfo(to_br, to_br->GetNDevices() - 1, to_AS->isd_number, to_AS->as_number);
             }
 
@@ -406,17 +392,15 @@ namespace ns3 {
                     from_rel = neighbour_relation::CUSTOMER;
                     break;
                 case neighbour_relation::PROVIDER:
-// Should never happen, there is no "Provider" type in xml files
+                    // Should never happen, there is no "Provider" type in xml files
                     to_rel = neighbour_relation::CUSTOMER;
                     from_rel = neighbour_relation::PROVIDER;
                     assert(false);
             }
 
             to_AS->interface_to_neighbor_map.insert(std::make_pair(to_AS->GetNDevices() - 1, from_AS->as_number));
-            if (to_AS->interfaces_per_neighbor_as.find(from_AS->as_number) !=
-                to_AS->interfaces_per_neighbor_as.end()) {
-                to_AS->interfaces_per_neighbor_as.at(from_AS->as_number).push_back(
-                        (uint16_t) to_AS->GetNDevices() - 1);
+            if (to_AS->interfaces_per_neighbor_as.find(from_AS->as_number) != to_AS->interfaces_per_neighbor_as.end()) {
+                to_AS->interfaces_per_neighbor_as.at(from_AS->as_number).push_back((uint16_t) to_AS->GetNDevices() - 1);
             } else {
                 std::vector<uint16_t> tmp;
                 tmp.push_back((uint16_t) to_AS->GetNDevices() - 1);
@@ -427,8 +411,7 @@ namespace ns3 {
             from_AS->interface_to_neighbor_map.insert(std::make_pair(from_AS->GetNDevices() - 1, to_AS->as_number));
             if (from_AS->interfaces_per_neighbor_as.find(to_AS->as_number) !=
                 from_AS->interfaces_per_neighbor_as.end()) {
-                from_AS->interfaces_per_neighbor_as.at(to_AS->as_number).push_back(
-                        from_AS->GetNDevices() - 1);
+                from_AS->interfaces_per_neighbor_as.at(to_AS->as_number).push_back(from_AS->GetNDevices() - 1);
             } else {
                 std::vector<uint16_t> tmp;
                 tmp.push_back((uint16_t) from_AS->GetNDevices() - 1);
@@ -440,10 +423,8 @@ namespace ns3 {
         }
     }
 
-
-    void GetASesWithMaliciousBRs (const NodeContainer& AS_nodes,
-                                  const YAML::Node& config,
-                                  std::vector<std::string>& border_routers_malicious_action) {
+    void GetASesWithMaliciousBRs(const NodeContainer &AS_nodes, const YAML::Node &config,
+                                 std::vector<std::string> &border_routers_malicious_action) {
         if (!config["border_router"]) {
             return;
         }
@@ -466,33 +447,34 @@ namespace ns3 {
         border_routers_malicious_action.resize(AS_nodes.GetN());
 
         uint16_t number_of_ASes_with_malicious_br = (uint16_t) std::floor(
-                ((double ) config["border_router"]["percent_of_ASes_with_malicious_br"].as<uint16_t>() * (double ) AS_nodes.GetN()) / 100.0);
-
+                ((double) config["border_router"]["percent_of_ASes_with_malicious_br"].as<uint16_t>() *
+                 (double) AS_nodes.GetN()) /
+                100.0);
 
         for (uint16_t i = 0; i < number_of_ASes_with_malicious_br; ++i) {
-            border_routers_malicious_action.at(indices.at(i)) = config["border_router"]["malicious_action"].as<std::string>();
+            border_routers_malicious_action.at(indices.at(i)) =
+                    config["border_router"]["malicious_action"].as<std::string>();
         }
 
         for (uint16_t i = number_of_ASes_with_malicious_br; i < AS_nodes.GetN(); ++i) {
             border_routers_malicious_action.at(indices.at(i)) = "no";
         }
-
     }
 
-
-    void InitializeASesAttributes(const NodeContainer& AS_nodes, std::map<int32_t, uint16_t>& real_to_alias_as_no, const YAML::Node& config ) {
-
+    void InitializeASesAttributes(const NodeContainer &AS_nodes, std::map<int32_t, uint16_t> &real_to_alias_as_no,
+                                  const YAML::Node &config) {
         bool only_propagation_delay = OnlyPropagationDelay(config);
 
         if (config["border_router"]) {
             std::vector<std::string> border_routers_malicious_action;
-            GetASesWithMaliciousBRs (AS_nodes, config, border_routers_malicious_action);
+            GetASesWithMaliciousBRs(AS_nodes, config, border_routers_malicious_action);
             Time malicious_delay = TimeStep(0);
             std::string malicious_action = config["border_router"]["malicious_action"].as<std::string>();
-            if ((malicious_action == "symmetric_delay" || malicious_action == "asymmetric_delay") && !only_propagation_delay){
+            if ((malicious_action == "symmetric_delay" || malicious_action == "asymmetric_delay") &&
+                !only_propagation_delay) {
                 std::random_device rd;
-                std::uniform_int_distribution <uint64_t> dist (50000, 300000); // random asymmetry between 50ms and 300ms
-                uint64_t random_delay = dist (rd);
+                std::uniform_int_distribution<uint64_t> dist(50000, 300000); // random asymmetry between 50ms and 300ms
+                uint64_t random_delay = dist(rd);
 
                 malicious_delay = MicroSeconds(random_delay);
             }
@@ -514,12 +496,11 @@ namespace ns3 {
         }
     }
 
-
-    bool OnlyPropagationDelay(const YAML::Node& config) {
+    bool OnlyPropagationDelay(const YAML::Node &config) {
         if (config["only_propagation_delay"] && config["only_propagation_delay"].as<int32_t>() != 0) {
             return true;
         }
 
         return false;
     }
-}
+} // namespace ns3
