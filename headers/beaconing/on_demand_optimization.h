@@ -27,6 +27,13 @@ namespace ns3 {
         uint32_t push_based_to_pull_based_frequency_ratio;
         std::set<const optimization_target_t> pull_based_optimization_targets;
 
+        void initiate_beacons_per_interface(uint16_t self_egress_if_no, SCION_AS *remote_as,
+                                            uint16_t remote_ingress_if_no) override;
+
+        void create_initial_static_info_extension(static_info_extension_t &static_info_extension,
+                                                  uint16_t self_egress_if_no,
+                                                  const optimization_target_t *optimization_target) override;
+
         void disseminate_beacons(neighbour_relation relation) override;
 
         std::tuple<bool, bool, bool, Beacon *, ld> alg_specific_import_policy(Beacon &the_beacon, uint16_t sender_as,
@@ -39,17 +46,12 @@ namespace ns3 {
 
         void delete_from_algorithm_data_structures(Beacon *the_beacon, ld replacement_key) override;
 
-        void initiate_beacons_per_interface(uint16_t self_egress_if_no, SCION_AS *remote_as,
-                                            uint16_t remote_ingress_if_no) override;
-
-        void create_initial_static_info_extension(static_info_extension_t &static_info_extension,
-                                                  uint16_t self_egress_if_no,
-                                                  const optimization_target_t *optimization_target) override;
+        static ld calculate_incoming_beacon_score(Beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
+                                                  uint16_t self_ingress_if_no);
 
         void update_algorithm_data_structures_periodic(Beacon *the_beacon, bool invalidated) override;
 
-        static ld calculate_incoming_beacon_score(Beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
-                                                  uint16_t self_ingress_if_no);
+
 
 
     };

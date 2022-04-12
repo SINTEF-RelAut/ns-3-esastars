@@ -10,7 +10,7 @@ namespace ns3 {
 
     void OnDemandOptimization::initiate_beacons_per_interface(uint16_t self_egress_if_no, SCION_AS *remote_as,
                                                               uint16_t remote_ingress_if_no) {
-        //push_based
+        // push_based
         for (auto it = if_to_optimization_targets_map.lower_bound(self_egress_if_no);
              it != if_to_optimization_targets_map.upper_bound(self_egress_if_no); ++it) {
             static_info_extension_t static_info_extension;
@@ -19,14 +19,26 @@ namespace ns3 {
                                      it->second, beacon_direction_t::PUSH_BASED);
         }
 
-        //pull-based
-        //        if (Simulator::Now().GetTimeStep() % beaconing_period.GetTimeStep() == 0 &&
-        //           (Simulator::Now().GetTimeStep() / beaconing_period.GetTimeStep()) % push_based_to_pull_based_frequency_ratio == 0) {
-        //            for (auto const& dst_as : beacon_store) {
-        //
-        //            }
-        //        }
+        // pull-based
+        // TODO
     }
+
+    void OnDemandOptimization::create_initial_static_info_extension(static_info_extension_t &static_info_extension,
+                                                                    uint16_t self_egress_if_no,
+                                                                    const optimization_target_t *optimization_target) {
+        for (auto const &criteria : optimization_target->criteria) {
+            if (criteria.first == LATENCY) {
+                static_info_extension.insert(std::make_pair(static_info_type_t::LATENCY, 0));
+            } else if (criteria.first == BW) {
+                static_info_extension.insert(
+                        std::make_pair(static_info_type_t::BW, AS->inter_as_bwds.at(self_egress_if_no)));
+            } else if (criteria.first == CO2) {
+                static_info_extension.insert(std::make_pair(static_info_type_t::CO2, 0));
+            }
+        }
+    }
+
+    void OnDemandOptimization::disseminate_beacons(neighbour_relation relation) {}
 
     std::tuple<bool, bool, bool, Beacon *, ld>
     OnDemandOptimization::alg_specific_import_policy(Beacon &the_beacon, uint16_t sender_as,
@@ -64,28 +76,30 @@ namespace ns3 {
         return std::tuple<bool, bool, bool, Beacon *, ld>(false, false, false, NULL, 0);
     }
 
-    ld OnDemandOptimization::calculate_incoming_beacon_score(Beacon &the_beacon, uint16_t sender_as,
-                                                             uint16_t remote_egress_if_no,
-                                                             uint16_t self_ingress_if_no) {
-        ld score = 0;
-        ld weights_sum = 0;
-        for (auto const &criteria : the_beacon.optimization_target->criteria) {
-            weights_sum += criteria.second;
-            if (criteria.first == static_info_type_t::LATENCY) { // in ms, assuming max latency is 1000 ms
-                score += (1 - the_beacon.static_info_extension.at(static_info_type_t::LATENCY) / 1000.0) *
-                         criteria.second;
-            } else if (criteria.first == static_info_type_t::BW) { // in Gbps, assuming max BW is 400 Gbps
-                score += the_beacon.static_info_extension.at(static_info_type_t::BW) / 400.0 * criteria.second;
-            } else if (criteria.first == static_info_type_t::CO2) { // in g/Gbps, assuming max is 10 g/Gbps
-                score += (1 - the_beacon.static_info_extension.at(static_info_type_t::CO2) / 10.0) * criteria.second;
-            }
-        }
-        return (score / weights_sum);
-    }
-
     void OnDemandOptimization::insert_to_algorithm_data_structures(Beacon *the_beacon, uint16_t sender_as,
                                                                    uint16_t remote_egress_if_no,
-                                                                   uint16_t self_ingress_if_no) {}
+                                                                   uint16_t self_ingress_if_no) {
+        auto &beacon_container = (the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED)
+                                         ? push_based_beacons_grouped_by_optimization_targets_and_ingress_if
+                                         : pull_based_beacons_grouped_by_optimization_targets_and_ingress_if;
+
+        if (beacon_container.find(the_beacon->optimization_target) == beacon_container.end()) {
+            beacon_container.insert(std::make_pair(the_beacon->optimization_target,
+                                                   std::map<uint16_t, std::multimap<ld, Beacon *>>()));
+        }
+
+        if (beacon_container.at(the_beacon->optimization_target).find(self_ingress_if_no) ==
+            beacon_container.at(the_beacon->optimization_target).end()) {
+            beacon_container.at(the_beacon->optimization_target).insert(
+                    std::make_pair(self_ingress_if_no, std::multimap<ld, Beacon *>()));
+        }
+
+        ld incoming_beacon_score =
+                calculate_incoming_beacon_score(*the_beacon, sender_as, remote_egress_if_no, self_ingress_if_no);
+
+        beacon_container.at(the_beacon->optimization_target).at(self_ingress_if_no)
+                .insert(std::make_pair(incoming_beacon_score, the_beacon));
+    }
 
     void OnDemandOptimization::delete_from_algorithm_data_structures(Beacon *the_beacon, ld replacement_key) {
         uint16_t self_ingress_if = LOWER_16_BITS(the_beacon->the_path.back());
@@ -107,21 +121,25 @@ namespace ns3 {
         }
     }
 
-    void OnDemandOptimization::disseminate_beacons(neighbour_relation relation) {}
-
-    void OnDemandOptimization::create_initial_static_info_extension(static_info_extension_t &static_info_extension,
-                                                                    uint16_t self_egress_if_no,
-                                                                    const optimization_target_t *optimization_target) {
-        for (auto const &criteria : optimization_target->criteria) {
-            if (criteria.first == LATENCY) {
-                static_info_extension.insert(std::make_pair(static_info_type_t::LATENCY, 0));
-            } else if (criteria.first == BW) {
-                static_info_extension.insert(
-                        std::make_pair(static_info_type_t::BW, AS->inter_as_bwds.at(self_egress_if_no)));
-            } else if (criteria.first == CO2) {
-                static_info_extension.insert(std::make_pair(static_info_type_t::CO2, 0));
+    ld OnDemandOptimization::calculate_incoming_beacon_score(Beacon &the_beacon, uint16_t sender_as,
+                                                             uint16_t remote_egress_if_no,
+                                                             uint16_t self_ingress_if_no) {
+        ld score = 0;
+        ld weights_sum = 0;
+        for (auto const &criteria : the_beacon.optimization_target->criteria) {
+            weights_sum += criteria.second;
+            if (criteria.first == static_info_type_t::LATENCY) { // in ms, assuming max latency is 1000 ms
+                score += (1 - the_beacon.static_info_extension.at(static_info_type_t::LATENCY) / 1000.0) *
+                         criteria.second;
+            } else if (criteria.first == static_info_type_t::BW) { // in Gbps, assuming max BW is 400 Gbps
+                score += the_beacon.static_info_extension.at(static_info_type_t::BW) / 400.0 * criteria.second;
+            } else if (criteria.first == static_info_type_t::CO2) { // in g/Gbps, assuming max is 10 g/Gbps
+                score += (1 - the_beacon.static_info_extension.at(static_info_type_t::CO2) / 10.0) * criteria.second;
             }
         }
+        return (score / weights_sum);
     }
+
+
 
 } // namespace ns3
