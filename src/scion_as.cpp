@@ -27,7 +27,7 @@ namespace ns3 {
             }
         }
 
-        beaconServer->DoInitializations(num_ASes);
+        beacon_server->DoInitializations(num_ASes);
     }
 
     void SCION_AS::DoInitializations(uint32_t num_ASes, bool only_propagation_delay,
@@ -43,7 +43,7 @@ namespace ns3 {
             host->InitializeTransmissionQueues();
         }
 
-        pathServer->InitializeTransmissionQueues();
+        path_server->InitializeTransmissionQueues();
 
         AS_max_bwd = 0;
         for (auto const curr_bwd : inter_as_bwds) {
@@ -52,7 +52,7 @@ namespace ns3 {
             }
         }
 
-        beaconServer->DoInitializations(num_ASes);
+        beacon_server->DoInitializations(num_ASes);
     }
 
     std::pair<uint16_t, SCION_AS *> SCION_AS::GetRemoteAsInfo(uint16_t egress_interface_no) {
@@ -60,18 +60,18 @@ namespace ns3 {
     }
 
     void SCION_AS::ReceiveBeacon(Beacon &received_beacon, uint16_t sender_as, uint16_t remote_if, uint16_t local_if) {
-        beaconServer->ReceiveBeacon(received_beacon, sender_as, remote_if, local_if);
+        beacon_server->ReceiveBeacon(received_beacon, sender_as, remote_if, local_if);
     }
 
-    void SCION_AS::SetBeaconServer(BeaconServer *the_beaconServer) { this->beaconServer = the_beaconServer; }
+    void SCION_AS::SetBeaconServer(BeaconServer *the_beaconServer) { this->beacon_server = the_beaconServer; }
 
     void SCION_AS::AdvanceTime(ns3::Time advance) { local_time += advance; }
 
-    BeaconServer *SCION_AS::GetBeaconServer() { return this->beaconServer; }
+    BeaconServer *SCION_AS::GetBeaconServer() { return this->beacon_server; }
 
-    PathServer *SCION_AS::GetPathServer() { return this->pathServer; }
+    PathServer *SCION_AS::GetPathServer() { return this->path_server; }
 
-    void SCION_AS::SetPathServer(PathServer *the_pathServer) { this->pathServer = the_pathServer; }
+    void SCION_AS::SetPathServer(PathServer *the_pathServer) { this->path_server = the_pathServer; }
 
     SCIONCapableNode *SCION_AS::GetHost(host_addr_t host_addr) {
         if (host_addr == 1) {
@@ -192,28 +192,28 @@ namespace ns3 {
 
             Time propagation_delay = NanoSeconds(
                     (int64_t) floor(1e6 * calculate_great_circle_latency((ld) br->GetLatitude(), (ld) br->GetLogitude(),
-                                                                         (ld) pathServer->GetLatitude(),
-                                                                         (ld) pathServer->GetLogitude())));
+                                                                         (ld) path_server->GetLatitude(),
+                                                                         (ld) path_server->GetLogitude())));
 
             br->AddToPropagationDelays(propagation_delay);
-            pathServer->AddToPropagationDelays(propagation_delay);
+            path_server->AddToPropagationDelays(propagation_delay);
 
             if (only_propagation_delay) {
                 br->AddToTransmissionDelays(Time(0)); // transmission delay for one byte assuming 10 Gbps link
-                pathServer->AddToTransmissionDelays(Time(0));
+                path_server->AddToTransmissionDelays(Time(0));
             } else {
                 br->AddToTransmissionDelays(PicoSeconds(800)); // transmission delay for one byte assuming 10 Gbps link
-                pathServer->AddToTransmissionDelays(PicoSeconds(800));
+                path_server->AddToTransmissionDelays(PicoSeconds(800));
             }
 
-            br->AddToRemoteNodesInfo(pathServer, pathServer->GetNDevices() - 1, isd_number, as_number);
-            pathServer->AddToRemoteNodesInfo(br, br->GetNDevices() - 1, isd_number, as_number);
+            br->AddToRemoteNodesInfo(path_server, path_server->GetNDevices() - 1, isd_number, as_number);
+            path_server->AddToRemoteNodesInfo(br, br->GetNDevices() - 1, isd_number, as_number);
 
             for (uint16_t as_if : border_router_to_if.at(br)) {
-                pathServer->AddToIFForwadingTable(as_if, pathServer->GetNDevices() - 1);
+                path_server->AddToIFForwadingTable(as_if, path_server->GetNDevices() - 1);
             }
 
-            br->AddToAddressForwardingTable(pathServer->GetLocalAddress(), br->GetNDevices() - 1);
+            br->AddToAddressForwardingTable(path_server->GetLocalAddress(), br->GetNDevices() - 1);
         }
 
         // Connect hosts to local path server
@@ -222,25 +222,25 @@ namespace ns3 {
 
             Time propagation_delay = NanoSeconds((int64_t) floor(
                     1e6 * calculate_great_circle_latency((ld) host->GetLatitude(), (ld) host->GetLogitude(),
-                                                         (ld) pathServer->GetLatitude(),
-                                                         (ld) pathServer->GetLogitude())));
+                                                         (ld) path_server->GetLatitude(),
+                                                         (ld) path_server->GetLogitude())));
 
             host->AddToPropagationDelays(propagation_delay);
-            pathServer->AddToPropagationDelays(propagation_delay);
+            path_server->AddToPropagationDelays(propagation_delay);
 
             if (only_propagation_delay) {
                 host->AddToTransmissionDelays(Time(0)); // transmission delay for one byte assuming 1 Gbps link
-                pathServer->AddToTransmissionDelays(Time(0));
+                path_server->AddToTransmissionDelays(Time(0));
             } else {
                 host->AddToTransmissionDelays(NanoSeconds(8)); // transmission delay for one byte assuming 1 Gbps link
-                pathServer->AddToTransmissionDelays(NanoSeconds(8));
+                path_server->AddToTransmissionDelays(NanoSeconds(8));
             }
 
-            host->AddToRemoteNodesInfo(pathServer, pathServer->GetNDevices() - 1, isd_number, as_number);
-            pathServer->AddToRemoteNodesInfo(host, host->GetNDevices() - 1, isd_number, as_number);
+            host->AddToRemoteNodesInfo(path_server, path_server->GetNDevices() - 1, isd_number, as_number);
+            path_server->AddToRemoteNodesInfo(host, host->GetNDevices() - 1, isd_number, as_number);
 
-            host->AddToAddressForwardingTable(pathServer->GetLocalAddress(), host->GetNDevices() - 1);
-            pathServer->AddToAddressForwardingTable(host->GetLocalAddress(), pathServer->GetNDevices() - 1);
+            host->AddToAddressForwardingTable(path_server->GetLocalAddress(), host->GetNDevices() - 1);
+            path_server->AddToAddressForwardingTable(host->GetLocalAddress(), path_server->GetNDevices() - 1);
         }
 
         // Connect hosts to each other
@@ -301,5 +301,28 @@ namespace ns3 {
 
     void SCION_AS::AddToRemoteASInfo(uint16_t remote_if, SCION_AS *remote_as) {
         remote_as_info.push_back(std::make_pair(remote_if, remote_as));
+    }
+
+    void SCION_AS::instantiate_beacon_server(bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
+                                             const YAML::Node &config) {
+        std::string beaconing_policy_str = config["beacon_service"]["policy"].as<std::string>();
+        beacon_server = BeaconServerFactory::CreateBeaconServer(beaconing_policy_str, this, parallel_scheduler,
+                                                                xml_node, config);
+
+        //        if (beaconing_policy_str == "baseline") {
+        //            beacon_server = (BeaconServer *) new Baseline(this, parallel_scheduler, xml_node, config);
+        //        } else if (beaconing_policy_str == "diversity_age_based") {
+        //            beacon_server = (BeaconServer *) new DiversityAgeBased(this, parallel_scheduler, xml_node, config);
+        //        } else if (beaconing_policy_str == "green_beaconing") {
+        //            beacon_server = (BeaconServer *) new GreenBeaconing(this, parallel_scheduler, xml_node, config);
+        //        } else if (beaconing_policy_str == "latency_optimized") {
+        //            beacon_server = (BeaconServer *) new LatencyOptimized(this, parallel_scheduler, xml_node, config);
+        //        } else if (beaconing_policy_str == "scionlab") {
+        //            beacon_server = (BeaconServer *) new SCIONLAB(this, parallel_scheduler, xml_node, config);
+        //        } else if (beaconing_policy_str == "on_demand") {
+        //            beacon_server = (BeaconServer *) new OnDemandOptimization(this, parallel_scheduler, xml_node, config);
+        //        } else {
+        //            beacon_server = (BeaconServer *) new Baseline(this, parallel_scheduler, xml_node, config);
+        //        }
     }
 } // namespace ns3

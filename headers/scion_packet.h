@@ -2,8 +2,8 @@
 // Created by seyedali on 19.07.21.
 //
 
-#ifndef NS_3_BEACONING_SIMULATOR_SCION_PACKET_H
-#define NS_3_BEACONING_SIMULATOR_SCION_PACKET_H
+#ifndef SCION_SIMULATOR_SCION_PACKET_H
+#define SCION_SIMULATOR_SCION_PACKET_H
 
 #include <ns3/node.h>
 #include <unordered_set>
@@ -89,4 +89,4 @@ namespace ns3 {
     };
 
 } // namespace ns3
-#endif //NS_3_BEACONING_SIMULATOR_SCION_PACKET_H
+#endif //SCION_SIMULATOR_SCION_PACKET_H

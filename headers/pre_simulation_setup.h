@@ -2,8 +2,8 @@
 // Created by Seyedali Tabaeiaghdaei on 24.03.22.
 //
 
-#ifndef NS_3_BEACONING_SIMULATOR_PRE_SIMULATION_SETUP_H
-#define NS_3_BEACONING_SIMULATOR_PRE_SIMULATION_SETUP_H
+#ifndef SCION_SIMULATOR_PRE_SIMULATION_SETUP_H
+#define SCION_SIMULATOR_PRE_SIMULATION_SETUP_H
 
 #include <istream>
 #include <omp.h>
@@ -70,4 +70,4 @@ namespace ns3 {
 
     bool OnlyPropagationDelay(const YAML::Node &config);
 } // namespace ns3
-#endif //NS_3_BEACONING_SIMULATOR_PRE_SIMULATION_SETUP_H
+#endif //SCION_SIMULATOR_PRE_SIMULATION_SETUP_H

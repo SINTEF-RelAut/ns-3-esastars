@@ -7,6 +7,8 @@
 #include <omp.h>
 
 namespace ns3 {
+    BeaconingPolicyRegister<OnDemandOptimization> OnDemandOptimization::reg("on_demand");
+
     void OnDemandOptimization::DoInitializations(uint32_t num_ASes) {}
 
     void OnDemandOptimization::initiate_beacons_per_interface(uint16_t self_egress_if_no, SCION_AS *remote_as,
@@ -105,7 +107,7 @@ namespace ns3 {
             }
 
             for (auto const &group_selected_beacons_pair : selected_beacons) {
-                for (auto const & score_selected_beacons_pair : group_selected_beacons_pair.second) {
+                for (auto const &score_selected_beacons_pair : group_selected_beacons_pair.second) {
                     Beacon *the_beacon;
                     uint16_t remote_ingress_if_no;
                     uint16_t self_egress_if_no;

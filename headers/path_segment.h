@@ -2,8 +2,8 @@
 // Created by seyedali on 21.07.21.
 //
 
-#ifndef NS_3_BEACONING_SIMULATOR_PATH_SEGMENT_H
-#define NS_3_BEACONING_SIMULATOR_PATH_SEGMENT_H
+#ifndef SCION_SIMULATOR_PATH_SEGMENT_H
+#define SCION_SIMULATOR_PATH_SEGMENT_H
 
 #include <map>
 #include <unordered_map>
@@ -59,4 +59,4 @@ namespace ns3 {
     typedef std::unordered_map<ia_t, reg_path_segs_to_one_as_t *> registered_path_segs_dataset_t;
     typedef std::unordered_map<ia_t, cached_path_segs_per_dst_t *> cached_path_segs_dataset_t;
 } // namespace ns3
-#endif //NS_3_BEACONING_SIMULATOR_PATH_SEGMENT_H
+#endif //SCION_SIMULATOR_PATH_SEGMENT_H

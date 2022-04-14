@@ -370,4 +370,73 @@ namespace ns3 {
     const std::unordered_map<uint16_t, std::vector<uint32_t>> &BeaconServer::GetBytesSentPerInterfacePerPeriod() const {
         return bytes_sent_per_interface_per_period;
     }
+
+    void ReadBr2BrEnergy(NodeContainer AS_nodes, std::map<int32_t, uint16_t> real_to_alias_as_no,
+                         const YAML::Node &config) {
+        std::ifstream energy_file(config["beacon_service"]["br_br_energy_file"].as<std::string>());
+        std::string line;
+
+        int counter = 0;
+        while (getline(energy_file, line)) {
+            std::vector<std::string> fields;
+            fields = split(line, '\t', fields);
+
+            int as_no = std::stoi(fields[0]);
+
+            double lat1 = std::stod(fields[1]);
+            double long1 = std::stod(fields[2]);
+
+            double lat2 = std::stod(fields[3]);
+            double long2 = std::stod(fields[4]);
+
+            double energy = std::stod(fields[5]);
+
+            if (real_to_alias_as_no.find(as_no) == real_to_alias_as_no.end()) {
+                counter++;
+                continue;
+            }
+
+            uint16_t index = real_to_alias_as_no.at(as_no);
+            SCION_AS *as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(index)));
+            assert(as->as_number == index);
+
+            BeaconServer *beacon_server = as->GetBeaconServer();
+
+            if (beacon_server->intra_as_energies.size() == 0) {
+                beacon_server->intra_as_energies.resize(as->GetNDevices());
+                for (uint32_t i = 0; i < as->GetNDevices(); ++i) {
+                    beacon_server->intra_as_energies.at(i).resize(as->GetNDevices());
+                }
+            }
+
+            for (uint32_t i = 0; i < as->interfaces_coordinates.size(); ++i) {
+                std::pair<double, double> coordinates1 = as->interfaces_coordinates.at(i);
+                double if1_lat = coordinates1.first;
+                double if1_long = coordinates1.second;
+
+                if (std::abs(if1_lat - lat1) < 0.001 && std::abs(if1_long - long1) < 0.001) {
+                    for (uint32_t j = 0; j < as->interfaces_coordinates.size(); ++j) {
+                        std::pair<double, double> coordinates2 = as->interfaces_coordinates.at(j);
+                        double if2_lat = coordinates2.first;
+                        double if2_long = coordinates2.second;
+
+                        if (std::abs(if2_lat - lat2) < 0.001 && std::abs(if2_long - long2) < 0.001) {
+                            beacon_server->intra_as_energies.at(i).at(j) = energy;
+                        }
+                    }
+                }
+            }
+        }
+        energy_file.close();
+        std::cout << counter << std::endl;
+
+        for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+            SCION_AS *as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+            for (uint32_t j = 0; j < as->GetBeaconServer()->intra_as_energies.size(); ++j) {
+                for (uint32_t k = 0; k < as->GetBeaconServer()->intra_as_energies.at(j).size(); ++k) {
+                    assert(as->GetBeaconServer()->intra_as_energies.at(j).at(k) != 0);
+                }
+            }
+        }
+    }
 } // namespace ns3

@@ -2,8 +2,8 @@
 // Created by seyedali on 19.07.21.
 //
 
-#ifndef NS_3_BEACONING_SIMULATOR_SCION_HOST_H
-#define NS_3_BEACONING_SIMULATOR_SCION_HOST_H
+#ifndef SCION_SIMULATOR_SCION_HOST_H
+#define SCION_SIMULATOR_SCION_HOST_H
 
 #include <unordered_map>
 
@@ -44,4 +44,4 @@ namespace ns3 {
     };
 } // namespace ns3
 
-#endif //NS_3_BEACONING_SIMULATOR_SCION_HOST_H
+#endif //SCION_SIMULATOR_SCION_HOST_H

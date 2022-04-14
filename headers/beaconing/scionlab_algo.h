@@ -4,8 +4,8 @@
  * @date 2020
  */
 
-#ifndef NS_3_BEACONING_SIMULATOR_SCIONLAB_ALGO_H
-#define NS_3_BEACONING_SIMULATOR_SCIONLAB_ALGO_H
+#ifndef SCION_SIMULATOR_SCIONLAB_ALGO_H
+#define SCION_SIMULATOR_SCIONLAB_ALGO_H
 
 #include "src/SCION/headers/beaconing/beacon_server.h"
 
@@ -14,7 +14,8 @@ namespace ns3 {
 
     class SCIONLAB : public BeaconServer {
     public:
-        SCIONLAB(bool parallel_scheduler, beaconing_timing_params params) : BeaconServer(parallel_scheduler, params) {}
+        SCIONLAB(SCION_AS *AS, bool parallel_scheduler, rapidxml::xml_node<> *xml_node, const YAML::Node &config)
+            : BeaconServer(AS, parallel_scheduler, xml_node, config) {}
 
         void DoInitializations(uint32_t num_ASes) override;
 
@@ -37,9 +38,11 @@ namespace ns3 {
 
         void update_algorithm_data_structures_periodic(Beacon *the_beacon, bool invalidated) override;
 
+        static BeaconingPolicyRegister<SCIONLAB> reg;
+
         std::pair<Beacon *, int32_t> select_most_diverse(std::vector<Beacon *> &beacons, Beacon *the_beacon);
 
         static int32_t calc_diversity(Beacon *beacon1, Beacon *beacon2);
     };
 } // namespace ns3
-#endif //NS_3_BEACONING_SIMULATOR_SCIONLAB_ALGO_H
+#endif //SCION_SIMULATOR_SCIONLAB_ALGO_H

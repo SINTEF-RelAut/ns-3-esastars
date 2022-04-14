@@ -4,8 +4,8 @@
  * @date 2020
  */
 
-#ifndef SCION_BEACONING_SIMULATOR_BEACON_H
-#define SCION_BEACONING_SIMULATOR_BEACON_H
+#ifndef SCION_SIMULATOR_BEACON_H
+#define SCION_SIMULATOR_BEACON_H
 
 #include <string>
 #include <utility>
@@ -78,4 +78,4 @@ namespace ns3 {
         void ExtractPathSegment(PathSegment &pathSegment);
     };
 } // namespace ns3
-#endif //SCION_BEACONING_SIMULATOR_BEACON_H
+#endif //SCION_SIMULATOR_BEACON_H

@@ -7,16 +7,18 @@
  *
  */
 
-#ifndef SCION_BEACONING_SIMMULATOR_SCION_CORE_AS_H
-#define SCION_BEACONING_SIMMULATOR_SCION_CORE_AS_H
+#ifndef SCION_SIMULATOR_SCION_CORE_AS_H
+#define SCION_SIMULATOR_SCION_CORE_AS_H
+
 #include "src/SCION/headers/scion_as.h"
 
 namespace ns3 {
 
     class SCION_Core_AS : public SCION_AS {
     public:
-        SCION_Core_AS(uint16_t isd_number, uint16_t as_number, uint32_t system_id, Time local_time)
-            : SCION_AS(isd_number, as_number, system_id, local_time) {}
+        SCION_Core_AS(uint32_t system_id, bool parallel_scheduler, uint16_t as_number, rapidxml::xml_node<> *xml_node,
+                      const YAML::Node &config, Time local_time)
+            : SCION_AS(system_id, parallel_scheduler, as_number, xml_node, config, local_time) {}
     };
 } // namespace ns3
-#endif //SCION_BEACONING_SIMMULATOR_SCION_CORE_AS_H
+#endif //SCION_SIMULATOR_SCION_CORE_AS_H

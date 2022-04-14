@@ -49,61 +49,29 @@ namespace ns3 {
     void InstantiateASesFromTopo(rapidxml::xml_node<> *xml_root, std::map<int32_t, uint16_t> &real_to_alias_as_no,
                                  std::map<uint16_t, int32_t> &alias_to_real_as_no, NodeContainer &AS_nodes,
                                  const YAML::Node &config) {
-        Time beaconing_period = Time(config["beacon_service"]["period"].as<std::string>());
-        Time last_beaconing_event_time = Time(config["beacon_service"]["last_beaconing"].as<std::string>());
-        uint16_t expiration_period =
-                Time(config["beacon_service"]["expiration_period"].as<std::string>()).ToInteger(Time::MIN);
-
-        int16_t alias_as_no = 0;
-
-        bool parallel_scheduler = true;
-
+        uint16_t alias_as_no = 0;
         rapidxml::xml_node<> *cur_xml_node = xml_root->first_node("node");
         while (cur_xml_node) {
-            int32_t real_as_no = std::stoi(getAttribute(cur_xml_node, "id"));
             PropertyContainer p = parseProperties(cur_xml_node);
-
-            uint16_t isd_number = 0;
-            if (p.hasProperty("isd")) {
-                isd_number = std::stoi(p.getProperty("isd"));
-            }
-
-            beaconing_timing_params timing_params = std::make_pair(beaconing_period, expiration_period);
-            std::string type = "core"; //p.getProperty("type");
-
-            std::string beaconing_policy_str = config["beacon_service"]["policy"].as<std::string>();
-            BeaconServer *beaconing_policy;
-            if (beaconing_policy_str == "baseline") {
-                beaconing_policy = (BeaconServer *) new Baseline(parallel_scheduler, timing_params);
-            } else if (beaconing_policy_str == "diversity_age_based") {
-                beaconing_policy = (BeaconServer *) new DiversityAgeBased(parallel_scheduler, timing_params);
-            } else if (beaconing_policy_str == "green_beaconing") {
-                ld dirty_energy_ratio = std::stod(p.getProperty("dirty_energy_ratio"));
-                ld sun_energy_ratio = std::stod(p.getProperty("sun_energy_ratio"));
-                beaconing_policy = (BeaconServer *) new GreenBeaconing(parallel_scheduler, timing_params,
-                                                                       dirty_energy_ratio, sun_energy_ratio);
-            } else if (beaconing_policy_str == "latency_optimized") {
-                beaconing_policy = (BeaconServer *) new LatencyOptimized(parallel_scheduler, timing_params);
-            } else if (beaconing_policy_str == "scionlab") {
-                beaconing_policy = (BeaconServer *) new SCIONLAB(parallel_scheduler, timing_params);
-            } else {
-                beaconing_policy = (BeaconServer *) new Baseline(parallel_scheduler, timing_params);
-            }
+            std::string type = p.getProperty("type");
 
             Ptr<SCION_AS> AS_node;
             if (type == "core") {
-                AS_node = CreateObject<SCION_Core_AS>(isd_number, alias_as_no, 0, Time(0));
+                AS_node =
+                        CreateObject<SCION_Core_AS>(0, (alias_as_no == 0), alias_as_no, cur_xml_node, config, Time(0));
             } else if (type == "non-core") {
-                AS_node = CreateObject<SCION_AS>(isd_number, alias_as_no, 0, Time(0));
+                AS_node = CreateObject<SCION_AS>(0, (alias_as_no == 0), alias_as_no, cur_xml_node, config, Time(0));
             } else {
                 std::cerr << "Incompatible AS_node type!" << std::endl;
                 exit(1);
             }
-
-            AS_node->SetBeaconServer(beaconing_policy);
-            beaconing_policy->SetAS(PeekPointer(AS_node));
-
             AS_nodes.Add(AS_node);
+
+            int32_t real_as_no = std::stoi(getAttribute(cur_xml_node, "id"));
+            uint16_t isd_number = 0;
+            if (p.hasProperty("isd")) {
+                isd_number = std::stoi(p.getProperty("isd"));
+            }
 
             as_to_isd_map.insert(std::make_pair(alias_as_no, isd_number));
 
@@ -113,7 +81,6 @@ namespace ns3 {
             alias_as_no++;
 
             cur_xml_node = cur_xml_node->next_sibling("node");
-            parallel_scheduler = false;
         }
     }
 
@@ -491,7 +458,7 @@ namespace ns3 {
             }
         }
 
-        if (config["beacon_service"]["policy"].as<std::string>() == "green_beaconing") {
+        if (config["beacon_service"]["br_br_energy_file"]) {
             ReadBr2BrEnergy(AS_nodes, real_to_alias_as_no, config);
         }
     }

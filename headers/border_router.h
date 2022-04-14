@@ -2,8 +2,8 @@
 // Created by seyedali on 28.07.21.
 //
 
-#ifndef NS_3_BEACONING_SIMULATOR_BORDER_ROUTER_H
-#define NS_3_BEACONING_SIMULATOR_BORDER_ROUTER_H
+#ifndef SCION_SIMULATOR_BORDER_ROUTER_H
+#define SCION_SIMULATOR_BORDER_ROUTER_H
 
 #include "ns3/network-module.h"
 #include "ns3/node.h"
@@ -25,4 +25,4 @@ namespace ns3 {
         void process_received_packet(uint16_t local_if, SCIONPacket *packet, Time receive_time) override;
     };
 } // namespace ns3
-#endif //NS_3_BEACONING_SIMULATOR_BORDER_ROUTER_H
+#endif //SCION_SIMULATOR_BORDER_ROUTER_H

@@ -2,8 +2,8 @@
 // Created by seyedali on 19.07.21.
 //
 
-#ifndef NS_3_BEACONING_SIMULATOR_PATH_SERVER_H
-#define NS_3_BEACONING_SIMULATOR_PATH_SERVER_H
+#ifndef SCION_SIMULATOR_PATH_SERVER_H
+#define SCION_SIMULATOR_PATH_SERVER_H
 
 #include <map>
 #include <unordered_map>
@@ -51,4 +51,4 @@ namespace ns3 {
     };
 } // namespace ns3
 
-#endif //NS_3_BEACONING_SIMULATOR_PATH_SERVER_H
+#endif //SCION_SIMULATOR_PATH_SERVER_H

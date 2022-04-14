@@ -2,8 +2,8 @@
 // Created by Seyedali Tabaeiaghdaei on 06.04.22.
 //
 
-#ifndef NS_3_BEACONING_SIMULATOR_ON_DEMAND_OPTIMIZATION_H
-#define NS_3_BEACONING_SIMULATOR_ON_DEMAND_OPTIMIZATION_H
+#ifndef SCION_SIMULATOR_ON_DEMAND_OPTIMIZATION_H
+#define SCION_SIMULATOR_ON_DEMAND_OPTIMIZATION_H
 
 #include "src/SCION/headers/beaconing/beacon_server.h"
 
@@ -13,8 +13,9 @@ namespace ns3 {
 
     class OnDemandOptimization : public BeaconServer {
     public:
-        OnDemandOptimization(bool parallel_scheduler, beaconing_timing_params params)
-            : BeaconServer(parallel_scheduler, params) {}
+        OnDemandOptimization(SCION_AS *AS, bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
+                             const YAML::Node &config)
+            : BeaconServer(AS, parallel_scheduler, xml_node, config) {}
 
         void DoInitializations(uint32_t num_ASes) override;
 
@@ -27,7 +28,8 @@ namespace ns3 {
         std::unordered_map<uint16_t, const optimization_target_t> set_of_optimization_targets_originated_from_this_as;
         std::multimap<uint16_t, const optimization_target_t *> if_to_optimization_targets_map;
 
-        std::unordered_map<uint16_t, std::unordered_map<uint16_t, std::vector<uint16_t>>> interface_groups_connected_per_neighbor;
+        std::unordered_map<uint16_t, std::unordered_map<uint16_t, std::vector<uint16_t>>>
+                interface_groups_connected_per_neighbor;
 
         uint32_t push_based_to_pull_based_frequency_ratio;
         std::set<const optimization_target_t> pull_based_optimization_targets;
@@ -68,6 +70,8 @@ namespace ns3 {
                                           static_info_extension_t &propagation_static_info);
 
         void update_algorithm_data_structures_periodic(Beacon *the_beacon, bool invalidated) override;
+
+        static BeaconingPolicyRegister<OnDemandOptimization> reg;
     };
 } // namespace ns3
-#endif //NS_3_BEACONING_SIMULATOR_ON_DEMAND_OPTIMIZATION_H
+#endif //SCION_SIMULATOR_ON_DEMAND_OPTIMIZATION_H

@@ -2,8 +2,8 @@
 // Created by Seyedali Tabaeiaghdaei on 21.03.22.
 //
 
-#ifndef NS_3_BEACONING_SIMULATOR_RUN_PARALLEL_EVENTS_H
-#define NS_3_BEACONING_SIMULATOR_RUN_PARALLEL_EVENTS_H
+#ifndef SCION_SIMULATOR_RUN_PARALLEL_EVENTS_H
+#define SCION_SIMULATOR_RUN_PARALLEL_EVENTS_H
 
 #include "src/SCION/headers/externs.h"
 #include "src/SCION/headers/scion_as.h"
@@ -33,4 +33,4 @@ namespace ns3 {
         }
     }
 } // namespace ns3
-#endif //NS_3_BEACONING_SIMULATOR_RUN_PARALLEL_EVENTS_H
+#endif //SCION_SIMULATOR_RUN_PARALLEL_EVENTS_H

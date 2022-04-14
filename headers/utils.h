@@ -4,8 +4,8 @@
  * @date 2020
  */
 
-#ifndef SCION_BEACONING_SIMULATOR_UTILS_H
-#define SCION_BEACONING_SIMULATOR_UTILS_H
+#ifndef SCION_SIMULATOR_UTILS_H
+#define SCION_SIMULATOR_UTILS_H
 
 #include <map>
 
@@ -65,4 +65,4 @@ namespace ns3 {
     void print_number_of_valid_beacon_entries_in_beacon_store(Ptr<SCION_AS> node,
                                                               const std::map<uint16_t, int32_t> &index_to_AS_no);
 } // namespace ns3
-#endif //SCION_BEACONING_SIMMULATOR_UTILS_H
+#endif //SCION_SIMULATOR_UTILS_H

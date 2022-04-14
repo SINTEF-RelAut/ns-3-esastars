@@ -1,11 +1,9 @@
-/**
- * @file scion_as.h
- * @authors Seyedali Tabaeiaghdaei, Christelle Gloor
- * @date 2020
- */
-#ifndef SCION_BEACONING_SIMULATOR_SCION_AS_H
-#define SCION_BEACONING_SIMULATOR_SCION_AS_H
+//
+// Created by Seyedali Tabaeiaghdaei, Christelle Gloor on 14.04.22.
+//
 
+#ifndef SCION_SIMULATOR_SCION_AS_H
+#define SCION_SIMULATOR_SCION_AS_H
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -16,6 +14,7 @@
 #include "ns3/point-to-point-channel.h"
 #include "ns3/point-to-point-helper.h"
 #include "ns3/point-to-point-net-device.h"
+#include "ns3/rapidxml.hpp"
 
 #include "src/SCION/headers/beaconing/beacon.h"
 #include "src/SCION/headers/border_router.h"
@@ -23,6 +22,7 @@
 #include "src/SCION/headers/scion_host.h"
 #include "src/SCION/headers/scion_packet.h"
 #include "src/SCION/headers/user_defined_events.h"
+#include "src/SCION/headers/utils.h"
 
 namespace ns3 {
 
@@ -32,9 +32,23 @@ namespace ns3 {
 
     class SCION_AS : public Node {
     public:
-        SCION_AS(uint16_t isd_number, uint16_t as_number, uint32_t system_id, Time local_time)
-            : Node(system_id), isd_number(isd_number), as_number(as_number), local_time(local_time) {
+        SCION_AS(uint32_t system_id, bool parallel_scheduler, uint16_t as_number, rapidxml::xml_node<> *xml_node,
+                 const YAML::Node &config, Time local_time)
+            : Node(system_id) {
+            PropertyContainer p = parseProperties(xml_node);
+
+            if (p.hasProperty("isd")) {
+                isd_number = std::stoi(p.getProperty("isd"));
+            } else {
+                isd_number = 0;
+            }
+
+            this->as_number = as_number;
             ia_addr = (((uint32_t) isd_number) << 16) | ((uint32_t) as_number);
+
+            this->local_time = local_time;
+
+            instantiate_beacon_server(parallel_scheduler, xml_node, config);
         }
 
         virtual ~SCION_AS() {}
@@ -89,8 +103,8 @@ namespace ns3 {
         friend class UserDefinedEvents;
 
     protected:
-        BeaconServer *beaconServer;
-        PathServer *pathServer;
+        BeaconServer *beacon_server;
+        PathServer *path_server;
         std::vector<SCIONHost *> hosts;
         std::vector<BorderRouter *> border_routers;
 
@@ -99,6 +113,9 @@ namespace ns3 {
         void connect_internal_nodes(bool only_propagation_delay, std::string border_routers_malicious_action,
                                     Time malicious_delay);
         void initialize_latencies(bool only_propagation_delay);
+
+        void instantiate_beacon_server(bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
+                                       const YAML::Node &config);
     };
 } // namespace ns3
-#endif //SCION_BEACONING_SIMULATOR_SCION_AS_H
+#endif //SCION_SIMULATOR_SCION_AS_H

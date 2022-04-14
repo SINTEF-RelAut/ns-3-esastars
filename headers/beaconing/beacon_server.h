@@ -4,14 +4,15 @@
  * @date 2020
  */
 
-#ifndef SCION_BEACONING_SIMULATOR_BEACON_SERVER_H
-#define SCION_BEACONING_SIMULATOR_BEACON_SERVER_H
+#ifndef SCION_SIMULATOR_BEACON_SERVER_H
+#define SCION_SIMULATOR_BEACON_SERVER_H
 
 #include <map>
 #include <unordered_map>
 #include <unordered_set>
 
 #include "ns3/nstime.h"
+#include "ns3/rapidxml.hpp"
 
 #include "src/SCION/headers/beaconing/beacon.h"
 #include "src/SCION/headers/externs.h"
@@ -30,14 +31,21 @@ namespace ns3 {
 
     class BeaconServer {
     public:
-        BeaconServer(bool parallel_scheduler, beaconing_timing_params params)
-            : parallel_scheduler(parallel_scheduler), beaconing_period(params.first), expiration_period(params.second) {
-        }
+        BeaconServer(SCION_AS *AS, bool parallel_scheduler, rapidxml::xml_node<> *xml_node, const YAML::Node &config)
+            : AS(AS), parallel_scheduler(parallel_scheduler),
+              beaconing_period(Time(config["beacon_service"]["period"].as<std::string>())),
+              expiration_period(
+                      Time(config["beacon_service"]["expiration_period"].as<std::string>()).ToInteger(Time::MIN)),
+              last_beaconing_event_time(Time(config["beacon_service"]["last_beaconing"].as<std::string>())) {
+            PropertyContainer p = parseProperties(xml_node);
+            if (p.hasProperty("dirty_energy_ratio")) {
+                dirty_energy_ratio = std::stod(p.getProperty("dirty_energy_ratio"));
+            }
 
-        BeaconServer(bool parallel_scheduler, beaconing_timing_params params, float dirty_energy_ratio,
-                     float sun_energy_ratio)
-            : parallel_scheduler(parallel_scheduler), beaconing_period(params.first), expiration_period(params.second),
-              dirty_energy_ratio(dirty_energy_ratio), sun_energy_ratio(sun_energy_ratio) {}
+            if (p.hasProperty("sun_energy_ratio")) {
+                sun_energy_ratio = std::stod(p.getProperty("sun_energy_ratio"));
+            }
+        }
 
         virtual void DoInitializations(uint32_t num_ASes) = 0;
 
@@ -66,15 +74,16 @@ namespace ns3 {
         const std::unordered_map<uint16_t, std::vector<uint32_t>> &GetBytesSentPerInterfacePerPeriod() const;
 
     protected:
-        bool parallel_scheduler;
+        SCION_AS *AS;
 
-        Time beaconing_period;
-        uint16_t expiration_period;
+        const bool parallel_scheduler;
+
+        const Time beaconing_period;
+        const uint16_t expiration_period;
+        const Time last_beaconing_event_time;
 
         float dirty_energy_ratio;
         float sun_energy_ratio;
-
-        SCION_AS *AS;
 
         uint16_t now;
         uint16_t next_period;
@@ -138,6 +147,40 @@ namespace ns3 {
         void increment_control_plane_bytes_sent(Beacon &the_beacon, uint16_t interface);
 
         std::pair<ld, ld> calculate_final_diversity_scores(Beacon *the_beacon);
+
+        friend void ReadBr2BrEnergy(ns3::NodeContainer AS_nodes, std::map<int32_t, uint16_t> real_to_alias_as_no,
+                                    const YAML::Node &config);
     };
+
+    void ReadBr2BrEnergy(NodeContainer AS_nodes, std::map<int32_t, uint16_t> real_to_alias_as_no,
+                         const YAML::Node &config);
+
+    template<typename BeaconingPolicy>
+    BeaconServer *CreateBeaconingPolicy(SCION_AS *AS, bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
+                                        const YAML::Node &config) {
+        return new BeaconingPolicy(AS, parallel_scheduler, xml_node, config);
+    }
+
+    struct BeaconServerFactory {
+        static BeaconServer *CreateBeaconServer(std::string const &s, SCION_AS *AS, bool parallel_scheduler,
+                                                rapidxml::xml_node<> *xml_node, const YAML::Node &config) {
+            auto it = string_to_beaconing_policy_map.find(s);
+            if (it == string_to_beaconing_policy_map.end())
+                return NULL;
+            return it->second(AS, parallel_scheduler, xml_node, config);
+        }
+
+    protected:
+        static std::map<std::string, BeaconServer *(*) (SCION_AS *, bool, rapidxml::xml_node<> *, const YAML::Node &)>
+                string_to_beaconing_policy_map;
+    };
+
+    template<typename BeaconingPolicy>
+    struct BeaconingPolicyRegister : BeaconServerFactory {
+        BeaconingPolicyRegister(std::string const &s) {
+            string_to_beaconing_policy_map.insert(std::make_pair(s, &CreateBeaconingPolicy<BeaconingPolicy>));
+        }
+    };
+
 } // namespace ns3
-#endif //SCION_BEACONING_SIMULATOR_BEACON_SERVER_H
+#endif //SCION_SIMULATOR_BEACON_SERVER_H

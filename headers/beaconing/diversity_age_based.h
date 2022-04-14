@@ -4,8 +4,8 @@
  * @date 2020
  */
 
-#ifndef SCION_BEACONING_SIMULATOR_CRITERIA_MATCHING_H
-#define SCION_BEACONING_SIMULATOR_CRITERIA_MATCHING_H
+#ifndef SCION_SIMULATOR_CRITERIA_MATCHING_H
+#define SCION_SIMULATOR_CRITERIA_MATCHING_H
 
 #include "src/SCION/headers/beaconing/beacon_server.h"
 
@@ -21,8 +21,9 @@ namespace ns3 {
 
     class DiversityAgeBased : public BeaconServer {
     public:
-        DiversityAgeBased(bool parallel_scheduler, beaconing_timing_params params)
-            : BeaconServer(parallel_scheduler, params) {}
+        DiversityAgeBased(SCION_AS *AS, bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
+                          const YAML::Node &config)
+            : BeaconServer(AS, parallel_scheduler, xml_node, config) {}
 
         void DoInitializations(uint32_t num_ASes) override;
 
@@ -84,6 +85,8 @@ namespace ns3 {
                                       SCION_AS *remote_as);
 
         inline ld calculate_import_raw_score(Beacon &the_beacon);
+
+        static BeaconingPolicyRegister<DiversityAgeBased> reg;
     };
 } // namespace ns3
-#endif //SCION_BEACONING_SIMULATOR_CRITERIA_MATCHING_H
+#endif //SCION_SIMULATOR_CRITERIA_MATCHING_H

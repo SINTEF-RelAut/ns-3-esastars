@@ -11,6 +11,8 @@
 #include <omp.h>
 
 namespace ns3 {
+    BeaconingPolicyRegister<SCIONLAB> SCIONLAB::reg("scionlab");
+
     void SCIONLAB::DoInitializations(uint32_t num_ASes) {}
 
     void SCIONLAB::create_initial_static_info_extension(static_info_extension_t &static_info_extension,

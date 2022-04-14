@@ -2,8 +2,8 @@
 // Created by seyedali on 17.07.21.
 //
 
-#ifndef NS_3_BEACONING_SIMULATOR_POST_SIMULATION_EVALUATIONS_H
-#define NS_3_BEACONING_SIMULATOR_POST_SIMULATION_EVALUATIONS_H
+#ifndef SCION_SIMULATOR_POST_SIMULATION_EVALUATIONS_H
+#define SCION_SIMULATOR_POST_SIMULATION_EVALUATIONS_H
 
 #include <yaml-cpp/yaml.h>
 
@@ -96,4 +96,4 @@ namespace ns3 {
             std::map<double, std::map<double, std::set<Beacon *>>> &sorted_beacons_by_pollution_by_latency);
 
 } // namespace ns3
-#endif //NS_3_BEACONING_SIMULATOR_POST_SIMULATION_EVALUATIONS_H
+#endif //SCION_SIMULATOR_POST_SIMULATION_EVALUATIONS_H

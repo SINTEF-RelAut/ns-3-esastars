@@ -2,8 +2,8 @@
 // Created by seyedali on 30.08.21.
 //
 
-#ifndef NS_3_BEACONING_SIMULATOR_TIME_SERVER_H
-#define NS_3_BEACONING_SIMULATOR_TIME_SERVER_H
+#ifndef SCION_SIMULATOR_TIME_SERVER_H
+#define SCION_SIMULATOR_TIME_SERVER_H
 
 #include <algorithm>
 #include <random>
@@ -205,4 +205,4 @@ namespace ns3 {
     };
 } // namespace ns3
 
-#endif //NS_3_BEACONING_SIMULATOR_TIME_SERVER_H
+#endif //SCION_SIMULATOR_TIME_SERVER_H

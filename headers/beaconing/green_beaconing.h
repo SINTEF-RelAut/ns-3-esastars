@@ -4,8 +4,8 @@
  * @date 2021
  */
 
-#ifndef NS_3_BEACONING_SIMULATOR_GREEN_BEACONING_H
-#define NS_3_BEACONING_SIMULATOR_GREEN_BEACONING_H
+#ifndef SCION_SIMULATOR_GREEN_BEACONING_H
+#define SCION_SIMULATOR_GREEN_BEACONING_H
 
 #include <cmath>
 #include <yaml-cpp/yaml.h>
@@ -20,9 +20,8 @@ namespace ns3 {
 
     class GreenBeaconing : public BeaconServer {
     public:
-        GreenBeaconing(bool parallel_scheduler, beaconing_timing_params params, float dirty_energy_ratio,
-                       float sun_energy_ratio)
-            : BeaconServer(parallel_scheduler, params, dirty_energy_ratio, sun_energy_ratio) {}
+        GreenBeaconing(SCION_AS *AS, bool parallel_scheduler, rapidxml::xml_node<> *xml_node, const YAML::Node &config)
+            : BeaconServer(AS, parallel_scheduler, xml_node, config) {}
 
         void DoInitializations(uint32_t num_ASes) override;
 
@@ -56,11 +55,8 @@ namespace ns3 {
 
         ld calculate_pollution_between_border_routers(uint16_t ingress_if, uint16_t egress_if);
 
-        friend void ReadBr2BrEnergy(ns3::NodeContainer AS_nodes, std::map<int32_t, uint16_t> real_to_alias_as_no,
-                                    const YAML::Node &config);
+        static BeaconingPolicyRegister<GreenBeaconing> reg;
     };
 
-    void ReadBr2BrEnergy(NodeContainer AS_nodes, std::map<int32_t, uint16_t> real_to_alias_as_no,
-                         const YAML::Node &config);
 } // namespace ns3
-#endif //NS_3_BEACONING_SIMULATOR_GREEN_BEACONING_H
+#endif //SCION_SIMULATOR_GREEN_BEACONING_H

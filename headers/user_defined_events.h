@@ -2,20 +2,21 @@
 // Created by Seyedali Tabaeiaghdaei on 21.03.22.
 //
 
-#ifndef NS_3_BEACONING_SIMULATOR_USER_DEFINED_EVENTS_H
-#define NS_3_BEACONING_SIMULATOR_USER_DEFINED_EVENTS_H
+#ifndef SCION_SIMULATOR_USER_DEFINED_EVENTS_H
+#define SCION_SIMULATOR_USER_DEFINED_EVENTS_H
 
-#include "scion_as.h"
 #include <any>
 #include <fstream>
 #include <functional>
 #include <unordered_map>
 #include <yaml-cpp/yaml.h>
 
-#include "json.hpp"
-#include "scion_packet.h"
-#include "src/SCION/headers/path_segment.h"
 #include "src/core/model/simulator.h"
+
+#include "src/SCION/headers/json.hpp"
+#include "src/SCION/headers/path_segment.h"
+#include "src/SCION/headers/scion_as.h"
+#include "src/SCION/headers/scion_packet.h"
 
 template<typename Ret>
 struct AnyCallable {
@@ -113,4 +114,4 @@ namespace ns3 {
         void time_references_up();
     };
 } // namespace ns3
-#endif //NS_3_BEACONING_SIMULATOR_USER_DEFINED_EVENTS_H
+#endif //SCION_SIMULATOR_USER_DEFINED_EVENTS_H

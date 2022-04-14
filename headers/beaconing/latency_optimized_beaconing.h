@@ -4,8 +4,8 @@
  * @date 2021
  */
 
-#ifndef NS_3_BEACONING_SIMULATOR_LATENCY_OPTIMIZED_BEACONING_H
-#define NS_3_BEACONING_SIMULATOR_LATENCY_OPTIMIZED_BEACONING_H
+#ifndef SCION_SIMULATOR_LATENCY_OPTIMIZED_BEACONING_H
+#define SCION_SIMULATOR_LATENCY_OPTIMIZED_BEACONING_H
 
 #include "src/SCION/headers/beaconing/beacon_server.h"
 
@@ -16,8 +16,9 @@ namespace ns3 {
 
     class LatencyOptimized : public BeaconServer {
     public:
-        LatencyOptimized(bool parallel_scheduler, beaconing_timing_params params)
-            : BeaconServer(parallel_scheduler, params) {}
+        LatencyOptimized(SCION_AS *AS, bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
+                         const YAML::Node &config)
+            : BeaconServer(AS, parallel_scheduler, xml_node, config) {}
 
         void DoInitializations(uint32_t num_ASes) override;
 
@@ -44,6 +45,8 @@ namespace ns3 {
         std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>>
         select_beacons_to_disseminate_per_dst_per_nbr(uint16_t remote_as_no, uint16_t dst_as_no,
                                                       const beacons_with_same_dst_as &beacons_to_the_dst_as);
+
+        static BeaconingPolicyRegister<LatencyOptimized> reg;
     };
 } // namespace ns3
-#endif //NS_3_BEACONING_SIMULATOR_LATENCY_OPTIMIZED_BEACONING_H
+#endif //SCION_SIMULATOR_LATENCY_OPTIMIZED_BEACONING_H
