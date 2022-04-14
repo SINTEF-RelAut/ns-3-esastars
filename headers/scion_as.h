@@ -14,7 +14,7 @@
 #include "ns3/point-to-point-channel.h"
 #include "ns3/point-to-point-helper.h"
 #include "ns3/point-to-point-net-device.h"
-#include "ns3/rapidxml.hpp"
+
 
 #include "src/SCION/headers/beaconing/beacon.h"
 #include "src/SCION/headers/border_router.h"

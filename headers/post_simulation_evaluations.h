@@ -41,6 +41,11 @@ namespace ns3 {
             REGISTER_FUN(PrintBestPerHopPollutionIndexes)
             //             REGISTER_FUN(PrintTransitTrafficBaseline)
             REGISTER_FUN(InvestigateAffectedTimeServers)
+            REGISTER_FUN(PrintBeaconStores)
+            REGISTER_FUN(PrintConsumedBWForBeaconing)
+
+            REGISTER_FUN(PrintNumberOfValidBeaconEntriesInBeaconStore)
+
         }
 
         void DoFinalEvaluations();
@@ -72,6 +77,12 @@ namespace ns3 {
         void PrintTransitTrafficBaseline();
 
         void InvestigateAffectedTimeServers();
+
+        void PrintConsumedBWForBeaconing();
+
+        void PrintBeaconStores();
+
+        void PrintNumberOfValidBeaconEntriesInBeaconStore();
 
         friend void sort_beacons_by_pollution_by_latency(
                 NodeContainer &AS_nodes, SCION_AS *AS1, SCION_AS *AS2, std::string beaconing_policy_str,

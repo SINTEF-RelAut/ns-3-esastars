@@ -751,6 +751,85 @@ namespace ns3 {
         }
     }
 
+    void PostSimulationEvaluations::PrintConsumedBWForBeaconing() {
+        for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+            SCION_AS *AS_node = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+            for (auto const &el : AS_node->GetBeaconServer()->GetBytesSentPerInterfacePerPeriod()) {
+                auto const &vector = el.second;
+                std::cerr << "\nNode: " << real_to_alias_as_no.at(AS_node->as_number) << " at time 0." << std::endl;
+                for (auto const &element : vector) {
+                    std::cerr << element << " ";
+                }
+            }
+        }
+    }
+
+    void PostSimulationEvaluations::PrintBeaconStores() {
+        for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+            SCION_AS *AS_node = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+            std::cout << "From: " << real_to_alias_as_no.at(AS_node->as_number) << std::endl;
+
+            for (auto const &dst_as_beacons_pair : AS_node->GetBeaconServer()->GetBeaconStore()) {
+                uint16_t dst_as = dst_as_beacons_pair.first;
+                auto const &same_dst_as_beacons = dst_as_beacons_pair.second;
+
+                std::cout << "\t"
+                          << "To: " << real_to_alias_as_no.at(dst_as) << std::endl;
+
+                for (auto const &beacons_from_same_nbr : same_dst_as_beacons) {
+                    for (auto const &the_beacon : beacons_from_same_nbr.second) {
+                        if (!the_beacon->is_valid) {
+                            continue;
+                        }
+                        std::cout << "\t"
+                                  << "\t";
+                        uint32_t hop_cnt = 0;
+                        std::vector<link_information>::reverse_iterator hop = the_beacon->the_path.rbegin();
+                        for (; hop != the_beacon->the_path.rend(); ++hop) {
+                            if (hop_cnt != 0) {
+                                std::cout << ", ";
+                            }
+                            std::cout << real_to_alias_as_no.at(SECOND_LOWER_16_BITS(*hop)) << ":"
+                                      << LOWER_16_BITS(*hop) << ", " << real_to_alias_as_no.at(UPPER_16_BITS(*hop))
+                                      << ":" << SECOND_UPPER_16_BITS(*hop);
+                            hop_cnt++;
+                        }
+                        std::cout << "; ";
+                        std::cout << "latency = " << the_beacon->static_info_extension.at(static_info_type_t::LATENCY);
+                        std::cout << "; ";
+                        std::cout << "BWD = " << the_beacon->static_info_extension.at(static_info_type_t::BW);
+                        std::cout << std::endl;
+                    }
+                }
+            }
+        }
+    }
+
+    void PostSimulationEvaluations::PrintNumberOfValidBeaconEntriesInBeaconStore() {
+        for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+            SCION_AS *AS_node = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+            std::cerr << "Beacon Store on Node: " << real_to_alias_as_no.at(AS_node->as_number) << std::endl;
+            for (auto const &src_as_beacons_pair : AS_node->GetBeaconServer()->GetBeaconStore()) {
+                auto const &src_as = src_as_beacons_pair.first;
+                auto const &beacons = src_as_beacons_pair.second;
+
+                int count = 0;
+                for (auto const &len_beacon_set_pair : beacons) {
+                    auto const &length = len_beacon_set_pair.first;
+                    auto const &beacon_set = len_beacon_set_pair.second;
+                    std::cout << length;
+                    for (auto b : beacon_set) {
+                        if (b->is_valid) {
+                            count++;
+                        }
+                    }
+                }
+                std::cerr << "\t" << real_to_alias_as_no.at(src_as) << ":" << count << std::endl;
+            }
+            std::cerr << std::endl;
+        }
+    }
+
     void PostSimulationEvaluations::InvestigateAffectedTimeServers() {
         std::cout << "########################### InvestigateAffectedTimeServers #####################################"
                   << std::endl;

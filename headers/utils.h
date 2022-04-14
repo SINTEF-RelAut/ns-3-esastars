@@ -12,7 +12,6 @@
 #include "ns3/rapidxml.hpp"
 
 #include "src/SCION/headers/beaconing/beacon.h"
-#include "src/SCION/headers/scion_as.h"
 
 namespace ns3 {
 
@@ -55,14 +54,6 @@ namespace ns3 {
 
     PropertyContainer parseProperties(rapidxml::xml_node<> *node);
 
-    void print_consumed_bw_structure(Ptr<SCION_AS> node, const std::map<uint16_t, int32_t> &index_to_AS_no);
 
-    void print_beacon_store(Ptr<SCION_AS> the_node, const std::map<uint16_t, int32_t> &index_to_AS_no);
-
-    void print_valid_beacon_counter(Ptr<SCION_AS> node, const std::map<uint16_t, int32_t> &index_to_AS_no,
-                                    std::unordered_map<uint16_t, uint64_t> counter);
-
-    void print_number_of_valid_beacon_entries_in_beacon_store(Ptr<SCION_AS> node,
-                                                              const std::map<uint16_t, int32_t> &index_to_AS_no);
 } // namespace ns3
 #endif //SCION_SIMULATOR_UTILS_H
