@@ -70,8 +70,6 @@ namespace ns3 {
                                           static_info_extension_t &propagation_static_info);
 
         void update_algorithm_data_structures_periodic(Beacon *the_beacon, bool invalidated) override;
-
-        static BeaconingPolicyRegister<OnDemandOptimization> reg;
     };
 } // namespace ns3
 #endif //SCION_SIMULATOR_ON_DEMAND_OPTIMIZATION_H

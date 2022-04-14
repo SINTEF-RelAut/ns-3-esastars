@@ -86,7 +86,6 @@ namespace ns3 {
 
         inline ld calculate_import_raw_score(Beacon &the_beacon);
 
-        static BeaconingPolicyRegister<DiversityAgeBased> reg;
     };
 } // namespace ns3
 #endif //SCION_SIMULATOR_CRITERIA_MATCHING_H

@@ -13,8 +13,6 @@
 
 namespace ns3 {
 
-    BeaconingPolicyRegister<Baseline> Baseline::reg("baseline");
-
     void Baseline::DoInitializations(uint32_t num_ASes) {}
 
     void Baseline::create_initial_static_info_extension(static_info_extension_t &static_info_extension,

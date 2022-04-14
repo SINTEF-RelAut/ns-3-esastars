@@ -54,8 +54,6 @@ namespace ns3 {
                         &pollution_index_map_to_beacon_and_metadata);
 
         ld calculate_pollution_between_border_routers(uint16_t ingress_if, uint16_t egress_if);
-
-        static BeaconingPolicyRegister<GreenBeaconing> reg;
     };
 
 } // namespace ns3

@@ -155,32 +155,5 @@ namespace ns3 {
     void ReadBr2BrEnergy(NodeContainer AS_nodes, std::map<int32_t, uint16_t> real_to_alias_as_no,
                          const YAML::Node &config);
 
-    template<typename BeaconingPolicy>
-    BeaconServer *CreateBeaconingPolicy(SCION_AS *AS, bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
-                                        const YAML::Node &config) {
-        return new BeaconingPolicy(AS, parallel_scheduler, xml_node, config);
-    }
-
-    struct BeaconServerFactory {
-        static BeaconServer *CreateBeaconServer(std::string const &s, SCION_AS *AS, bool parallel_scheduler,
-                                                rapidxml::xml_node<> *xml_node, const YAML::Node &config) {
-            auto it = string_to_beaconing_policy_map.find(s);
-            if (it == string_to_beaconing_policy_map.end())
-                return NULL;
-            return it->second(AS, parallel_scheduler, xml_node, config);
-        }
-
-    protected:
-        static std::map<std::string, BeaconServer *(*) (SCION_AS *, bool, rapidxml::xml_node<> *, const YAML::Node &)>
-                string_to_beaconing_policy_map;
-    };
-
-    template<typename BeaconingPolicy>
-    struct BeaconingPolicyRegister : BeaconServerFactory {
-        BeaconingPolicyRegister(std::string const &s) {
-            string_to_beaconing_policy_map.insert(std::make_pair(s, &CreateBeaconingPolicy<BeaconingPolicy>));
-        }
-    };
-
 } // namespace ns3
 #endif //SCION_SIMULATOR_BEACON_SERVER_H

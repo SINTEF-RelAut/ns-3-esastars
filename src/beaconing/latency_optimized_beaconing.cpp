@@ -11,7 +11,6 @@
 #include <omp.h>
 
 namespace ns3 {
-    BeaconingPolicyRegister<LatencyOptimized> LatencyOptimized::reg("latency_optimized");
 
     void LatencyOptimized::DoInitializations(uint32_t num_ASes) {
         beacons_per_dst_per_ing_if_sorted_by_latency.resize(num_ASes);

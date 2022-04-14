@@ -45,8 +45,6 @@ namespace ns3 {
         std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>>
         select_beacons_to_disseminate_per_dst_per_nbr(uint16_t remote_as_no, uint16_t dst_as_no,
                                                       const beacons_with_same_dst_as &beacons_to_the_dst_as);
-
-        static BeaconingPolicyRegister<LatencyOptimized> reg;
     };
 } // namespace ns3
 #endif //SCION_SIMULATOR_LATENCY_OPTIMIZED_BEACONING_H

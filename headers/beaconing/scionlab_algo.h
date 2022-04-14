@@ -38,8 +38,6 @@ namespace ns3 {
 
         void update_algorithm_data_structures_periodic(Beacon *the_beacon, bool invalidated) override;
 
-        static BeaconingPolicyRegister<SCIONLAB> reg;
-
         std::pair<Beacon *, int32_t> select_most_diverse(std::vector<Beacon *> &beacons, Beacon *the_beacon);
 
         static int32_t calc_diversity(Beacon *beacon1, Beacon *beacon2);

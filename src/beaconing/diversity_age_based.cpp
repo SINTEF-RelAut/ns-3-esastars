@@ -14,8 +14,6 @@
 
 namespace ns3 {
 
-    BeaconingPolicyRegister<DiversityAgeBased> DiversityAgeBased::reg("diversity_age_based");
-
     void DiversityAgeBased::DoInitializations(uint32_t num_ASes) {
         sent_beacons.resize(AS->GetNDevices());
         sent_beacons_cnt.resize(num_ASes);

@@ -9,6 +9,12 @@
 
 #include "ns3/core-module.h"
 
+#include "src/SCION/headers/beaconing/baseline.h"
+#include "src/SCION/headers/beaconing/diversity_age_based.h"
+#include "src/SCION/headers/beaconing/green_beaconing.h"
+#include "src/SCION/headers/beaconing/latency_optimized_beaconing.h"
+#include "src/SCION/headers/beaconing/on_demand_optimization.h"
+#include "src/SCION/headers/beaconing/scionlab_algo.h"
 #include "src/SCION/headers/beaconing/beacon_server.h"
 #include "src/SCION/headers/path_server.h"
 #include "src/SCION/headers/scion_as.h"
@@ -306,23 +312,21 @@ namespace ns3 {
     void SCION_AS::instantiate_beacon_server(bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
                                              const YAML::Node &config) {
         std::string beaconing_policy_str = config["beacon_service"]["policy"].as<std::string>();
-        beacon_server = BeaconServerFactory::CreateBeaconServer(beaconing_policy_str, this, parallel_scheduler,
-                                                                xml_node, config);
 
-        //        if (beaconing_policy_str == "baseline") {
-        //            beacon_server = (BeaconServer *) new Baseline(this, parallel_scheduler, xml_node, config);
-        //        } else if (beaconing_policy_str == "diversity_age_based") {
-        //            beacon_server = (BeaconServer *) new DiversityAgeBased(this, parallel_scheduler, xml_node, config);
-        //        } else if (beaconing_policy_str == "green_beaconing") {
-        //            beacon_server = (BeaconServer *) new GreenBeaconing(this, parallel_scheduler, xml_node, config);
-        //        } else if (beaconing_policy_str == "latency_optimized") {
-        //            beacon_server = (BeaconServer *) new LatencyOptimized(this, parallel_scheduler, xml_node, config);
-        //        } else if (beaconing_policy_str == "scionlab") {
-        //            beacon_server = (BeaconServer *) new SCIONLAB(this, parallel_scheduler, xml_node, config);
-        //        } else if (beaconing_policy_str == "on_demand") {
-        //            beacon_server = (BeaconServer *) new OnDemandOptimization(this, parallel_scheduler, xml_node, config);
-        //        } else {
-        //            beacon_server = (BeaconServer *) new Baseline(this, parallel_scheduler, xml_node, config);
-        //        }
+        if (beaconing_policy_str == "baseline") {
+            beacon_server = (BeaconServer *) new Baseline(this, parallel_scheduler, xml_node, config);
+        } else if (beaconing_policy_str == "diversity_age_based") {
+            beacon_server = (BeaconServer *) new DiversityAgeBased(this, parallel_scheduler, xml_node, config);
+        } else if (beaconing_policy_str == "green_beaconing") {
+            beacon_server = (BeaconServer *) new GreenBeaconing(this, parallel_scheduler, xml_node, config);
+        } else if (beaconing_policy_str == "latency_optimized") {
+            beacon_server = (BeaconServer *) new LatencyOptimized(this, parallel_scheduler, xml_node, config);
+        } else if (beaconing_policy_str == "scionlab") {
+            beacon_server = (BeaconServer *) new SCIONLAB(this, parallel_scheduler, xml_node, config);
+        } else if (beaconing_policy_str == "on_demand") {
+            beacon_server = (BeaconServer *) new OnDemandOptimization(this, parallel_scheduler, xml_node, config);
+        } else {
+            beacon_server = (BeaconServer *) new Baseline(this, parallel_scheduler, xml_node, config);
+        }
     }
 } // namespace ns3

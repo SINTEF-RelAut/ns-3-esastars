@@ -37,7 +37,6 @@ namespace ns3 {
 
         void update_algorithm_data_structures_periodic(Beacon *the_beacon, bool invalidated) override;
 
-        static BeaconingPolicyRegister<Baseline> reg;
     };
 } // namespace ns3
 #endif //SCION_SIMULATOR_BASELINE_H

@@ -13,7 +13,6 @@
 #include "src/SCION/headers/utils.h"
 
 namespace ns3 {
-    BeaconingPolicyRegister<GreenBeaconing> GreenBeaconing::reg("green_beaconing");
 
     void GreenBeaconing::DoInitializations(uint32_t num_ASes) {
         beacons_per_dst_per_ing_if_sorted_by_pollution.resize(num_ASes);

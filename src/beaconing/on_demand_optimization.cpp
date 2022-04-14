@@ -7,7 +7,6 @@
 #include <omp.h>
 
 namespace ns3 {
-    BeaconingPolicyRegister<OnDemandOptimization> OnDemandOptimization::reg("on_demand");
 
     void OnDemandOptimization::DoInitializations(uint32_t num_ASes) {}
 
