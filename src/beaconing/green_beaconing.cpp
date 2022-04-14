@@ -204,7 +204,6 @@ namespace ns3 {
     }
 
     void GreenBeaconing::update_algorithm_data_structures_periodic(Beacon *the_beacon, bool invalidated) {
-        uint16_t dst_as = UPPER_16_BITS(the_beacon->the_path.at(0));
         if (invalidated) {
             delete_from_algorithm_data_structures(the_beacon,
                                                   the_beacon->static_info_extension.at(static_info_type_t::CO2));
