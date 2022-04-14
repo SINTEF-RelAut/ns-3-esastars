@@ -8,6 +8,7 @@
 #define SCION_SIMULATOR_UTILS_H
 
 #include <map>
+#include <set>
 
 #include "ns3/rapidxml.hpp"
 
