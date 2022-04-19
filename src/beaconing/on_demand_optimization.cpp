@@ -281,4 +281,6 @@ namespace ns3 {
         return (score / weights_sum);
     }
 
+    void OnDemandOptimization::update_algorithm_data_structures_periodic(Beacon *the_beacon, bool invalidated) {}
+
 } // namespace ns3
