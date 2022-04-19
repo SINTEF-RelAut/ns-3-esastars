@@ -104,7 +104,7 @@ namespace ns3 {
 
     protected:
         BeaconServer *beacon_server;
-        PathServer *path_server;
+        PathServer *path_server = NULL;
         std::vector<SCIONHost *> hosts;
         std::vector<BorderRouter *> border_routers;
 
