@@ -285,7 +285,7 @@ namespace ns3 {
                                      uint16_t local_if) {
         try {
             beacon_buffer.at(local_if).push_back(received_beacon);
-        } catch (std::out_of_range e) {
+        } catch (const std::out_of_range &) {
             return;
         }
 
