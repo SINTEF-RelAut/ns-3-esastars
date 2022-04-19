@@ -53,7 +53,13 @@ namespace ns3 {
         rapidxml::xml_node<> *cur_xml_node = xml_root->first_node("node");
         while (cur_xml_node) {
             PropertyContainer p = parseProperties(cur_xml_node);
-            std::string type = p.getProperty("type");
+            std::string type;
+
+            if (p.hasProperty("type")) {
+                type = p.getProperty("type");
+            } else {
+                type = "core";
+            }
 
             Ptr<SCION_AS> AS_node;
             if (type == "core") {
