@@ -32,7 +32,7 @@ namespace ns3 {
                 interface_groups_connected_per_neighbor;
 
         uint32_t push_based_to_pull_based_frequency_ratio;
-        std::set<const optimization_target_t> pull_based_optimization_targets;
+        std::set<optimization_target_t> pull_based_optimization_targets;
 
         void initiate_beacons_per_interface(uint16_t self_egress_if_no, SCION_AS *remote_as,
                                             uint16_t remote_ingress_if_no) override;
