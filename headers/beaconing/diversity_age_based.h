@@ -25,7 +25,7 @@ namespace ns3 {
                           const YAML::Node &config)
             : BeaconServer(AS, parallel_scheduler, xml_node, config) {}
 
-        void DoInitializations(uint32_t num_ASes) override;
+        void DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node, const YAML::Node &config) override;
 
     private:
         std::vector<std::unordered_map<Beacon *, std::pair<float, uint16_t>> *> sent_beacons;

@@ -435,32 +435,21 @@ namespace ns3 {
     }
 
     void InitializeASesAttributes(const NodeContainer &AS_nodes, std::map<int32_t, uint16_t> &real_to_alias_as_no,
-                                  const YAML::Node &config) {
+                                  rapidxml::xml_node<> *xml_node, const YAML::Node &config) {
         bool only_propagation_delay = OnlyPropagationDelay(config);
 
         if (config["border_router"]) {
             std::vector<std::string> border_routers_malicious_action;
             GetASesWithMaliciousBRs(AS_nodes, config, border_routers_malicious_action);
-            Time malicious_delay = TimeStep(0);
-            std::string malicious_action = config["border_router"]["malicious_action"].as<std::string>();
-            if ((malicious_action == "symmetric_delay" || malicious_action == "asymmetric_delay") &&
-                !only_propagation_delay) {
-                std::random_device rd;
-                std::uniform_int_distribution<uint64_t> dist(50000, 300000); // random asymmetry between 50ms and 300ms
-                uint64_t random_delay = dist(rd);
-
-                malicious_delay = MicroSeconds(random_delay);
-            }
-
             for (uint64_t i = 0; i < AS_nodes.GetN(); ++i) {
                 SCION_AS *AS_node = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
-                AS_node->DoInitializations(AS_nodes.GetN(), only_propagation_delay,
-                                           border_routers_malicious_action.at(i), malicious_delay);
+                AS_node->DoInitializations(AS_nodes.GetN(), xml_node, config, only_propagation_delay,
+                                           border_routers_malicious_action.at(i));
             }
         } else {
             for (uint64_t i = 0; i < AS_nodes.GetN(); ++i) {
                 SCION_AS *AS_node = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
-                AS_node->DoInitializations(AS_nodes.GetN());
+                AS_node->DoInitializations(AS_nodes.GetN(), xml_node, config);
             }
         }
 

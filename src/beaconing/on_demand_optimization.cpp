@@ -8,7 +8,8 @@
 
 namespace ns3 {
 
-    void OnDemandOptimization::DoInitializations(uint32_t num_ASes) {}
+    void OnDemandOptimization::DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
+                                                 const YAML::Node &config) {}
 
     void OnDemandOptimization::initiate_beacons_per_interface(uint16_t self_egress_if_no, SCION_AS *remote_as,
                                                               uint16_t remote_ingress_if_no) {

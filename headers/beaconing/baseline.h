@@ -16,7 +16,7 @@ namespace ns3 {
         Baseline(SCION_AS *AS, bool parallel_scheduler, rapidxml::xml_node<> *xml_node, const YAML::Node &config)
             : BeaconServer(AS, parallel_scheduler, xml_node, config) {}
 
-        void DoInitializations(uint32_t num_ASes) override;
+        void DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node, const YAML::Node &config) override;
 
     private:
         void disseminate_beacons(neighbour_relation relation) override;

@@ -65,8 +65,8 @@ namespace ns3 {
     void InstantiateLinksFromTopo(rapidxml::xml_node<> *xml_root, ns3::NodeContainer &AS_nodes,
                                   const std::map<int32_t, uint16_t> &real_to_alias_as_no, const YAML::Node &config);
 
-    void InitializeASesAttributes(const ns3::NodeContainer &AS_nodes, std::map<int32_t, uint16_t> &real_to_alias_as_no,
-                                  const YAML::Node &config);
+    void InitializeASesAttributes(const NodeContainer &AS_nodes, std::map<int32_t, uint16_t> &real_to_alias_as_no,
+                                  rapidxml::xml_node<> *xml_node, const YAML::Node &config);
 
     bool OnlyPropagationDelay(const YAML::Node &config);
 } // namespace ns3

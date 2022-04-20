@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
     }
 
     InstantiateLinksFromTopo(xml_root, nodes, real_to_alias_as_no, config);
-    InitializeASesAttributes(nodes, real_to_alias_as_no, config);
+    InitializeASesAttributes(nodes, real_to_alias_as_no, xml_root, config);
 
     SchedulePeriodicEvents(config);
     UserDefinedEvents user_defined_events(config, nodes, real_to_alias_as_no, alias_to_real_as_no);

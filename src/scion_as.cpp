@@ -8,6 +8,7 @@
  */
 
 #include "ns3/core-module.h"
+#include <random>
 
 #include "src/SCION/headers/beaconing/baseline.h"
 #include "src/SCION/headers/beaconing/diversity_age_based.h"
@@ -23,7 +24,7 @@
 
 namespace ns3 {
 
-    void SCION_AS::DoInitializations(uint32_t num_ASes) {
+    void SCION_AS::DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node, const YAML::Node &config) {
         initialize_latencies(true);
 
         AS_max_bwd = 0;
@@ -33,11 +34,22 @@ namespace ns3 {
             }
         }
 
-        beacon_server->DoInitializations(num_ASes);
+        beacon_server->DoInitializations(num_ASes, xml_node, config);
     }
 
-    void SCION_AS::DoInitializations(uint32_t num_ASes, bool only_propagation_delay,
-                                     std::string border_routers_malicious_action, Time malicious_delay) {
+    void SCION_AS::DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node, const YAML::Node &config,
+                                     bool only_propagation_delay, std::string border_routers_malicious_action) {
+        Time malicious_delay = TimeStep(0);
+        std::string malicious_action = config["border_router"]["malicious_action"].as<std::string>();
+        if ((malicious_action == "symmetric_delay" || malicious_action == "asymmetric_delay") &&
+            !only_propagation_delay) {
+            std::random_device rd;
+            std::uniform_int_distribution<uint64_t> dist(50000, 300000); // random asymmetry between 50ms and 300ms
+            uint64_t random_delay = dist(rd);
+
+            malicious_delay = MicroSeconds(random_delay);
+        }
+
         connect_internal_nodes(only_propagation_delay, border_routers_malicious_action, malicious_delay);
         initialize_latencies(only_propagation_delay);
 
@@ -58,7 +70,7 @@ namespace ns3 {
             }
         }
 
-        beacon_server->DoInitializations(num_ASes);
+        beacon_server->DoInitializations(num_ASes, xml_node, config);
     }
 
     std::pair<uint16_t, SCION_AS *> SCION_AS::GetRemoteAsInfo(uint16_t egress_interface_no) {

@@ -47,7 +47,7 @@ namespace ns3 {
             }
         }
 
-        virtual void DoInitializations(uint32_t num_ASes) = 0;
+        virtual void DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node, const YAML::Node &config) = 0;
 
         void SetAS(SCION_AS *AS);
 

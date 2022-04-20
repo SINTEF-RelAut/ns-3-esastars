@@ -12,7 +12,8 @@
 
 namespace ns3 {
 
-    void LatencyOptimized::DoInitializations(uint32_t num_ASes) {
+    void LatencyOptimized::DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
+                                             const YAML::Node &config) {
         beacons_per_dst_per_ing_if_sorted_by_latency.resize(num_ASes);
 
         for (uint32_t i = 0; i < num_ASes; ++i) {

@@ -12,7 +12,7 @@
 
 namespace ns3 {
 
-    void SCIONLAB::DoInitializations(uint32_t num_ASes) {}
+    void SCIONLAB::DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node, const YAML::Node &config) {}
 
     void SCIONLAB::create_initial_static_info_extension(static_info_extension_t &static_info_extension,
                                                         uint16_t self_egress_if_no,

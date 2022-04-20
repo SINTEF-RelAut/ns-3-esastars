@@ -1,5 +1,5 @@
 //
-// Created by Seyedali Tabaeiaghdaei, Christelle Gloor on 14.04.22.
+// Created by Seyedali Tabaeiaghdaei on 20.04.22.
 //
 
 #ifndef SCION_SIMULATOR_SCION_AS_H
@@ -71,10 +71,10 @@ namespace ns3 {
         std::vector<std::vector<ld>> latencies_between_interfaces;
         std::vector<int32_t> inter_as_bwds;
 
-        void DoInitializations(uint32_t num_ASes, bool only_propagation_delay,
-                               std::string border_routers_malicious_action, Time malicious_delay);
+        void DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node, const YAML::Node &config,
+                               bool only_propagation_delay, std::string border_routers_malicious_action);
 
-        void DoInitializations(uint32_t num_ASes);
+        void DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node, const YAML::Node &config);
 
         std::pair<uint16_t, SCION_AS *> GetRemoteAsInfo(uint16_t egress_interface_no);
 

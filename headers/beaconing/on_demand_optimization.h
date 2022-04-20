@@ -17,7 +17,7 @@ namespace ns3 {
                              const YAML::Node &config)
             : BeaconServer(AS, parallel_scheduler, xml_node, config) {}
 
-        void DoInitializations(uint32_t num_ASes) override;
+        void DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node, const YAML::Node &config) override;
 
     private:
         std::unordered_map<const optimization_target_t *, beacons_with_the_same_opt_target_t>
