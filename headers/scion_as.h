@@ -26,7 +26,7 @@
 
 namespace ns3 {
 
-    typedef enum neighbour_relation { CORE = 0, PEER = 1, CUSTOMER = 2, PROVIDER = 3 } neighbour_relation_t;
+    enum neighbour_relation { CORE = 0, PEER = 1, CUSTOMER = 2, PROVIDER = 3 };
 
     class BeaconServer;
 

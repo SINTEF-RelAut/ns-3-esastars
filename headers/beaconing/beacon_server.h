@@ -98,8 +98,6 @@ namespace ns3 {
 
         std::unordered_map<uint16_t, std::vector<uint32_t>> bytes_sent_per_interface_per_period;
 
-        std::vector<std::list<Beacon>> beacon_buffer;
-
         void initiate_beacons(neighbour_relation relation);
 
         virtual void initiate_beacons_per_interface(uint16_t self_egress_if_no, SCION_AS *remote_as,
@@ -147,8 +145,6 @@ namespace ns3 {
         void register_to_local_path_server();
 
         void increment_control_plane_bytes_sent(Beacon &the_beacon, uint16_t interface);
-
-        void receive_all_beacons();
 
         std::pair<ld, ld> calculate_final_diversity_scores(Beacon *the_beacon);
 

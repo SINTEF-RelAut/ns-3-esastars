@@ -16,54 +16,30 @@
 #include "src/SCION/headers/utils.h"
 
 namespace ns3 {
-    void BeaconServer::DoInitializations(uint32_t num_ASes) {
-        beacon_buffer.resize(AS->GetNDevices(), std::list<Beacon>());
-    }
-
     void BeaconServer::SetAS(SCION_AS *AS) { this->AS = AS; }
 
     void BeaconServer::ScheduleBeaconing(Time last_beaconing_event_time) {
         for (Time t = Seconds(0); t < last_beaconing_event_time; t += beaconing_period) {
             Simulator::Schedule(t, &BeaconServer::update_time_and_stats, this);
 
-//            if (dynamic_cast<SCION_Core_AS *>(AS) != NULL) {
-//                Simulator::Schedule(t, &BeaconServer::disseminate_beacons, this, neighbour_relation::CORE);
-//
-//                Simulator::Schedule(t, &BeaconServer::initiate_beacons, this, neighbour_relation::CORE);
-//                Simulator::Schedule(t, &BeaconServer::initiate_beacons, this, neighbour_relation::CUSTOMER);
-//            } else {
-//                Simulator::Schedule(t, &BeaconServer::disseminate_beacons, this, neighbour_relation::CUSTOMER);
-//            }
-//
-//            if (parallel_scheduler) {
-//                if (AS->GetPathServer() != NULL) {
-//                    Simulator::Schedule(t + AS->latency_between_path_server_and_beacon_server,
-//                                        &RunParallelEvents<void (BeaconServer::*)()>,
-//                                        &BeaconServer::register_to_local_path_server);
-//                }
-//
-//                Simulator::Schedule(t + MilliSeconds(150), &RunParallelEvents<void (BeaconServer::*)()>,
-//                                    &BeaconServer::update_state_periodic);
-//            }
+            if (dynamic_cast<SCION_Core_AS *>(AS) != NULL) {
+                Simulator::Schedule(t, &BeaconServer::disseminate_beacons, this, neighbour_relation::CORE);
+
+                Simulator::Schedule(t, &BeaconServer::initiate_beacons, this, neighbour_relation::CORE);
+                Simulator::Schedule(t, &BeaconServer::initiate_beacons, this, neighbour_relation::CUSTOMER);
+            } else {
+                Simulator::Schedule(t, &BeaconServer::disseminate_beacons, this, neighbour_relation::CUSTOMER);
+            }
 
             if (parallel_scheduler) {
-                if (dynamic_cast<SCION_Core_AS *>(AS) != NULL) {
-                    Simulator::Schedule(t, &RunParallelEvents<void (BeaconServer::*)(neighbour_relation_t)>, &BeaconServer::disseminate_beacons,neighbour_relation::CORE);
-
-                    Simulator::Schedule(t, &RunParallelEvents<void (BeaconServer::*)(neighbour_relation_t)>, &BeaconServer::initiate_beacons, neighbour_relation::CORE);
-                    Simulator::Schedule(t, &RunParallelEvents<void (BeaconServer::*)(neighbour_relation_t)>, &BeaconServer::initiate_beacons,  neighbour_relation::CUSTOMER);
-                } else {
-                    Simulator::Schedule(t, &RunParallelEvents<void (BeaconServer::*)(neighbour_relation_t)>, &BeaconServer::disseminate_beacons, neighbour_relation::CUSTOMER);
+                if (AS->GetPathServer() != NULL) {
+                    Simulator::Schedule(t + AS->latency_between_path_server_and_beacon_server,
+                                        &RunParallelEvents<void (BeaconServer::*)()>,
+                                        &BeaconServer::register_to_local_path_server);
                 }
 
                 Simulator::Schedule(t + MilliSeconds(150), &RunParallelEvents<void (BeaconServer::*)()>,
                                     &BeaconServer::update_state_periodic);
-
-                if (AS->GetPathServer() != NULL) {
-                    Simulator::Schedule(t + MilliSeconds(150) + AS->latency_between_path_server_and_beacon_server,
-                                        &RunParallelEvents<void (BeaconServer::*)()>,
-                                        &BeaconServer::register_to_local_path_server);
-                }
             }
         }
     }
@@ -183,7 +159,6 @@ namespace ns3 {
     }
 
     void BeaconServer::update_state_periodic() {
-        receive_all_beacons();
         auto const &beacons = path_map_to_beacon;
         for (auto const &the_beacon_pair : beacons) {
             Beacon *the_beacon = the_beacon_pair.second;
@@ -283,61 +258,27 @@ namespace ns3 {
 
     void BeaconServer::ReceiveBeacon(Beacon &received_beacon, uint16_t sender_as, uint16_t remote_if,
                                      uint16_t local_if) {
-        beacon_buffer.at(local_if).push_back(received_beacon);
-//        uint16_t dst_as = UPPER_16_BITS(received_beacon.the_path.at(0));
-//
-//        bool to_import;
-//        bool path_exists;
-//        bool existing_path_valid;
-//        Beacon *beacon_to_replace;
-//        ld replacement_key;
-//
-//        std::tie(to_import, path_exists, existing_path_valid, beacon_to_replace, replacement_key) =
-//                import_policy(received_beacon, sender_as, remote_if, local_if, now);
-//
-//        if (!to_import) {
-//            return;
-//        }
-//
-//        if (!path_exists && beacon_to_replace != NULL) {
-//            delete_beacon(beacon_to_replace, replacement_key, dst_as);
-//        }
-//
-//        insert_beacon(received_beacon, dst_as, sender_as, remote_if, local_if, path_exists, existing_path_valid,
-//                      beacon_to_replace);
-    }
+        uint16_t dst_as = UPPER_16_BITS(received_beacon.the_path.at(0));
 
-    void BeaconServer::receive_all_beacons() {
-        for (uint16_t local_if = 0; local_if < beacon_buffer.size(); ++local_if) {
-            for (auto it = beacon_buffer.at(local_if).begin();
-                 it != beacon_buffer.at(local_if).end(); ++it) {
+        bool to_import;
+        bool path_exists;
+        bool existing_path_valid;
+        Beacon *beacon_to_replace;
+        ld replacement_key;
 
-                Beacon & received_beacon = *beacon_buffer.at(local_if).erase(it--);
-                uint16_t dst_as = UPPER_16_BITS(received_beacon.the_path.at(0));
-                uint16_t sender_as = UPPER_16_BITS(received_beacon.the_path.back());
-                uint16_t remote_if = SECOND_UPPER_16_BITS(received_beacon.the_path.back());
+        std::tie(to_import, path_exists, existing_path_valid, beacon_to_replace, replacement_key) =
+                import_policy(received_beacon, sender_as, remote_if, local_if, now);
 
-                bool to_import;
-                bool path_exists;
-                bool existing_path_valid;
-                Beacon *beacon_to_replace;
-                ld replacement_key;
-
-                std::tie(to_import, path_exists, existing_path_valid, beacon_to_replace, replacement_key) =
-                        import_policy(received_beacon, sender_as, remote_if, local_if, now);
-
-                if (!to_import) {
-                    return;
-                }
-
-                if (!path_exists && beacon_to_replace != NULL) {
-                    delete_beacon(beacon_to_replace, replacement_key, dst_as);
-                }
-
-                insert_beacon(received_beacon, dst_as, sender_as, remote_if, local_if, path_exists, existing_path_valid,
-                              beacon_to_replace);
-            }
+        if (!to_import) {
+            return;
         }
+
+        if (!path_exists && beacon_to_replace != NULL) {
+            delete_beacon(beacon_to_replace, replacement_key, dst_as);
+        }
+
+        insert_beacon(received_beacon, dst_as, sender_as, remote_if, local_if, path_exists, existing_path_valid,
+                      beacon_to_replace);
     }
 
     std::tuple<bool, bool, bool, Beacon *, ld> BeaconServer::import_policy(Beacon &the_beacon, uint16_t sender_as,

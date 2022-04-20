@@ -32,15 +32,5 @@ namespace ns3 {
             ((node->GetBeaconServer())->*mem_ptr)();
         }
     }
-
-    template<typename MEM>
-    void RunParallelEvents(MEM mem_ptr, neighbour_relation_t relation) {
-        omp_set_num_threads(NUM_CORE);
-#pragma omp parallel for schedule(dynamic)
-        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-            SCION_AS *node = dynamic_cast<SCION_AS *>(PeekPointer(nodes.Get(i)));
-            ((node->GetBeaconServer())->*mem_ptr)(relation);
-        }
-    }
 } // namespace ns3
 #endif //SCION_SIMULATOR_RUN_PARALLEL_EVENTS_H
