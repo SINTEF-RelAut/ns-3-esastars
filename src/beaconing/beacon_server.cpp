@@ -283,12 +283,7 @@ namespace ns3 {
 
     void BeaconServer::ReceiveBeacon(Beacon &received_beacon, uint16_t sender_as, uint16_t remote_if,
                                      uint16_t local_if) {
-        try {
-            beacon_buffer.at(local_if).push_back(received_beacon);
-        } catch (std::out_of_range e) {
-            return;
-        }
-
+        beacon_buffer.at(local_if).push_back(received_beacon);
 //        uint16_t dst_as = UPPER_16_BITS(received_beacon.the_path.at(0));
 //
 //        bool to_import;
