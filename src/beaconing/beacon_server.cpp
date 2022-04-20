@@ -296,7 +296,11 @@ namespace ns3 {
         Beacon *beacon_to_replace;
         ld replacement_key;
 
-        #pragma omp critical
+        static omp_lock_t writelock;
+
+        omp_init_lock(&writelock);
+
+        omp_set_lock(&writelock);
         std::tie(to_import, path_exists, existing_path_valid, beacon_to_replace, replacement_key) =
                 import_policy(received_beacon, sender_as, remote_if, local_if, now);
 
@@ -310,6 +314,7 @@ namespace ns3 {
 
         insert_beacon(received_beacon, dst_as, sender_as, remote_if, local_if, path_exists, existing_path_valid,
                       beacon_to_replace);
+        omp_unset_lock(&writelock);
     }
 
     void BeaconServer::receive_all_beacons() {
