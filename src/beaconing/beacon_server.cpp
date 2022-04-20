@@ -106,9 +106,9 @@ namespace ns3 {
 
     void BeaconServer::initiate_beacons(neighbour_relation relation) {
         uint32_t neighbors_cnt = AS->neighbors.size();
-//        omp_set_num_threads(NUM_CORE);
+        omp_set_num_threads(NUM_CORE);
 
-//#pragma omp parallel for
+#pragma omp parallel for
         for (uint32_t i = 0; i < neighbors_cnt; ++i) {
             if (AS->neighbors.at(i).second != relation) {
                 continue;
