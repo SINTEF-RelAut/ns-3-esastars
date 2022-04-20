@@ -18,7 +18,6 @@
 namespace ns3 {
     void BeaconServer::DoInitializations(uint32_t num_ASes) {
         beacon_buffer.resize(AS->GetNDevices(), std::list<Beacon>());
-        omp_init_lock(&writelock);
     }
 
     void BeaconServer::SetAS(SCION_AS *AS) { this->AS = AS; }
@@ -296,6 +295,10 @@ namespace ns3 {
         bool existing_path_valid;
         Beacon *beacon_to_replace;
         ld replacement_key;
+
+        static omp_lock_t writelock;
+
+        omp_init_lock(&writelock);
 
         omp_set_lock(&writelock);
         std::tie(to_import, path_exists, existing_path_valid, beacon_to_replace, replacement_key) =

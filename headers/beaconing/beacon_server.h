@@ -100,8 +100,6 @@ namespace ns3 {
 
         std::vector<std::list<Beacon>> beacon_buffer;
 
-        omp_lock_t writelock;
-
         void initiate_beacons(neighbour_relation relation);
 
         virtual void initiate_beacons_per_interface(uint16_t self_egress_if_no, SCION_AS *remote_as,
