@@ -13,9 +13,7 @@
 
 namespace ns3 {
 
-    void Baseline::DoInitializations(uint32_t num_ASes) {
-        BeaconServer::DoInitializations(num_ASes);
-    }
+    void Baseline::DoInitializations(uint32_t num_ASes) {}
 
     void Baseline::create_initial_static_info_extension(static_info_extension_t &static_info_extension,
                                                         uint16_t self_egress_if_no,
