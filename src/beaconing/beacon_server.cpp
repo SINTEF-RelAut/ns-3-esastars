@@ -287,7 +287,7 @@ namespace ns3 {
                                      uint16_t local_if) {
 //        beacon_buffer.at(local_if).push_back(received_beacon);
 
-
+        #pragma omp critical
         uint16_t dst_as = UPPER_16_BITS(received_beacon.the_path.at(0));
 
         bool to_import;
@@ -296,7 +296,6 @@ namespace ns3 {
         Beacon *beacon_to_replace;
         ld replacement_key;
 
-        #pragma omp critical
         std::tie(to_import, path_exists, existing_path_valid, beacon_to_replace, replacement_key) =
                 import_policy(received_beacon, sender_as, remote_if, local_if, now);
 
