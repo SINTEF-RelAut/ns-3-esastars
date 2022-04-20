@@ -24,8 +24,8 @@ namespace ns3 {
 
     void BeaconServer::ScheduleBeaconing(Time last_beaconing_event_time) {
         for (Time t = Seconds(0); t < last_beaconing_event_time; t += beaconing_period) {
-//            Simulator::Schedule(t, &BeaconServer::update_time_and_stats, this);
-//
+            Simulator::Schedule(t, &BeaconServer::update_time_and_stats, this);
+
 //            if (dynamic_cast<SCION_Core_AS *>(AS) != NULL) {
 //                Simulator::Schedule(t, &BeaconServer::disseminate_beacons, this, neighbour_relation::CORE);
 //
@@ -47,8 +47,6 @@ namespace ns3 {
 //            }
 
             if (parallel_scheduler) {
-                Simulator::Schedule(t, &RunParallelEvents<void (BeaconServer::*)()>,
-                                    &BeaconServer::update_time_and_stats);
                 if (dynamic_cast<SCION_Core_AS *>(AS) != NULL) {
                     Simulator::Schedule(t, &RunParallelEvents<void (BeaconServer::*)(neighbour_relation_t)>, &BeaconServer::disseminate_beacons,neighbour_relation::CORE);
 
