@@ -6,7 +6,7 @@
 
 #ifndef SCION_SIMULATOR_BEACON_SERVER_H
 #define SCION_SIMULATOR_BEACON_SERVER_H
-#include <omp.h>
+
 #include <map>
 #include <unordered_map>
 #include <unordered_set>
