@@ -9,7 +9,17 @@
 namespace ns3 {
 
     void OnDemandOptimization::DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
-                                                 const YAML::Node &config) {}
+                                                 const YAML::Node &config) {
+        rapidxml::xml_node<> *curr_xml_node = xml_node->first_node("node");
+        uint16_t alias_as_number = 0;
+        while (curr_xml_node) {
+            if (alias_as_number == AS->as_number) {
+
+                break ;
+            }
+            curr_xml_node = curr_xml_node->next_sibling("node");
+        }
+    }
 
     void OnDemandOptimization::initiate_beacons_per_interface(uint16_t self_egress_if_no, SCION_AS *remote_as,
                                                               uint16_t remote_ingress_if_no) {
