@@ -59,9 +59,6 @@ namespace ns3 {
 
     void InstantiateTimeServers(const YAML::Node &config, const ns3::NodeContainer &AS_nodes);
 
-    void GetASesWithMaliciousBRs(const ns3::NodeContainer &AS_nodes, const YAML::Node &config,
-                                 std::vector<std::string> &border_routers_malicious_action);
-
     void InstantiateLinksFromTopo(rapidxml::xml_node<> *xml_root, ns3::NodeContainer &AS_nodes,
                                   const std::map<int32_t, uint16_t> &real_to_alias_as_no, const YAML::Node &config);
 

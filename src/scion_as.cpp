@@ -38,19 +38,8 @@ namespace ns3 {
     }
 
     void SCION_AS::DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node, const YAML::Node &config,
-                                     bool only_propagation_delay, std::string border_routers_malicious_action) {
-        Time malicious_delay = TimeStep(0);
-        std::string malicious_action = config["border_router"]["malicious_action"].as<std::string>();
-        if ((malicious_action == "symmetric_delay" || malicious_action == "asymmetric_delay") &&
-            !only_propagation_delay) {
-            std::random_device rd;
-            std::uniform_int_distribution<uint64_t> dist(50000, 300000); // random asymmetry between 50ms and 300ms
-            uint64_t random_delay = dist(rd);
-
-            malicious_delay = MicroSeconds(random_delay);
-        }
-
-        connect_internal_nodes(only_propagation_delay, border_routers_malicious_action, malicious_delay);
+                                     bool only_propagation_delay) {
+        connect_internal_nodes(only_propagation_delay);
         initialize_latencies(only_propagation_delay);
 
         for (auto const &br : border_routers) {
@@ -114,8 +103,17 @@ namespace ns3 {
         return the_br;
     }
 
-    void SCION_AS::connect_internal_nodes(bool only_propagation_delay, std::string border_routers_malicious_action,
-                                          Time malicious_delay) {
+    void SCION_AS::connect_internal_nodes(bool only_propagation_delay) {
+        Time malicious_delay = TimeStep(0);
+        if (malicious_border_routers
+            && (border_routers_malicious_action == "symmetric_delay" || border_routers_malicious_action == "asymmetric_delay")
+            && !only_propagation_delay) {
+            std::random_device rd;
+            std::uniform_int_distribution<uint64_t> dist(50000, 300000); // random asymmetry between 50ms and 300ms
+            uint64_t random_delay = dist(rd);
+            malicious_delay = MicroSeconds(random_delay);
+        }
+
         std::map<BorderRouter *, std::set<uint16_t>> border_router_to_if;
 
         for (uint16_t i = 0; i < GetNDevices(); ++i) {

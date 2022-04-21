@@ -17,8 +17,8 @@ namespace ns3 {
     class SCION_Core_AS : public SCION_AS {
     public:
         SCION_Core_AS(uint32_t system_id, bool parallel_scheduler, uint16_t as_number, rapidxml::xml_node<> *xml_node,
-                      const YAML::Node &config, Time local_time)
-            : SCION_AS(system_id, parallel_scheduler, as_number, xml_node, config, local_time) {}
+                      const YAML::Node &config, bool malicious_border_routers, Time local_time)
+            : SCION_AS(system_id, parallel_scheduler, as_number, xml_node, config, malicious_border_routers, local_time) {}
     };
 } // namespace ns3
 #endif //SCION_SIMULATOR_SCION_CORE_AS_H

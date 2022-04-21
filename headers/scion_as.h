@@ -33,7 +33,7 @@ namespace ns3 {
     class SCION_AS : public Node {
     public:
         SCION_AS(uint32_t system_id, bool parallel_scheduler, uint16_t as_number, rapidxml::xml_node<> *xml_node,
-                 const YAML::Node &config, Time local_time)
+                 const YAML::Node &config, bool malicious_border_routers, Time local_time)
             : Node(system_id) {
             PropertyContainer p = parseProperties(xml_node);
 
@@ -47,6 +47,14 @@ namespace ns3 {
             ia_addr = (((uint32_t) isd_number) << 16) | ((uint32_t) as_number);
 
             this->local_time = local_time;
+
+            this->malicious_border_routers = malicious_border_routers;
+
+            if (malicious_border_routers) {
+                border_routers_malicious_action = config["border_router"]["malicious_action"].as<std::string>();
+            } else {
+                border_routers_malicious_action  = "no";
+            }
 
             instantiate_beacon_server(parallel_scheduler, xml_node, config);
         }
@@ -72,7 +80,7 @@ namespace ns3 {
         std::vector<int32_t> inter_as_bwds;
 
         void DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node, const YAML::Node &config,
-                               bool only_propagation_delay, std::string border_routers_malicious_action);
+                               bool only_propagation_delay);
 
         void DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node, const YAML::Node &config);
 
@@ -103,6 +111,9 @@ namespace ns3 {
         friend class UserDefinedEvents;
 
     protected:
+        bool malicious_border_routers;
+        std::string border_routers_malicious_action;
+
         BeaconServer *beacon_server;
         PathServer *path_server = NULL;
         std::vector<SCIONHost *> hosts;
@@ -110,8 +121,7 @@ namespace ns3 {
 
         std::vector<std::pair<uint16_t, SCION_AS *>> remote_as_info;
 
-        void connect_internal_nodes(bool only_propagation_delay, std::string border_routers_malicious_action,
-                                    Time malicious_delay);
+        void connect_internal_nodes(bool only_propagation_delay);
         void initialize_latencies(bool only_propagation_delay);
 
         void instantiate_beacon_server(bool parallel_scheduler, rapidxml::xml_node<> *xml_node,

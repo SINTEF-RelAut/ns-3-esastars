@@ -51,6 +51,8 @@ namespace ns3 {
                                  const YAML::Node &config) {
         uint16_t alias_as_no = 0;
         rapidxml::xml_node<> *cur_xml_node = xml_root->first_node("node");
+
+
         while (cur_xml_node) {
             PropertyContainer p = parseProperties(cur_xml_node);
             std::string type;
@@ -61,12 +63,20 @@ namespace ns3 {
                 type = "core";
             }
 
+            bool malicious_border_routers = false;
+            if (config["border_router"] && config["border_router"]["malicious_action"]) {
+                assert(p.hasProperty("malicious"));
+                if (p.getProperty("malicious") == "True") {
+                    malicious_border_routers = true;
+                }
+            }
+
             Ptr<SCION_AS> AS_node;
             if (type == "core") {
                 AS_node =
-                        CreateObject<SCION_Core_AS>(0, (alias_as_no == 0), alias_as_no, cur_xml_node, config, Time(0));
+                        CreateObject<SCION_Core_AS>(0, (alias_as_no == 0), alias_as_no, cur_xml_node, config, malicious_border_routers, Time(0));
             } else if (type == "non-core") {
-                AS_node = CreateObject<SCION_AS>(0, (alias_as_no == 0), alias_as_no, cur_xml_node, config, Time(0));
+                AS_node = CreateObject<SCION_AS>(0, (alias_as_no == 0), alias_as_no, cur_xml_node, config, malicious_border_routers, Time(0));
             } else {
                 std::cerr << "Incompatible AS_node type!" << std::endl;
                 exit(1);
@@ -396,55 +406,14 @@ namespace ns3 {
         }
     }
 
-    void GetASesWithMaliciousBRs(const NodeContainer &AS_nodes, const YAML::Node &config,
-                                 std::vector<std::string> &border_routers_malicious_action) {
-        if (!config["border_router"]) {
-            return;
-        }
-
-        if (!config["border_router"]["percent_of_ASes_with_malicious_br"]) {
-            return;
-        }
-
-        std::vector<uint16_t> indices;
-        for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
-            indices.push_back(i);
-        }
-
-        if (config["border_router"]["truly_random_malicious"].as<uint16_t>() == 1) {
-            std::shuffle(indices.begin(), indices.end(), std::random_device{});
-        } else {
-            std::shuffle(indices.begin(), indices.end(), std::mt19937{});
-        }
-
-        border_routers_malicious_action.resize(AS_nodes.GetN());
-
-        uint16_t number_of_ASes_with_malicious_br = (uint16_t) std::floor(
-                ((double) config["border_router"]["percent_of_ASes_with_malicious_br"].as<uint16_t>() *
-                 (double) AS_nodes.GetN()) /
-                100.0);
-
-        for (uint16_t i = 0; i < number_of_ASes_with_malicious_br; ++i) {
-            border_routers_malicious_action.at(indices.at(i)) =
-                    config["border_router"]["malicious_action"].as<std::string>();
-        }
-
-        for (uint16_t i = number_of_ASes_with_malicious_br; i < AS_nodes.GetN(); ++i) {
-            border_routers_malicious_action.at(indices.at(i)) = "no";
-        }
-    }
-
     void InitializeASesAttributes(const NodeContainer &AS_nodes, std::map<int32_t, uint16_t> &real_to_alias_as_no,
                                   rapidxml::xml_node<> *xml_node, const YAML::Node &config) {
         bool only_propagation_delay = OnlyPropagationDelay(config);
 
         if (config["border_router"]) {
-            std::vector<std::string> border_routers_malicious_action;
-            GetASesWithMaliciousBRs(AS_nodes, config, border_routers_malicious_action);
             for (uint64_t i = 0; i < AS_nodes.GetN(); ++i) {
                 SCION_AS *AS_node = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
-                AS_node->DoInitializations(AS_nodes.GetN(), xml_node, config, only_propagation_delay,
-                                           border_routers_malicious_action.at(i));
+                AS_node->DoInitializations(AS_nodes.GetN(), xml_node, config, only_propagation_delay);
             }
         } else {
             for (uint64_t i = 0; i < AS_nodes.GetN(); ++i) {
