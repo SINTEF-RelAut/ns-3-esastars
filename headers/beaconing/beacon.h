@@ -34,13 +34,19 @@ namespace ns3 {
     typedef uint16_t target_as_t;
     typedef uint16_t target_if_group_t;
 
-    typedef struct {
+    struct optimization_target_t {
         const optimization_criteria_t criteria;
         const optimization_direction_t direction;
         const target_as_t target_as;
         const target_if_group_t target_if_group;
         const uint16_t no_beacons_per_optimization_target;
-    } optimization_target_t;
+
+        optimization_target_t (optimization_criteria_t criteria, optimization_direction_t direction,
+                              target_as_t target_as, target_if_group_t target_if_group,
+                              uint16_t no_beacons_per_optimization_target) :
+              criteria(std::move(criteria)), direction (direction), target_as(target_as),
+              target_if_group(target_if_group), no_beacons_per_optimization_target(no_beacons_per_optimization_target) {}
+    };
 
     enum beacon_direction_t { PUSH_BASED = 0, PULL_BASED = 1 };
 
