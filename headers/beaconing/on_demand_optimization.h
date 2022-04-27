@@ -32,7 +32,7 @@ namespace ns3 {
                 interface_groups_connected_per_neighbor; // key1: neighbor AS, key2: interface_group, values in the vector: interface ids
 
         uint32_t push_based_to_pull_based_frequency_ratio;
-        std::set<const optimization_target_t> pull_based_optimization_targets;
+        std::set<optimization_target_t> pull_based_optimization_targets;
         std::unordered_map<uint16_t, std::set<uint32_t>*> set_of_forbidden_edges_per_destination_as;
 
         void initiate_beacons_per_interface(uint16_t self_egress_if_no, SCION_AS *remote_as,
