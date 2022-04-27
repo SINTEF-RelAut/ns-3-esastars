@@ -29,13 +29,11 @@ namespace ns3 {
                     }
 
                     std::string direction = cur_target->first_node("direction")->value();
-                    optimization_direction_t optimization_direction;
+                    optimization_direction_t optimization_direction = optimization_direction_t::SYMMETRIC;
                     if (direction == "forward") {
                         optimization_direction = optimization_direction_t::FORWARD;
                     } else if (direction == "backward") {
                         optimization_direction = optimization_direction_t::BACKWARD;
-                    } else if (direction == "symmetric") {
-                        optimization_direction = optimization_direction_t::SYMMETRIC;
                     }
 
                     uint16_t group_id = std::stoi(cur_target->first_node("group_id")->value());
