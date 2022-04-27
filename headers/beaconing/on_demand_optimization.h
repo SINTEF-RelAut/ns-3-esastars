@@ -29,10 +29,11 @@ namespace ns3 {
         std::multimap<uint16_t, const optimization_target_t *> if_to_optimization_targets_map;
 
         std::unordered_map<uint16_t, std::unordered_map<uint16_t, std::vector<uint16_t>>>
-                interface_groups_connected_per_neighbor;
+                interface_groups_connected_per_neighbor; // key1: neighbor AS, key2: interface_group, values in the vector: interface ids
 
         uint32_t push_based_to_pull_based_frequency_ratio;
-        std::set<optimization_target_t> pull_based_optimization_targets;
+        std::set<const optimization_target_t> pull_based_optimization_targets;
+        std::unordered_map<uint16_t, std::set<uint32_t>*> set_of_forbidden_edges_per_destination_as;
 
         void initiate_beacons_per_interface(uint16_t self_egress_if_no, SCION_AS *remote_as,
                                             uint16_t remote_ingress_if_no) override;

@@ -76,6 +76,7 @@ namespace ns3 {
         std::unordered_map<uint16_t, std::vector<uint16_t>> interfaces_per_neighbor_as;
         std::unordered_map<uint16_t, uint16_t> interface_to_neighbor_map;
         std::vector<std::pair<ld, ld>> interfaces_coordinates;
+        std::multimap<std::pair<ld, ld>, uint16_t> coordinates_to_interfaces;
         std::vector<std::vector<ld>> latencies_between_interfaces;
         std::vector<int32_t> inter_as_bwds;
 

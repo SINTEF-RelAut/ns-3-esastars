@@ -7,6 +7,7 @@
 #ifndef SCION_SIMULATOR_BEACON_H
 #define SCION_SIMULATOR_BEACON_H
 
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -40,12 +41,15 @@ namespace ns3 {
         const target_as_t target_as;
         const target_if_group_t target_if_group;
         const uint16_t no_beacons_per_optimization_target;
+        const std::set<uint32_t> * const set_of_forbidden_edges;
 
         optimization_target_t (optimization_criteria_t criteria, optimization_direction_t direction,
                               target_as_t target_as, target_if_group_t target_if_group,
-                              uint16_t no_beacons_per_optimization_target) :
+                              uint16_t no_beacons_per_optimization_target,
+                              const std::set<uint32_t> *set_of_forbidden_edges) :
               criteria(std::move(criteria)), direction (direction), target_as(target_as),
-              target_if_group(target_if_group), no_beacons_per_optimization_target(no_beacons_per_optimization_target) {}
+              target_if_group(target_if_group), no_beacons_per_optimization_target(no_beacons_per_optimization_target),
+              set_of_forbidden_edges(set_of_forbidden_edges){}
     };
 
     enum beacon_direction_t { PUSH_BASED = 0, PULL_BASED = 1 };

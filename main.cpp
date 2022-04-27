@@ -26,9 +26,6 @@
 using namespace ns3;
 
 int main(int argc, char *argv[]) {
-    std::map<int32_t, uint16_t> real_to_alias_as_no;
-    std::map<uint16_t, int32_t> alias_to_real_as_no;
-
     if (argc != 2) {
         std::cerr << "Please pass the config file location as the argument." << std::endl;
         return 1;
