@@ -305,7 +305,7 @@ namespace ns3 {
             to_AS->coordinates_to_interfaces.insert(std::make_pair(std::pair<ld, ld>(latitude, longitude), to_AS->interfaces_coordinates.size() - 1));
 
             if (p.hasProperty("to_if_id")) {
-                assert(std::stoi(p.getProperty("to_if_id")) == to_AS->GetNDevices() - 1);
+                assert((uint32_t) std::stoi(p.getProperty("to_if_id")) == to_AS->GetNDevices() - 1);
             }
 
             from_AS->AddToRemoteASInfo(to_AS->GetNDevices() - 1, PeekPointer(to_AS));
@@ -313,7 +313,7 @@ namespace ns3 {
             from_AS->coordinates_to_interfaces.insert(std::make_pair(std::pair<ld, ld>(latitude, longitude), from_AS->interfaces_coordinates.size() - 1));
 
             if (p.hasProperty("from_if_id")) {
-                assert(std::stoi(p.getProperty("from_if_id")) == from_AS->GetNDevices() - 1);
+                assert((uint32_t) std::stoi(p.getProperty("from_if_id")) == from_AS->GetNDevices() - 1);
             }
 
             if (config["border_router"]) {
