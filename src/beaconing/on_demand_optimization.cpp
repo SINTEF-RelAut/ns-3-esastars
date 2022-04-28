@@ -205,7 +205,7 @@ namespace ns3 {
 
                 for (auto const &[group, ifaces] : interface_groups_connected_per_neighbor.at(remote_as_no)) {
                     for (auto const &candidate_egress_if_no : ifaces) {
-                        if (selected_beacons.find(group) != selected_beacons.end()) {
+                        if (selected_beacons.find(group) == selected_beacons.end()) {
                             selected_beacons.insert(
                                     std::make_pair(group, std::multimap<ld,
                                                                         std::tuple<Beacon *, uint16_t, uint16_t,
