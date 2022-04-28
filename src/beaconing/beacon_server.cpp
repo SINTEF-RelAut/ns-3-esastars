@@ -16,6 +16,8 @@
 #include "src/SCION/headers/utils.h"
 
 namespace ns3 {
+    void BeaconServer::PerLinkInitializations(rapidxml::xml_node<> *xml_node, const YAML::Node &config) {};
+
     void BeaconServer::SetAS(SCION_AS *AS) { this->AS = AS; }
 
     void BeaconServer::ScheduleBeaconing(Time last_beaconing_event_time) {
