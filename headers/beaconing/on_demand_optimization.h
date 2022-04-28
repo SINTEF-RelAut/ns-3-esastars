@@ -15,9 +15,46 @@ namespace ns3 {
     public:
         OnDemandOptimization(SCION_AS *AS, bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
                              const YAML::Node &config)
-            : BeaconServer(AS, parallel_scheduler, xml_node, config) {}
+            : BeaconServer(AS, parallel_scheduler, xml_node, config) {
+            rapidxml::xml_node<> *cur_target = xml_node->first_node("target");
+            while (cur_target) {
+                uint16_t target_id = std::stoi(cur_target->first_node("target_id")->value());
+
+                optimization_criteria_t optimization_criteria;
+                PropertyContainer p = parseProperties(cur_target);
+                if (p.hasProperty("bw") && std::stof(p.getProperty("bw")) > 0.001) {
+                    optimization_criteria.insert(std::make_pair(static_info_type_t::BW, std::stof(p.getProperty("bw"))));
+                }
+
+                if (p.hasProperty("latency") && std::stof(p.getProperty("latency")) > 0.001) {
+                    optimization_criteria.insert(std::make_pair(static_info_type_t::LATENCY, std::stof(p.getProperty("latency"))));
+                }
+
+                std::string direction = cur_target->first_node("direction")->value();
+                optimization_direction_t optimization_direction = optimization_direction_t::SYMMETRIC;
+                if (direction == "forward") {
+                    optimization_direction = optimization_direction_t::FORWARD;
+                } else if (direction == "backward") {
+                    optimization_direction = optimization_direction_t::BACKWARD;
+                }
+
+                uint16_t group_id = std::stoi(cur_target->first_node("group_id")->value());
+                uint16_t no_beacons = std::stoi(cur_target->first_node("no_beacons")->value());
+
+                set_of_optimization_targets_originated_from_this_as.insert(
+                        std::make_pair(target_id, optimization_target_t(optimization_criteria,
+                                                                        optimization_direction,
+                                                                        AS->as_number,
+                                                                        group_id,
+                                                                        no_beacons,
+                                                                        NULL)));
+                cur_target = cur_target->next_sibling("target");
+            }
+        }
 
         void DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node, const YAML::Node &config) override;
+
+        void PerLinkInitializations(rapidxml::xml_node<> *xml_node, const YAML::Node &config) override;
 
     private:
         std::unordered_map<const optimization_target_t *, beacons_with_the_same_opt_target_t>

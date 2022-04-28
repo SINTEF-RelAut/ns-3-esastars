@@ -49,6 +49,8 @@ namespace ns3 {
 
         virtual void DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node, const YAML::Node &config) = 0;
 
+        virtual void PerLinkInitializations(rapidxml::xml_node<> *xml_node, const YAML::Node &config) = 0;
+
         void SetAS(SCION_AS *AS);
 
         void ReceiveBeacon(Beacon &received_beacon, uint16_t sender_as, uint16_t remote_if, uint16_t local_if);

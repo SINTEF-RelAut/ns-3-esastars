@@ -9,107 +9,57 @@
 namespace ns3 {
 
     void OnDemandOptimization::DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
-                                                 const YAML::Node &config) {
-        rapidxml::xml_node<> *cur_xml_node = xml_node->first_node("node");
-        uint16_t alias_as_number = 0;
-        while (cur_xml_node) {
-            if (alias_as_number == AS->as_number) {
-                rapidxml::xml_node<> *cur_target = cur_xml_node->first_node("target");
-                while (cur_target) {
-                    uint16_t target_id = std::stoi(cur_target->first_node("target_id")->value());
+                                                 const YAML::Node &config) {}
 
-                    optimization_criteria_t optimization_criteria;
-                    PropertyContainer p = parseProperties(cur_target);
-                    if (p.hasProperty("bw") && std::stof(p.getProperty("bw")) > 0.001) {
-                        optimization_criteria.insert(std::make_pair(static_info_type_t::BW, std::stof(p.getProperty("bw"))));
-                    }
+    void OnDemandOptimization::PerLinkInitializations(rapidxml::xml_node<> *cur_xml_link, const YAML::Node &config) {
+        uint32_t to = std::stoi(cur_xml_link->first_node("to")->value());
+        uint32_t from = std::stoi(cur_xml_link->first_node("from")->value());
 
-                    if (p.hasProperty("latency") && std::stof(p.getProperty("latency")) > 0.001) {
-                        optimization_criteria.insert(std::make_pair(static_info_type_t::LATENCY, std::stof(p.getProperty("latency"))));
-                    }
+        assert(real_to_alias_as_no.at(to) == AS->as_number || real_to_alias_as_no.at(from) == AS->as_number);
 
-                    std::string direction = cur_target->first_node("direction")->value();
-                    optimization_direction_t optimization_direction = optimization_direction_t::SYMMETRIC;
-                    if (direction == "forward") {
-                        optimization_direction = optimization_direction_t::FORWARD;
-                    } else if (direction == "backward") {
-                        optimization_direction = optimization_direction_t::BACKWARD;
-                    }
+        std::string target_element_str = "_target";
+        uint16_t interface_id = 0;
+        uint16_t neighbor_as = 0;
 
-                    uint16_t group_id = std::stoi(cur_target->first_node("group_id")->value());
-                    uint16_t no_beacons = std::stoi(cur_target->first_node("no_beacons")->value());
-
-                    set_of_optimization_targets_originated_from_this_as.insert(
-                            std::make_pair(target_id, optimization_target_t(optimization_criteria,
-                                                                            optimization_direction,
-                                                                            alias_as_number,
-                                                                            group_id,
-                                                                            no_beacons,
-                                                                            NULL)));
-                    cur_target = cur_target->next_sibling("target");
-                }
-
-                break;
-            }
-            alias_as_number++;
-            cur_xml_node = cur_xml_node->next_sibling("node");
+        PropertyContainer p = parseProperties(cur_xml_link);
+        if (real_to_alias_as_no.at(to) == AS->as_number) {
+            target_element_str = "to" + target_element_str;
+            interface_id = std::stoi(p.getProperty("to_if_id"));
+            neighbor_as = real_to_alias_as_no.at(from);
+        } else {
+            target_element_str = "from" + target_element_str;
+            interface_id = std::stoi(p.getProperty("from_if_id"));
+            neighbor_as = real_to_alias_as_no.at(to);
         }
 
-        rapidxml::xml_node<> *cur_xml_link = xml_node->first_node("link");
+        ld latitude = std::stod(p.getProperty("latitude"));
+        ld longitude = std::stod(p.getProperty("longitude"));
+        std::pair<ld, ld> coordinates = std::make_pair(latitude, longitude);
 
-        while (cur_xml_link) {
-            uint32_t to = std::stoi(cur_xml_link->first_node("to")->value());
-            uint32_t from = std::stoi(cur_xml_link->first_node("from")->value());
+        assert(coordinates == AS->interfaces_coordinates.at(interface_id));
 
-            std::string target_element_str = "_target";
-            uint16_t interface_id = 0;
-            uint16_t neighbor_as = 0;
+        rapidxml::xml_node<> *cur_xml_target = cur_xml_link->first_node(target_element_str.c_str());
+        while (cur_xml_target) {
+            uint16_t target_id = std::stoi(cur_xml_target->value());
+            const optimization_target_t* optimization_target = &set_of_optimization_targets_originated_from_this_as.at(target_id);
+            uint16_t interface_group = optimization_target->target_if_group;
 
-            PropertyContainer p = parseProperties(cur_xml_link);
-            if (real_to_alias_as_no.at(to) == AS->as_number) {
-                target_element_str = "to" + target_element_str;
-                interface_id = std::stoi(p.getProperty("to_if_id"));
-                neighbor_as = real_to_alias_as_no.at(from);
-            } else if (real_to_alias_as_no.at(from) == AS->as_number) {
-                target_element_str = "from" + target_element_str;
-                interface_id = std::stoi(p.getProperty("from_if_id"));
-                neighbor_as = real_to_alias_as_no.at(to);
-            } else {
-                cur_xml_link = cur_xml_link->next_sibling("link");
-                continue;
+            if_to_optimization_targets_map.insert(std::make_pair(interface_id, optimization_target));
+
+            if (interface_groups_connected_per_neighbor.find(neighbor_as) == interface_groups_connected_per_neighbor.end()) {
+                interface_groups_connected_per_neighbor.insert(std::make_pair(neighbor_as, std::unordered_map<uint16_t, std::vector<uint16_t>>()));
+            }
+            if (interface_groups_connected_per_neighbor.at(neighbor_as).find(interface_group) == interface_groups_connected_per_neighbor.at(neighbor_as).end()) {
+                interface_groups_connected_per_neighbor.at(neighbor_as).insert(std::make_pair(interface_group, std::vector<uint16_t>()));
+            }
+            if (std::find(std::begin(interface_groups_connected_per_neighbor.at(neighbor_as).at(interface_group)),
+                          std::end(interface_groups_connected_per_neighbor.at(neighbor_as).at(interface_group)),
+                          interface_id) == std::end(interface_groups_connected_per_neighbor.at(neighbor_as).at(interface_group))) {
+                interface_groups_connected_per_neighbor.at(neighbor_as).at(interface_group).push_back(interface_id);
             }
 
-            ld latitude = std::stod(p.getProperty("latitude"));
-            ld longitude = std::stod(p.getProperty("longitude"));
-            std::pair<ld, ld> coordinates = std::make_pair(latitude, longitude);
 
-            assert(coordinates == AS->interfaces_coordinates.at(interface_id));
-
-            rapidxml::xml_node<> *cur_xml_target = xml_node->first_node(target_element_str.c_str());
-            while (cur_xml_target) {
-                uint16_t target_id = std::stoi(cur_xml_target->value());
-                const optimization_target_t* optimization_target = &set_of_optimization_targets_originated_from_this_as.at(target_id);
-                uint16_t interface_group = optimization_target->target_if_group;
-
-                if_to_optimization_targets_map.insert(std::make_pair(interface_id, optimization_target));
-
-                if (interface_groups_connected_per_neighbor.find(neighbor_as) == interface_groups_connected_per_neighbor.end()) {
-                    interface_groups_connected_per_neighbor.insert(std::make_pair(neighbor_as, std::unordered_map<uint16_t, std::vector<uint16_t>>()));
-                }
-                if (interface_groups_connected_per_neighbor.at(neighbor_as).find(interface_group) == interface_groups_connected_per_neighbor.at(neighbor_as).end()) {
-                    interface_groups_connected_per_neighbor.at(neighbor_as).insert(std::make_pair(interface_group, std::vector<uint16_t>()));
-                }
-                if (std::find(std::begin(interface_groups_connected_per_neighbor.at(neighbor_as).at(interface_group)),
-                              std::end(interface_groups_connected_per_neighbor.at(neighbor_as).at(interface_group)),
-                              interface_id) == std::end(interface_groups_connected_per_neighbor.at(neighbor_as).at(interface_group))) {
-                    interface_groups_connected_per_neighbor.at(neighbor_as).at(interface_group).push_back(interface_id);
-                }
-
-
-                cur_xml_target = cur_xml_target->next_sibling(target_element_str.c_str());
-            }
-
-            cur_xml_link = cur_xml_link->next_sibling("link");
+            cur_xml_target = cur_xml_target->next_sibling(target_element_str.c_str());
         }
     }
 

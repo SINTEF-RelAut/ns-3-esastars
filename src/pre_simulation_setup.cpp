@@ -412,6 +412,9 @@ namespace ns3 {
                 from_AS->neighbors.push_back(std::make_pair(to_AS->as_number, from_rel));
             }
 
+            to_AS->GetBeaconServer()->PerLinkInitializations(curr_xml_node, config);
+            from_AS->GetBeaconServer()->PerLinkInitializations(curr_xml_node, config);
+
             curr_xml_node = curr_xml_node->next_sibling("link");
         }
     }
