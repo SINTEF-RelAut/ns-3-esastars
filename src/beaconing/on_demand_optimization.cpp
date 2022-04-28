@@ -41,23 +41,28 @@ namespace ns3 {
         rapidxml::xml_node<> *cur_xml_target = cur_xml_link->first_node(target_element_str.c_str());
         while (cur_xml_target) {
             uint16_t target_id = std::stoi(cur_xml_target->value());
-            const optimization_target_t* optimization_target = &set_of_optimization_targets_originated_from_this_as.at(target_id);
+            const optimization_target_t *optimization_target =
+                    &set_of_optimization_targets_originated_from_this_as.at(target_id);
             uint16_t interface_group = optimization_target->target_if_group;
 
             if_to_optimization_targets_map.insert(std::make_pair(interface_id, optimization_target));
 
-            if (interface_groups_connected_per_neighbor.find(neighbor_as) == interface_groups_connected_per_neighbor.end()) {
-                interface_groups_connected_per_neighbor.insert(std::make_pair(neighbor_as, std::unordered_map<uint16_t, std::vector<uint16_t>>()));
+            if (interface_groups_connected_per_neighbor.find(neighbor_as) ==
+                interface_groups_connected_per_neighbor.end()) {
+                interface_groups_connected_per_neighbor.insert(
+                        std::make_pair(neighbor_as, std::unordered_map<uint16_t, std::vector<uint16_t>>()));
             }
-            if (interface_groups_connected_per_neighbor.at(neighbor_as).find(interface_group) == interface_groups_connected_per_neighbor.at(neighbor_as).end()) {
-                interface_groups_connected_per_neighbor.at(neighbor_as).insert(std::make_pair(interface_group, std::vector<uint16_t>()));
+            if (interface_groups_connected_per_neighbor.at(neighbor_as).find(interface_group) ==
+                interface_groups_connected_per_neighbor.at(neighbor_as).end()) {
+                interface_groups_connected_per_neighbor.at(neighbor_as)
+                        .insert(std::make_pair(interface_group, std::vector<uint16_t>()));
             }
             if (std::find(std::begin(interface_groups_connected_per_neighbor.at(neighbor_as).at(interface_group)),
                           std::end(interface_groups_connected_per_neighbor.at(neighbor_as).at(interface_group)),
-                          interface_id) == std::end(interface_groups_connected_per_neighbor.at(neighbor_as).at(interface_group))) {
+                          interface_id) ==
+                std::end(interface_groups_connected_per_neighbor.at(neighbor_as).at(interface_group))) {
                 interface_groups_connected_per_neighbor.at(neighbor_as).at(interface_group).push_back(interface_id);
             }
-
 
             cur_xml_target = cur_xml_target->next_sibling(target_element_str.c_str());
         }
@@ -124,53 +129,28 @@ namespace ns3 {
 
             uint16_t remote_as_no = AS->neighbors.at(i).first;
 
-            std::unordered_map<
-                    uint16_t,
-                    std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>,
-                                  std::greater<ld>>>
-                    selected_beacons;
+            // The direction of beaconing not optimization
+            for (auto const &[direction, beacons_grouped_by_optimization_targets_and_ingress_if] :
+                 pull_and_push_beacons_grouped_by_optimization_targets_and_ingress_if) {
+                for (auto const &[optimization_target, beacons_with_the_same_opt_target] :
+                     beacons_grouped_by_optimization_targets_and_ingress_if) {
+                    uint16_t dst_as_no = optimization_target->target_as;
 
-            // push-based
-            for (auto const &[optimization_target, beacons_with_the_same_opt_target] :
-                 push_based_beacons_grouped_by_optimization_targets_and_ingress_if) {
-                uint16_t dst_as_no = optimization_target->target_as;
+                    if (remote_as_no == dst_as_no) {
+                        continue;
+                    }
 
-                if (remote_as_no == dst_as_no) {
-                    continue;
-                }
+                    std::unordered_map<
+                            uint16_t,
+                            std::multimap<ld,
+                                          std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>,
+                                          std::greater<ld>>>
+                            selected_beacons;
 
-                select_beacons_to_disseminate_per_target_per_nbr(remote_as_no, dst_as_no,
-                                                                 beacons_with_the_same_opt_target, optimization_target,
-                                                                 selected_beacons);
-            }
-
-            // pull-based
-            for (auto const &[optimization_target, beacons_with_the_same_opt_target] :
-                 pull_based_beacons_grouped_by_optimization_targets_and_ingress_if) {
-                uint16_t dst_as_no = optimization_target->target_as;
-
-                if (remote_as_no == dst_as_no) {
-                    continue;
-                }
-
-                select_beacons_to_disseminate_per_target_per_nbr(remote_as_no, dst_as_no,
-                                                                 beacons_with_the_same_opt_target, optimization_target,
-                                                                 selected_beacons);
-            }
-
-            for (auto const &group_selected_beacons_pair : selected_beacons) {
-                for (auto const &score_selected_beacons_pair : group_selected_beacons_pair.second) {
-                    Beacon *the_beacon;
-                    uint16_t remote_ingress_if_no;
-                    uint16_t self_egress_if_no;
-                    SCION_AS *remote_as;
-                    static_info_extension_t static_info_extension;
-
-                    std::tie(the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as, static_info_extension) =
-                            score_selected_beacons_pair.second;
-
-                    generate_beacon_and_send(the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as,
-                                             static_info_extension, the_beacon->optimization_target, the_beacon->beacon_direction);
+                    select_beacons_to_disseminate_per_target_per_nbr(remote_as_no, dst_as_no,
+                                                                     beacons_with_the_same_opt_target,
+                                                                     optimization_target, selected_beacons);
+                    send_selected_beacons_per_target_per_nbr(selected_beacons);
                 }
             }
         }
@@ -231,9 +211,34 @@ namespace ns3 {
 
         for (auto &subgroup_selected_beacons_per_subgroup_pair : selected_beacons) {
             auto &selected_beacons_per_subgroup = subgroup_selected_beacons_per_subgroup_pair.second;
-            auto it = selected_beacons_per_subgroup.begin();
-            std::advance(it, optimization_target->no_beacons_per_optimization_target);
-            selected_beacons_per_subgroup.erase(it, selected_beacons_per_subgroup.end());
+            if (selected_beacons_per_subgroup.size() >  optimization_target->no_beacons_per_optimization_target) {
+                auto it = selected_beacons_per_subgroup.begin();
+                std::advance(it, optimization_target->no_beacons_per_optimization_target);
+                selected_beacons_per_subgroup.erase(it, selected_beacons_per_subgroup.end());
+            }
+        }
+    }
+
+    void OnDemandOptimization::send_selected_beacons_per_target_per_nbr(
+            const std::unordered_map<
+                    uint16_t,
+                    std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>,
+                                  std::greater<ld>>> &selected_beacons) {
+        for (auto const &group_selected_beacons_pair : selected_beacons) {
+            for (auto const &score_selected_beacons_pair : group_selected_beacons_pair.second) {
+                Beacon *the_beacon;
+                uint16_t remote_ingress_if_no;
+                uint16_t self_egress_if_no;
+                SCION_AS *remote_as;
+                static_info_extension_t static_info_extension;
+
+                std::tie(the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as, static_info_extension) =
+                        score_selected_beacons_pair.second;
+
+                generate_beacon_and_send(the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as,
+                                         static_info_extension, the_beacon->optimization_target,
+                                         the_beacon->beacon_direction);
+            }
         }
     }
 

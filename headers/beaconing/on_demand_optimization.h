@@ -10,6 +10,8 @@
 namespace ns3 {
     typedef std::multimap<ld, Beacon *, std::greater<ld>> beacons_with_the_same_opt_target_and_ingress_if_t;
     typedef std::map<uint16_t, beacons_with_the_same_opt_target_and_ingress_if_t> beacons_with_the_same_opt_target_t;
+    typedef std::unordered_map<const optimization_target_t *, beacons_with_the_same_opt_target_t>
+            beacons_grouped_by_optimization_targets_and_ingress_if_t;
 
     class OnDemandOptimization : public BeaconServer {
     public:
@@ -23,11 +25,13 @@ namespace ns3 {
                 optimization_criteria_t optimization_criteria;
                 PropertyContainer p = parseProperties(cur_target);
                 if (p.hasProperty("bw") && std::stof(p.getProperty("bw")) > 0.001) {
-                    optimization_criteria.insert(std::make_pair(static_info_type_t::BW, std::stof(p.getProperty("bw"))));
+                    optimization_criteria.insert(
+                            std::make_pair(static_info_type_t::BW, std::stof(p.getProperty("bw"))));
                 }
 
                 if (p.hasProperty("latency") && std::stof(p.getProperty("latency")) > 0.001) {
-                    optimization_criteria.insert(std::make_pair(static_info_type_t::LATENCY, std::stof(p.getProperty("latency"))));
+                    optimization_criteria.insert(
+                            std::make_pair(static_info_type_t::LATENCY, std::stof(p.getProperty("latency"))));
                 }
 
                 std::string direction = cur_target->first_node("direction")->value();
@@ -42,12 +46,8 @@ namespace ns3 {
                 uint16_t no_beacons = std::stoi(cur_target->first_node("no_beacons")->value());
 
                 set_of_optimization_targets_originated_from_this_as.insert(
-                        std::make_pair(target_id, optimization_target_t(optimization_criteria,
-                                                                        optimization_direction,
-                                                                        AS->as_number,
-                                                                        group_id,
-                                                                        no_beacons,
-                                                                        NULL)));
+                        std::make_pair(target_id, optimization_target_t(optimization_criteria, optimization_direction,
+                                                                        AS->as_number, group_id, no_beacons, NULL)));
                 cur_target = cur_target->next_sibling("target");
             }
         }
@@ -57,10 +57,17 @@ namespace ns3 {
         void PerLinkInitializations(rapidxml::xml_node<> *xml_node, const YAML::Node &config) override;
 
     private:
-        std::unordered_map<const optimization_target_t *, beacons_with_the_same_opt_target_t>
+        beacons_grouped_by_optimization_targets_and_ingress_if_t
                 push_based_beacons_grouped_by_optimization_targets_and_ingress_if; // permanent until beacons expiration
-        std::unordered_map<const optimization_target_t *, beacons_with_the_same_opt_target_t>
+        beacons_grouped_by_optimization_targets_and_ingress_if_t
                 pull_based_beacons_grouped_by_optimization_targets_and_ingress_if; // gets wiped out at every beaconing interval
+
+        std::unordered_map<beacon_direction_t, const beacons_grouped_by_optimization_targets_and_ingress_if_t &>
+                pull_and_push_beacons_grouped_by_optimization_targets_and_ingress_if = {
+                        {beacon_direction_t::PUSH_BASED,
+                         this->push_based_beacons_grouped_by_optimization_targets_and_ingress_if},
+                        {beacon_direction_t::PULL_BASED,
+                         this->pull_based_beacons_grouped_by_optimization_targets_and_ingress_if}};
 
         std::unordered_map<uint16_t, const optimization_target_t> set_of_optimization_targets_originated_from_this_as;
         std::multimap<uint16_t, const optimization_target_t *> if_to_optimization_targets_map;
@@ -70,7 +77,7 @@ namespace ns3 {
 
         uint32_t push_based_to_pull_based_frequency_ratio;
         std::set<optimization_target_t> pull_based_optimization_targets;
-        std::unordered_map<uint16_t, std::set<uint32_t>*> set_of_forbidden_edges_per_destination_as;
+        std::unordered_map<uint16_t, std::set<uint32_t> *> set_of_forbidden_edges_per_destination_as;
 
         void initiate_beacons_per_interface(uint16_t self_egress_if_no, SCION_AS *remote_as,
                                             uint16_t remote_ingress_if_no) override;
@@ -99,6 +106,12 @@ namespace ns3 {
                 const beacons_with_the_same_opt_target_t &beacons_with_the_same_opt_target,
                 const optimization_target_t *optimization_target,
                 std::unordered_map<
+                        uint16_t,
+                        std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>,
+                                      std::greater<ld>>> &selected_beacons);
+
+        void send_selected_beacons_per_target_per_nbr(
+                const std::unordered_map<
                         uint16_t,
                         std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>,
                                       std::greater<ld>>> &selected_beacons);
