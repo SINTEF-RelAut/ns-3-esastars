@@ -170,7 +170,7 @@ namespace ns3 {
                             score_selected_beacons_pair.second;
 
                     generate_beacon_and_send(the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as,
-                                             static_info_extension);
+                                             static_info_extension, the_beacon->optimization_target, the_beacon->beacon_direction);
                 }
             }
         }
