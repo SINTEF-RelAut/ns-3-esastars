@@ -58,19 +58,21 @@ namespace ns3 {
 
     private:
         beacons_grouped_by_optimization_targets_and_ingress_if_t
-                push_based_beacons_grouped_by_optimization_targets_and_ingress_if; // permanent until beacons expiration
+                push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group; // permanent until beacons expiration
         beacons_grouped_by_optimization_targets_and_ingress_if_t
                 pull_based_beacons_grouped_by_optimization_targets_and_ingress_if; // gets wiped out at every beaconing interval
 
         std::unordered_map<beacon_direction_t, const beacons_grouped_by_optimization_targets_and_ingress_if_t &>
                 pull_and_push_beacons_grouped_by_optimization_targets_and_ingress_if = {
                         {beacon_direction_t::PUSH_BASED,
-                         this->push_based_beacons_grouped_by_optimization_targets_and_ingress_if},
+                         this->push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group},
                         {beacon_direction_t::PULL_BASED,
                          this->pull_based_beacons_grouped_by_optimization_targets_and_ingress_if}};
 
         std::unordered_map<uint16_t, const optimization_target_t> set_of_optimization_targets_originated_from_this_as;
         std::multimap<uint16_t, const optimization_target_t *> if_to_optimization_targets_map;
+
+        std::unordered_map<uint16_t, uint16_t> if_to_if_group;
 
         std::unordered_map<uint16_t, std::unordered_map<uint16_t, std::vector<uint16_t>>>
                 interface_groups_connected_per_neighbor; // key1: neighbor AS, key2: interface_group, values in the vector: interface ids

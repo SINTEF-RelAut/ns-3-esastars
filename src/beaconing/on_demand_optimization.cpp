@@ -46,6 +46,7 @@ namespace ns3 {
             uint16_t interface_group = optimization_target->target_if_group;
 
             if_to_optimization_targets_map.insert(std::make_pair(interface_id, optimization_target));
+            if_to_if_group.insert(std::make_pair(interface_id, interface_group));
 
             if (interface_groups_connected_per_neighbor.find(neighbor_as) ==
                 interface_groups_connected_per_neighbor.end()) {
@@ -121,7 +122,8 @@ namespace ns3 {
     void OnDemandOptimization::disseminate_beacons(neighbour_relation relation) {
         uint32_t neighbors_cnt = AS->neighbors.size();
         omp_set_num_threads(NUM_CORE);
-#pragma omp parallel for
+#pragma omp parallel for schedule(dynamic)
+
         for (uint32_t i = 0; i < neighbors_cnt; ++i) { // Per neighbor AS
             if (AS->neighbors.at(i).second != relation) {
                 continue;
@@ -194,7 +196,7 @@ namespace ns3 {
                         }
 
                         static_info_extension_t propagation_static_info;
-                        extend_static_info_extension(the_beacon, beacon_ingress_if_no, candidate_egress_if_no,
+                        extend_static_info_extension(the_beacon, LOWER_16_BITS(the_beacon->the_path.back()), candidate_egress_if_no,
                                                      propagation_static_info);
 
                         ld score = calculate_score(the_beacon->optimization_target, propagation_static_info);
@@ -247,25 +249,29 @@ namespace ns3 {
                                                      uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
                                                      uint16_t now) {
         const auto &beacon_container = (the_beacon.beacon_direction == beacon_direction_t::PUSH_BASED)
-                                               ? push_based_beacons_grouped_by_optimization_targets_and_ingress_if
+                                               ? push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group
                                                : pull_based_beacons_grouped_by_optimization_targets_and_ingress_if;
+
+        uint16_t access_index = (the_beacon.beacon_direction == beacon_direction_t::PUSH_BASED)
+                                ? if_to_if_group.at(self_ingress_if_no)
+                                : self_ingress_if_no;
 
         if (beacon_container.find(the_beacon.optimization_target) == beacon_container.end()) {
             return std::tuple<bool, bool, bool, Beacon *, ld>(true, false, false, NULL, 0);
         }
 
-        if (beacon_container.at(the_beacon.optimization_target).find(self_ingress_if_no) ==
+        if (beacon_container.at(the_beacon.optimization_target).find(access_index) ==
             beacon_container.at(the_beacon.optimization_target).end()) {
             return std::tuple<bool, bool, bool, Beacon *, ld>(true, false, false, NULL, 0);
         }
 
-        if (beacon_container.at(the_beacon.optimization_target).at(self_ingress_if_no).size() <
+        if (beacon_container.at(the_beacon.optimization_target).at(access_index).size() <
             the_beacon.optimization_target->no_beacons_per_optimization_target) {
             return std::tuple<bool, bool, bool, Beacon *, ld>(true, false, false, NULL, 0);
         }
 
         std::multimap<ld, Beacon *>::const_reverse_iterator worst_beacon_score =
-                beacon_container.at(the_beacon.optimization_target).at(self_ingress_if_no).rbegin();
+                beacon_container.at(the_beacon.optimization_target).at(access_index).rbegin();
         ld incoming_beacon_score = calculate_score(the_beacon.optimization_target, the_beacon.static_info_extension);
         ld lowest_previous_score = worst_beacon_score->first;
         if (lowest_previous_score < incoming_beacon_score) {
@@ -281,24 +287,28 @@ namespace ns3 {
                                                                    uint16_t remote_egress_if_no,
                                                                    uint16_t self_ingress_if_no) {
         auto &beacon_container = (the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED)
-                                         ? push_based_beacons_grouped_by_optimization_targets_and_ingress_if
+                                         ? push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group
                                          : pull_based_beacons_grouped_by_optimization_targets_and_ingress_if;
+
+        uint16_t access_index = (the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED)
+                                        ? if_to_if_group.at(self_ingress_if_no)
+                                        : self_ingress_if_no;
 
         if (beacon_container.find(the_beacon->optimization_target) == beacon_container.end()) {
             beacon_container.insert(
                     std::make_pair(the_beacon->optimization_target, beacons_with_the_same_opt_target_t()));
         }
 
-        if (beacon_container.at(the_beacon->optimization_target).find(self_ingress_if_no) ==
+        if (beacon_container.at(the_beacon->optimization_target).find(access_index) ==
             beacon_container.at(the_beacon->optimization_target).end()) {
             beacon_container.at(the_beacon->optimization_target)
-                    .insert(std::make_pair(self_ingress_if_no, beacons_with_the_same_opt_target_and_ingress_if_t()));
+                    .insert(std::make_pair(access_index, beacons_with_the_same_opt_target_and_ingress_if_t()));
         }
 
         ld incoming_beacon_score = calculate_score(the_beacon->optimization_target, the_beacon->static_info_extension);
 
         beacon_container.at(the_beacon->optimization_target)
-                .at(self_ingress_if_no)
+                .at(access_index)
                 .insert(std::make_pair(incoming_beacon_score, the_beacon));
     }
 
@@ -306,9 +316,9 @@ namespace ns3 {
         uint16_t self_ingress_if = LOWER_16_BITS(the_beacon->the_path.back());
 
         auto &beacon_container = (the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED)
-                                         ? push_based_beacons_grouped_by_optimization_targets_and_ingress_if
+                                         ? push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group
                                                    .at(the_beacon->optimization_target)
-                                                   .at(self_ingress_if)
+                                                   .at(if_to_if_group.at(self_ingress_if))
                                          : pull_based_beacons_grouped_by_optimization_targets_and_ingress_if
                                                    .at(the_beacon->optimization_target)
                                                    .at(self_ingress_if);
