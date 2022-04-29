@@ -75,6 +75,7 @@ namespace ns3 {
 
         const std::unordered_map<uint16_t, std::vector<uint32_t>> &GetBytesSentPerInterfacePerPeriod() const;
 
+        const std::unordered_map<uint16_t, std::vector<uint32_t>> &GetBeaconsSentPerInterfacePerPeriod() const;
     protected:
         SCION_AS *AS;
 
@@ -99,6 +100,7 @@ namespace ns3 {
         std::unordered_map<uint16_t, uint16_t> next_round_valid_beacons_count_per_dst_as;
 
         std::unordered_map<uint16_t, std::vector<uint32_t>> bytes_sent_per_interface_per_period;
+        std::unordered_map<uint16_t, std::vector<uint32_t>> beacons_sent_per_interface_per_period;
 
         void initiate_beacons(neighbour_relation relation);
 

@@ -325,8 +325,102 @@ namespace ns3 {
                         std::cout << "; ";
                         std::cout << "BWD = " << the_beacon->static_info_extension.at(static_info_type_t::BW);
                         std::cout << std::endl;
+
+                        if (the_beacon->optimization_target != NULL) {
+                            for (auto const & criteria : the_beacon->optimization_target->criteria) {
+                                std::cout << "iface group id = " << the_beacon->optimization_target->target_if_group << "; ";
+                                if (criteria.first == static_info_type_t::LATENCY) {
+                                    std::cout << "latency coef = " << criteria.second << "; ";
+                                }
+                                if (criteria.first == static_info_type_t::BW) {
+                                    std::cout << "BW coef = " << criteria.second << "; ";
+                                }
+                            }
+                        }
                     }
                 }
+            }
+        }
+    }
+
+    void PostSimulationEvaluations::PrintAllPathsAttributes() {
+        std::cout << "################################################ Paths Information "
+                     "##############################################################"
+                  << std::endl;
+
+        for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+            SCION_AS *as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+
+            std::cout << "From: " << alias_to_real_as_no.at(as->as_number) << std::endl;
+
+            for (auto const &dst_as_beacons_pair : as->GetBeaconServer()->GetBeaconStore()) {
+                uint16_t dst_as = dst_as_beacons_pair.first;
+                auto const &same_dst_as_beacons = dst_as_beacons_pair.second;
+
+                std::cout << "\t"
+                          << "To: " << alias_to_real_as_no.at(dst_as) << std::endl;
+
+                for (auto const &beacons_from_same_nbr : same_dst_as_beacons) {
+                    for (auto const &the_beacon : beacons_from_same_nbr.second) {
+                        if (!the_beacon->is_valid) {
+                            continue;
+                        }
+                        std::cout << "\t"
+                                  << "\t";
+                        for (auto const & [att_type, att_value] : the_beacon->static_info_extension) {
+                            if (att_type == static_info_type_t::LATENCY) {
+                                std::cout << "latency = " << att_value << "; ";
+                            }
+                            if (att_type == static_info_type_t::BW) {
+                                std::cout << "BW = " << att_value << "; ";
+                            }
+                        }
+
+                        if (the_beacon->optimization_target != NULL) {
+                            for (auto const & [criteria_type, criteria_coef] : the_beacon->optimization_target->criteria) {
+                                std::cout << "iface_group_id = " << the_beacon->optimization_target->target_if_group << "; ";
+                                if (criteria_type == static_info_type_t::LATENCY) {
+                                    std::cout << "latency_coef = " << criteria_coef << "; ";
+                                }
+                                if (criteria_type == static_info_type_t::BW) {
+                                    std::cout << "BW_coef = " << criteria_coef << "; ";
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    void PostSimulationEvaluations::PrintNoBeaconsPerInterface() {
+        for (Time t = Seconds(0.0); t < last_beaconing_event_time; t += beaconing_period) {
+            std::cout << "####################################### frequencies of sent beacons at Time " << t
+                      << " #######################################" << std::endl;
+
+            std::map<uint32_t, uint32_t> frequencies_of_sent_beacon_numbers;
+            for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+                SCION_AS *as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+                for (uint32_t if_index = 0; if_index < as->GetNDevices(); ++if_index) {
+                    uint32_t no_sent_beacons = as->GetBeaconServer()
+                                                    ->GetBeaconsSentPerInterfacePerPeriod()
+                                                    .at(t.ToInteger(Time::MIN))
+                                                    .at(if_index);
+
+                    if (frequencies_of_sent_beacon_numbers.find(no_sent_beacons) !=
+                        frequencies_of_sent_beacon_numbers.end()) {
+                        frequencies_of_sent_beacon_numbers.at(no_sent_beacons)++;
+                    } else {
+                        frequencies_of_sent_beacon_numbers.insert(std::make_pair(no_sent_beacons, 1));
+                    }
+                }
+            }
+
+            std::cout << "consumed bandwidth on a link"
+                      << "\t"
+                      << "frequency" << std::endl;
+            for (auto const &bwd_freq_pair : frequencies_of_sent_beacon_numbers) {
+                std::cout << bwd_freq_pair.first << "\t" << bwd_freq_pair.second << std::endl;
             }
         }
     }

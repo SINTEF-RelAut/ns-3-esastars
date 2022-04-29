@@ -254,6 +254,7 @@ namespace ns3 {
     }
 
     void BeaconServer::increment_control_plane_bytes_sent(Beacon &the_beacon, uint16_t interface) {
+        beacons_sent_per_interface_per_period.at(now).at(interface)++;
         bytes_sent_per_interface_per_period.at(now).at(interface) +=
                 (BEACON_HEADER_SIZE + BEACON_HOP_SIZE * the_beacon.the_path.size());
     }
@@ -307,6 +308,7 @@ namespace ns3 {
         now = (uint16_t) Simulator::Now().ToInteger(Time::MIN);
         next_period = now + (uint16_t) beaconing_period.ToInteger(Time::MIN);
         bytes_sent_per_interface_per_period.insert(std::make_pair(now, std::vector<uint32_t>(AS->GetNDevices(), 0)));
+        beacons_sent_per_interface_per_period.insert(std::make_pair(now, std::vector<uint32_t>(AS->GetNDevices(), 0)));
     }
 
     const uint16_t BeaconServer::GetCurrentTime() const { return now; }
@@ -371,6 +373,10 @@ namespace ns3 {
 
     const std::unordered_map<uint16_t, std::vector<uint32_t>> &BeaconServer::GetBytesSentPerInterfacePerPeriod() const {
         return bytes_sent_per_interface_per_period;
+    }
+
+    const std::unordered_map<uint16_t, std::vector<uint32_t>> &BeaconServer::GetBeaconsSentPerInterfacePerPeriod() const {
+        return beacons_sent_per_interface_per_period;
     }
 
     void ReadBr2BrEnergy(NodeContainer AS_nodes, std::map<int32_t, uint16_t> real_to_alias_as_no,

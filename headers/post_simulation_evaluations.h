@@ -29,7 +29,9 @@ namespace ns3 {
 
             REGISTER_FUN(PrintTrafficSentFromCollectorsPerDstPerPeriod)
             REGISTER_FUN(PrintAllDiscoveredPaths)
+            REGISTER_FUN(PrintAllPathsAttributes)
             REGISTER_FUN(PrintDistributionOfPathsWithSpecificHopCount)
+            REGISTER_FUN(PrintNoBeaconsPerInterface)
             REGISTER_FUN(PrintConsumedBWAtEachPeriod)
             //             REGISTER_FUN(PrintPathQualities)
             //             REGISTER_FUN(Evaluate_S_T_Connectivity)
@@ -54,7 +56,11 @@ namespace ns3 {
 
         void PrintAllDiscoveredPaths();
 
+        void PrintAllPathsAttributes();
+
         void PrintDistributionOfPathsWithSpecificHopCount();
+
+        void PrintNoBeaconsPerInterface();
 
         void PrintConsumedBWAtEachPeriod();
 
