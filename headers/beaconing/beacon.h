@@ -33,9 +33,11 @@ namespace ns3 {
     typedef std::map<static_info_type_t, float> optimization_criteria_t;
     enum optimization_direction_t { FORWARD = 0, BACKWARD = 1, SYMMETRIC = 2 };
     typedef uint16_t target_as_t;
+    typedef uint16_t target_id_t;
     typedef uint16_t target_if_group_t;
 
     struct optimization_target_t {
+        const target_id_t target_id;
         const optimization_criteria_t criteria;
         const optimization_direction_t direction;
         const target_as_t target_as;
@@ -43,11 +45,11 @@ namespace ns3 {
         const uint16_t no_beacons_per_optimization_target;
         const std::set<uint32_t> * const set_of_forbidden_edges;
 
-        optimization_target_t (optimization_criteria_t criteria, optimization_direction_t direction,
+        optimization_target_t (target_id_t target_id, optimization_criteria_t criteria, optimization_direction_t direction,
                               target_as_t target_as, target_if_group_t target_if_group,
                               uint16_t no_beacons_per_optimization_target,
                               const std::set<uint32_t> *set_of_forbidden_edges) :
-              criteria(std::move(criteria)), direction (direction), target_as(target_as),
+              target_id (target_id), criteria(std::move(criteria)), direction (direction), target_as(target_as),
               target_if_group(target_if_group), no_beacons_per_optimization_target(no_beacons_per_optimization_target),
               set_of_forbidden_edges(set_of_forbidden_edges){}
     };

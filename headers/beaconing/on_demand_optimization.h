@@ -46,7 +46,7 @@ namespace ns3 {
                 uint16_t no_beacons = std::stoi(cur_target->first_node("no_beacons")->value());
 
                 set_of_optimization_targets_originated_from_this_as.insert(
-                        std::make_pair(target_id, optimization_target_t(optimization_criteria, optimization_direction,
+                        std::make_pair(target_id, optimization_target_t(target_id, optimization_criteria, optimization_direction,
                                                                         AS->as_number, group_id, no_beacons, NULL)));
                 cur_target = cur_target->next_sibling("target");
             }
