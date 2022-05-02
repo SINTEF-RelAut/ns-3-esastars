@@ -388,6 +388,7 @@ namespace ns3 {
                             }
                         }
                     }
+                    std::cout << std::endl;
                 }
             }
         }
