@@ -290,10 +290,12 @@ namespace ns3 {
         if (the_beacon.beacon_direction == beacon_direction_t::PUSH_BASED) {
             if (path_map_to_beacon.find(the_beacon.key) != path_map_to_beacon.end()) {
                 Beacon *existing_beacon = path_map_to_beacon.at(the_beacon.key);
-                if (!existing_beacon->is_valid) {
-                    return std::tuple<bool, bool, bool, Beacon *, ld>(true, true, false, existing_beacon, 0);
+                if (existing_beacon->optimization_target == the_beacon.optimization_target) {
+                    if (!existing_beacon->is_valid) {
+                        return std::tuple<bool, bool, bool, Beacon *, ld>(true, true, false, existing_beacon, 0);
+                    }
+                    return std::tuple<bool, bool, bool, Beacon *, ld>(true, true, true, existing_beacon, 0);
                 }
-                return std::tuple<bool, bool, bool, Beacon *, ld>(true, true, true, existing_beacon, 0);
             }
 
             if (the_beacon.the_path.size() == 1) {
