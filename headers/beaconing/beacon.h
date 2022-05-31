@@ -11,6 +11,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <unordered_set>
 
 #include "src/SCION/headers/path_segment.h"
 
@@ -18,6 +19,13 @@ namespace ns3 {
 
 #define BEACON_HEADER_SIZE 86
 #define BEACON_HOP_SIZE 132
+#define ORIGINATOR(beacon) (UPPER_16_BITS(beacon.the_path.front()))
+#define ORIGINATOR_PTR(beacon) (UPPER_16_BITS(beacon->the_path.front()))
+#define DST_AS(beacon) (beacon.beacon_direction == beacon_direction_t::PULL_BASED \
+    ? beacon.optimization_target->target_as : UPPER_16_BITS(beacon.the_path.front()))
+
+#define DST_AS_PTR(beacon) (beacon->beacon_direction == beacon_direction_t::PULL_BASED \
+                                    ? beacon->optimization_target->target_as : UPPER_16_BITS(beacon->the_path.front()))
 
     typedef long double ld;
 
@@ -43,12 +51,12 @@ namespace ns3 {
         const target_as_t target_as;
         const target_if_group_t target_if_group;
         const uint16_t no_beacons_per_optimization_target;
-        const std::set<uint32_t> * const set_of_forbidden_edges;
+        const std::unordered_map<uint16_t, std::unordered_set<uint16_t>*> * const set_of_forbidden_edges;
 
         optimization_target_t (target_id_t target_id, optimization_criteria_t criteria, optimization_direction_t direction,
                               target_as_t target_as, target_if_group_t target_if_group,
                               uint16_t no_beacons_per_optimization_target,
-                              const std::set<uint32_t> *set_of_forbidden_edges) :
+                              const std::unordered_map<uint16_t, std::unordered_set<uint16_t>*> *set_of_forbidden_edges) :
               target_id (target_id), criteria(std::move(criteria)), direction (direction), target_as(target_as),
               target_if_group(target_if_group), no_beacons_per_optimization_target(no_beacons_per_optimization_target),
               set_of_forbidden_edges(set_of_forbidden_edges){}
@@ -87,7 +95,9 @@ namespace ns3 {
 
         {}
 
-        void ExtractPathSegment(PathSegment &pathSegment);
+        void ExtractPathSegmentFromPushBasedBeacon(PathSegment &pathSegment) const;
+
+        void ExtractPathSegmentFromPullBasedBeacon(PathSegment &pathSegment) const;
     };
 } // namespace ns3
 #endif //SCION_SIMULATOR_BEACON_H

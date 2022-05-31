@@ -57,6 +57,8 @@ namespace ns3 {
 
         void ScheduleBeaconing(Time last_beaconing_event_time);
 
+        void InsertPulledBeaconsToBeaconStore();
+
         const uint16_t GetCurrentTime() const;
 
         const std::vector<std::vector<ld>> &GetIntraASEnergies() const;
@@ -67,7 +69,7 @@ namespace ns3 {
 
         const std::unordered_map<uint16_t, beacons_with_same_dst_as> &GetBeaconStore() const;
 
-        const std::unordered_map<std::string, Beacon *> &GetPathMapToBeacon() const;
+        const std::unordered_map<std::string, Beacon> &GetPathMapToBeacon() const;
 
         const std::unordered_map<uint16_t, uint16_t> &GetValidBeaconsCountPerDstAS() const;
 
@@ -94,7 +96,13 @@ namespace ns3 {
         std::vector<std::vector<ld>> intra_as_energies;
 
         std::unordered_map<uint16_t, beacons_with_same_dst_as> beacon_store;
-        std::unordered_map<std::string, Beacon *> path_map_to_beacon;
+
+        // All beacon instances are stored in either of the containers, with no overlap
+        std::unordered_map<std::string, Beacon> push_based_beacon_container;
+        std::unordered_map<std::string, Beacon> non_requested_pull_based_beacon_container;
+        std::unordered_map<std::string, Beacon>
+                requested_pull_based_beacon_container; // the result of pull based beaconing returned to the source AS
+
 
         std::unordered_map<uint16_t, uint16_t> valid_beacons_count_per_dst_as;
         std::unordered_map<uint16_t, uint16_t> next_round_valid_beacons_count_per_dst_as;

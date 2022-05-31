@@ -295,6 +295,8 @@ namespace ns3 {
 
             std::cout << "From: " << alias_to_real_as_no.at(as->as_number) << std::endl;
 
+            as->GetBeaconServer()->InsertPulledBeaconsToBeaconStore();
+
             for (auto const &dst_as_beacons_pair : as->GetBeaconServer()->GetBeaconStore()) {
                 uint16_t dst_as = dst_as_beacons_pair.first;
                 auto const &same_dst_as_beacons = dst_as_beacons_pair.second;
@@ -319,6 +321,11 @@ namespace ns3 {
                                       << LOWER_16_BITS(*hop) << ", " << alias_to_real_as_no.at(UPPER_16_BITS(*hop))
                                       << ":" << SECOND_UPPER_16_BITS(*hop);
                             hop_cnt++;
+                        }
+                        if (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED) {
+                            std::cout << "; pull";
+                        } else {
+                            std::cout << "; push";
                         }
                         std::cout << "; ";
                         std::cout << "latency = " << the_beacon->static_info_extension.at(static_info_type_t::LATENCY);

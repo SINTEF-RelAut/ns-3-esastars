@@ -8,16 +8,18 @@
 #include "src/SCION/headers/beaconing/beacon_server.h"
 
 namespace ns3 {
-    typedef std::multimap<ld, Beacon *, std::greater<ld>> beacons_with_the_same_opt_target_and_ingress_if_t;
-    typedef std::map<uint16_t, beacons_with_the_same_opt_target_and_ingress_if_t> beacons_with_the_same_opt_target_t;
+    typedef std::multimap<ld, Beacon *, std::greater<ld>> beacons_with_the_same_opt_target_and_ingress_if_group_t;
+    typedef std::map<uint16_t, beacons_with_the_same_opt_target_and_ingress_if_group_t> beacons_with_the_same_opt_target_t;
     typedef std::unordered_map<const optimization_target_t *, beacons_with_the_same_opt_target_t>
-            beacons_grouped_by_optimization_targets_and_ingress_if_t;
+            beacons_grouped_by_optimization_targets_and_ingress_if_group_t;
 
     class OnDemandOptimization : public BeaconServer {
     public:
         OnDemandOptimization(SCION_AS *AS, bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
                              const YAML::Node &config)
             : BeaconServer(AS, parallel_scheduler, xml_node, config) {
+            last_push_based_interval = Time(config["beacon_service"]["last_push_based_interval"].as<std::string>()).ToInteger(Time::MIN);
+            pull_based_dissemination_to_initiation_frequency = stoi(config["beacon_service"]["pull_based_dissemination_to_initiation_frequency"].as<std::string>());
             rapidxml::xml_node<> *cur_target = xml_node->first_node("target");
             while (cur_target) {
                 uint16_t target_id = std::stoi(cur_target->first_node("target_id")->value());
@@ -57,29 +59,31 @@ namespace ns3 {
         void PerLinkInitializations(rapidxml::xml_node<> *xml_node, const YAML::Node &config) override;
 
     private:
-        beacons_grouped_by_optimization_targets_and_ingress_if_t
+        beacons_grouped_by_optimization_targets_and_ingress_if_group_t
                 push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group; // permanent until beacons expiration
-        beacons_grouped_by_optimization_targets_and_ingress_if_t
-                pull_based_beacons_grouped_by_optimization_targets_and_ingress_if; // gets wiped out at every beaconing interval
+        beacons_grouped_by_optimization_targets_and_ingress_if_group_t
+                pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group; // gets wiped out at every beaconing interval
 
-        std::unordered_map<beacon_direction_t, const beacons_grouped_by_optimization_targets_and_ingress_if_t &>
+        std::unordered_map<beacon_direction_t, const beacons_grouped_by_optimization_targets_and_ingress_if_group_t &>
                 pull_and_push_beacons_grouped_by_optimization_targets_and_ingress_if = {
                         {beacon_direction_t::PUSH_BASED,
                          this->push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group},
                         {beacon_direction_t::PULL_BASED,
-                         this->pull_based_beacons_grouped_by_optimization_targets_and_ingress_if}};
+                         this->pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group}};
 
         std::unordered_map<uint16_t, const optimization_target_t> set_of_optimization_targets_originated_from_this_as;
-        std::multimap<uint16_t, const optimization_target_t *> if_to_optimization_targets_map;
+        std::multimap<uint16_t, const optimization_target_t *> if_to_push_based_optimization_targets_map;
 
         std::unordered_map<uint16_t, uint16_t> if_to_if_group;
 
         std::unordered_map<uint16_t, std::unordered_map<uint16_t, std::vector<uint16_t>>>
                 interface_groups_connected_per_neighbor; // key1: neighbor AS, key2: interface_group, values in the vector: interface ids
 
-        uint32_t push_based_to_pull_based_frequency_ratio;
-        std::set<optimization_target_t> pull_based_optimization_targets;
-        std::unordered_map<uint16_t, std::set<uint32_t> *> set_of_forbidden_edges_per_destination_as;
+        uint16_t last_push_based_interval;
+        uint16_t pull_based_dissemination_to_initiation_frequency;
+        std::multimap<uint16_t, const optimization_target_t *> if_to_pull_based_optimization_targets_map;
+        std::unordered_map<uint16_t, std::unordered_map<uint32_t, uint16_t> *> repetition_of_edges;
+        std::unordered_map<uint16_t, std::unordered_map<uint16_t, std::unordered_set<uint16_t>*> *> set_of_forbidden_edges_per_destination_as;
 
         void initiate_beacons_per_interface(uint16_t self_egress_if_no, SCION_AS *remote_as,
                                             uint16_t remote_ingress_if_no) override;
@@ -123,6 +127,12 @@ namespace ns3 {
                                           static_info_extension_t &propagation_static_info);
 
         void update_algorithm_data_structures_periodic(Beacon *the_beacon, bool invalidated) override;
+
+        void delete_from_forbidden_edges(Beacon *the_beacon);
+
+        void insert_to_forbidden_edges(Beacon *the_beacon);
+
+        void create_optimization_targets_for_forbidden_edges(uint16_t dst_as);
     };
 } // namespace ns3
 #endif //SCION_SIMULATOR_ON_DEMAND_OPTIMIZATION_H
