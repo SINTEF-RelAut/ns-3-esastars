@@ -93,6 +93,10 @@ namespace ns3 {
             (now / beaconing_period.ToInteger(Time::MIN)) % pull_based_dissemination_to_initiation_frequency == 0) {
             for (auto it = if_to_pull_based_optimization_targets_map.lower_bound(self_egress_if_no);
                  it != if_to_pull_based_optimization_targets_map.upper_bound(self_egress_if_no); ++it) {
+                if (it->second->set_of_forbidden_edges->at(AS->as_number)->find(self_egress_if_no)
+                    != it->second->set_of_forbidden_edges->at(AS->as_number)->end()) {
+                    continue;
+                }
                 static_info_extension_t static_info_extension;
                 create_initial_static_info_extension(static_info_extension, self_egress_if_no, it->second);
                 generate_beacon_and_send(NULL, self_egress_if_no, remote_ingress_if_no, remote_as,
