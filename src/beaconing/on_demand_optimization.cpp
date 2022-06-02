@@ -85,7 +85,6 @@ namespace ns3 {
         // pull-based
         if (now > last_push_based_interval &&
             (now / beaconing_period.ToInteger(Time::MIN)) % pull_based_dissemination_to_initiation_frequency == 0) {
-            std::cout << "pull_based started" << std::endl;
             for (auto it = if_to_pull_based_optimization_targets_map.lower_bound(self_egress_if_no);
                  it != if_to_pull_based_optimization_targets_map.upper_bound(self_egress_if_no); ++it) {
                 static_info_extension_t static_info_extension;
