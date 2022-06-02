@@ -80,6 +80,7 @@ namespace ns3 {
 
     void BeaconServer::update_beacon_state(Beacon *the_beacon) {
         uint16_t dst_as = DST_AS_PTR(the_beacon);
+        NS_ASSERT(the_beacon->beacon_direction == beacon_direction_t::PULL_BASED || UPPER_16_BITS(the_beacon->the_path.front()) == the_beacon->optimization_target->target_as);
         if (the_beacon->is_new) {
             the_beacon->is_new = false;
             if (the_beacon->next_expiration_time > now) {
