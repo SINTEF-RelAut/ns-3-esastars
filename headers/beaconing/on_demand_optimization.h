@@ -108,8 +108,7 @@ namespace ns3 {
                                   const static_info_extension_t &static_info_extension);
 
         void select_beacons_to_disseminate_per_target_per_nbr(
-                uint16_t remote_as_no, uint16_t dst_as_no,
-                const beacons_with_the_same_opt_target_t &beacons_with_the_same_opt_target,
+                uint16_t remote_as_no, const beacons_with_the_same_opt_target_t &beacons_with_the_same_opt_target,
                 const optimization_target_t *optimization_target,
                 std::unordered_map<
                         uint16_t,

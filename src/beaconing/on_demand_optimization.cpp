@@ -67,6 +67,12 @@ namespace ns3 {
 
             cur_xml_target = cur_xml_target->next_sibling(target_element_str.c_str());
         }
+#if NS3_ASSERT_ENABLE
+        for (uint32_t i = 0; i < AS->interfaces_coordinates.size(); ++i) {
+            NS_ASSERT(if_to_if_group.find(i) != if_to_if_group.end());
+            NS_ASSERT(if_to_push_based_optimization_targets_map.find(i) != if_to_push_based_optimization_targets_map.end());
+        }
+#endif
     }
 
     void OnDemandOptimization::initiate_beacons_per_interface(uint16_t self_egress_if_no, SCION_AS *remote_as,
@@ -148,13 +154,8 @@ namespace ns3 {
 
             for (auto const &[optimization_target, beacons_with_the_same_opt_target] :
                  beacons_grouped_by_optimization_targets_and_ingress_if) {
-                uint16_t dst_as_no = optimization_target->target_as;
 
-                if (remote_as_no == dst_as_no) {
-                    continue;
-                }
-
-                if (dst_as_no == AS->as_number) { // pull-based request to this AS
+                if (optimization_target->target_as == AS->as_number) { // pull-based request to this AS
                     continue;
                 }
 
@@ -164,9 +165,8 @@ namespace ns3 {
                                       std::greater<ld>>>
                         selected_beacons;
 
-                select_beacons_to_disseminate_per_target_per_nbr(remote_as_no, dst_as_no,
-                                                                 beacons_with_the_same_opt_target, optimization_target,
-                                                                 selected_beacons);
+                select_beacons_to_disseminate_per_target_per_nbr(remote_as_no, beacons_with_the_same_opt_target,
+                                                                 optimization_target, selected_beacons);
                 send_selected_beacons_per_target_per_nbr(selected_beacons);
             }
         }
@@ -197,8 +197,7 @@ namespace ns3 {
     }
 
     void OnDemandOptimization::select_beacons_to_disseminate_per_target_per_nbr(
-            uint16_t remote_as_no, uint16_t dst_as_no,
-            const beacons_with_the_same_opt_target_t &beacons_with_the_same_opt_target,
+            uint16_t remote_as_no, const beacons_with_the_same_opt_target_t &beacons_with_the_same_opt_target,
             const optimization_target_t *optimization_target,
             std::unordered_map<
                     uint16_t,
@@ -265,6 +264,7 @@ namespace ns3 {
                 std::advance(it, optimization_target->no_beacons_per_optimization_target);
                 selected_beacons_per_subgroup.erase(it, selected_beacons_per_subgroup.end());
             }
+            NS_ASSERT(selected_beacons_per_subgroup.size() == optimization_target->no_beacons_per_optimization_target);
         }
     }
 
