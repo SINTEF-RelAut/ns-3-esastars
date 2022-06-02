@@ -24,7 +24,17 @@ namespace ns3 {
 
     void BeaconServer::ScheduleBeaconing(Time last_beaconing_event_time) {
         for (Time t = Seconds(0); t < last_beaconing_event_time; t += beaconing_period) {
-            Simulator::Schedule(t, &BeaconServer::update_time_and_stats, this);
+            if (parallel_scheduler) {
+                if (AS->GetPathServer() != NULL) {
+                    Simulator::Schedule(t + AS->latency_between_path_server_and_beacon_server,
+                                        &RunParallelEvents<void (BeaconServer::*)()>,
+                                        &BeaconServer::register_to_local_path_server);
+                }
+                Simulator::Schedule(t, &RunParallelEvents<void (BeaconServer::*)()>, &BeaconServer::update_time_and_stats);
+
+                Simulator::Schedule(t + MilliSeconds(150), &RunParallelEvents<void (BeaconServer::*)()>,
+                                    &BeaconServer::update_state_periodic);
+            }
 
             if (dynamic_cast<SCION_Core_AS *>(AS) != NULL) {
                 Simulator::Schedule(t, &BeaconServer::disseminate_beacons, this, neighbour_relation::CORE);
@@ -33,17 +43,6 @@ namespace ns3 {
                 Simulator::Schedule(t, &BeaconServer::initiate_beacons, this, neighbour_relation::CUSTOMER);
             } else {
                 Simulator::Schedule(t, &BeaconServer::disseminate_beacons, this, neighbour_relation::CUSTOMER);
-            }
-
-            if (parallel_scheduler) {
-                if (AS->GetPathServer() != NULL) {
-                    Simulator::Schedule(t + AS->latency_between_path_server_and_beacon_server,
-                                        &RunParallelEvents<void (BeaconServer::*)()>,
-                                        &BeaconServer::register_to_local_path_server);
-                }
-
-                Simulator::Schedule(t + MilliSeconds(150), &RunParallelEvents<void (BeaconServer::*)()>,
-                                    &BeaconServer::update_state_periodic);
             }
         }
     }
