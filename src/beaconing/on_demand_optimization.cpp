@@ -93,6 +93,7 @@ namespace ns3 {
             (now / beaconing_period.ToInteger(Time::MIN)) % pull_based_dissemination_to_initiation_frequency == 0) {
             for (auto it = if_to_pull_based_optimization_targets_map.lower_bound(self_egress_if_no);
                  it != if_to_pull_based_optimization_targets_map.upper_bound(self_egress_if_no); ++it) {
+                NS_ASSERT(it->second->set_of_forbidden_edges->find(AS->as_number) != it->second->set_of_forbidden_edges->end());
                 if (it->second->set_of_forbidden_edges->at(AS->as_number)->find(self_egress_if_no)
                     != it->second->set_of_forbidden_edges->at(AS->as_number)->end()) {
                     continue;
