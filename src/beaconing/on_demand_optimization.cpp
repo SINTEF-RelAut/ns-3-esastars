@@ -173,6 +173,7 @@ namespace ns3 {
 
                 select_beacons_to_disseminate_per_target_per_nbr(remote_as_no, beacons_with_the_same_opt_target,
                                                                  optimization_target, selected_beacons);
+                NS_ASSERT(selected_beacons.size() > 0);
                 send_selected_beacons_per_target_per_nbr(selected_beacons);
             }
         }
@@ -253,12 +254,12 @@ namespace ns3 {
                         extend_static_info_extension(the_beacon, LOWER_16_BITS(the_beacon->the_path.back()),
                                                      candidate_egress_if_no, propagation_static_info);
 
-                        ld score = calculate_score(the_beacon->optimization_target, propagation_static_info);
+                        ld dissemination_score = calculate_score(the_beacon->optimization_target, propagation_static_info);
 
                         auto [remote_ingress_if_no, remote_as] = AS->GetRemoteAsInfo(candidate_egress_if_no);
 
                         selected_beacons.at(group).insert(std::make_pair(
-                                score, std::make_tuple(the_beacon, candidate_egress_if_no, remote_ingress_if_no,
+                                dissemination_score, std::make_tuple(the_beacon, candidate_egress_if_no, remote_ingress_if_no,
                                                        remote_as, propagation_static_info)));
                     }
                 }
