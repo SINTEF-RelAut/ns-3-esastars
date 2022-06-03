@@ -70,7 +70,8 @@ namespace ns3 {
 #if NS3_ASSERT_ENABLE
         for (uint32_t i = 0; i < AS->interfaces_coordinates.size(); ++i) {
             NS_ASSERT(if_to_if_group.find(i) != if_to_if_group.end());
-            NS_ASSERT(if_to_push_based_optimization_targets_map.find(i) != if_to_push_based_optimization_targets_map.end());
+            NS_ASSERT(if_to_push_based_optimization_targets_map.find(i) !=
+                      if_to_push_based_optimization_targets_map.end());
         }
 #endif
     }
@@ -93,9 +94,10 @@ namespace ns3 {
             (now / beaconing_period.ToInteger(Time::MIN)) % pull_based_dissemination_to_initiation_frequency == 0) {
             for (auto it = if_to_pull_based_optimization_targets_map.lower_bound(self_egress_if_no);
                  it != if_to_pull_based_optimization_targets_map.upper_bound(self_egress_if_no); ++it) {
-                NS_ASSERT(it->second->set_of_forbidden_edges->find(AS->as_number) != it->second->set_of_forbidden_edges->end());
-                if (it->second->set_of_forbidden_edges->at(AS->as_number)->find(self_egress_if_no)
-                    != it->second->set_of_forbidden_edges->at(AS->as_number)->end()) {
+                NS_ASSERT(it->second->set_of_forbidden_edges->find(AS->as_number) !=
+                          it->second->set_of_forbidden_edges->end());
+                if (it->second->set_of_forbidden_edges->at(AS->as_number)->find(self_egress_if_no) !=
+                    it->second->set_of_forbidden_edges->at(AS->as_number)->end()) {
                     continue;
                 }
                 static_info_extension_t static_info_extension;
@@ -159,7 +161,6 @@ namespace ns3 {
 
             for (auto const &[optimization_target, beacons_with_the_same_opt_target] :
                  beacons_grouped_by_optimization_targets_and_ingress_if) {
-
                 if (optimization_target->target_as == AS->as_number) { // pull-based request to this AS
                     continue;
                 }
@@ -211,7 +212,8 @@ namespace ns3 {
         for (auto const &[beacon_ingress_if_group, score_beacons_map] : beacons_with_the_same_opt_target) {
             for (auto const &[score, the_beacon] : score_beacons_map) {
                 if ((the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED && !the_beacon->is_valid) ||
-                    (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED && the_beacon->expiration_time < now)) {
+                    (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED &&
+                     the_beacon->expiration_time < now)) {
                     continue;
                 }
 
@@ -336,7 +338,9 @@ namespace ns3 {
                                                               lowest_previous_score);
         }
 
-        NS_ASSERT(next_round_valid_beacons_count_per_dst_as.find(DST_AS(the_beacon)) != next_round_valid_beacons_count_per_dst_as.end());
+        NS_ASSERT(the_beacon.beacon_direction != beacon_direction_t::PUSH_BASED ||
+                  next_round_valid_beacons_count_per_dst_as.find(DST_AS(the_beacon)) !=
+                          next_round_valid_beacons_count_per_dst_as.end());
         return std::tuple<bool, bool, bool, Beacon *, ld>(false, false, false, NULL, 0);
     }
 
@@ -384,9 +388,9 @@ namespace ns3 {
             return;
         }
 
-        uint16_t self_ingress_if =
-                (the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED)
-                ? LOWER_16_BITS(the_beacon->the_path.back()) : SECOND_UPPER_16_BITS(the_beacon->the_path.front());
+        uint16_t self_ingress_if = (the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED)
+                                           ? LOWER_16_BITS(the_beacon->the_path.back())
+                                           : SECOND_UPPER_16_BITS(the_beacon->the_path.front());
 
         auto &grouped_beacons = (the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED)
                                         ? push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group
