@@ -352,7 +352,8 @@ namespace ns3 {
         std::tie(to_import, path_exists, existing_path_valid, beacon_to_replace, replacement_key) =
                 import_policy(received_beacon, sender_as, remote_if, local_if, now);
 
-        NS_ASSERT(next_round_valid_beacons_count_per_dst_as.find(dst_as) !=
+        NS_ASSERT(received_beacon.beacon_direction != beacon_direction_t::PUSH_BASED ||
+                  next_round_valid_beacons_count_per_dst_as.find(dst_as) !=
                           next_round_valid_beacons_count_per_dst_as.end() ||
                   to_import);
 
