@@ -30,7 +30,8 @@ namespace ns3 {
                                         &RunParallelEvents<void (BeaconServer::*)()>,
                                         &BeaconServer::register_to_local_path_server);
                 }
-                Simulator::Schedule(t, &RunParallelEvents<void (BeaconServer::*)()>, &BeaconServer::update_time_and_stats);
+                Simulator::Schedule(t, &RunParallelEvents<void (BeaconServer::*)()>,
+                                    &BeaconServer::update_time_and_stats);
 
                 Simulator::Schedule(t + MilliSeconds(150), &RunParallelEvents<void (BeaconServer::*)()>,
                                     &BeaconServer::update_state_periodic);
@@ -48,9 +49,9 @@ namespace ns3 {
     }
 
     void BeaconServer::InsertPulledBeaconsToBeaconStore() {
-        for (auto & key_beacon_pair : requested_pull_based_beacon_container) {
-            Beacon* to_insert_beacon = &key_beacon_pair.second;
-            std::vector<uint64_t>& the_path = to_insert_beacon->the_path;
+        for (auto &key_beacon_pair : requested_pull_based_beacon_container) {
+            Beacon *to_insert_beacon = &key_beacon_pair.second;
+            std::vector<uint64_t> &the_path = to_insert_beacon->the_path;
             uint16_t dst_as = to_insert_beacon->optimization_target->target_as;
 
             std::reverse(the_path.begin(), the_path.end());
@@ -74,23 +75,19 @@ namespace ns3 {
                 beacon_store.at(dst_as).insert(std::make_pair(path_len, beacons_with_equal_length()));
                 beacon_store.at(dst_as).at(path_len).insert(to_insert_beacon);
             }
-
         }
     }
 
     void BeaconServer::update_beacon_state(Beacon *the_beacon) {
         uint16_t dst_as = DST_AS_PTR(the_beacon);
-        NS_ASSERT(the_beacon->beacon_direction == beacon_direction_t::PULL_BASED || UPPER_16_BITS(the_beacon->the_path.front()) == the_beacon->optimization_target->target_as);
+        NS_ASSERT(the_beacon->beacon_direction == beacon_direction_t::PULL_BASED ||
+                  ORIGINATOR_PTR(the_beacon) == the_beacon->optimization_target->target_as);
         if (the_beacon->is_new) {
             the_beacon->is_new = false;
             if (the_beacon->next_expiration_time > now) {
                 if (!the_beacon->is_valid) {
                     the_beacon->is_valid = true;
-                    try {
-                        valid_beacons_count_per_dst_as.at(dst_as)++;
-                    } catch (const std::out_of_range &) {
-                        valid_beacons_count_per_dst_as.insert(std::make_pair(dst_as, 1));
-                    }
+                    increment_valid_beacons_count(dst_as);
                 }
                 the_beacon->initiation_time = the_beacon->next_initiation_time;
                 the_beacon->expiration_time = the_beacon->next_expiration_time;
@@ -99,15 +96,8 @@ namespace ns3 {
 
         if (the_beacon->expiration_time <= next_period && the_beacon->is_valid) {
             the_beacon->is_valid = false;
-
-            if (valid_beacons_count_per_dst_as.find(dst_as) != valid_beacons_count_per_dst_as.end()) {
-                valid_beacons_count_per_dst_as.at(dst_as)--;
-            }
-
-            if (next_round_valid_beacons_count_per_dst_as.find(dst_as) !=
-                next_round_valid_beacons_count_per_dst_as.end()) {
-                next_round_valid_beacons_count_per_dst_as.at(dst_as)--;
-            }
+            decrement_valid_beacons_count(dst_as);
+            decrement_next_round_valid_beacons_count(dst_as);
         }
     }
 
@@ -184,12 +174,11 @@ namespace ns3 {
             new_isd_path.push_back(AS->isd_number);
         }
 
-        bool valid = (beacon_direction == beacon_direction_t::PULL_BASED);
         uint16_t initiation_time = (beacon_direction == beacon_direction_t::PULL_BASED) ? next_initiation_time : 0;
         uint16_t expiration_time = (beacon_direction == beacon_direction_t::PULL_BASED) ? next_expiration_time : 0;
 
         Beacon to_disseminate_beacon(static_info_extension, optimization_target, beacon_direction, initiation_time,
-                                     expiration_time, next_initiation_time, next_expiration_time, true, valid, new_path,
+                                     expiration_time, next_initiation_time, next_expiration_time, true, false, new_path,
                                      key, new_isd_path);
 
         increment_control_plane_bytes_sent(to_disseminate_beacon, self_egress_if_no);
@@ -217,16 +206,6 @@ namespace ns3 {
     void BeaconServer::insert_beacon(Beacon &the_beacon, uint16_t dst_as, uint16_t sender_as, uint16_t remote_egress_if,
                                      uint16_t local_ingress_if, bool path_exists, bool existing_path_valid,
                                      Beacon *beacon_to_replace) {
-
-        if (the_beacon.beacon_direction == beacon_direction_t::PUSH_BASED ||
-            (the_beacon.beacon_direction == beacon_direction_t::PULL_BASED &&
-             ORIGINATOR(the_beacon) == AS->as_number)) {
-            if (next_round_valid_beacons_count_per_dst_as.find(dst_as) ==
-                next_round_valid_beacons_count_per_dst_as.end()) {
-                next_round_valid_beacons_count_per_dst_as.insert(std::make_pair(dst_as, 0));
-            }
-        }
-
         if (the_beacon.beacon_direction == beacon_direction_t::PULL_BASED) {
             auto &beacon_container = (ORIGINATOR(the_beacon) == AS->as_number)
                                              ? requested_pull_based_beacon_container
@@ -236,7 +215,7 @@ namespace ns3 {
             Beacon *to_insert_beacon = &beacon_container.at(the_beacon.key);
 
             if (ORIGINATOR(the_beacon) == AS->as_number) {
-                next_round_valid_beacons_count_per_dst_as.at(dst_as)++;
+                increment_next_round_valid_beacons_count(dst_as);
             }
 
             insert_to_algorithm_data_structures(to_insert_beacon, sender_as, remote_egress_if, local_ingress_if);
@@ -249,12 +228,12 @@ namespace ns3 {
             beacon_to_replace->is_new = true;
 
             if (!existing_path_valid) {
-                next_round_valid_beacons_count_per_dst_as.at(dst_as)++;
+                increment_next_round_valid_beacons_count(dst_as);
                 insert_to_algorithm_data_structures(beacon_to_replace, sender_as, remote_egress_if, local_ingress_if);
             }
             return;
         } else {
-            next_round_valid_beacons_count_per_dst_as.at(dst_as)++;
+            increment_next_round_valid_beacons_count(dst_as);
 
             push_based_beacon_container.insert(std::make_pair(the_beacon.key, the_beacon));
             Beacon *to_insert_beacon = &push_based_beacon_container.at(the_beacon.key);
@@ -274,6 +253,22 @@ namespace ns3 {
             }
 
             insert_to_algorithm_data_structures(to_insert_beacon, sender_as, remote_egress_if, local_ingress_if);
+        }
+    }
+
+    void BeaconServer::increment_valid_beacons_count(uint16_t dst_as) {
+        if (valid_beacons_count_per_dst_as.find(dst_as) == valid_beacons_count_per_dst_as.end()) {
+            valid_beacons_count_per_dst_as.insert(std::make_pair(dst_as, 1));
+        } else {
+            valid_beacons_count_per_dst_as.at(dst_as)++;
+        }
+    }
+
+    void BeaconServer::increment_next_round_valid_beacons_count(uint16_t dst_as) {
+        if (next_round_valid_beacons_count_per_dst_as.find(dst_as) == next_round_valid_beacons_count_per_dst_as.end()) {
+            next_round_valid_beacons_count_per_dst_as.insert(std::make_pair(dst_as, 1));
+        } else {
+            next_round_valid_beacons_count_per_dst_as.at(dst_as)++;
         }
     }
 
@@ -297,12 +292,11 @@ namespace ns3 {
         if (to_be_removed_beacon->beacon_direction == beacon_direction_t::PUSH_BASED ||
             (to_be_removed_beacon->beacon_direction == beacon_direction_t::PULL_BASED &&
              ORIGINATOR_PTR(to_be_removed_beacon) == AS->as_number)) {
-            if (to_be_removed_beacon->is_valid && !to_be_removed_beacon->is_new) {
-                valid_beacons_count_per_dst_as.at(dst_as)--;
-            }
-
             if (to_be_removed_beacon->is_new) {
-                next_round_valid_beacons_count_per_dst_as.at(dst_as)--;
+                decrement_next_round_valid_beacons_count(dst_as);
+            } else if (to_be_removed_beacon->is_valid) {
+                decrement_valid_beacons_count(dst_as);
+                decrement_next_round_valid_beacons_count(dst_as);
             }
         }
 
@@ -318,6 +312,25 @@ namespace ns3 {
         beacon_container.erase(to_be_removed_beacon->key);
     }
 
+    void BeaconServer::decrement_valid_beacons_count(uint16_t dst_as) {
+        NS_ASSERT(valid_beacons_count_per_dst_as.find(dst_as) != valid_beacons_count_per_dst_as.end() &&
+                  valid_beacons_count_per_dst_as.at(dst_as) > 0);
+        valid_beacons_count_per_dst_as.at(dst_as)--;
+        if (valid_beacons_count_per_dst_as.at(dst_as) == 0) {
+            valid_beacons_count_per_dst_as.erase(dst_as);
+        }
+    }
+
+    void BeaconServer::decrement_next_round_valid_beacons_count(uint16_t dst_as) {
+        NS_ASSERT(next_round_valid_beacons_count_per_dst_as.find(dst_as) !=
+                          next_round_valid_beacons_count_per_dst_as.end() &&
+                  next_round_valid_beacons_count_per_dst_as.at(dst_as) > 0);
+        next_round_valid_beacons_count_per_dst_as.at(dst_as)--;
+        if (next_round_valid_beacons_count_per_dst_as.at(dst_as) == 0) {
+            next_round_valid_beacons_count_per_dst_as.erase(dst_as);
+        }
+    }
+
     void BeaconServer::increment_control_plane_bytes_sent(Beacon &the_beacon, uint16_t interface) {
         beacons_sent_per_interface_per_period.at(now).at(interface)++;
         bytes_sent_per_interface_per_period.at(now).at(interface) +=
@@ -328,6 +341,8 @@ namespace ns3 {
                                      uint16_t local_if) {
         uint16_t dst_as = DST_AS(received_beacon);
 
+        NS_ASSERT(received_beacon.beacon_direction != beacon_direction_t::PUSH_BASED ||
+                  ORIGINATOR(received_beacon) == received_beacon.optimization_target->target_as);
         bool to_import;
         bool path_exists;
         bool existing_path_valid;
@@ -337,11 +352,16 @@ namespace ns3 {
         std::tie(to_import, path_exists, existing_path_valid, beacon_to_replace, replacement_key) =
                 import_policy(received_beacon, sender_as, remote_if, local_if, now);
 
+        NS_ASSERT(next_round_valid_beacons_count_per_dst_as.find(dst_as) !=
+                          next_round_valid_beacons_count_per_dst_as.end() ||
+                  to_import);
+
         if (!to_import) {
             return;
         }
 
         if (!path_exists && beacon_to_replace != NULL) {
+            NS_ASSERT(DST_AS_PTR(beacon_to_replace) == DST_AS(received_beacon));
             delete_beacon(beacon_to_replace, replacement_key, dst_as);
         }
 
@@ -397,7 +417,6 @@ namespace ns3 {
                     } else {
                         the_beacon.ExtractPathSegmentFromPullBasedBeacon(pathSegment);
                     }
-
 
                     if (dynamic_cast<SCION_Core_AS *>(AS) != NULL) {
                         AS->GetPathServer()->RegisterCorePathSegment(pathSegment, key);

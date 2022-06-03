@@ -322,28 +322,25 @@ namespace ns3 {
                                       << ":" << SECOND_UPPER_16_BITS(*hop);
                             hop_cnt++;
                         }
+
                         if (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED) {
                             std::cout << "; pull";
                         } else {
                             std::cout << "; push";
                         }
-                        std::cout << "; ";
-                        std::cout << "latency = " << the_beacon->static_info_extension.at(static_info_type_t::LATENCY);
-                        std::cout << "; ";
-                        std::cout << "BWD = " << the_beacon->static_info_extension.at(static_info_type_t::BW);
-                        std::cout << std::endl;
 
-                        if (the_beacon->optimization_target != NULL) {
-                            for (auto const & criteria : the_beacon->optimization_target->criteria) {
-                                std::cout << "iface group id = " << the_beacon->optimization_target->target_if_group << "; ";
-                                if (criteria.first == static_info_type_t::LATENCY) {
-                                    std::cout << "latency coef = " << criteria.second << "; ";
-                                }
-                                if (criteria.first == static_info_type_t::BW) {
-                                    std::cout << "BW coef = " << criteria.second << "; ";
-                                }
+                        std::cout << "; ";
+
+                        for (auto const &criteria : the_beacon->optimization_target->criteria) {
+                            if (criteria.first == LATENCY) {
+                                std::cout << "latency = " << the_beacon->static_info_extension.at(static_info_type_t::LATENCY);
+                                std::cout << "; ";
+                            }  else if (criteria.first == BW) {
+                                std::cout << "BWD = " << the_beacon->static_info_extension.at(static_info_type_t::BW) << ";";
                             }
                         }
+
+                        std::cout << std::endl;
                     }
                 }
             }

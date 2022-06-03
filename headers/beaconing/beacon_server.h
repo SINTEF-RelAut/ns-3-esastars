@@ -135,7 +135,15 @@ namespace ns3 {
                            uint16_t local_ingress_if, bool path_exists, bool existing_path_valid,
                            Beacon *beacon_to_replace);
 
+        void increment_valid_beacons_count(uint16_t dst_as);
+
+        void increment_next_round_valid_beacons_count(uint16_t dst_as);
+
         void delete_beacon(Beacon *to_be_removed_beacon, ld replacement_key, uint16_t dst_as);
+
+        void decrement_valid_beacons_count(uint16_t dst_as);
+
+        void decrement_next_round_valid_beacons_count(uint16_t dst_as);
 
         virtual std::tuple<bool, bool, bool, Beacon *, ld>
         alg_specific_import_policy(Beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
@@ -143,6 +151,8 @@ namespace ns3 {
 
         virtual void insert_to_algorithm_data_structures(Beacon *the_beacon, uint16_t sender_as,
                                                          uint16_t remote_egress_if_no, uint16_t self_ingress_if_no) = 0;
+
+
 
         virtual void delete_from_algorithm_data_structures(Beacon *the_beacon, ld replacement_key) = 0;
 

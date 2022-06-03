@@ -210,7 +210,8 @@ namespace ns3 {
                                   std::greater<ld>>> &selected_beacons) {
         for (auto const &[beacon_ingress_if_group, score_beacons_map] : beacons_with_the_same_opt_target) {
             for (auto const &[score, the_beacon] : score_beacons_map) {
-                if (!the_beacon->is_valid) {
+                if ((the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED && !the_beacon->is_valid) ||
+                    the_beacon->beacon_direction == beacon_direction_t::PULL_BASED && the_beacon->expiration_time < now) {
                     continue;
                 }
 
@@ -380,7 +381,9 @@ namespace ns3 {
             return;
         }
 
-        uint16_t self_ingress_if = LOWER_16_BITS(the_beacon->the_path.back());
+        uint16_t self_ingress_if =
+                (the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED)
+                ? LOWER_16_BITS(the_beacon->the_path.back()) : SECOND_UPPER_16_BITS(the_beacon->the_path.front());
 
         auto &grouped_beacons = (the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED)
                                         ? push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group
