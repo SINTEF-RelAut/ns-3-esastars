@@ -173,7 +173,6 @@ namespace ns3 {
 
                 select_beacons_to_disseminate_per_target_per_nbr(remote_as_no, beacons_with_the_same_opt_target,
                                                                  optimization_target, selected_beacons);
-                NS_ASSERT(selected_beacons.size() > 0);
                 send_selected_beacons_per_target_per_nbr(selected_beacons);
             }
         }
