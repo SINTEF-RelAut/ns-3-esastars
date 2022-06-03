@@ -158,6 +158,9 @@ namespace ns3 {
             next_expiration_time = now + expiration_period;
             if (optimization_target != NULL) {
                 key = std::string((char *) &optimization_target->target_id, 2);
+                if (beacon_direction == beacon_direction_t::PULL_BASED) {
+                    key = key + std::string((char *) &optimization_target->target_as, 2);
+                }
             }
         } else {
             next_initiation_time = selected_beacon->initiation_time;
