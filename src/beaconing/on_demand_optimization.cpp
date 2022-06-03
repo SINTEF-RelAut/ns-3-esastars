@@ -330,10 +330,13 @@ namespace ns3 {
         ld lowest_previous_score = worst_beacon_score->first;
         if (lowest_previous_score < incoming_beacon_score) {
             Beacon *to_be_removed_beacon = worst_beacon_score->second;
+            NS_ASSERT(to_be_removed_beacon->beacon_direction == the_beacon.beacon_direction);
+            NS_ASSERT(DST_AS_PTR(to_be_removed_beacon) == DST_AS(the_beacon));
             return std::tuple<bool, bool, bool, Beacon *, ld>(true, false, false, to_be_removed_beacon,
                                                               lowest_previous_score);
         }
 
+        NS_ASSERT(next_round_valid_beacons_count_per_dst_as.find(DST_AS(the_beacon)) != next_round_valid_beacons_count_per_dst_as.end());
         return std::tuple<bool, bool, bool, Beacon *, ld>(false, false, false, NULL, 0);
     }
 

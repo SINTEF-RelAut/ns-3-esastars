@@ -380,6 +380,8 @@ namespace ns3 {
         if (the_beacon.beacon_direction == beacon_direction_t::PUSH_BASED) {
             if (push_based_beacon_container.find(the_beacon.key) != push_based_beacon_container.end()) {
                 Beacon *existing_beacon = &push_based_beacon_container.at(the_beacon.key);
+                NS_ASSERT(existing_beacon->beacon_direction == beacon_direction_t::PUSH_BASED);
+                NS_ASSERT(ORIGINATOR_PTR(existing_beacon) == ORIGINATOR(the_beacon));
                 if (!existing_beacon->is_valid) {
                     return std::tuple<bool, bool, bool, Beacon *, ld>(true, true, false, existing_beacon, 0);
                 }
