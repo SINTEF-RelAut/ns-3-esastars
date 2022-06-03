@@ -186,6 +186,8 @@ namespace ns3 {
     }
 
     void BeaconServer::update_state_periodic() {
+        pull_based_read = (pull_based_read + 1) % 2;
+        pull_based_write = (pull_based_write + 1) % 2;
         std::map<int32_t, std::unordered_map<std::string, Beacon> &> beacon_containers = {
                 {1, push_based_beacon_container}, {2, requested_pull_based_beacon_container}};
 
@@ -209,7 +211,7 @@ namespace ns3 {
         if (the_beacon.beacon_direction == beacon_direction_t::PULL_BASED) {
             auto &beacon_container = (ORIGINATOR(the_beacon) == AS->as_number)
                                              ? requested_pull_based_beacon_container
-                                             : non_requested_pull_based_beacon_container;
+                                             : non_requested_pull_based_beacon_container.at(pull_based_write);
 
             beacon_container.insert(std::make_pair(the_beacon.key, the_beacon));
             Beacon *to_insert_beacon = &beacon_container.at(the_beacon.key);
@@ -304,7 +306,7 @@ namespace ns3 {
                                          ? push_based_beacon_container
                                          : ((ORIGINATOR_PTR(to_be_removed_beacon) == AS->as_number)
                                                     ? requested_pull_based_beacon_container
-                                                    : non_requested_pull_based_beacon_container);
+                                                    : non_requested_pull_based_beacon_container.at(pull_based_write));
 
         NS_ASSERT(beacon_container.find(to_be_removed_beacon->key) != beacon_container.end());
 

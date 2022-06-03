@@ -37,6 +37,7 @@ namespace ns3 {
               expiration_period(
                       Time(config["beacon_service"]["expiration_period"].as<std::string>()).ToInteger(Time::MIN)),
               last_beaconing_event_time(Time(config["beacon_service"]["last_beaconing"].as<std::string>())) {
+            non_requested_pull_based_beacon_container.resize(2);
             PropertyContainer p = parseProperties(xml_node);
             if (p.hasProperty("dirty_energy_ratio")) {
                 dirty_energy_ratio = std::stod(p.getProperty("dirty_energy_ratio"));
@@ -98,8 +99,10 @@ namespace ns3 {
         std::unordered_map<uint16_t, beacons_with_same_dst_as> beacon_store;
 
         // All beacon instances are stored in either of the containers, with no overlap
+        uint16_t pull_based_write = 0;
+        uint16_t pull_based_read = 1;
         std::unordered_map<std::string, Beacon> push_based_beacon_container;
-        std::unordered_map<std::string, Beacon> non_requested_pull_based_beacon_container;
+        std::vector<std::unordered_map<std::string, Beacon>> non_requested_pull_based_beacon_container;
         std::unordered_map<std::string, Beacon>
                 requested_pull_based_beacon_container; // the result of pull based beaconing returned to the source AS
 

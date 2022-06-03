@@ -18,6 +18,7 @@ namespace ns3 {
         OnDemandOptimization(SCION_AS *AS, bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
                              const YAML::Node &config)
             : BeaconServer(AS, parallel_scheduler, xml_node, config) {
+            pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group.resize(2);
             last_push_based_interval = Time(config["beacon_service"]["last_push_based_interval"].as<std::string>()).ToInteger(Time::MIN);
             pull_based_dissemination_to_initiation_frequency = stoi(config["beacon_service"]["pull_based_dissemination_to_initiation_frequency"].as<std::string>());
             rapidxml::xml_node<> *cur_target = xml_node->first_node("target");
@@ -61,15 +62,11 @@ namespace ns3 {
     private:
         beacons_grouped_by_optimization_targets_and_ingress_if_group_t
                 push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group; // permanent until beacons expiration
-        beacons_grouped_by_optimization_targets_and_ingress_if_group_t
-                pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group; // gets wiped out at every beaconing interval
+//        beacons_grouped_by_optimization_targets_and_ingress_if_group_t
+//                pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group; // gets wiped out at every beaconing interval
 
-        std::unordered_map<beacon_direction_t, const beacons_grouped_by_optimization_targets_and_ingress_if_group_t &>
-                pull_and_push_beacons_grouped_by_optimization_targets_and_ingress_if = {
-                        {beacon_direction_t::PUSH_BASED,
-                         this->push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group},
-                        {beacon_direction_t::PULL_BASED,
-                         this->pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group}};
+
+        std::vector<beacons_grouped_by_optimization_targets_and_ingress_if_group_t> pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group;
 
         std::unordered_map<uint16_t, const optimization_target_t> set_of_optimization_targets_originated_from_this_as;
         std::multimap<uint16_t, const optimization_target_t *> if_to_push_based_optimization_targets_map;

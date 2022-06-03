@@ -147,7 +147,7 @@ namespace ns3 {
         auto &beacons_grouped_by_optimization_targets_and_ingress_if =
                 (now <= last_push_based_interval)
                         ? push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group
-                        : pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group;
+                        : pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group.at(pull_based_read);
         uint32_t neighbors_cnt = AS->neighbors.size();
         omp_set_num_threads(NUM_CORE);
 #pragma omp parallel for schedule(dynamic)
@@ -180,7 +180,7 @@ namespace ns3 {
         if (now > last_push_based_interval) {
             // returning pull-based beacons
             for (auto const &[optimization_target, beacons_with_the_same_opt_target] :
-                 pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group) {
+                 pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group.at(pull_based_read)) {
                 if (optimization_target->target_as != AS->as_number) {
                     continue;
                 }
@@ -197,8 +197,8 @@ namespace ns3 {
                     }
                 }
             }
-            pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group.clear();
-            non_requested_pull_based_beacon_container.clear();
+            pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group.at(pull_based_read).clear();
+            non_requested_pull_based_beacon_container.at(pull_based_read).clear();
         }
     }
 
@@ -308,7 +308,7 @@ namespace ns3 {
 
         const auto &grouped_beacons = (the_beacon.beacon_direction == beacon_direction_t::PUSH_BASED)
                                               ? push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group
-                                              : pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group;
+                                              : pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group.at(pull_based_write);
 
         uint16_t access_index = if_to_if_group.at(self_ingress_if_no);
 
@@ -355,7 +355,7 @@ namespace ns3 {
 
         auto &grouped_beacons = (the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED)
                                         ? push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group
-                                        : pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group;
+                                        : pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group.at(pull_based_write);
 
         uint16_t access_index = if_to_if_group.at(self_ingress_if_no);
 
@@ -396,7 +396,7 @@ namespace ns3 {
                                         ? push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group
                                                   .at(the_beacon->optimization_target)
                                                   .at(if_to_if_group.at(self_ingress_if))
-                                        : pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group
+                                        : pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group.at(pull_based_write)
                                                   .at(the_beacon->optimization_target)
                                                   .at(if_to_if_group.at(self_ingress_if));
 
