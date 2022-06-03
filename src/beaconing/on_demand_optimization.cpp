@@ -211,7 +211,7 @@ namespace ns3 {
         for (auto const &[beacon_ingress_if_group, score_beacons_map] : beacons_with_the_same_opt_target) {
             for (auto const &[score, the_beacon] : score_beacons_map) {
                 if ((the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED && !the_beacon->is_valid) ||
-                    the_beacon->beacon_direction == beacon_direction_t::PULL_BASED && the_beacon->expiration_time < now) {
+                    (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED && the_beacon->expiration_time < now)) {
                     continue;
                 }
 
