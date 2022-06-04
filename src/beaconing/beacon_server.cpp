@@ -380,10 +380,6 @@ namespace ns3 {
     std::tuple<bool, bool, bool, Beacon *, ld> BeaconServer::import_policy(Beacon &the_beacon, uint16_t sender_as,
                                                                            uint16_t remote_egress_if_no,
                                                                            uint16_t self_ingress_if_no, uint16_t now) {
-        if (the_beacon.beacon_direction == beacon_direction_t::PULL_BASED && ORIGINATOR(the_beacon) == AS->as_number) {
-            return std::tuple<bool, bool, bool, Beacon *, ld>(true, false, false, NULL, 0);
-        }
-
         if (the_beacon.beacon_direction == beacon_direction_t::PUSH_BASED) {
             if (push_based_beacon_container.find(the_beacon.key) != push_based_beacon_container.end()) {
                 Beacon *existing_beacon = &push_based_beacon_container.at(the_beacon.key);

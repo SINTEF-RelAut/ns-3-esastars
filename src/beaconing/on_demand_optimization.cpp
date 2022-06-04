@@ -92,6 +92,14 @@ namespace ns3 {
         // pull-based
         if (now > last_push_based_interval &&
             (now / beaconing_period.ToInteger(Time::MIN)) % pull_based_dissemination_to_initiation_frequency == 0) {
+
+            if (!new_requested_pull_based_beacons.empty()) {
+                for (auto const & the_beacon : new_requested_pull_based_beacons) {
+                    insert_to_forbidden_edges(the_beacon);
+                }
+                new_requested_pull_based_beacons.clear();
+            }
+
             for (auto it = if_to_pull_based_optimization_targets_map.lower_bound(self_egress_if_no);
                  it != if_to_pull_based_optimization_targets_map.upper_bound(self_egress_if_no); ++it) {
                 NS_ASSERT(it->second->set_of_forbidden_edges->find(AS->as_number) !=
@@ -316,8 +324,12 @@ namespace ns3 {
     OnDemandOptimization::alg_specific_import_policy(Beacon &the_beacon, uint16_t sender_as,
                                                      uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
                                                      uint16_t now) {
-        NS_ASSERT(the_beacon.beacon_direction == beacon_direction_t::PUSH_BASED ||
-                  ORIGINATOR(the_beacon) != AS->as_number);
+        if (the_beacon.beacon_direction == beacon_direction_t::PULL_BASED && ORIGINATOR(the_beacon) == AS->as_number) {
+            if (the_beacon.next_initiation_time <= now - pull_based_dissemination_to_initiation_frequency * beaconing_period.ToInteger(Time::MIN)) {
+                return std::tuple<bool, bool, bool, Beacon *, ld>(false, false, false, NULL, 0);
+            }
+            return std::tuple<bool, bool, bool, Beacon *, ld>(true, false, false, NULL, 0);
+        }
 
         const auto &grouped_beacons = (the_beacon.beacon_direction == beacon_direction_t::PUSH_BASED)
                                               ? push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group
@@ -456,6 +468,13 @@ namespace ns3 {
     }
 
     void OnDemandOptimization::delete_from_forbidden_edges(Beacon *the_beacon) {
+        if (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED &&
+            ORIGINATOR_PTR(the_beacon) == AS->as_number &&
+            the_beacon->next_initiation_time > now - pull_based_dissemination_to_initiation_frequency * beaconing_period.ToInteger(Time::MIN)) {
+            new_requested_pull_based_beacons.erase(the_beacon);
+            return;
+        }
+
         if (the_beacon->the_path.size() == 1) {
             return ;
         }
@@ -495,6 +514,12 @@ namespace ns3 {
     }
 
     void OnDemandOptimization::insert_to_forbidden_edges(Beacon *the_beacon) {
+        if (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED &&
+            ORIGINATOR_PTR(the_beacon) == AS->as_number &&
+            the_beacon->next_initiation_time > now - pull_based_dissemination_to_initiation_frequency * beaconing_period.ToInteger(Time::MIN)) {
+            new_requested_pull_based_beacons.insert(the_beacon);
+            return;
+        }
         if (the_beacon->the_path.size() == 1) {
             return ;
         }

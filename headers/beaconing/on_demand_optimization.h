@@ -81,6 +81,7 @@ namespace ns3 {
         std::multimap<uint16_t, const optimization_target_t *> if_to_pull_based_optimization_targets_map;
         std::unordered_map<uint16_t, std::unordered_map<uint32_t, uint16_t> *> repetition_of_edges;
         std::unordered_map<uint16_t, std::unordered_map<uint16_t, std::unordered_set<uint16_t>*> *> set_of_forbidden_edges_per_destination_as;
+        std::unordered_set<Beacon*> new_requested_pull_based_beacons;
 
         void initiate_beacons_per_interface(uint16_t self_egress_if_no, SCION_AS *remote_as,
                                             uint16_t remote_ingress_if_no) override;
