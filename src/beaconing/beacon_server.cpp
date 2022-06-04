@@ -215,7 +215,7 @@ namespace ns3 {
             auto &beacon_container = (ORIGINATOR(the_beacon) == AS->as_number)
                                              ? requested_pull_based_beacon_container
                                              : non_requested_pull_based_beacon_container.at(pull_based_write);
-
+            NS_ASSERT(beacon_container.find(the_beacon.key) == beacon_container.end());
             beacon_container.insert(std::make_pair(the_beacon.key, the_beacon));
             Beacon *to_insert_beacon = &beacon_container.at(the_beacon.key);
 
@@ -240,6 +240,7 @@ namespace ns3 {
         } else {
             increment_next_round_valid_beacons_count(dst_as);
 
+            NS_ASSERT(push_based_beacon_container.find(the_beacon.key) == push_based_beacon_container.end());
             push_based_beacon_container.insert(std::make_pair(the_beacon.key, the_beacon));
             Beacon *to_insert_beacon = &push_based_beacon_container.at(the_beacon.key);
             uint16_t path_len = (uint16_t) to_insert_beacon->the_path.size();

@@ -533,9 +533,16 @@ namespace ns3 {
         optimization_target_t *optimization_target = new optimization_target_t(
                 0xFFFF - AS->as_number, {{static_info_type_t::FORBIDDEN_EDGES, 1}}, optimization_direction_t::SYMMETRIC,
                 dst_as, 0xFFFF, 1, set_of_forbidden_edges_per_destination_as.at(dst_as));
-        for (uint16_t iface = 0; iface < AS->GetNDevices(); ++iface) {
-            if_to_pull_based_optimization_targets_map.insert(std::make_pair(iface, optimization_target));
+
+        for (auto const & neighbor_interfaces_pair : interface_groups_connected_per_neighbor) {
+            for (auto const & iface_group_interface_pair : neighbor_interfaces_pair.second) {
+                if_to_pull_based_optimization_targets_map.insert(std::make_pair(iface_group_interface_pair.second.front(), optimization_target));
+            }
         }
+
+//        for (uint16_t iface = 0; iface < AS->GetNDevices(); ++iface) {
+//            if_to_pull_based_optimization_targets_map.insert(std::make_pair(iface, optimization_target));
+//        }
     }
 
 } // namespace ns3
