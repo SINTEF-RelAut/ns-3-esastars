@@ -240,7 +240,9 @@ namespace ns3 {
                     continue;
                 }
 
+                NS_ASSERT(!interface_groups_connected_per_neighbor.at(remote_as_no).empty());
                 for (auto const &[group, ifaces] : interface_groups_connected_per_neighbor.at(remote_as_no)) {
+                    NS_ASSERT(!ifaces.empty());
                     for (auto const &candidate_egress_if_no : ifaces) {
                         if (the_beacon->optimization_target->set_of_forbidden_edges != NULL) {
                             if (the_beacon->optimization_target->set_of_forbidden_edges->find(AS->as_number) !=
@@ -551,16 +553,9 @@ namespace ns3 {
                 0xFFFF - AS->as_number, {{static_info_type_t::FORBIDDEN_EDGES, 1}}, optimization_direction_t::SYMMETRIC,
                 dst_as, 0xFFFF, 1, set_of_forbidden_edges_per_destination_as.at(dst_as));
 
-        for (auto const & neighbor_interfaces_pair : interface_groups_connected_per_neighbor) {
-            NS_ASSERT(neighbor_interfaces_pair.first != dst_as);
-            for (auto const & iface_group_interface_pair : neighbor_interfaces_pair.second) {
-                if_to_pull_based_optimization_targets_map.insert(std::make_pair(iface_group_interface_pair.second.front(), optimization_target));
-            }
+        for (uint16_t iface = 0; iface < AS->GetNDevices(); ++iface) {
+            if_to_pull_based_optimization_targets_map.insert(std::make_pair(iface, optimization_target));
         }
-
-//        for (uint16_t iface = 0; iface < AS->GetNDevices(); ++iface) {
-//            if_to_pull_based_optimization_targets_map.insert(std::make_pair(iface, optimization_target));
-//        }
     }
 
 } // namespace ns3
