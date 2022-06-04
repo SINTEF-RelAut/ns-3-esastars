@@ -144,10 +144,14 @@ namespace ns3 {
     }
 
     void OnDemandOptimization::disseminate_beacons(neighbour_relation relation) {
+        bool pull_based_dissemination = now > last_push_based_interval;
+        bool push_based_dissemination = now <= last_push_based_interval;
+
         auto &beacons_grouped_by_optimization_targets_and_ingress_if =
-                (now <= last_push_based_interval)
+                (push_based_dissemination)
                         ? push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group
                         : pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group.at(pull_based_read);
+
         uint32_t neighbors_cnt = AS->neighbors.size();
         omp_set_num_threads(NUM_CORE);
 #pragma omp parallel for schedule(dynamic)
@@ -161,6 +165,13 @@ namespace ns3 {
 
             for (auto const &[optimization_target, beacons_with_the_same_opt_target] :
                  beacons_grouped_by_optimization_targets_and_ingress_if) {
+                if (pull_based_dissemination) {
+                    if (optimization_target->target_as != remote_as_no &&
+                        AS->interfaces_per_neighbor_as.find(optimization_target->target_as) != AS->interfaces_per_neighbor_as.end()) {
+                        continue;
+                    }
+                }
+
                 if (optimization_target->target_as == AS->as_number) { // pull-based request to this AS
                     continue;
                 }
@@ -177,7 +188,7 @@ namespace ns3 {
             }
         }
 
-        if (now > last_push_based_interval) {
+        if (pull_based_dissemination) {
             // returning pull-based beacons
             for (auto const &[optimization_target, beacons_with_the_same_opt_target] :
                  pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group.at(pull_based_read)) {
