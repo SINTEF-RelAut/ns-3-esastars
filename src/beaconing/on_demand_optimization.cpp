@@ -443,6 +443,9 @@ namespace ns3 {
     }
 
     void OnDemandOptimization::delete_from_forbidden_edges(Beacon *the_beacon) {
+        if (the_beacon->the_path.size() == 1) {
+            return ;
+        }
         uint16_t dst_as = DST_AS_PTR(the_beacon);
 
         NS_ASSERT(the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED ||
@@ -479,6 +482,9 @@ namespace ns3 {
     }
 
     void OnDemandOptimization::insert_to_forbidden_edges(Beacon *the_beacon) {
+        if (the_beacon->the_path.size() == 1) {
+            return ;
+        }
         uint16_t dst_as = DST_AS_PTR(the_beacon);
         NS_ASSERT(the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED ||
                   ORIGINATOR_PTR(the_beacon) == AS->as_number);
@@ -535,6 +541,7 @@ namespace ns3 {
                 dst_as, 0xFFFF, 1, set_of_forbidden_edges_per_destination_as.at(dst_as));
 
         for (auto const & neighbor_interfaces_pair : interface_groups_connected_per_neighbor) {
+            NS_ASSERT(neighbor_interfaces_pair.first != dst_as);
             for (auto const & iface_group_interface_pair : neighbor_interfaces_pair.second) {
                 if_to_pull_based_optimization_targets_map.insert(std::make_pair(iface_group_interface_pair.second.front(), optimization_target));
             }

@@ -159,6 +159,7 @@ namespace ns3 {
             if (optimization_target != NULL) {
                 key = std::string((char *) &optimization_target->target_id, 2);
                 if (beacon_direction == beacon_direction_t::PULL_BASED) {
+                    NS_ASSERT(optimization_target->target_as != remote_as_no);
                     key = key + std::string((char *) &optimization_target->target_as, 2);
                 }
             }
