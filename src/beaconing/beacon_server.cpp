@@ -106,6 +106,7 @@ namespace ns3 {
                                                             const optimization_target_t *optimization_target) {}
 
     void BeaconServer::initiate_beacons(neighbour_relation relation) {
+        NS_ASSERT(now == (uint16_t) Simulator::Now().ToInteger(Time::MIN));
         uint32_t neighbors_cnt = AS->neighbors.size();
         omp_set_num_threads(NUM_CORE);
 

@@ -152,6 +152,7 @@ namespace ns3 {
     }
 
     void OnDemandOptimization::disseminate_beacons(neighbour_relation relation) {
+        NS_ASSERT(now == (uint16_t) Simulator::Now().ToInteger(Time::MIN));
         bool pull_based_dissemination = now > last_push_based_interval;
         bool push_based_dissemination = now <= last_push_based_interval;
 
@@ -552,6 +553,8 @@ namespace ns3 {
                 observed_iface = LOWER_16_BITS(*hop);
             }
 
+            NS_ASSERT(repetition_of_edges.find(dst_as) != repetition_of_edges.end());
+            NS_ASSERT(repetition_of_edges.at(dst_as) != NULL);
             if (repetition_of_edges.at(dst_as)->find(observed_edge) == repetition_of_edges.at(dst_as)->end()) {
                 repetition_of_edges.at(dst_as)->insert(std::make_pair(observed_edge, 0));
                 NS_ASSERT(set_of_forbidden_edges_per_destination_as.at(dst_as)->find(observed_as) ==
