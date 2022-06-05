@@ -31,7 +31,7 @@ namespace ns3 {
                                         &BeaconServer::register_to_local_path_server);
                 }
                 Simulator::Schedule(t, &RunParallelEvents<void (BeaconServer::*)()>,
-                                    &BeaconServer::update_time_and_stats);
+                                    &BeaconServer::update_state_before_beaconing);
 
                 Simulator::Schedule(t + MilliSeconds(150), &RunParallelEvents<void (BeaconServer::*)()>,
                                     &BeaconServer::update_state_periodic);
@@ -400,7 +400,7 @@ namespace ns3 {
         return alg_specific_import_policy(the_beacon, sender_as, remote_egress_if_no, self_ingress_if_no, now);
     }
 
-    void BeaconServer::update_time_and_stats() {
+    void BeaconServer::update_state_before_beaconing() {
         now = (uint16_t) Simulator::Now().ToInteger(Time::MIN);
         next_period = now + (uint16_t) beaconing_period.ToInteger(Time::MIN);
         bytes_sent_per_interface_per_period.insert(std::make_pair(now, std::vector<uint32_t>(AS->GetNDevices(), 0)));

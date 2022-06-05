@@ -161,7 +161,7 @@ namespace ns3 {
 
         void update_state_periodic();
 
-        void update_time_and_stats();
+        virtual void update_state_before_beaconing();
 
         void update_beacon_state(Beacon *the_beacon);
 

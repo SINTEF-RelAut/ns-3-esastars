@@ -92,14 +92,6 @@ namespace ns3 {
         // pull-based
         if (now > last_push_based_interval &&
             (now / beaconing_period.ToInteger(Time::MIN)) % pull_based_dissemination_to_initiation_frequency == 0) {
-
-            if (!new_requested_pull_based_beacons.empty()) {
-                for (auto const & the_beacon : new_requested_pull_based_beacons) {
-                    insert_to_forbidden_edges(the_beacon);
-                }
-                new_requested_pull_based_beacons.clear();
-            }
-
             for (auto it = if_to_pull_based_optimization_targets_map.lower_bound(self_egress_if_no);
                  it != if_to_pull_based_optimization_targets_map.upper_bound(self_egress_if_no); ++it) {
                 NS_ASSERT(it->second->set_of_forbidden_edges->find(AS->as_number) !=
@@ -465,6 +457,20 @@ namespace ns3 {
     void OnDemandOptimization::update_algorithm_data_structures_periodic(Beacon *the_beacon, bool invalidated) {
         if (invalidated) {
             delete_from_forbidden_edges(the_beacon);
+        }
+    }
+
+    void OnDemandOptimization::update_state_before_beaconing() {
+        BeaconServer::update_state_before_beaconing();
+        NS_ASSERT(now == Simulator::Now().ToInteger(Time::MIN));
+        if (now > last_push_based_interval &&
+            (now / beaconing_period.ToInteger(Time::MIN)) % pull_based_dissemination_to_initiation_frequency == 0) {
+            if (!new_requested_pull_based_beacons.empty()) {
+                for (auto const &the_beacon : new_requested_pull_based_beacons) {
+                    insert_to_forbidden_edges(the_beacon);
+                }
+                new_requested_pull_based_beacons.clear();
+            }
         }
     }
 

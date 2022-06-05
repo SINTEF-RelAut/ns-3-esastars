@@ -123,6 +123,8 @@ namespace ns3 {
                                           uint16_t candidate_egress_if_no,
                                           static_info_extension_t &propagation_static_info);
 
+        void update_state_before_beaconing() override;
+
         void update_algorithm_data_structures_periodic(Beacon *the_beacon, bool invalidated) override;
 
         void delete_from_forbidden_edges(Beacon *the_beacon);
