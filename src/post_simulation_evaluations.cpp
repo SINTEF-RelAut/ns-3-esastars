@@ -324,7 +324,7 @@ namespace ns3 {
                         }
 
                         if (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED) {
-                            std::cout << "; pull";
+                            std::cout << "; pull" << "; initiation_time = " << the_beacon->initiation_time;
                         } else {
                             std::cout << "; push";
                         }
