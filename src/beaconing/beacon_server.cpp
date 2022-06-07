@@ -81,6 +81,7 @@ namespace ns3 {
     void BeaconServer::update_beacon_state(Beacon *the_beacon) {
         uint16_t dst_as = DST_AS_PTR(the_beacon);
         NS_ASSERT(the_beacon->beacon_direction == beacon_direction_t::PULL_BASED ||
+                  the_beacon->optimization_target == NULL ||
                   ORIGINATOR_PTR(the_beacon) == the_beacon->optimization_target->target_as);
         if (the_beacon->is_new) {
             the_beacon->is_new = false;
@@ -349,7 +350,8 @@ namespace ns3 {
                                      uint16_t local_if) {
         uint16_t dst_as = DST_AS(received_beacon);
 
-        NS_ASSERT(received_beacon.beacon_direction != beacon_direction_t::PUSH_BASED ||
+        NS_ASSERT(received_beacon.beacon_direction == beacon_direction_t::PULL_BASED ||
+                  received_beacon.optimization_target == NULL ||
                   ORIGINATOR(received_beacon) == received_beacon.optimization_target->target_as);
         bool to_import;
         bool path_exists;
