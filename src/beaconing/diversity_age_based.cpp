@@ -216,7 +216,7 @@ namespace ns3 {
 
         bool counters_changed = false;
 
-        for (int i = 0; i < MAX_BEACONS_TO_SEND; ++i) {
+        for (uint32_t i = 0; i < MAX_BEACONS_TO_SEND; ++i) {
             if (max_score_beacon == NULL) {
                 break;
             } else {

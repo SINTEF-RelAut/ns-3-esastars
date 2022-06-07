@@ -38,7 +38,7 @@ namespace ns3 {
                 const uint16_t &dst_as_no = dst_as_beacons_pair.first;
                 auto const &equal_dst_as_beacons = dst_as_beacons_pair.second;
 
-                int16_t sent_count = 0;
+                uint32_t sent_count = 0;
 
                 if (remote_as_no == dst_as_no) {
                     continue;
