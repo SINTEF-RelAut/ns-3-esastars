@@ -72,9 +72,9 @@ namespace ns3 {
 
         const std::unordered_map<std::string, Beacon> &GetPathMapToBeacon() const;
 
-        const std::unordered_map<uint16_t, uint16_t> &GetValidBeaconsCountPerDstAS() const;
+        const std::unordered_map<uint16_t, uint32_t> &GetValidBeaconsCountPerDstAS() const;
 
-        const std::unordered_map<uint16_t, uint16_t> &GetNextRoundValidBeaconsCountPerDstAS() const;
+        const std::unordered_map<uint16_t, uint32_t> &GetNextRoundValidBeaconsCountPerDstAS() const;
 
         const std::unordered_map<uint16_t, std::vector<uint32_t>> &GetBytesSentPerInterfacePerPeriod() const;
 

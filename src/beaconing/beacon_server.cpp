@@ -478,11 +478,11 @@ namespace ns3 {
         return push_based_beacon_container;
     }
 
-    const std::unordered_map<uint16_t, uint16_t> &BeaconServer::GetValidBeaconsCountPerDstAS() const {
+    const std::unordered_map<uint16_t, uint32_t> &BeaconServer::GetValidBeaconsCountPerDstAS() const {
         return valid_beacons_count_per_dst_as;
     }
 
-    const std::unordered_map<uint16_t, uint16_t> &BeaconServer::GetNextRoundValidBeaconsCountPerDstAS() const {
+    const std::unordered_map<uint16_t, uint32_t> &BeaconServer::GetNextRoundValidBeaconsCountPerDstAS() const {
         return next_round_valid_beacons_count_per_dst_as;
     }
 
