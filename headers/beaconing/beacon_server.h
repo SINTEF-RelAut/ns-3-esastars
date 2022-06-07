@@ -107,8 +107,8 @@ namespace ns3 {
                 requested_pull_based_beacon_container; // the result of pull based beaconing returned to the source AS
 
 
-        std::unordered_map<uint16_t, uint16_t> valid_beacons_count_per_dst_as;
-        std::unordered_map<uint16_t, uint16_t> next_round_valid_beacons_count_per_dst_as;
+        std::unordered_map<uint16_t, uint32_t> valid_beacons_count_per_dst_as;
+        std::unordered_map<uint16_t, uint32_t> next_round_valid_beacons_count_per_dst_as;
 
         std::unordered_map<uint16_t, std::vector<uint32_t>> bytes_sent_per_interface_per_period;
         std::unordered_map<uint16_t, std::vector<uint32_t>> beacons_sent_per_interface_per_period;
