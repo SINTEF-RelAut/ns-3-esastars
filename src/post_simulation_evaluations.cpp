@@ -331,12 +331,14 @@ namespace ns3 {
 
                         std::cout << "; ";
 
-                        for (auto const &criteria : the_beacon->optimization_target->criteria) {
-                            if (criteria.first == LATENCY) {
-                                std::cout << "latency = " << the_beacon->static_info_extension.at(static_info_type_t::LATENCY);
-                                std::cout << "; ";
-                            }  else if (criteria.first == BW) {
-                                std::cout << "BWD = " << the_beacon->static_info_extension.at(static_info_type_t::BW) << ";";
+                        if (the_beacon->optimization_target != NULL) {
+                            for (auto const &criteria : the_beacon->optimization_target->criteria) {
+                                if (criteria.first == LATENCY) {
+                                    std::cout << "latency = " << the_beacon->static_info_extension.at(static_info_type_t::LATENCY);
+                                    std::cout << "; ";
+                                }  else if (criteria.first == BW) {
+                                    std::cout << "BWD = " << the_beacon->static_info_extension.at(static_info_type_t::BW) << ";";
+                                }
                             }
                         }
 
