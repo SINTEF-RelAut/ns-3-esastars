@@ -9,7 +9,9 @@
 namespace ns3 {
 
     void OnDemandOptimization::DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
-                                                 const YAML::Node &config) {}
+                                                 const YAML::Node &config) {
+        BeaconServer::DoInitializations(num_ASes, xml_node, config);
+    }
 
     void OnDemandOptimization::PerLinkInitializations(rapidxml::xml_node<> *cur_xml_link, const YAML::Node &config) {
         uint32_t to = std::stoi(cur_xml_link->first_node("to")->value());

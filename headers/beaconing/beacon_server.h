@@ -48,7 +48,7 @@ namespace ns3 {
             }
         }
 
-        virtual void DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node, const YAML::Node &config) = 0;
+        virtual void DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node, const YAML::Node &config);
 
         virtual void PerLinkInitializations(rapidxml::xml_node<> *xml_node, const YAML::Node &config);
 
@@ -79,6 +79,8 @@ namespace ns3 {
         const std::unordered_map<uint16_t, std::vector<uint32_t>> &GetBytesSentPerInterfacePerPeriod() const;
 
         const std::unordered_map<uint16_t, std::vector<uint32_t>> &GetBeaconsSentPerInterfacePerPeriod() const;
+
+        const std::vector<uint64_t> &GetBeaconsSentPerInterface() const;
     protected:
         SCION_AS *AS;
 
@@ -112,6 +114,7 @@ namespace ns3 {
 
         std::unordered_map<uint16_t, std::vector<uint32_t>> bytes_sent_per_interface_per_period;
         std::unordered_map<uint16_t, std::vector<uint32_t>> beacons_sent_per_interface_per_period;
+        std::vector<uint64_t> beacons_sent_per_interface;
 
         void initiate_beacons(neighbour_relation relation);
 

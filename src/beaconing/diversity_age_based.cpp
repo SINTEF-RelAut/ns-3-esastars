@@ -16,6 +16,8 @@ namespace ns3 {
 
     void DiversityAgeBased::DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
                                               const YAML::Node &config) {
+        BeaconServer::DoInitializations(num_ASes, xml_node, config);
+
         sent_beacons.resize(AS->GetNDevices());
         sent_beacons_cnt.resize(num_ASes);
 

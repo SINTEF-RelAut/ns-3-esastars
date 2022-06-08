@@ -16,6 +16,10 @@
 #include "src/SCION/headers/utils.h"
 
 namespace ns3 {
+
+    void BeaconServer::DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node, const YAML::Node &config) {
+        beacons_sent_per_interface.resize(AS->GetNDevices());
+    }
     void BeaconServer::PerLinkInitializations(rapidxml::xml_node<> *xml_node, const YAML::Node &config){};
 
     void BeaconServer::SetAS(SCION_AS *AS) {
@@ -341,6 +345,7 @@ namespace ns3 {
     }
 
     void BeaconServer::increment_control_plane_bytes_sent(Beacon &the_beacon, uint16_t interface) {
+        beacons_sent_per_interface.at(interface)++;
         beacons_sent_per_interface_per_period.at(now).at(interface)++;
         bytes_sent_per_interface_per_period.at(now).at(interface) +=
                 (BEACON_HEADER_SIZE + BEACON_HOP_SIZE * the_beacon.the_path.size());
@@ -493,6 +498,11 @@ namespace ns3 {
     const std::unordered_map<uint16_t, std::vector<uint32_t>> &
     BeaconServer::GetBeaconsSentPerInterfacePerPeriod() const {
         return beacons_sent_per_interface_per_period;
+    }
+
+    const std::vector<uint64_t> &
+    BeaconServer::GetBeaconsSentPerInterface() const {
+        return beacons_sent_per_interface;
     }
 
     void ReadBr2BrEnergy(NodeContainer AS_nodes, std::map<int32_t, uint16_t> real_to_alias_as_no,

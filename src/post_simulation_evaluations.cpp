@@ -399,6 +399,20 @@ namespace ns3 {
     }
 
     void PostSimulationEvaluations::PrintNoBeaconsPerInterface() {
+        std::cout << "####################################### cumulative sent beacons on each interface #######################################" << std::endl;
+        std::cout << "link"
+                  << "\t"
+                  << "sent beacons" << std::endl;
+        for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+            SCION_AS *as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+            for (uint32_t if_index = 0; if_index < as->GetNDevices(); ++if_index) {
+                uint64_t no_sent_beacons = as->GetBeaconServer()
+                                                   ->GetBeaconsSentPerInterface()
+                                                   .at(if_index);
+                std::cout << alias_to_real_as_no.at(as->as_number) << ":" << if_index << "\t" << no_sent_beacons << std::endl;
+            }
+        }
+
         for (Time t = Seconds(0.0); t < last_beaconing_event_time; t += beaconing_period) {
             std::cout << "####################################### frequencies of sent beacons at Time " << t
                       << " #######################################" << std::endl;
@@ -421,7 +435,7 @@ namespace ns3 {
                 }
             }
 
-            std::cout << "consumed bandwidth on a link"
+            std::cout << "sent beacons on a link"
                       << "\t"
                       << "frequency" << std::endl;
             for (auto const &bwd_freq_pair : frequencies_of_sent_beacon_numbers) {
