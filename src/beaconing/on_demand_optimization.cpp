@@ -156,32 +156,32 @@ namespace ns3 {
                         ? push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group
                         : pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group.at(pull_based_read);
 
-        std::unordered_set<uint16_t> already_sent;
-        if (pull_based_dissemination) {
-            for (auto const &[optimization_target, beacons_with_the_same_opt_target] :
-                 beacons_grouped_by_optimization_targets_and_ingress_if) {
-                if (AS->interfaces_per_neighbor_as.find(optimization_target->target_as) !=
-                    AS->interfaces_per_neighbor_as.end()) {
-                    std::unordered_map<
-                            uint16_t,
-                            std::multimap<ld,
-                                          std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>,
-                                          std::greater<ld>>>
-                            selected_beacons;
-
-                    select_beacons_to_disseminate_per_target_per_nbr(optimization_target->target_as,
-                                                                     beacons_with_the_same_opt_target,
-                                                                     optimization_target, selected_beacons);
-
-                    send_selected_beacons_per_target_per_nbr(selected_beacons);
-
-                    if (!selected_beacons.empty()) {
-                        already_sent.insert(optimization_target->target_as);
-                    }
-                }
-            }
-
-        }
+//        std::unordered_set<uint16_t> already_sent;
+//        if (pull_based_dissemination) {
+//            for (auto const &[optimization_target, beacons_with_the_same_opt_target] :
+//                 beacons_grouped_by_optimization_targets_and_ingress_if) {
+//                if (AS->interfaces_per_neighbor_as.find(optimization_target->target_as) !=
+//                    AS->interfaces_per_neighbor_as.end()) {
+//                    std::unordered_map<
+//                            uint16_t,
+//                            std::multimap<ld,
+//                                          std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>,
+//                                          std::greater<ld>>>
+//                            selected_beacons;
+//
+//                    select_beacons_to_disseminate_per_target_per_nbr(optimization_target->target_as,
+//                                                                     beacons_with_the_same_opt_target,
+//                                                                     optimization_target, selected_beacons);
+//
+//                    send_selected_beacons_per_target_per_nbr(selected_beacons);
+//
+//                    if (!selected_beacons.empty()) {
+//                        already_sent.insert(optimization_target->target_as);
+//                    }
+//                }
+//            }
+//
+//        }
 
 
         uint32_t neighbors_cnt = AS->neighbors.size();
@@ -201,11 +201,11 @@ namespace ns3 {
                     continue;
                 }
 
-                if (pull_based_dissemination && optimization_target->target_as != remote_as_no &&
-                    AS->interfaces_per_neighbor_as.find(optimization_target->target_as) != AS->interfaces_per_neighbor_as.end() &&
-                    already_sent.find(optimization_target->target_as) != already_sent.end()) {
-                    continue;
-                }
+//                if (pull_based_dissemination && optimization_target->target_as != remote_as_no &&
+//                    AS->interfaces_per_neighbor_as.find(optimization_target->target_as) != AS->interfaces_per_neighbor_as.end() &&
+//                    already_sent.find(optimization_target->target_as) != already_sent.end()) {
+//                    continue;
+//                }
 
                 std::unordered_map<
                         uint16_t,
