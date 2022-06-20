@@ -23,7 +23,7 @@ namespace ns3 {
               alias_to_real_as_no(alias_to_real_as_no) {
             beaconing_period = Time(config["beacon_service"]["period"].as<std::string>());
             last_beaconing_event_time = Time(config["beacon_service"]["last_beaconing"].as<std::string>());
-            first_beaconing = Time(config["first_beaconing"]["last_beaconing"].as<std::string>());
+            first_beaconing = Time(config["beacon_service"]["first_beaconing"].as<std::string>());
             expiration_period =
                     Time(config["beacon_service"]["expiration_period"].as<std::string>()).ToInteger(Time::MIN);
             beaconing_policy_str = config["beacon_service"]["policy"].as<std::string>();
