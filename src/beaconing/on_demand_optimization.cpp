@@ -709,7 +709,7 @@ namespace ns3 {
             }
         }
 
-        check_max_tolerable_link_failures_per_dst(per_dst_edge_to_beacon, max_tolerable_link_failure + 1);
+        return check_max_tolerable_link_failures_per_dst(per_dst_edge_to_beacon, max_tolerable_link_failure + 1);
 
     }
 
