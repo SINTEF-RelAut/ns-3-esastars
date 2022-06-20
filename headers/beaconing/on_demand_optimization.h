@@ -19,8 +19,9 @@ namespace ns3 {
                              const YAML::Node &config)
             : BeaconServer(AS, parallel_scheduler, xml_node, config) {
             pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group.resize(2);
-            last_push_based_interval = Time(config["beacon_service"]["last_push_based_interval"].as<std::string>()).ToInteger(Time::MIN);
+            first_pull_based_interval = Time(config["beacon_service"]["first_pull_based_interval"].as<std::string>()).ToInteger(Time::MIN);
             pull_based_dissemination_to_initiation_frequency = stoi(config["beacon_service"]["pull_based_dissemination_to_initiation_frequency"].as<std::string>());
+            desired_max_tolerable_link_failures = stoi(config["beacon_service"]["desired_max_tolerable_link_failures"].as<std::string>());
             rapidxml::xml_node<> *cur_target = xml_node->first_node("target");
             while (cur_target) {
                 uint16_t target_id = std::stoi(cur_target->first_node("target_id")->value());
@@ -73,12 +74,14 @@ namespace ns3 {
         std::unordered_map<uint16_t, std::unordered_map<uint16_t, std::vector<uint16_t>>>
                 interface_groups_connected_per_neighbor; // key1: neighbor AS, key2: interface_group, values in the vector: interface ids
 
-        uint16_t last_push_based_interval;
+        uint16_t first_pull_based_interval;
         uint16_t pull_based_dissemination_to_initiation_frequency;
+        uint16_t desired_max_tolerable_link_failures;
         std::set<std::pair<uint16_t, uint16_t>> visited_pull_based_src_dst_pair;
 
         std::multimap<uint16_t, const optimization_target_t *> if_to_pull_based_optimization_targets_map;
         std::unordered_map<uint16_t, std::unordered_map<uint32_t, uint16_t> *> repetition_of_edges;
+        std::unordered_map<uint16_t, std::unordered_map<uint32_t, std::unordered_set<const Beacon*>> *> edge_to_beacon;
         std::unordered_map<uint16_t, std::unordered_map<uint16_t, std::unordered_set<uint16_t>*> *> set_of_forbidden_edges_per_destination_as;
         std::unordered_set<Beacon*> new_requested_pull_based_beacons;
 
@@ -130,7 +133,13 @@ namespace ns3 {
 
         void insert_to_forbidden_edges(Beacon *the_beacon);
 
+        void check_max_tolerable_link_failures();
+
+        uint16_t check_max_tolerable_link_failures_per_dst(std::unordered_map<uint32_t, std::unordered_set<const Beacon*>>& per_dst_edge_to_beacon, uint16_t max_tolerable_link_failure);
+
         void create_optimization_targets_for_forbidden_edges(uint16_t dst_as);
+
+        void remove_optimization_targets_for_forbidden_edges(uint16_t dst_as);
     };
 } // namespace ns3
 #endif //SCION_SIMULATOR_ON_DEMAND_OPTIMIZATION_H

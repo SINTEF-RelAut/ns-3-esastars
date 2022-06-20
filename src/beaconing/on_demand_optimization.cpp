@@ -81,7 +81,7 @@ namespace ns3 {
     void OnDemandOptimization::initiate_beacons_per_interface(uint16_t self_egress_if_no, SCION_AS *remote_as,
                                                               uint16_t remote_ingress_if_no) {
         // push_based
-        if (now <= last_push_based_interval) {
+        if (now < first_pull_based_interval) {
             for (auto it = if_to_push_based_optimization_targets_map.lower_bound(self_egress_if_no);
                  it != if_to_push_based_optimization_targets_map.upper_bound(self_egress_if_no); ++it) {
                 static_info_extension_t static_info_extension;
@@ -92,7 +92,7 @@ namespace ns3 {
         }
 
         // pull-based
-        if (now > last_push_based_interval &&
+        if (now >= first_pull_based_interval &&
             (now / beaconing_period.ToInteger(Time::MIN)) % pull_based_dissemination_to_initiation_frequency == 0) {
             for (auto it = if_to_pull_based_optimization_targets_map.lower_bound(self_egress_if_no);
                  it != if_to_pull_based_optimization_targets_map.upper_bound(self_egress_if_no); ++it) {
@@ -147,8 +147,8 @@ namespace ns3 {
 
     void OnDemandOptimization::disseminate_beacons(neighbour_relation relation) {
         NS_ASSERT(now == (uint16_t) Simulator::Now().ToInteger(Time::MIN));
-        bool pull_based_dissemination = now > last_push_based_interval;
-        bool push_based_dissemination = now <= last_push_based_interval;
+        bool pull_based_dissemination = now >= first_pull_based_interval;
+        bool push_based_dissemination = now < first_pull_based_interval;
 
 
         auto &beacons_grouped_by_optimization_targets_and_ingress_if =
@@ -349,8 +349,8 @@ namespace ns3 {
                                                      uint16_t now) {
         if (the_beacon.beacon_direction == beacon_direction_t::PULL_BASED) {
             if (ORIGINATOR(the_beacon) == AS->as_number) {
-                if (the_beacon.next_initiation_time <=
-                    now - pull_based_dissemination_to_initiation_frequency * beaconing_period.ToInteger(Time::MIN)) {
+                if (now - the_beacon.next_initiation_time >=
+                     pull_based_dissemination_to_initiation_frequency * beaconing_period.ToInteger(Time::MIN)) {
                     return std::tuple<bool, bool, bool, Beacon *, ld>(false, false, false, NULL, 0);
                 }
                 return std::tuple<bool, bool, bool, Beacon *, ld>(true, false, false, NULL, 0);
@@ -502,24 +502,44 @@ namespace ns3 {
 
     void OnDemandOptimization::update_state_before_beaconing() {
         BeaconServer::update_state_before_beaconing();
+        if (now == 0 && file_to_read_beacons != "none") {
+            NS_ASSERT(!beacon_store.empty());
+
+
+            for (auto const & dst_beacons : beacon_store) {
+                for (auto const & len_beacons : dst_beacons.second) {
+                    if (len_beacons.first == 1) {
+                        break ;
+                    }
+
+                    for (auto const & the_beacon : len_beacons.second) {
+                        insert_to_forbidden_edges(the_beacon);
+                    }
+                }
+            }
+
+            check_max_tolerable_link_failures();
+        }
+
         NS_ASSERT(now == Simulator::Now().ToInteger(Time::MIN));
-        if (now > last_push_based_interval &&
+        if (now >= first_pull_based_interval &&
             (now / beaconing_period.ToInteger(Time::MIN)) % pull_based_dissemination_to_initiation_frequency == 0) {
             if (!new_requested_pull_based_beacons.empty()) {
                 for (auto const &the_beacon : new_requested_pull_based_beacons) {
-                    NS_ASSERT(the_beacon->next_initiation_time <= now - pull_based_dissemination_to_initiation_frequency * beaconing_period.ToInteger(Time::MIN));
+                    NS_ASSERT(now - the_beacon->next_initiation_time >=  pull_based_dissemination_to_initiation_frequency * beaconing_period.ToInteger(Time::MIN));
                     insert_to_forbidden_edges(the_beacon);
                 }
                 new_requested_pull_based_beacons.clear();
             }
             visited_pull_based_src_dst_pair.clear();
+            check_max_tolerable_link_failures();
         }
     }
 
     void OnDemandOptimization::delete_from_forbidden_edges(Beacon *the_beacon) {
         if (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED &&
             ORIGINATOR_PTR(the_beacon) == AS->as_number &&
-            the_beacon->next_initiation_time > now - pull_based_dissemination_to_initiation_frequency * beaconing_period.ToInteger(Time::MIN)) {
+            now - the_beacon->next_initiation_time < pull_based_dissemination_to_initiation_frequency * beaconing_period.ToInteger(Time::MIN)) {
             new_requested_pull_based_beacons.erase(the_beacon);
             return;
         }
@@ -550,8 +570,11 @@ namespace ns3 {
             }
             NS_ASSERT(repetition_of_edges.at(dst_as)->find(observed_edge) != repetition_of_edges.at(dst_as)->end());
             repetition_of_edges.at(dst_as)->at(observed_edge)--;
+            edge_to_beacon.at(dst_as)->at(observed_edge).erase(the_beacon);
+
             if (repetition_of_edges.at(dst_as)->at(observed_edge) == 0) {
                 repetition_of_edges.at(dst_as)->erase(observed_edge);
+                edge_to_beacon.at(dst_as)->erase(observed_edge);
                 NS_ASSERT(set_of_forbidden_edges_per_destination_as.at(dst_as)->find(observed_as) !=
                           set_of_forbidden_edges_per_destination_as.at(dst_as)->end());
                 NS_ASSERT(set_of_forbidden_edges_per_destination_as.at(dst_as)->at(observed_as)->find(observed_iface) !=
@@ -565,7 +588,7 @@ namespace ns3 {
     void OnDemandOptimization::insert_to_forbidden_edges(Beacon *the_beacon) {
         if (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED &&
             ORIGINATOR_PTR(the_beacon) == AS->as_number &&
-            the_beacon->next_initiation_time > now - pull_based_dissemination_to_initiation_frequency * beaconing_period.ToInteger(Time::MIN)) {
+            now - the_beacon->next_initiation_time < pull_based_dissemination_to_initiation_frequency * beaconing_period.ToInteger(Time::MIN)) {
             new_requested_pull_based_beacons.insert(the_beacon);
             return;
         }
@@ -578,11 +601,14 @@ namespace ns3 {
 
         if (repetition_of_edges.find(dst_as) == repetition_of_edges.end()) {
             repetition_of_edges.insert(std::make_pair(dst_as, new std::unordered_map<uint32_t, uint16_t>()));
+            edge_to_beacon.insert(std::make_pair(dst_as, new std::unordered_map<uint32_t, std::unordered_set<const Beacon*>>()));
             NS_ASSERT(set_of_forbidden_edges_per_destination_as.find(dst_as) ==
                       set_of_forbidden_edges_per_destination_as.end());
             set_of_forbidden_edges_per_destination_as.insert(
                     std::make_pair(dst_as, new std::unordered_map<uint16_t, std::unordered_set<uint16_t> *>()));
-            create_optimization_targets_for_forbidden_edges(dst_as);
+            if (file_to_read_beacons == "none") {
+                create_optimization_targets_for_forbidden_edges(dst_as);
+            }
         }
 
         std::vector<link_information>::const_reverse_iterator hop = the_beacon->the_path.rbegin();
@@ -605,12 +631,14 @@ namespace ns3 {
             NS_ASSERT(repetition_of_edges.at(dst_as) != NULL);
             if (repetition_of_edges.at(dst_as)->find(observed_edge) == repetition_of_edges.at(dst_as)->end()) {
                 repetition_of_edges.at(dst_as)->insert(std::make_pair(observed_edge, 0));
+                edge_to_beacon.at(dst_as)->insert(std::make_pair(observed_edge, std::unordered_set<const Beacon*>()));
                 NS_ASSERT(set_of_forbidden_edges_per_destination_as.at(dst_as)->find(observed_as) ==
                                   set_of_forbidden_edges_per_destination_as.at(dst_as)->end() ||
                           set_of_forbidden_edges_per_destination_as.at(dst_as)->at(observed_as)->find(observed_iface) ==
                                   set_of_forbidden_edges_per_destination_as.at(dst_as)->at(observed_as)->end());
             }
 
+            edge_to_beacon.at(dst_as)->at(observed_edge).insert(the_beacon);
             repetition_of_edges.at(dst_as)->at(observed_edge)++;
             if (set_of_forbidden_edges_per_destination_as.at(dst_as)->find(observed_as) ==
                 set_of_forbidden_edges_per_destination_as.at(dst_as)->end()) {
@@ -624,6 +652,68 @@ namespace ns3 {
         }
     }
 
+    void OnDemandOptimization::check_max_tolerable_link_failures() {
+        for (auto const & [dst_as, per_dst_edge_to_beacon] : edge_to_beacon) {
+            auto per_dst_edge_to_beacon_copy = *per_dst_edge_to_beacon;
+
+            uint16_t max_tolerable_link_failure = check_max_tolerable_link_failures_per_dst( per_dst_edge_to_beacon_copy, 0);
+
+            if (max_tolerable_link_failure < desired_max_tolerable_link_failures) {
+                create_optimization_targets_for_forbidden_edges(dst_as);
+            } else {
+                remove_optimization_targets_for_forbidden_edges(dst_as);
+            }
+        }
+    }
+
+    uint16_t OnDemandOptimization::check_max_tolerable_link_failures_per_dst(std::unordered_map<uint32_t, std::unordered_set<const Beacon*>>& per_dst_edge_to_beacon, uint16_t max_tolerable_link_failure) {
+        if (per_dst_edge_to_beacon.empty()) {
+            return max_tolerable_link_failure;
+        }
+
+        uint32_t max_edge = 0;
+        uint16_t max_repetition = 0;
+        for (auto const & [edge, beacons] : per_dst_edge_to_beacon) {
+            if (beacons.size() > max_repetition) {
+                max_edge = edge;
+                max_repetition = beacons.size();
+            }
+        }
+
+        for (auto const & the_beacon : per_dst_edge_to_beacon.at(max_edge)) {
+            std::vector<link_information>::const_reverse_iterator hop = the_beacon->the_path.rbegin();
+            for (; hop != the_beacon->the_path.rend(); ++hop) {
+                uint32_t observed_edge;
+
+                if (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED) {
+                    observed_edge = UPPER_32_BITS(*hop);
+                } else {
+                    observed_edge = LOWER_32_BITS(*hop);
+                }
+
+                if (observed_edge == max_edge) {
+                    continue;
+                }
+
+                per_dst_edge_to_beacon.at(observed_edge).erase(the_beacon);
+            }
+        }
+
+        per_dst_edge_to_beacon.erase(max_edge);
+
+        for (auto it = per_dst_edge_to_beacon.begin(); it != per_dst_edge_to_beacon.end();) {
+            if (it->second.empty()) {
+                it = per_dst_edge_to_beacon.erase(it);
+            } else {
+                ++it;
+            }
+        }
+
+        check_max_tolerable_link_failures_per_dst(per_dst_edge_to_beacon, max_tolerable_link_failure + 1);
+
+    }
+
+
     void OnDemandOptimization::create_optimization_targets_for_forbidden_edges(uint16_t dst_as) {
         optimization_target_t *optimization_target = new optimization_target_t(
                 0xFFFF - AS->as_number, {{static_info_type_t::FORBIDDEN_EDGES, 1}}, optimization_direction_t::SYMMETRIC,
@@ -632,6 +722,17 @@ namespace ns3 {
         for (uint16_t iface = 0; iface < AS->GetNDevices(); ++iface) {
             if_to_pull_based_optimization_targets_map.insert(std::make_pair(iface, optimization_target));
         }
+    }
+
+    void OnDemandOptimization::remove_optimization_targets_for_forbidden_edges(uint16_t dst_as) {
+        for (auto it = if_to_pull_based_optimization_targets_map.begin(); it != if_to_pull_based_optimization_targets_map.end();) {
+            if (it->second->target_as == dst_as) {
+                it = if_to_pull_based_optimization_targets_map.erase(it);
+            } else {
+                ++it;
+            }
+        }
+
     }
 
 } // namespace ns3

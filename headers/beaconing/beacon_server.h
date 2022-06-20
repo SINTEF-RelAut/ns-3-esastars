@@ -46,6 +46,19 @@ namespace ns3 {
             if (p.hasProperty("sun_energy_ratio")) {
                 sun_energy_ratio = std::stod(p.getProperty("sun_energy_ratio"));
             }
+
+            if (config["beacon_service"]["read_beacons_directory"]) {
+                file_to_read_beacons = config["beacon_service"]["read_beacons_directory"].as<std::string>() + "beacons_" + std::to_string(AS->as_number) + ".xml";
+            } else {
+                file_to_read_beacons = "none";
+            }
+
+            if (config["beacon_service"]["write_beacons_directory"]) {
+                file_to_write_beacons = config["beacon_service"]["write_beacons_directory"].as<std::string>() + "beacons_" + std::to_string(AS->as_number) + ".xml";
+            } else {
+                file_to_write_beacons = "none";
+            }
+
         }
 
         virtual void DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node, const YAML::Node &config);
@@ -87,7 +100,6 @@ namespace ns3 {
         const std::unordered_map<uint16_t, std::vector<std::unordered_map<const optimization_target_t*, uint32_t>>>&
                 GetPullBasedBeaconsSentPerOptPerInterfacePerPeriod() const;
 
-
         const std::vector<uint64_t> &GetBeaconsSentPerInterface() const;
     protected:
         SCION_AS *AS;
@@ -100,6 +112,9 @@ namespace ns3 {
 
         float dirty_energy_ratio;
         float sun_energy_ratio;
+
+        std::string file_to_write_beacons;
+        std::string file_to_read_beacons;
 
         uint16_t now;
         uint16_t next_period;
@@ -191,6 +206,10 @@ namespace ns3 {
 
         friend void ReadBr2BrEnergy(ns3::NodeContainer AS_nodes, std::map<int32_t, uint16_t> real_to_alias_as_no,
                                     const YAML::Node &config);
+
+        void read_beacons();
+
+        void write_beacons();
     };
 
     void ReadBr2BrEnergy(NodeContainer AS_nodes, std::map<int32_t, uint16_t> real_to_alias_as_no,

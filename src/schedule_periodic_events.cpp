@@ -38,9 +38,9 @@ namespace ns3 {
         }
 
         if (config["beacon_service"]) {
-            for (Time t = ns3::Seconds(0.0); t < Time(config["beacon_service"]["last_beaconing"].as<std::string>());
+            for (Time t = Seconds(0.0); t <= Time(config["beacon_service"]["last_beaconing"].as<std::string>());
                  t += Time(config["beacon_service"]["period"].as<std::string>())) {
-                Simulator::Schedule(t + ns3::Seconds(1.0), &PeriodicBeaconingCheckPoint);
+                Simulator::Schedule(t + TimeStep(2), &PeriodicBeaconingCheckPoint);
             }
         }
     }
