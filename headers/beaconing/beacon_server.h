@@ -48,13 +48,13 @@ namespace ns3 {
             }
 
             if (config["beacon_service"]["read_beacons_directory"]) {
-                file_to_read_beacons = config["beacon_service"]["read_beacons_directory"].as<std::string>() + "beacons_" + std::to_string(AS->as_number) + ".xml";
+                file_to_read_beacons = config["beacon_service"]["read_beacons_directory"].as<std::string>() + "beacons_" + std::to_string(AS->as_number) + ".json";
             } else {
                 file_to_read_beacons = "none";
             }
 
             if (config["beacon_service"]["write_beacons_directory"]) {
-                file_to_write_beacons = config["beacon_service"]["write_beacons_directory"].as<std::string>() + "beacons_" + std::to_string(AS->as_number) + ".xml";
+                file_to_write_beacons = config["beacon_service"]["write_beacons_directory"].as<std::string>() + "beacons_" + std::to_string(AS->as_number) + ".json";
             } else {
                 file_to_write_beacons = "none";
             }
