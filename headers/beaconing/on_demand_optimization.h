@@ -62,9 +62,6 @@ namespace ns3 {
     private:
         beacons_grouped_by_optimization_targets_and_ingress_if_group_t
                 push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group; // permanent until beacons expiration
-//        beacons_grouped_by_optimization_targets_and_ingress_if_group_t
-//                pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group; // gets wiped out at every beaconing interval
-
 
         std::vector<beacons_grouped_by_optimization_targets_and_ingress_if_group_t> pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group;
 
@@ -78,6 +75,8 @@ namespace ns3 {
 
         uint16_t last_push_based_interval;
         uint16_t pull_based_dissemination_to_initiation_frequency;
+        std::set<std::pair<uint16_t, uint16_t>> visited_pull_based_src_dst_pair;
+
         std::multimap<uint16_t, const optimization_target_t *> if_to_pull_based_optimization_targets_map;
         std::unordered_map<uint16_t, std::unordered_map<uint32_t, uint16_t> *> repetition_of_edges;
         std::unordered_map<uint16_t, std::unordered_map<uint16_t, std::unordered_set<uint16_t>*> *> set_of_forbidden_edges_per_destination_as;

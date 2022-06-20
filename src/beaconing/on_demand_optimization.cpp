@@ -347,11 +347,18 @@ namespace ns3 {
     OnDemandOptimization::alg_specific_import_policy(Beacon &the_beacon, uint16_t sender_as,
                                                      uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
                                                      uint16_t now) {
-        if (the_beacon.beacon_direction == beacon_direction_t::PULL_BASED && ORIGINATOR(the_beacon) == AS->as_number) {
-            if (the_beacon.next_initiation_time <= now - pull_based_dissemination_to_initiation_frequency * beaconing_period.ToInteger(Time::MIN)) {
-                return std::tuple<bool, bool, bool, Beacon *, ld>(false, false, false, NULL, 0);
+        if (the_beacon.beacon_direction == beacon_direction_t::PULL_BASED) {
+            if (ORIGINATOR(the_beacon) == AS->as_number) {
+                if (the_beacon.next_initiation_time <=
+                    now - pull_based_dissemination_to_initiation_frequency * beaconing_period.ToInteger(Time::MIN)) {
+                    return std::tuple<bool, bool, bool, Beacon *, ld>(false, false, false, NULL, 0);
+                }
+                return std::tuple<bool, bool, bool, Beacon *, ld>(true, false, false, NULL, 0);
+            } else {
+                if (visited_pull_based_src_dst_pair.find(std::make_pair(ORIGINATOR(the_beacon), DST_AS(the_beacon))) != visited_pull_based_src_dst_pair.end()) {
+                    return std::tuple<bool, bool, bool, Beacon *, ld>(false, false, false, NULL, 0);
+                }
             }
-            return std::tuple<bool, bool, bool, Beacon *, ld>(true, false, false, NULL, 0);
         }
 
         const auto &grouped_beacons = (the_beacon.beacon_direction == beacon_direction_t::PUSH_BASED)
@@ -395,10 +402,13 @@ namespace ns3 {
     void OnDemandOptimization::insert_to_algorithm_data_structures(Beacon *the_beacon, uint16_t sender_as,
                                                                    uint16_t remote_egress_if_no,
                                                                    uint16_t self_ingress_if_no) {
-        if (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED &&
-            ORIGINATOR_PTR(the_beacon) == AS->as_number) {
-            insert_to_forbidden_edges(the_beacon);
-            return;
+        if (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED) {
+            if (ORIGINATOR_PTR(the_beacon) == AS->as_number) {
+                insert_to_forbidden_edges(the_beacon);
+                return;
+            } else {
+                visited_pull_based_src_dst_pair.insert(std::make_pair(ORIGINATOR_PTR(the_beacon), DST_AS_PTR(the_beacon)));
+            }
         }
 
         auto &grouped_beacons = (the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED)
@@ -497,10 +507,12 @@ namespace ns3 {
             (now / beaconing_period.ToInteger(Time::MIN)) % pull_based_dissemination_to_initiation_frequency == 0) {
             if (!new_requested_pull_based_beacons.empty()) {
                 for (auto const &the_beacon : new_requested_pull_based_beacons) {
+                    NS_ASSERT(the_beacon->next_initiation_time <= now - pull_based_dissemination_to_initiation_frequency * beaconing_period.ToInteger(Time::MIN));
                     insert_to_forbidden_edges(the_beacon);
                 }
                 new_requested_pull_based_beacons.clear();
             }
+            visited_pull_based_src_dst_pair.clear();
         }
     }
 
