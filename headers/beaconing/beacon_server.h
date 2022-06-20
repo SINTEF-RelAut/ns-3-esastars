@@ -80,6 +80,14 @@ namespace ns3 {
 
         const std::unordered_map<uint16_t, std::vector<uint32_t>> &GetBeaconsSentPerInterfacePerPeriod() const;
 
+        const std::unordered_map<uint16_t, std::vector<std::unordered_map<uint16_t, uint32_t>>>&
+                GetBeaconsSentPerDstPerInterfacePerPeriod() const;
+        const std::unordered_map<uint16_t, std::vector<std::unordered_map<const optimization_target_t*, uint32_t>>>&
+                GetPushBasedBeaconsSentPerOptPerInterfacePerPeriod() const;
+        const std::unordered_map<uint16_t, std::vector<std::unordered_map<const optimization_target_t*, uint32_t>>>&
+                GetPullBasedBeaconsSentPerOptPerInterfacePerPeriod() const;
+
+
         const std::vector<uint64_t> &GetBeaconsSentPerInterface() const;
     protected:
         SCION_AS *AS;
@@ -114,6 +122,11 @@ namespace ns3 {
 
         std::unordered_map<uint16_t, std::vector<uint32_t>> bytes_sent_per_interface_per_period;
         std::unordered_map<uint16_t, std::vector<uint32_t>> beacons_sent_per_interface_per_period;
+
+        std::unordered_map<uint16_t, std::vector<std::unordered_map<uint16_t, uint32_t>>> beacons_sent_per_dst_per_interface_per_period;
+        std::unordered_map<uint16_t, std::vector<std::unordered_map<const optimization_target_t*, uint32_t>>> push_based_beacons_sent_per_opt_per_interface_per_period;
+        std::unordered_map<uint16_t, std::vector<std::unordered_map<const optimization_target_t*, uint32_t>>> pull_based_beacons_sent_per_opt_per_interface_per_period;
+
         std::vector<uint64_t> beacons_sent_per_interface;
 
         void initiate_beacons(neighbour_relation relation);

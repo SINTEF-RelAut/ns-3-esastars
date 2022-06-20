@@ -400,6 +400,121 @@ namespace ns3 {
         }
     }
 
+    void PostSimulationEvaluations::PrintNoBeaconsPerInterfacePerDstOrOpt () {
+        std::cout << "####################################### sent beacons per interface per period per destination #######################################" << std::endl;
+
+        for (uint16_t now = (uint16_t) first_beaconing.ToInteger(Time::MIN);
+             now < (uint16_t) last_beaconing_event_time.ToInteger(Time::MIN);
+             now += (uint16_t) beaconing_period.ToInteger(Time::MIN)) {
+
+            std::unordered_map<uint16_t, std::vector<uint32_t>> beacons_sent_per_dst_per_interface;
+
+            for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+                SCION_AS *as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+                auto &counters = as->GetBeaconServer()->GetBeaconsSentPerDstPerInterfacePerPeriod();
+                if (counters.find(now) != counters.end()) {
+                    auto &counters_per_period = counters.at(now);
+                    for (uint32_t if_index = 0; if_index < as->GetNDevices(); ++if_index) {
+                        auto &counters_per_interface = counters_per_period.at(if_index);
+                        for (auto const &[dst_as, counter] : counters_per_interface) {
+                            if (beacons_sent_per_dst_per_interface.find(dst_as) ==
+                                beacons_sent_per_dst_per_interface.end()) {
+                                beacons_sent_per_dst_per_interface.insert(
+                                        std::make_pair(dst_as, std::vector<uint32_t>()));
+                            }
+                            beacons_sent_per_dst_per_interface.at(dst_as).push_back(counter);
+                        }
+                    }
+                }
+            }
+
+            for (auto const &[dst_as, counters] : beacons_sent_per_dst_per_interface) {
+                std::cout << now << "|" << alias_to_real_as_no.at(dst_as) <<  "|";
+                for (auto const counter : counters) {
+                    std::cout << counter << ",";
+                }
+                std::cout << std::endl;
+            }
+
+        }
+
+        std::cout << "####################################### push sent beacons per interface per period per optimization target #######################################" << std::endl;
+
+        for (uint16_t now = (uint16_t) first_beaconing.ToInteger(Time::MIN);
+             now < (uint16_t) last_beaconing_event_time.ToInteger(Time::MIN);
+             now += (uint16_t) beaconing_period.ToInteger(Time::MIN)) {
+
+            std::unordered_map<const optimization_target_t*, std::vector<uint32_t>> beacons_sent_per_dst_per_interface;
+
+            for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+                SCION_AS *as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+                auto &counters = as->GetBeaconServer()->GetPushBasedBeaconsSentPerOptPerInterfacePerPeriod();
+                if (counters.find(now) != counters.end()) {
+                    auto &counters_per_period = counters.at(now);
+                    for (uint32_t if_index = 0; if_index < as->GetNDevices(); ++if_index) {
+                        auto &counters_per_interface = counters_per_period.at(if_index);
+                        for (auto const &[opt_target, counter] : counters_per_interface) {
+                            if (beacons_sent_per_dst_per_interface.find(opt_target) ==
+                                beacons_sent_per_dst_per_interface.end()) {
+                                beacons_sent_per_dst_per_interface.insert(
+                                        std::make_pair(opt_target, std::vector<uint32_t>()));
+                            }
+                            beacons_sent_per_dst_per_interface.at(opt_target).push_back(counter);
+                        }
+                    }
+                }
+            }
+
+            for (auto const &[opt_target, counters] : beacons_sent_per_dst_per_interface) {
+                std::cout << now << "|" << alias_to_real_as_no.at(opt_target->target_as) <<  "|" << opt_target->target_id << "|" << opt_target->target_if_group << "|";
+                for (auto const counter : counters) {
+                    std::cout << counter << ",";
+                }
+                std::cout << std::endl;
+            }
+        }
+
+
+        std::cout << "####################################### pull sent beacons per interface per period per optimization target #######################################" << std::endl;
+
+        for (uint16_t now = (uint16_t) first_beaconing.ToInteger(Time::MIN);
+             now < (uint16_t) last_beaconing_event_time.ToInteger(Time::MIN);
+             now += (uint16_t) beaconing_period.ToInteger(Time::MIN)) {
+
+            std::unordered_map<const optimization_target_t*, std::vector<uint32_t>> beacons_sent_per_dst_per_interface;
+
+            for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+                SCION_AS *as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+                auto &counters = as->GetBeaconServer()->GetPullBasedBeaconsSentPerOptPerInterfacePerPeriod();
+                if (counters.find(now) != counters.end()) {
+                    auto &counters_per_period = counters.at(now);
+                    for (uint32_t if_index = 0; if_index < as->GetNDevices(); ++if_index) {
+                        auto &counters_per_interface = counters_per_period.at(if_index);
+                        for (auto const &[opt_target, counter] : counters_per_interface) {
+                            if (beacons_sent_per_dst_per_interface.find(opt_target) ==
+                                beacons_sent_per_dst_per_interface.end()) {
+                                beacons_sent_per_dst_per_interface.insert(
+                                        std::make_pair(opt_target, std::vector<uint32_t>()));
+                            }
+                            beacons_sent_per_dst_per_interface.at(opt_target).push_back(counter);
+                        }
+                    }
+                }
+            }
+
+            for (auto const &[opt_target, counters] : beacons_sent_per_dst_per_interface) {
+                std::cout << now << "|" << alias_to_real_as_no.at(opt_target->target_as) <<  "|" << alias_to_real_as_no.at(0xFFFF - opt_target->target_id) << "|";
+                for (auto const counter : counters) {
+                    std::cout << counter << ",";
+                }
+                std::cout << std::endl;
+            }
+        }
+
+
+
+    }
+
     void PostSimulationEvaluations::PrintNoBeaconsPerInterface() {
         std::cout << "####################################### cumulative sent beacons on each interface #######################################" << std::endl;
         std::cout << "link"
