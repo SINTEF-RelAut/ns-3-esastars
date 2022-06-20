@@ -502,18 +502,19 @@ namespace ns3 {
 
     void OnDemandOptimization::update_state_before_beaconing() {
         BeaconServer::update_state_before_beaconing();
-        if (now == 0 && file_to_read_beacons != "none") {
-            NS_ASSERT(!beacon_store.empty());
+        if (now == first_pull_based_interval) {
+            if (file_to_read_beacons != "none") {
+                NS_ASSERT(!beacon_store.empty());
 
+                for (auto const & dst_beacons : beacon_store) {
+                    for (auto const & len_beacons : dst_beacons.second) {
+                        if (len_beacons.first == 1) {
+                            break ;
+                        }
 
-            for (auto const & dst_beacons : beacon_store) {
-                for (auto const & len_beacons : dst_beacons.second) {
-                    if (len_beacons.first == 1) {
-                        break ;
-                    }
-
-                    for (auto const & the_beacon : len_beacons.second) {
-                        insert_to_forbidden_edges(the_beacon);
+                        for (auto const & the_beacon : len_beacons.second) {
+                            insert_to_forbidden_edges(the_beacon);
+                        }
                     }
                 }
             }
@@ -606,9 +607,9 @@ namespace ns3 {
                       set_of_forbidden_edges_per_destination_as.end());
             set_of_forbidden_edges_per_destination_as.insert(
                     std::make_pair(dst_as, new std::unordered_map<uint16_t, std::unordered_set<uint16_t> *>()));
-            if (file_to_read_beacons == "none") {
-                create_optimization_targets_for_forbidden_edges(dst_as);
-            }
+//            if (file_to_read_beacons == "none") {
+//                create_optimization_targets_for_forbidden_edges(dst_as);
+//            }
         }
 
         std::vector<link_information>::const_reverse_iterator hop = the_beacon->the_path.rbegin();
@@ -659,7 +660,9 @@ namespace ns3 {
             uint16_t max_tolerable_link_failure = check_max_tolerable_link_failures_per_dst( per_dst_edge_to_beacon_copy, 0);
 
             if (max_tolerable_link_failure < desired_max_tolerable_link_failures) {
-                create_optimization_targets_for_forbidden_edges(dst_as);
+                if (now == first_pull_based_interval) {
+                    create_optimization_targets_for_forbidden_edges(dst_as);
+                }
             } else {
                 remove_optimization_targets_for_forbidden_edges(dst_as);
             }
