@@ -560,7 +560,8 @@ namespace ns3 {
             static_info_extension_t staticInfoExtension;
             path the_path = beacon_json["path"].get<std::vector<uint64_t>>();
             isd_path the_isd_path = beacon_json["isd_path"].get<std::vector<uint16_t>>();
-            std::string key = beacon_json["key"];
+            std::vector<uint16_t> key_v = beacon_json["key"].get<std::vector<uint16_t>>();
+            std::string key = std::string(key_v.begin(), key_v.end());
             push_based_beacon_container.insert(std::make_pair(beacon_json["key"],
                                                               Beacon(staticInfoExtension,
                                                                      NULL,
@@ -608,7 +609,8 @@ namespace ns3 {
         for (auto const &[key, the_beacon] : push_based_beacon_container) {
             nlohmann::json beacon_json;
 
-            beacon_json["key"] = key;
+            std::vector<uint16_t> v(key.begin(), key.end());
+            beacon_json["key"] = nlohmann::json(v);
             beacon_json["initiation_time"] = 0;
             beacon_json["expiration_time"] = 0xFFFF;
             beacon_json["direction"] = "push";
