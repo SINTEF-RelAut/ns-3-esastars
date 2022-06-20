@@ -562,7 +562,7 @@ namespace ns3 {
             isd_path the_isd_path = beacon_json["isd_path"].get<std::vector<uint16_t>>();
             std::vector<uint16_t> key_v = beacon_json["key"].get<std::vector<uint16_t>>();
             std::string key = std::string(key_v.begin(), key_v.end());
-            push_based_beacon_container.insert(std::make_pair(beacon_json["key"],
+            push_based_beacon_container.insert(std::make_pair(key,
                                                               Beacon(staticInfoExtension,
                                                                      NULL,
                                                                      beacon_direction_t::PUSH_BASED,
