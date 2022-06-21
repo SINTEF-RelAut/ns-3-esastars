@@ -473,6 +473,10 @@ namespace ns3 {
                 NS_ASSERT(!beacon_store.empty());
                 for (auto const & dst_beacons : beacon_store) {
                     for (auto const & len_beacons : dst_beacons.second) {
+                        if (len_beacons.first == 1) {
+                            break;
+                        }
+
                         for (auto const & the_beacon : len_beacons.second) {
                             insert_to_forbidden_edges(the_beacon);
                         }
