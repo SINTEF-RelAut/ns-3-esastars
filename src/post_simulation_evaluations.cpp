@@ -464,7 +464,7 @@ namespace ns3 {
             }
 
             for (auto const &[opt_target, counters] : beacons_sent_per_dst_per_interface) {
-                std::cout << now << "|" << alias_to_real_as_no.at(opt_target->target_as) <<  "|" << opt_target->target_id << "|" << opt_target->target_if_group << "|";
+                std::cout << now << "|" << int64_t(opt_target) <<  "|" << alias_to_real_as_no.at(opt_target->target_as) <<  "|" << opt_target->target_id << "|" << opt_target->target_if_group << "|";
                 for (auto const counter : counters) {
                     std::cout << counter << ",";
                 }
@@ -501,7 +501,7 @@ namespace ns3 {
             }
 
             for (auto const &[opt_target, counters] : beacons_sent_per_dst_per_interface) {
-                std::cout << now << "|" << alias_to_real_as_no.at(opt_target->target_as) <<  "|" << alias_to_real_as_no.at(0xFFFF - opt_target->target_id) << "|";
+                std::cout << now << "|" << int64_t(opt_target) << "|" << alias_to_real_as_no.at(opt_target->target_as) <<  "|" << alias_to_real_as_no.at(0xFFFF - opt_target->target_id) << "|";
                 for (auto const counter : counters) {
                     std::cout << counter << ",";
                 }
