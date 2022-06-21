@@ -156,34 +156,6 @@ namespace ns3 {
                         ? push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group
                         : pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group.at(pull_based_read);
 
-//        std::unordered_set<uint16_t> already_sent;
-//        if (pull_based_dissemination) {
-//            for (auto const &[optimization_target, beacons_with_the_same_opt_target] :
-//                 beacons_grouped_by_optimization_targets_and_ingress_if) {
-//                if (AS->interfaces_per_neighbor_as.find(optimization_target->target_as) !=
-//                    AS->interfaces_per_neighbor_as.end()) {
-//                    std::unordered_map<
-//                            uint16_t,
-//                            std::multimap<ld,
-//                                          std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>,
-//                                          std::greater<ld>>>
-//                            selected_beacons;
-//
-//                    select_beacons_to_disseminate_per_target_per_nbr(optimization_target->target_as,
-//                                                                     beacons_with_the_same_opt_target,
-//                                                                     optimization_target, selected_beacons);
-//
-//                    send_selected_beacons_per_target_per_nbr(selected_beacons);
-//
-//                    if (!selected_beacons.empty()) {
-//                        already_sent.insert(optimization_target->target_as);
-//                    }
-//                }
-//            }
-//
-//        }
-
-
         uint32_t neighbors_cnt = AS->neighbors.size();
         omp_set_num_threads(NUM_CORE);
 #pragma omp parallel for schedule(dynamic)
@@ -200,12 +172,6 @@ namespace ns3 {
                 if (optimization_target->target_as == AS->as_number) { // pull-based request to this AS
                     continue;
                 }
-
-//                if (pull_based_dissemination && optimization_target->target_as != remote_as_no &&
-//                    AS->interfaces_per_neighbor_as.find(optimization_target->target_as) != AS->interfaces_per_neighbor_as.end() &&
-//                    already_sent.find(optimization_target->target_as) != already_sent.end()) {
-//                    continue;
-//                }
 
                 std::unordered_map<
                         uint16_t,
@@ -505,13 +471,8 @@ namespace ns3 {
         if (now == first_pull_based_interval) {
             if (file_to_read_beacons != "none") {
                 NS_ASSERT(!beacon_store.empty());
-
                 for (auto const & dst_beacons : beacon_store) {
                     for (auto const & len_beacons : dst_beacons.second) {
-                        if (len_beacons.first == 1) {
-                            break ;
-                        }
-
                         for (auto const & the_beacon : len_beacons.second) {
                             insert_to_forbidden_edges(the_beacon);
                         }
@@ -545,9 +506,6 @@ namespace ns3 {
             return;
         }
 
-        if (the_beacon->the_path.size() == 1) {
-            return ;
-        }
         uint16_t dst_as = DST_AS_PTR(the_beacon);
 
         NS_ASSERT(the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED ||
@@ -593,9 +551,7 @@ namespace ns3 {
             new_requested_pull_based_beacons.insert(the_beacon);
             return;
         }
-        if (the_beacon->the_path.size() == 1) {
-            return ;
-        }
+
         uint16_t dst_as = DST_AS_PTR(the_beacon);
         NS_ASSERT(the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED ||
                   ORIGINATOR_PTR(the_beacon) == AS->as_number);
@@ -607,9 +563,6 @@ namespace ns3 {
                       set_of_forbidden_edges_per_destination_as.end());
             set_of_forbidden_edges_per_destination_as.insert(
                     std::make_pair(dst_as, new std::unordered_map<uint16_t, std::unordered_set<uint16_t> *>()));
-//            if (file_to_read_beacons == "none") {
-//                create_optimization_targets_for_forbidden_edges(dst_as);
-//            }
         }
 
         std::vector<link_information>::const_reverse_iterator hop = the_beacon->the_path.rbegin();
