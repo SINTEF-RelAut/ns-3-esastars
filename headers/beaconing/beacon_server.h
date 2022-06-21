@@ -20,7 +20,7 @@
 
 namespace ns3 {
 
-#define MAX_BEACONS_TO_STORE 60
+#define MAX_BEACONS_TO_STORE 20
 #define MAX_BEACONS_TO_SEND 5
 
     class SCION_AS;
