@@ -366,7 +366,7 @@ namespace ns3 {
 
 
         if (the_beacon.optimization_target != NULL) {
-            auto counters_per_opt = the_beacon.beacon_direction == beacon_direction_t::PUSH_BASED ?
+            auto& counters_per_opt = the_beacon.beacon_direction == beacon_direction_t::PUSH_BASED ?
                     push_based_beacons_sent_per_opt_per_interface_per_period.at(now).at(interface) :
                     pull_based_beacons_sent_per_opt_per_interface_per_period.at(now).at(interface);
             if (counters_per_opt.find(the_beacon.optimization_target) == counters_per_opt.end()) {
