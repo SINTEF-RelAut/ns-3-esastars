@@ -19,6 +19,9 @@ namespace ns3 {
 
     void BeaconServer::DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node, const YAML::Node &config) {
         beacons_sent_per_interface.resize(AS->GetNDevices());
+        pull_based_beacons_sent_per_opt_per_interface.resize(AS->GetNDevices());
+        push_based_beacons_sent_per_opt_per_interface.resize(AS->GetNDevices());
+        beacons_sent_per_dst_per_interface.resize(AS->GetNDevices());
     }
     void BeaconServer::PerLinkInitializations(rapidxml::xml_node<> *xml_node, const YAML::Node &config){};
 
@@ -358,7 +361,7 @@ namespace ns3 {
 
         auto dst_as = DST_AS(the_beacon);
 
-        auto & counters_per_dst = beacons_sent_per_dst_per_interface_per_period.at(now).at(interface);
+        auto & counters_per_dst = beacons_sent_per_dst_per_interface.at(interface);
         if (counters_per_dst.find(dst_as) == counters_per_dst.end()) {
             counters_per_dst.insert(std::make_pair(dst_as, 0));
         }
@@ -366,9 +369,7 @@ namespace ns3 {
 
 
         if (the_beacon.optimization_target != NULL) {
-            auto& counters_per_opt = the_beacon.beacon_direction == beacon_direction_t::PUSH_BASED ?
-                    push_based_beacons_sent_per_opt_per_interface_per_period.at(now).at(interface) :
-                    pull_based_beacons_sent_per_opt_per_interface_per_period.at(now).at(interface);
+            auto& counters_per_opt = the_beacon.beacon_direction == beacon_direction_t::PUSH_BASED ? push_based_beacons_sent_per_opt_per_interface.at(interface) : pull_based_beacons_sent_per_opt_per_interface.at(interface);
             if (counters_per_opt.find(the_beacon.optimization_target) == counters_per_opt.end()) {
                 counters_per_opt.insert(std::make_pair(the_beacon.optimization_target, 0));
             }
@@ -437,9 +438,6 @@ namespace ns3 {
         next_period = now + (uint16_t) beaconing_period.ToInteger(Time::MIN);
         bytes_sent_per_interface_per_period.insert(std::make_pair(now, std::vector<uint32_t>(AS->GetNDevices(), 0)));
         beacons_sent_per_interface_per_period.insert(std::make_pair(now, std::vector<uint32_t>(AS->GetNDevices(), 0)));
-        beacons_sent_per_dst_per_interface_per_period.insert(std::make_pair(now, std::vector<std::unordered_map<uint16_t, uint32_t>>(AS->GetNDevices(), std::unordered_map<uint16_t, uint32_t>())));
-        push_based_beacons_sent_per_opt_per_interface_per_period.insert(std::make_pair(now, std::vector<std::unordered_map<const optimization_target_t*, uint32_t>>(AS->GetNDevices(), std::unordered_map<const optimization_target_t*, uint32_t>())));
-        pull_based_beacons_sent_per_opt_per_interface_per_period.insert(std::make_pair(now, std::vector<std::unordered_map<const optimization_target_t*, uint32_t>>(AS->GetNDevices(), std::unordered_map<const optimization_target_t*, uint32_t>())));
     }
 
     const uint16_t BeaconServer::GetCurrentTime() const {
@@ -523,17 +521,17 @@ namespace ns3 {
         return bytes_sent_per_interface_per_period;
     }
 
-    const std::unordered_map<uint16_t, std::vector<std::unordered_map<uint16_t, uint32_t>>>&
+    const std::vector<std::unordered_map<uint16_t, uint32_t>>&
     BeaconServer::GetBeaconsSentPerDstPerInterfacePerPeriod() const {
-        return beacons_sent_per_dst_per_interface_per_period;
+        return beacons_sent_per_dst_per_interface;
     }
-    const std::unordered_map<uint16_t, std::vector<std::unordered_map<const optimization_target_t*, uint32_t>>>&
+    const std::vector<std::unordered_map<const optimization_target_t*, uint32_t>>&
     BeaconServer::GetPushBasedBeaconsSentPerOptPerInterfacePerPeriod() const {
-        return push_based_beacons_sent_per_opt_per_interface_per_period;
+        return push_based_beacons_sent_per_opt_per_interface;
     }
-    const std::unordered_map<uint16_t, std::vector<std::unordered_map<const optimization_target_t*, uint32_t>>>&
+    const std::vector<std::unordered_map<const optimization_target_t*, uint32_t>>&
     BeaconServer::GetPullBasedBeaconsSentPerOptPerInterfacePerPeriod() const {
-        return pull_based_beacons_sent_per_opt_per_interface_per_period;
+        return pull_based_beacons_sent_per_opt_per_interface;
     }
 
     const std::unordered_map<uint16_t, std::vector<uint32_t>> &
