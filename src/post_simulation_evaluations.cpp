@@ -406,10 +406,10 @@ namespace ns3 {
                      "#######################################"
                   << std::endl;
         for (uint16_t time = 0; time <= last_beaconing_event_time.ToInteger(Time::MIN); time += beaconing_period.ToInteger(Time::MIN)) {
+            std::cout << time << "|";
             for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
                 SCION_AS *as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
                 auto const & counters_per_period = as->GetBeaconServer()->GetBeaconsSentPerInterfacePerPeriod().at(time);
-                std::cout << time << "|";
                 for (uint32_t if_index = 0; if_index < as->GetNDevices(); ++if_index) {
                     uint64_t no_sent_beacons = counters_per_period.at(if_index);
                     std::cout << alias_to_real_as_no.at(as->as_number) << ":" << if_index << "=" << no_sent_beacons
