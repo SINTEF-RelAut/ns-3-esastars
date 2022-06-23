@@ -402,6 +402,39 @@ namespace ns3 {
     }
 
     void PostSimulationEvaluations::PrintNoBeaconsPerInterfacePerDstOrOpt() {
+        std::cout << "####################################### sent beacons on each interface in each period"
+                     "#######################################"
+                  << std::endl;
+        for (uint16_t time = 0; time <= last_beaconing_event_time.ToInteger(Time::MIN); time += beaconing_period.ToInteger(Time::MIN)) {
+            for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+                SCION_AS *as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+                auto const & counters_per_period = as->GetBeaconServer()->GetBeaconsSentPerInterfacePerPeriod().at(time);
+                std::cout << time << "|";
+                for (uint32_t if_index = 0; if_index < as->GetNDevices(); ++if_index) {
+                    uint64_t no_sent_beacons = counters_per_period.at(if_index);
+                    std::cout << alias_to_real_as_no.at(as->as_number) << ":" << if_index << "=" << no_sent_beacons
+                              << ",";
+                }
+            }
+            std::cout << std::endl;
+        }
+
+
+        std::cout << "####################################### cumulative sent beacons on each interface "
+                     "#######################################"
+                  << std::endl;
+
+        for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+            SCION_AS *as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+            for (uint32_t if_index = 0; if_index < as->GetNDevices(); ++if_index) {
+                uint64_t no_sent_beacons = as->GetBeaconServer()->GetBeaconsSentPerInterface().at(if_index);
+                std::cout << alias_to_real_as_no.at(as->as_number) << ":" << if_index << "=" << no_sent_beacons
+                          << ",";
+            }
+        }
+
+        std::cout << std::endl;
+
         std::cout << "####################################### sent beacons per interface per destination "
                      "#######################################"
                   << std::endl;
