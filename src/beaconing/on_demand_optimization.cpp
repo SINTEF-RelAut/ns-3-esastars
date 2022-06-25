@@ -498,7 +498,9 @@ namespace ns3 {
                 new_requested_pull_based_beacons.clear();
             }
             visited_pull_based_src_dst_pair.clear();
-            check_max_tolerable_link_failures();
+            if (now > first_pull_based_interval) {
+                check_max_tolerable_link_failures();
+            }
         }
     }
 
