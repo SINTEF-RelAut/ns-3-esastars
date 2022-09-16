@@ -66,23 +66,23 @@ my_placeholder<N> my_placeholder<N>::ph;
 
 namespace std {
 template <int N>
-struct is_placeholder<::my_placeholder<N>> : std::integral_constant<int, N>
+struct IsPlaceholder<::my_placeholder<N>> : std::integral_constant<int, N>
 {
 };
 } // namespace std
 
 template <class R, class... Types, class U, int... indices>
 std::function<R (Types...)>
-bind_factory (R (U::*f) (Types...), U *val, std::integer_sequence<int, indices...> /*seq*/)
+BindFactory (R (U::*f) (Types...), U *val, std::integer_sequence<int, indices...> /*seq*/)
 {
   return std::bind (f, val, my_placeholder<indices + 1>::ph...);
 }
 
 template <class R, class... Types, class U>
 std::function<R (Types...)>
-function_factory (R (U::*f) (Types...), U *val)
+FunctionFactory (R (U::*f) (Types...), U *val)
 {
-  return bind_factory (f, val, std::make_integer_sequence<int, sizeof...(Types)> ());
+  return BindFactory (f, val, std::make_integer_sequence<int, sizeof...(Types)> ());
 }
 
 namespace ns3 {
@@ -104,8 +104,8 @@ public:
         return;
       }
 
-    construct_func_map ();
-    read_and_schedule_user_defined_events (config["events_file"].as<std::string> ());
+    ConstructFuncMap ();
+    ReadAndScheduleUserDefinedEvents (config["events_file"].as<std::string> ());
   }
 
 private:
@@ -116,29 +116,29 @@ private:
 
   std::unordered_map<std::string, AnyCallable<void>> function_name_to_function;
 
-  void construct_func_map ();
+  void ConstructFuncMap ();
 
-  void read_and_schedule_user_defined_events (const std::string &events_file_str);
+  void ReadAndScheduleUserDefinedEvents (const std::string &events_file_str);
 
-  void run_user_specified_event (const std::string &func_name, std::vector<std::string> vec);
+  void RunUserSpecifiedEvent (const std::string &func_name, std::vector<std::string> vec);
 
-  void add_a_host (std::string isd_number, std::string real_as_no, std::string local_address);
+  void AddAHost (std::string isd_number, std::string real_as_no, std::string local_address);
 
-  void link_down (std::string isd_number, std::string real_as_no, std::string if_id);
-  void link_up (std::string isd_number, std::string real_as_no, std::string if_id);
+  void LinkDown (std::string isd_number, std::string real_as_no, std::string if_id);
+  void LinkUp (std::string isd_number, std::string real_as_no, std::string if_id);
 
-  void send_a_packet (std::string src_isd_number, std::string real_src_as_no,
+  void SendAPacket (std::string src_isd_number, std::string real_src_as_no,
                       std::string src_local_address, std::string dst_isd_number,
                       std::string real_dst_as_no, std::string dst_local_address,
                       std::string pyload_size);
 
-  void send_packet_batch (std::string src_isd_number, std::string real_src_as_no,
+  void SendPacketBatch (std::string src_isd_number, std::string real_src_as_no,
                           std::string src_local_address, std::string dst_isd_number,
                           std::string real_dst_as_no, std::string dst_local_address,
                           std::string pyload_size, std::string no_pkts);
 
-  void time_references_down ();
-  void time_references_up ();
+  void TimeReferencesDown ();
+  void TimeReferencesUp ();
 };
 } // namespace ns3
 #endif //SCION_SIMULATOR_USER_DEFINED_EVENTS_H

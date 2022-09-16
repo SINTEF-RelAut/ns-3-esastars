@@ -7,7 +7,7 @@
 
 namespace ns3 {
 void
-UserDefinedEvents::run_user_specified_event (const std::string &func_name,
+UserDefinedEvents::RunUserSpecifiedEvent (const std::string &func_name,
                                              std::vector<std::string> vec)
 {
   switch (vec.size ())
@@ -51,23 +51,23 @@ UserDefinedEvents::run_user_specified_event (const std::string &func_name,
 }
 
 void
-UserDefinedEvents::construct_func_map ()
+UserDefinedEvents::ConstructFuncMap ()
 {
-  function_name_to_function["add_host"] = function_factory (&UserDefinedEvents::add_a_host, this);
-  function_name_to_function["link_down"] = function_factory (&UserDefinedEvents::link_down, this);
-  function_name_to_function["link_up"] = function_factory (&UserDefinedEvents::link_up, this);
+  function_name_to_function["add_host"] = FunctionFactory (&UserDefinedEvents::AddAHost, this);
+  function_name_to_function["link_down"] = FunctionFactory (&UserDefinedEvents::LinkDown, this);
+  function_name_to_function["link_up"] = FunctionFactory (&UserDefinedEvents::LinkUp, this);
   function_name_to_function["send_packet"] =
-      function_factory (&UserDefinedEvents::send_a_packet, this);
+      FunctionFactory (&UserDefinedEvents::SendAPacket, this);
   function_name_to_function["send_packet_batch"] =
-      function_factory (&UserDefinedEvents::send_packet_batch, this);
+      FunctionFactory (&UserDefinedEvents::SendPacketBatch, this);
   function_name_to_function["time_references_down"] =
-      function_factory (&UserDefinedEvents::time_references_down, this);
+      FunctionFactory (&UserDefinedEvents::TimeReferencesDown, this);
   function_name_to_function["time_references_up"] =
-      function_factory (&UserDefinedEvents::time_references_up, this);
+      FunctionFactory (&UserDefinedEvents::TimeReferencesUp, this);
 }
 
 void
-UserDefinedEvents::read_and_schedule_user_defined_events (const std::string &events_file_str)
+UserDefinedEvents::ReadAndScheduleUserDefinedEvents (const std::string &events_file_str)
 {
   nlohmann::json events_json;
   std::ifstream events_file (events_file_str);
@@ -85,28 +85,28 @@ UserDefinedEvents::read_and_schedule_user_defined_events (const std::string &eve
           args_v.push_back ((std::string) event["args"][i]);
         }
 
-      Simulator::Schedule (time, &UserDefinedEvents::run_user_specified_event, this, func_name,
+      Simulator::Schedule (time, &UserDefinedEvents::RunUserSpecifiedEvent, this, func_name,
                            args_v);
     }
 }
 
 void
-UserDefinedEvents::add_a_host (std::string isd_number, std::string real_as_no,
+UserDefinedEvents::AddAHost (std::string isd_number, std::string real_as_no,
                                std::string local_address)
 {
 }
 
 void
-UserDefinedEvents::link_down (std::string isd_number, std::string real_as_no, std::string if_id)
+UserDefinedEvents::LinkDown (std::string isd_number, std::string real_as_no, std::string if_id)
 {
 }
 void
-UserDefinedEvents::link_up (std::string isd_number, std::string real_as_no, std::string if_id)
+UserDefinedEvents::LinkUp (std::string isd_number, std::string real_as_no, std::string if_id)
 {
 }
 
 void
-UserDefinedEvents::send_a_packet (std::string src_isd_number, std::string real_src_as_no,
+UserDefinedEvents::SendAPacket (std::string src_isd_number, std::string real_src_as_no,
                                   std::string src_local_address, std::string dst_isd_number,
                                   std::string real_dst_as_no, std::string dst_local_address,
                                   std::string pyload_size)
@@ -114,7 +114,7 @@ UserDefinedEvents::send_a_packet (std::string src_isd_number, std::string real_s
 }
 
 void
-UserDefinedEvents::send_packet_batch (std::string src_isd_number, std::string real_src_as_no,
+UserDefinedEvents::SendPacketBatch (std::string src_isd_number, std::string real_src_as_no,
                                       std::string src_local_address, std::string dst_isd_number,
                                       std::string real_dst_as_no, std::string dst_local_address,
                                       std::string pyload_size, std::string no_pkts)
@@ -122,7 +122,7 @@ UserDefinedEvents::send_packet_batch (std::string src_isd_number, std::string re
 }
 
 void
-UserDefinedEvents::time_references_down ()
+UserDefinedEvents::TimeReferencesDown ()
 {
   for (uint32_t i = 0; i < AS_nodes.GetN (); ++i)
     {
@@ -134,7 +134,7 @@ UserDefinedEvents::time_references_down ()
 }
 
 void
-UserDefinedEvents::time_references_up ()
+UserDefinedEvents::TimeReferencesUp ()
 {
   for (uint32_t i = 0; i < AS_nodes.GetN (); ++i)
     {
