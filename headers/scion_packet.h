@@ -14,79 +14,86 @@
 #include "src/SCION/headers/path_segment.h"
 
 namespace ns3 {
-    typedef uint16_t host_addr_t;
-    typedef uint32_t packet_id_t;
+typedef uint16_t host_addr_t;
+typedef uint32_t packet_id_t;
 
-    class SCIONCapableNode;
+class SCIONCapableNode;
 
-    enum payload_type_t {
-        EMPTY = 0,
-        PATH_REQ_FROM_HOST = 1,
-        REG_PATHS_FROM_LOCAL_PS = 2,
-        REG_PATHS_FROM_REMOTE_PS = 3,
-        REQ_FOR_LIST_OF_ALL_CORE_ASES = 4,
-        LIST_OF_ALL_CORE_ASES = 5,
-        BROADCAST_LIST_OF_ALL_CORE_ASES = 6,
-        NTP_REQ = 7,
-        NTP_RESP = 8
-    };
+enum payload_type_t {
+  EMPTY = 0,
+  PATH_REQ_FROM_HOST = 1,
+  REG_PATHS_FROM_LOCAL_PS = 2,
+  REG_PATHS_FROM_REMOTE_PS = 3,
+  REQ_FOR_LIST_OF_ALL_CORE_ASES = 4,
+  LIST_OF_ALL_CORE_ASES = 5,
+  BROADCAST_LIST_OF_ALL_CORE_ASES = 6,
+  NTP_REQ = 7,
+  NTP_RESP = 8
+};
 
-    struct PathReqFromHost {
-        ia_t src_ia, dst_ia;
-        path_segment_type seg_type;
-    };
+struct PathReqFromHost
+{
+  ia_t src_ia, dst_ia;
+  path_segment_type seg_type;
+};
 
-    struct RegPathsFromLocalPS {
-        const reg_path_segs_to_one_as_t *registered_path_segments;
-        ia_t src_ia, dst_ia;
-        path_segment_type seg_type;
-    };
+struct RegPathsFromLocalPS
+{
+  const reg_path_segs_to_one_as_t *registered_path_segments;
+  ia_t src_ia, dst_ia;
+  path_segment_type seg_type;
+};
 
-    struct ListOfAllASes {
-        std::set<ia_t> *set_of_all_ases;
-    };
+struct ListOfAllASes
+{
+  std::set<ia_t> *set_of_all_ases;
+};
 
-    struct NTPReqOrResp {
-        int64_t t0, t1, t2, t3;
-    };
+struct NTPReqOrResp
+{
+  int64_t t0, t1, t2, t3;
+};
 
-    union Payload {
-        PathReqFromHost path_req_from_host;
-        RegPathsFromLocalPS registered_paths_from_local_ps;
-        ListOfAllASes list_of_all_ases;
-        NTPReqOrResp ntp_req_or_resp;
-    };
+union Payload {
+  PathReqFromHost path_req_from_host;
+  RegPathsFromLocalPS registered_paths_from_local_ps;
+  ListOfAllASes list_of_all_ases;
+  NTPReqOrResp ntp_req_or_resp;
+};
 
-    struct SCIONPacket {
-    public:
-        Time timestamp;
+struct SCIONPacket
+{
+public:
+  Time timestamp;
 
-        SCIONCapableNode *const packet_originator; // This field is used for memory management of packets
+  SCIONCapableNode *const packet_originator; // This field is used for memory management of packets
 
-        std::vector<const PathSegment *> path;
+  std::vector<const PathSegment *> path;
 
-        Payload payload;
+  Payload payload;
 
-        const packet_id_t id; // This field is used for memory management of packets
+  const packet_id_t id; // This field is used for memory management of packets
 
-        ia_t src_ia, dst_ia;
+  ia_t src_ia, dst_ia;
 
-        payload_type_t payload_type;
+  payload_type_t payload_type;
 
-        host_addr_t src_host, dst_host;
+  host_addr_t src_host, dst_host;
 
-        uint16_t curr_inf, cur_hopf;
+  uint16_t curr_inf, cur_hopf;
 
-        uint16_t size; // size in bytes
+  uint16_t size; // size in bytes
 
-        // The index of cross overs in each segment
-        std::vector<uint8_t> shortcut_hopfs;
+  // The index of cross overs in each segment
+  std::vector<uint8_t> shortcut_hopfs;
 
-        bool path_reversed;
+  bool path_reversed;
 
-        SCIONPacket(SCIONCapableNode *const packet_originator, packet_id_t id)
-            : packet_originator(packet_originator), id(id) {}
-    };
+  SCIONPacket (SCIONCapableNode *const packet_originator, packet_id_t id)
+      : packet_originator (packet_originator), id (id)
+  {
+  }
+};
 
 } // namespace ns3
 #endif //SCION_SIMULATOR_SCION_PACKET_H

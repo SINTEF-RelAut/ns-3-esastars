@@ -8,693 +8,940 @@
 
 namespace ns3 {
 
-    void OnDemandOptimization::DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
-                                                 const YAML::Node &config) {
-        BeaconServer::DoInitializations(num_ASes, xml_node, config);
+void
+OnDemandOptimization::DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
+                                         const YAML::Node &config)
+{
+  BeaconServer::DoInitializations (num_ASes, xml_node, config);
+}
+
+void
+OnDemandOptimization::PerLinkInitializations (rapidxml::xml_node<> *cur_xml_link,
+                                              const YAML::Node &config)
+{
+  uint32_t to = std::stoi (cur_xml_link->first_node ("to")->value ());
+  uint32_t from = std::stoi (cur_xml_link->first_node ("from")->value ());
+
+  NS_ASSERT (real_to_alias_as_no.at (to) == AS->as_number ||
+             real_to_alias_as_no.at (from) == AS->as_number);
+
+  std::string target_element_str = "_target";
+  uint16_t interface_id = 0;
+  uint16_t neighbor_as = 0;
+
+  PropertyContainer p = parseProperties (cur_xml_link);
+  if (real_to_alias_as_no.at (to) == AS->as_number)
+    {
+      target_element_str = "to" + target_element_str;
+      interface_id = std::stoi (p.getProperty ("to_if_id"));
+      neighbor_as = real_to_alias_as_no.at (from);
+    }
+  else
+    {
+      target_element_str = "from" + target_element_str;
+      interface_id = std::stoi (p.getProperty ("from_if_id"));
+      neighbor_as = real_to_alias_as_no.at (to);
     }
 
-    void OnDemandOptimization::PerLinkInitializations(rapidxml::xml_node<> *cur_xml_link, const YAML::Node &config) {
-        uint32_t to = std::stoi(cur_xml_link->first_node("to")->value());
-        uint32_t from = std::stoi(cur_xml_link->first_node("from")->value());
+  ld latitude = std::stod (p.getProperty ("latitude"));
+  ld longitude = std::stod (p.getProperty ("longitude"));
+  std::pair<ld, ld> coordinates = std::make_pair (latitude, longitude);
 
-        NS_ASSERT(real_to_alias_as_no.at(to) == AS->as_number || real_to_alias_as_no.at(from) == AS->as_number);
+  NS_ASSERT (coordinates == AS->interfaces_coordinates.at (interface_id));
 
-        std::string target_element_str = "_target";
-        uint16_t interface_id = 0;
-        uint16_t neighbor_as = 0;
+  rapidxml::xml_node<> *cur_xml_target = cur_xml_link->first_node (target_element_str.c_str ());
+  while (cur_xml_target)
+    {
+      uint16_t target_id = std::stoi (cur_xml_target->value ());
+      const optimization_target_t *optimization_target =
+          &set_of_optimization_targets_originated_from_this_as.at (target_id);
+      uint16_t interface_group = optimization_target->target_if_group;
 
-        PropertyContainer p = parseProperties(cur_xml_link);
-        if (real_to_alias_as_no.at(to) == AS->as_number) {
-            target_element_str = "to" + target_element_str;
-            interface_id = std::stoi(p.getProperty("to_if_id"));
-            neighbor_as = real_to_alias_as_no.at(from);
-        } else {
-            target_element_str = "from" + target_element_str;
-            interface_id = std::stoi(p.getProperty("from_if_id"));
-            neighbor_as = real_to_alias_as_no.at(to);
+      if_to_push_based_optimization_targets_map.insert (
+          std::make_pair (interface_id, optimization_target));
+      if_to_if_group.insert (std::make_pair (interface_id, interface_group));
+
+      if (interface_groups_connected_per_neighbor.find (neighbor_as) ==
+          interface_groups_connected_per_neighbor.end ())
+        {
+          interface_groups_connected_per_neighbor.insert (
+              std::make_pair (neighbor_as, std::unordered_map<uint16_t, std::vector<uint16_t>> ()));
+        }
+      if (interface_groups_connected_per_neighbor.at (neighbor_as).find (interface_group) ==
+          interface_groups_connected_per_neighbor.at (neighbor_as).end ())
+        {
+          interface_groups_connected_per_neighbor.at (neighbor_as)
+              .insert (std::make_pair (interface_group, std::vector<uint16_t> ()));
+        }
+      if (std::find (
+              std::begin (
+                  interface_groups_connected_per_neighbor.at (neighbor_as).at (interface_group)),
+              std::end (
+                  interface_groups_connected_per_neighbor.at (neighbor_as).at (interface_group)),
+              interface_id) ==
+          std::end (interface_groups_connected_per_neighbor.at (neighbor_as).at (interface_group)))
+        {
+          interface_groups_connected_per_neighbor.at (neighbor_as)
+              .at (interface_group)
+              .push_back (interface_id);
         }
 
-        ld latitude = std::stod(p.getProperty("latitude"));
-        ld longitude = std::stod(p.getProperty("longitude"));
-        std::pair<ld, ld> coordinates = std::make_pair(latitude, longitude);
-
-        NS_ASSERT(coordinates == AS->interfaces_coordinates.at(interface_id));
-
-        rapidxml::xml_node<> *cur_xml_target = cur_xml_link->first_node(target_element_str.c_str());
-        while (cur_xml_target) {
-            uint16_t target_id = std::stoi(cur_xml_target->value());
-            const optimization_target_t *optimization_target =
-                    &set_of_optimization_targets_originated_from_this_as.at(target_id);
-            uint16_t interface_group = optimization_target->target_if_group;
-
-            if_to_push_based_optimization_targets_map.insert(std::make_pair(interface_id, optimization_target));
-            if_to_if_group.insert(std::make_pair(interface_id, interface_group));
-
-            if (interface_groups_connected_per_neighbor.find(neighbor_as) ==
-                interface_groups_connected_per_neighbor.end()) {
-                interface_groups_connected_per_neighbor.insert(
-                        std::make_pair(neighbor_as, std::unordered_map<uint16_t, std::vector<uint16_t>>()));
-            }
-            if (interface_groups_connected_per_neighbor.at(neighbor_as).find(interface_group) ==
-                interface_groups_connected_per_neighbor.at(neighbor_as).end()) {
-                interface_groups_connected_per_neighbor.at(neighbor_as)
-                        .insert(std::make_pair(interface_group, std::vector<uint16_t>()));
-            }
-            if (std::find(std::begin(interface_groups_connected_per_neighbor.at(neighbor_as).at(interface_group)),
-                          std::end(interface_groups_connected_per_neighbor.at(neighbor_as).at(interface_group)),
-                          interface_id) ==
-                std::end(interface_groups_connected_per_neighbor.at(neighbor_as).at(interface_group))) {
-                interface_groups_connected_per_neighbor.at(neighbor_as).at(interface_group).push_back(interface_id);
-            }
-
-            cur_xml_target = cur_xml_target->next_sibling(target_element_str.c_str());
-        }
+      cur_xml_target = cur_xml_target->next_sibling (target_element_str.c_str ());
+    }
 #if NS3_ASSERT_ENABLE
-        for (uint32_t i = 0; i < AS->interfaces_coordinates.size(); ++i) {
-            NS_ASSERT(if_to_if_group.find(i) != if_to_if_group.end());
-            NS_ASSERT(if_to_push_based_optimization_targets_map.find(i) !=
-                      if_to_push_based_optimization_targets_map.end());
-        }
+  for (uint32_t i = 0; i < AS->interfaces_coordinates.size (); ++i)
+    {
+      NS_ASSERT (if_to_if_group.find (i) != if_to_if_group.end ());
+      NS_ASSERT (if_to_push_based_optimization_targets_map.find (i) !=
+                 if_to_push_based_optimization_targets_map.end ());
+    }
 #endif
-    }
+}
 
-    void OnDemandOptimization::initiate_beacons_per_interface(uint16_t self_egress_if_no, SCION_AS *remote_as,
-                                                              uint16_t remote_ingress_if_no) {
-        // push_based
-        if (now < first_pull_based_interval) {
-            for (auto it = if_to_push_based_optimization_targets_map.lower_bound(self_egress_if_no);
-                 it != if_to_push_based_optimization_targets_map.upper_bound(self_egress_if_no); ++it) {
-                static_info_extension_t static_info_extension;
-                create_initial_static_info_extension(static_info_extension, self_egress_if_no, it->second);
-                generate_beacon_and_send(NULL, self_egress_if_no, remote_ingress_if_no, remote_as,
-                                         static_info_extension, it->second, beacon_direction_t::PUSH_BASED);
-            }
-        }
-
-        // pull-based
-        if (now >= first_pull_based_interval &&
-            (now / beaconing_period.ToInteger(Time::MIN)) % pull_based_dissemination_to_initiation_frequency == 0) {
-            for (auto it = if_to_pull_based_optimization_targets_map.lower_bound(self_egress_if_no);
-                 it != if_to_pull_based_optimization_targets_map.upper_bound(self_egress_if_no); ++it) {
-                NS_ASSERT(it->second->set_of_forbidden_edges->find(AS->as_number) !=
-                          it->second->set_of_forbidden_edges->end());
-                if (it->second->set_of_forbidden_edges->at(AS->as_number)->find(self_egress_if_no) !=
-                    it->second->set_of_forbidden_edges->at(AS->as_number)->end()) {
-                    continue;
-                }
-                static_info_extension_t static_info_extension;
-                create_initial_static_info_extension(static_info_extension, self_egress_if_no, it->second);
-                generate_beacon_and_send(NULL, self_egress_if_no, remote_ingress_if_no, remote_as,
-                                         static_info_extension, it->second, beacon_direction_t::PULL_BASED);
-            }
+void
+OnDemandOptimization::initiate_beacons_per_interface (uint16_t self_egress_if_no,
+                                                      SCION_AS *remote_as,
+                                                      uint16_t remote_ingress_if_no)
+{
+  // push_based
+  if (now < first_pull_based_interval)
+    {
+      for (auto it = if_to_push_based_optimization_targets_map.lower_bound (self_egress_if_no);
+           it != if_to_push_based_optimization_targets_map.upper_bound (self_egress_if_no); ++it)
+        {
+          static_info_extension_t static_info_extension;
+          create_initial_static_info_extension (static_info_extension, self_egress_if_no,
+                                                it->second);
+          generate_beacon_and_send (NULL, self_egress_if_no, remote_ingress_if_no, remote_as,
+                                    static_info_extension, it->second,
+                                    beacon_direction_t::PUSH_BASED);
         }
     }
 
-    void OnDemandOptimization::create_initial_static_info_extension(static_info_extension_t &static_info_extension,
-                                                                    uint16_t self_egress_if_no,
-                                                                    const optimization_target_t *optimization_target) {
-        for (auto const &criteria : optimization_target->criteria) {
-            if (criteria.first == LATENCY) {
-                static_info_extension.insert(std::make_pair(static_info_type_t::LATENCY, 0));
-            } else if (criteria.first == BW) {
-                static_info_extension.insert(
-                        std::make_pair(static_info_type_t::BW, AS->inter_as_bwds.at(self_egress_if_no)));
-            } else if (criteria.first == CO2) {
-                static_info_extension.insert(std::make_pair(static_info_type_t::CO2, 0));
+  // pull-based
+  if (now >= first_pull_based_interval &&
+      (now / beaconing_period.ToInteger (Time::MIN)) %
+              pull_based_dissemination_to_initiation_frequency ==
+          0)
+    {
+      for (auto it = if_to_pull_based_optimization_targets_map.lower_bound (self_egress_if_no);
+           it != if_to_pull_based_optimization_targets_map.upper_bound (self_egress_if_no); ++it)
+        {
+          NS_ASSERT (it->second->set_of_forbidden_edges->find (AS->as_number) !=
+                     it->second->set_of_forbidden_edges->end ());
+          if (it->second->set_of_forbidden_edges->at (AS->as_number)->find (self_egress_if_no) !=
+              it->second->set_of_forbidden_edges->at (AS->as_number)->end ())
+            {
+              continue;
             }
+          static_info_extension_t static_info_extension;
+          create_initial_static_info_extension (static_info_extension, self_egress_if_no,
+                                                it->second);
+          generate_beacon_and_send (NULL, self_egress_if_no, remote_ingress_if_no, remote_as,
+                                    static_info_extension, it->second,
+                                    beacon_direction_t::PULL_BASED);
         }
     }
+}
 
-    void OnDemandOptimization::extend_static_info_extension(const Beacon *the_beacon, uint16_t beacon_ingress_if_no,
-                                                            uint16_t candidate_egress_if_no,
-                                                            static_info_extension_t &propagation_static_info) {
-        for (auto const &criteria : the_beacon->optimization_target->criteria) {
-            if (criteria.first == LATENCY) {
-                ld latency = the_beacon->static_info_extension.at(static_info_type_t::LATENCY) +
-                             AS->latencies_between_interfaces.at(beacon_ingress_if_no).at(candidate_egress_if_no);
-                propagation_static_info.insert(std::make_pair(static_info_type_t::LATENCY, latency));
-            } else if (criteria.first == BW) {
-                ld bw = the_beacon->static_info_extension.at(static_info_type_t::BW) >
-                                        (ld) AS->inter_as_bwds.at(candidate_egress_if_no)
-                                ? (ld) AS->inter_as_bwds.at(candidate_egress_if_no)
-                                : the_beacon->static_info_extension.at(static_info_type_t::BW);
-                propagation_static_info.insert(std::make_pair(static_info_type_t::BW, bw));
-            } else if (criteria.first == CO2) {
-                propagation_static_info.insert(std::make_pair(static_info_type_t::CO2, 0));
-            }
+void
+OnDemandOptimization::create_initial_static_info_extension (
+    static_info_extension_t &static_info_extension, uint16_t self_egress_if_no,
+    const optimization_target_t *optimization_target)
+{
+  for (auto const &criteria : optimization_target->criteria)
+    {
+      if (criteria.first == LATENCY)
+        {
+          static_info_extension.insert (std::make_pair (static_info_type_t::LATENCY, 0));
+        }
+      else if (criteria.first == BW)
+        {
+          static_info_extension.insert (
+              std::make_pair (static_info_type_t::BW, AS->inter_as_bwds.at (self_egress_if_no)));
+        }
+      else if (criteria.first == CO2)
+        {
+          static_info_extension.insert (std::make_pair (static_info_type_t::CO2, 0));
         }
     }
+}
 
-    void OnDemandOptimization::disseminate_beacons(neighbour_relation relation) {
-        NS_ASSERT(now == (uint16_t) Simulator::Now().ToInteger(Time::MIN));
-        bool pull_based_dissemination = now >= first_pull_based_interval;
-        bool push_based_dissemination = now < first_pull_based_interval;
+void
+OnDemandOptimization::extend_static_info_extension (
+    const Beacon *the_beacon, uint16_t beacon_ingress_if_no, uint16_t candidate_egress_if_no,
+    static_info_extension_t &propagation_static_info)
+{
+  for (auto const &criteria : the_beacon->optimization_target->criteria)
+    {
+      if (criteria.first == LATENCY)
+        {
+          ld latency = the_beacon->static_info_extension.at (static_info_type_t::LATENCY) +
+                       AS->latencies_between_interfaces.at (beacon_ingress_if_no)
+                           .at (candidate_egress_if_no);
+          propagation_static_info.insert (std::make_pair (static_info_type_t::LATENCY, latency));
+        }
+      else if (criteria.first == BW)
+        {
+          ld bw = the_beacon->static_info_extension.at (static_info_type_t::BW) >
+                          (ld) AS->inter_as_bwds.at (candidate_egress_if_no)
+                      ? (ld) AS->inter_as_bwds.at (candidate_egress_if_no)
+                      : the_beacon->static_info_extension.at (static_info_type_t::BW);
+          propagation_static_info.insert (std::make_pair (static_info_type_t::BW, bw));
+        }
+      else if (criteria.first == CO2)
+        {
+          propagation_static_info.insert (std::make_pair (static_info_type_t::CO2, 0));
+        }
+    }
+}
 
+void
+OnDemandOptimization::disseminate_beacons (neighbour_relation relation)
+{
+  NS_ASSERT (now == (uint16_t) Simulator::Now ().ToInteger (Time::MIN));
+  bool pull_based_dissemination = now >= first_pull_based_interval;
+  bool push_based_dissemination = now < first_pull_based_interval;
 
-        auto &beacons_grouped_by_optimization_targets_and_ingress_if =
-                (push_based_dissemination)
-                        ? push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group
-                        : pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group.at(pull_based_read);
+  auto &beacons_grouped_by_optimization_targets_and_ingress_if =
+      (push_based_dissemination)
+          ? push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group
+          : pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group.at (
+                pull_based_read);
 
-        uint32_t neighbors_cnt = AS->neighbors.size();
-        omp_set_num_threads(NUM_CORE);
+  uint32_t neighbors_cnt = AS->neighbors.size ();
+  omp_set_num_threads (NUM_CORE);
 #pragma omp parallel for schedule(dynamic)
 
-        for (uint32_t i = 0; i < neighbors_cnt; ++i) { // Per neighbor AS
-            if (AS->neighbors.at(i).second != relation) {
-                continue;
-            }
-
-            uint16_t remote_as_no = AS->neighbors.at(i).first;
-
-            for (auto const &[optimization_target, beacons_with_the_same_opt_target] :
-                 beacons_grouped_by_optimization_targets_and_ingress_if) {
-                if (optimization_target->target_as == AS->as_number) { // pull-based request to this AS
-                    continue;
-                }
-
-                std::unordered_map<
-                        uint16_t,
-                        std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>,
-                                      std::greater<ld>>>
-                        selected_beacons;
-
-                select_beacons_to_disseminate_per_target_per_nbr(remote_as_no, beacons_with_the_same_opt_target,
-                                                                 optimization_target, selected_beacons);
-                send_selected_beacons_per_target_per_nbr(selected_beacons);
-            }
+  for (uint32_t i = 0; i < neighbors_cnt; ++i)
+    { // Per neighbor AS
+      if (AS->neighbors.at (i).second != relation)
+        {
+          continue;
         }
 
-        if (pull_based_dissemination) {
-            // returning pull-based beacons
-            for (auto const &[optimization_target, beacons_with_the_same_opt_target] :
-                 pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group.at(pull_based_read)) {
-                if (optimization_target->target_as != AS->as_number) {
-                    continue;
-                }
+      uint16_t remote_as_no = AS->neighbors.at (i).first;
 
-                for (auto const &[beacon_ingress_if_group, score_beacons_map] : beacons_with_the_same_opt_target) {
-                    for (auto &[score, the_beacon] : score_beacons_map) {
-                        if (the_beacon->expiration_time > now) {
-                            uint64_t first_hop = the_beacon->the_path.front();
-                            SCION_AS *requesting_as =
-                                    dynamic_cast<SCION_AS *>(PeekPointer(nodes.Get(UPPER_16_BITS(first_hop))));
-                            requesting_as->ReceiveBeacon(*the_beacon, SECOND_LOWER_16_BITS(first_hop),
-                                                         LOWER_16_BITS(first_hop), SECOND_UPPER_16_BITS(first_hop));
-                        }
-                    }
-                }
+      for (auto const &[optimization_target, beacons_with_the_same_opt_target] :
+           beacons_grouped_by_optimization_targets_and_ingress_if)
+        {
+          if (optimization_target->target_as == AS->as_number)
+            { // pull-based request to this AS
+              continue;
             }
-            pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group.at(pull_based_read).clear();
-            non_requested_pull_based_beacon_container.at(pull_based_read).clear();
+
+          std::unordered_map<
+              uint16_t,
+              std::multimap<
+                  ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>,
+                  std::greater<ld>>>
+              selected_beacons;
+
+          select_beacons_to_disseminate_per_target_per_nbr (remote_as_no,
+                                                            beacons_with_the_same_opt_target,
+                                                            optimization_target, selected_beacons);
+          send_selected_beacons_per_target_per_nbr (selected_beacons);
         }
     }
 
-    void OnDemandOptimization::select_beacons_to_disseminate_per_target_per_nbr(
-            uint16_t remote_as_no, const beacons_with_the_same_opt_target_t &beacons_with_the_same_opt_target,
-            const optimization_target_t *optimization_target,
-            std::unordered_map<
-                    uint16_t,
-                    std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>,
-                                  std::greater<ld>>> &selected_beacons) {
-        for (auto const &[beacon_ingress_if_group, score_beacons_map] : beacons_with_the_same_opt_target) {
-            for (auto const &[score, the_beacon] : score_beacons_map) {
-                if ((the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED && !the_beacon->is_valid) ||
-                    (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED &&
-                     the_beacon->expiration_time < now)) {
-                    continue;
-                }
+  if (pull_based_dissemination)
+    {
+      // returning pull-based beacons
+      for (auto const &[optimization_target, beacons_with_the_same_opt_target] :
+           pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group.at (
+               pull_based_read))
+        {
+          if (optimization_target->target_as != AS->as_number)
+            {
+              continue;
+            }
 
-                bool generates_loop = false;
-                for (auto const &link_info : the_beacon->the_path) { // remove loops
-                    if (UPPER_16_BITS(link_info) == remote_as_no) {
-                        generates_loop = true;
-                        break;
-                    }
-                }
-
-                if (generates_loop) {
-                    continue;
-                }
-
-                NS_ASSERT(!interface_groups_connected_per_neighbor.at(remote_as_no).empty());
-                for (auto const &[group, ifaces] : interface_groups_connected_per_neighbor.at(remote_as_no)) {
-                    NS_ASSERT(!ifaces.empty());
-                    for (auto const &candidate_egress_if_no : ifaces) {
-                        if (the_beacon->optimization_target->set_of_forbidden_edges != NULL) {
-                            if (the_beacon->optimization_target->set_of_forbidden_edges->find(AS->as_number) !=
-                                        the_beacon->optimization_target->set_of_forbidden_edges->end() &&
-                                the_beacon->optimization_target->set_of_forbidden_edges->at(AS->as_number)
-                                                ->find(candidate_egress_if_no) !=
-                                        the_beacon->optimization_target->set_of_forbidden_edges->at(AS->as_number)
-                                                ->end()) {
-                                continue;
-                            }
-                        }
-                        if (selected_beacons.find(group) == selected_beacons.end()) {
-                            selected_beacons.insert(
-                                    std::make_pair(group, std::multimap<ld,
-                                                                        std::tuple<Beacon *, uint16_t, uint16_t,
-                                                                                   SCION_AS *, static_info_extension_t>,
-                                                                        std::greater<ld>>()));
-                        }
-
-                        static_info_extension_t propagation_static_info;
-                        extend_static_info_extension(the_beacon, LOWER_16_BITS(the_beacon->the_path.back()),
-                                                     candidate_egress_if_no, propagation_static_info);
-
-                        ld dissemination_score = calculate_score(the_beacon->optimization_target, propagation_static_info);
-
-                        auto [remote_ingress_if_no, remote_as] = AS->GetRemoteAsInfo(candidate_egress_if_no);
-
-                        selected_beacons.at(group).insert(std::make_pair(
-                                dissemination_score, std::make_tuple(the_beacon, candidate_egress_if_no, remote_ingress_if_no,
-                                                       remote_as, propagation_static_info)));
+          for (auto const &[beacon_ingress_if_group, score_beacons_map] :
+               beacons_with_the_same_opt_target)
+            {
+              for (auto &[score, the_beacon] : score_beacons_map)
+                {
+                  if (the_beacon->expiration_time > now)
+                    {
+                      uint64_t first_hop = the_beacon->the_path.front ();
+                      SCION_AS *requesting_as = dynamic_cast<SCION_AS *> (
+                          PeekPointer (nodes.Get (UPPER_16_BITS (first_hop))));
+                      requesting_as->ReceiveBeacon (*the_beacon, SECOND_LOWER_16_BITS (first_hop),
+                                                    LOWER_16_BITS (first_hop),
+                                                    SECOND_UPPER_16_BITS (first_hop));
                     }
                 }
             }
         }
-
-        for (auto &subgroup_selected_beacons_per_subgroup_pair : selected_beacons) {
-            auto &selected_beacons_per_subgroup = subgroup_selected_beacons_per_subgroup_pair.second;
-            if (selected_beacons_per_subgroup.size() > optimization_target->no_beacons_per_optimization_target) {
-                auto it = selected_beacons_per_subgroup.begin();
-                std::advance(it, optimization_target->no_beacons_per_optimization_target);
-                selected_beacons_per_subgroup.erase(it, selected_beacons_per_subgroup.end());
-            }
-            NS_ASSERT(selected_beacons_per_subgroup.size() == optimization_target->no_beacons_per_optimization_target);
-        }
+      pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group.at (pull_based_read)
+          .clear ();
+      non_requested_pull_based_beacon_container.at (pull_based_read).clear ();
     }
+}
 
-    void OnDemandOptimization::send_selected_beacons_per_target_per_nbr(
-            const std::unordered_map<
-                    uint16_t,
-                    std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>,
-                                  std::greater<ld>>> &selected_beacons) {
-        for (auto const &group_selected_beacons_pair : selected_beacons) {
-            for (auto const &score_selected_beacons_pair : group_selected_beacons_pair.second) {
-                Beacon *the_beacon;
-                uint16_t remote_ingress_if_no;
-                uint16_t self_egress_if_no;
-                SCION_AS *remote_as;
-                static_info_extension_t static_info_extension;
-
-                std::tie(the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as, static_info_extension) =
-                        score_selected_beacons_pair.second;
-
-                generate_beacon_and_send(the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as,
-                                         static_info_extension, the_beacon->optimization_target,
-                                         the_beacon->beacon_direction);
+void
+OnDemandOptimization::select_beacons_to_disseminate_per_target_per_nbr (
+    uint16_t remote_as_no,
+    const beacons_with_the_same_opt_target_t &beacons_with_the_same_opt_target,
+    const optimization_target_t *optimization_target,
+    std::unordered_map<
+        uint16_t,
+        std::multimap<ld,
+                      std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>,
+                      std::greater<ld>>> &selected_beacons)
+{
+  for (auto const &[beacon_ingress_if_group, score_beacons_map] : beacons_with_the_same_opt_target)
+    {
+      for (auto const &[score, the_beacon] : score_beacons_map)
+        {
+          if ((the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED &&
+               !the_beacon->is_valid) ||
+              (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED &&
+               the_beacon->expiration_time < now))
+            {
+              continue;
             }
-        }
-    }
 
-    std::tuple<bool, bool, bool, Beacon *, ld>
-    OnDemandOptimization::alg_specific_import_policy(Beacon &the_beacon, uint16_t sender_as,
-                                                     uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
-                                                     uint16_t now) {
-        if (the_beacon.beacon_direction == beacon_direction_t::PULL_BASED) {
-            if (ORIGINATOR(the_beacon) == AS->as_number) {
-                if (now - the_beacon.next_initiation_time >=
-                     pull_based_dissemination_to_initiation_frequency * beaconing_period.ToInteger(Time::MIN)) {
-                    return std::tuple<bool, bool, bool, Beacon *, ld>(false, false, false, NULL, 0);
-                }
-                return std::tuple<bool, bool, bool, Beacon *, ld>(true, false, false, NULL, 0);
-            } else {
-                if (visited_pull_based_src_dst_pair.find(std::make_pair(ORIGINATOR(the_beacon), DST_AS(the_beacon))) != visited_pull_based_src_dst_pair.end()) {
-                    return std::tuple<bool, bool, bool, Beacon *, ld>(false, false, false, NULL, 0);
+          bool generates_loop = false;
+          for (auto const &link_info : the_beacon->the_path)
+            { // remove loops
+              if (UPPER_16_BITS (link_info) == remote_as_no)
+                {
+                  generates_loop = true;
+                  break;
                 }
             }
-        }
 
-        const auto &grouped_beacons = (the_beacon.beacon_direction == beacon_direction_t::PUSH_BASED)
-                                              ? push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group
-                                              : pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group.at(pull_based_write);
-
-        uint16_t access_index = if_to_if_group.at(self_ingress_if_no);
-
-        if (grouped_beacons.find(the_beacon.optimization_target) == grouped_beacons.end()) {
-            return std::tuple<bool, bool, bool, Beacon *, ld>(true, false, false, NULL, 0);
-        }
-
-        if (grouped_beacons.at(the_beacon.optimization_target).find(access_index) ==
-            grouped_beacons.at(the_beacon.optimization_target).end()) {
-            return std::tuple<bool, bool, bool, Beacon *, ld>(true, false, false, NULL, 0);
-        }
-
-        if (grouped_beacons.at(the_beacon.optimization_target).at(access_index).size() <
-            the_beacon.optimization_target->no_beacons_per_optimization_target) {
-            return std::tuple<bool, bool, bool, Beacon *, ld>(true, false, false, NULL, 0);
-        }
-
-        std::multimap<ld, Beacon *>::const_reverse_iterator worst_beacon_score =
-                grouped_beacons.at(the_beacon.optimization_target).at(access_index).rbegin();
-        ld incoming_beacon_score = calculate_score(the_beacon.optimization_target, the_beacon.static_info_extension);
-        ld lowest_previous_score = worst_beacon_score->first;
-        if (lowest_previous_score < incoming_beacon_score) {
-            Beacon *to_be_removed_beacon = worst_beacon_score->second;
-            NS_ASSERT(to_be_removed_beacon->beacon_direction == the_beacon.beacon_direction);
-            NS_ASSERT(DST_AS_PTR(to_be_removed_beacon) == DST_AS(the_beacon));
-            return std::tuple<bool, bool, bool, Beacon *, ld>(true, false, false, to_be_removed_beacon,
-                                                              lowest_previous_score);
-        }
-
-        NS_ASSERT(the_beacon.beacon_direction != beacon_direction_t::PUSH_BASED ||
-                  next_round_valid_beacons_count_per_dst_as.find(DST_AS(the_beacon)) !=
-                          next_round_valid_beacons_count_per_dst_as.end());
-        return std::tuple<bool, bool, bool, Beacon *, ld>(false, false, false, NULL, 0);
-    }
-
-    void OnDemandOptimization::insert_to_algorithm_data_structures(Beacon *the_beacon, uint16_t sender_as,
-                                                                   uint16_t remote_egress_if_no,
-                                                                   uint16_t self_ingress_if_no) {
-        if (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED) {
-            if (ORIGINATOR_PTR(the_beacon) == AS->as_number) {
-                insert_to_forbidden_edges(the_beacon);
-                return;
-            } else {
-                visited_pull_based_src_dst_pair.insert(std::make_pair(ORIGINATOR_PTR(the_beacon), DST_AS_PTR(the_beacon)));
+          if (generates_loop)
+            {
+              continue;
             }
-        }
 
-        auto &grouped_beacons = (the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED)
-                                        ? push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group
-                                        : pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group.at(pull_based_write);
-
-        uint16_t access_index = if_to_if_group.at(self_ingress_if_no);
-
-        if (grouped_beacons.find(the_beacon->optimization_target) == grouped_beacons.end()) {
-            grouped_beacons.insert(
-                    std::make_pair(the_beacon->optimization_target, beacons_with_the_same_opt_target_t()));
-        }
-
-        if (grouped_beacons.at(the_beacon->optimization_target).find(access_index) ==
-            grouped_beacons.at(the_beacon->optimization_target).end()) {
-            grouped_beacons.at(the_beacon->optimization_target)
-                    .insert(std::make_pair(access_index, beacons_with_the_same_opt_target_and_ingress_if_group_t()));
-        }
-
-        ld incoming_beacon_score = calculate_score(the_beacon->optimization_target, the_beacon->static_info_extension);
-
-        grouped_beacons.at(the_beacon->optimization_target)
-                .at(access_index)
-                .insert(std::make_pair(incoming_beacon_score, the_beacon));
-
-        if (the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED) {
-            insert_to_forbidden_edges(the_beacon);
-        }
-    }
-
-    void OnDemandOptimization::delete_from_algorithm_data_structures(Beacon *the_beacon, ld replacement_key) {
-        if (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED &&
-            ORIGINATOR_PTR(the_beacon) == AS->as_number) {
-            delete_from_forbidden_edges(the_beacon);
-            return;
-        }
-
-        uint16_t self_ingress_if = (the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED)
-                                           ? LOWER_16_BITS(the_beacon->the_path.back())
-                                           : SECOND_UPPER_16_BITS(the_beacon->the_path.front());
-
-        auto &grouped_beacons = (the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED)
-                                        ? push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group
-                                                  .at(the_beacon->optimization_target)
-                                                  .at(if_to_if_group.at(self_ingress_if))
-                                        : pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group.at(pull_based_write)
-                                                  .at(the_beacon->optimization_target)
-                                                  .at(if_to_if_group.at(self_ingress_if));
-
-        for (auto it = grouped_beacons.lower_bound(replacement_key); it != grouped_beacons.upper_bound(replacement_key);
-             ++it) {
-            if (it->second == the_beacon) {
-                grouped_beacons.erase(it--);
-                break;
-            }
-        }
-
-        if (the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED) {
-            delete_from_forbidden_edges(the_beacon);
-        }
-    }
-
-    ld OnDemandOptimization::calculate_score(const optimization_target_t *optimization_target,
-                                             const static_info_extension_t &static_info_extension) {
-        ld score = 0;
-        ld weights_sum = 0;
-        for (auto const &criteria : optimization_target->criteria) {
-            weights_sum += criteria.second;
-            if (criteria.first == static_info_type_t::LATENCY) { // in ms, assuming max latency is 1000 ms
-                score += (1 - static_info_extension.at(static_info_type_t::LATENCY) / 1000.0) * criteria.second;
-            } else if (criteria.first == static_info_type_t::BW) { // in Gbps, assuming max BW is 400 Gbps
-                score += static_info_extension.at(static_info_type_t::BW) / 400.0 * criteria.second;
-            } else if (criteria.first == static_info_type_t::CO2) { // in g/Gbps, assuming max is 10 g/Gbps
-                score += (1 - static_info_extension.at(static_info_type_t::CO2) / 10.0) * criteria.second;
-            } else if (criteria.first == static_info_type_t::FORBIDDEN_EDGES) {
-            }
-        }
-
-        if (weights_sum == 0) {
-            return score;
-        }
-
-        return (score / weights_sum);
-    }
-
-    void OnDemandOptimization::update_algorithm_data_structures_periodic(Beacon *the_beacon, bool invalidated) {
-        if (invalidated) {
-            delete_from_forbidden_edges(the_beacon);
-        }
-    }
-
-    void OnDemandOptimization::update_state_before_beaconing() {
-        BeaconServer::update_state_before_beaconing();
-        if (now == first_pull_based_interval) {
-            if (file_to_read_beacons != "none") {
-                NS_ASSERT(!beacon_store.empty());
-                for (auto const & dst_beacons : beacon_store) {
-                    for (auto const & len_beacons : dst_beacons.second) {
-                        if (len_beacons.first == 1) {
-                            break;
+          NS_ASSERT (!interface_groups_connected_per_neighbor.at (remote_as_no).empty ());
+          for (auto const &[group, ifaces] :
+               interface_groups_connected_per_neighbor.at (remote_as_no))
+            {
+              NS_ASSERT (!ifaces.empty ());
+              for (auto const &candidate_egress_if_no : ifaces)
+                {
+                  if (the_beacon->optimization_target->set_of_forbidden_edges != NULL)
+                    {
+                      if (the_beacon->optimization_target->set_of_forbidden_edges->find (
+                              AS->as_number) !=
+                              the_beacon->optimization_target->set_of_forbidden_edges->end () &&
+                          the_beacon->optimization_target->set_of_forbidden_edges
+                                  ->at (AS->as_number)
+                                  ->find (candidate_egress_if_no) !=
+                              the_beacon->optimization_target->set_of_forbidden_edges
+                                  ->at (AS->as_number)
+                                  ->end ())
+                        {
+                          continue;
                         }
+                    }
+                  if (selected_beacons.find (group) == selected_beacons.end ())
+                    {
+                      selected_beacons.insert (std::make_pair (
+                          group, std::multimap<ld,
+                                               std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *,
+                                                          static_info_extension_t>,
+                                               std::greater<ld>> ()));
+                    }
 
-                        for (auto const & the_beacon : len_beacons.second) {
-                            insert_to_forbidden_edges(the_beacon);
-                        }
+                  static_info_extension_t propagation_static_info;
+                  extend_static_info_extension (the_beacon,
+                                                LOWER_16_BITS (the_beacon->the_path.back ()),
+                                                candidate_egress_if_no, propagation_static_info);
+
+                  ld dissemination_score =
+                      calculate_score (the_beacon->optimization_target, propagation_static_info);
+
+                  auto [remote_ingress_if_no, remote_as] =
+                      AS->GetRemoteAsInfo (candidate_egress_if_no);
+
+                  selected_beacons.at (group).insert (std::make_pair (
+                      dissemination_score,
+                      std::make_tuple (the_beacon, candidate_egress_if_no, remote_ingress_if_no,
+                                       remote_as, propagation_static_info)));
+                }
+            }
+        }
+    }
+
+  for (auto &subgroup_selected_beacons_per_subgroup_pair : selected_beacons)
+    {
+      auto &selected_beacons_per_subgroup = subgroup_selected_beacons_per_subgroup_pair.second;
+      if (selected_beacons_per_subgroup.size () >
+          optimization_target->no_beacons_per_optimization_target)
+        {
+          auto it = selected_beacons_per_subgroup.begin ();
+          std::advance (it, optimization_target->no_beacons_per_optimization_target);
+          selected_beacons_per_subgroup.erase (it, selected_beacons_per_subgroup.end ());
+        }
+      NS_ASSERT (selected_beacons_per_subgroup.size () ==
+                 optimization_target->no_beacons_per_optimization_target);
+    }
+}
+
+void
+OnDemandOptimization::send_selected_beacons_per_target_per_nbr (
+    const std::unordered_map<
+        uint16_t,
+        std::multimap<ld,
+                      std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>,
+                      std::greater<ld>>> &selected_beacons)
+{
+  for (auto const &group_selected_beacons_pair : selected_beacons)
+    {
+      for (auto const &score_selected_beacons_pair : group_selected_beacons_pair.second)
+        {
+          Beacon *the_beacon;
+          uint16_t remote_ingress_if_no;
+          uint16_t self_egress_if_no;
+          SCION_AS *remote_as;
+          static_info_extension_t static_info_extension;
+
+          std::tie (the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as,
+                    static_info_extension) = score_selected_beacons_pair.second;
+
+          generate_beacon_and_send (the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as,
+                                    static_info_extension, the_beacon->optimization_target,
+                                    the_beacon->beacon_direction);
+        }
+    }
+}
+
+std::tuple<bool, bool, bool, Beacon *, ld>
+OnDemandOptimization::alg_specific_import_policy (Beacon &the_beacon, uint16_t sender_as,
+                                                  uint16_t remote_egress_if_no,
+                                                  uint16_t self_ingress_if_no, uint16_t now)
+{
+  if (the_beacon.beacon_direction == beacon_direction_t::PULL_BASED)
+    {
+      if (ORIGINATOR (the_beacon) == AS->as_number)
+        {
+          if (now - the_beacon.next_initiation_time >=
+              pull_based_dissemination_to_initiation_frequency *
+                  beaconing_period.ToInteger (Time::MIN))
+            {
+              return std::tuple<bool, bool, bool, Beacon *, ld> (false, false, false, NULL, 0);
+            }
+          return std::tuple<bool, bool, bool, Beacon *, ld> (true, false, false, NULL, 0);
+        }
+      else
+        {
+          if (visited_pull_based_src_dst_pair.find (
+                  std::make_pair (ORIGINATOR (the_beacon), DST_AS (the_beacon))) !=
+              visited_pull_based_src_dst_pair.end ())
+            {
+              return std::tuple<bool, bool, bool, Beacon *, ld> (false, false, false, NULL, 0);
+            }
+        }
+    }
+
+  const auto &grouped_beacons =
+      (the_beacon.beacon_direction == beacon_direction_t::PUSH_BASED)
+          ? push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group
+          : pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group.at (
+                pull_based_write);
+
+  uint16_t access_index = if_to_if_group.at (self_ingress_if_no);
+
+  if (grouped_beacons.find (the_beacon.optimization_target) == grouped_beacons.end ())
+    {
+      return std::tuple<bool, bool, bool, Beacon *, ld> (true, false, false, NULL, 0);
+    }
+
+  if (grouped_beacons.at (the_beacon.optimization_target).find (access_index) ==
+      grouped_beacons.at (the_beacon.optimization_target).end ())
+    {
+      return std::tuple<bool, bool, bool, Beacon *, ld> (true, false, false, NULL, 0);
+    }
+
+  if (grouped_beacons.at (the_beacon.optimization_target).at (access_index).size () <
+      the_beacon.optimization_target->no_beacons_per_optimization_target)
+    {
+      return std::tuple<bool, bool, bool, Beacon *, ld> (true, false, false, NULL, 0);
+    }
+
+  std::multimap<ld, Beacon *>::const_reverse_iterator worst_beacon_score =
+      grouped_beacons.at (the_beacon.optimization_target).at (access_index).rbegin ();
+  ld incoming_beacon_score =
+      calculate_score (the_beacon.optimization_target, the_beacon.static_info_extension);
+  ld lowest_previous_score = worst_beacon_score->first;
+  if (lowest_previous_score < incoming_beacon_score)
+    {
+      Beacon *to_be_removed_beacon = worst_beacon_score->second;
+      NS_ASSERT (to_be_removed_beacon->beacon_direction == the_beacon.beacon_direction);
+      NS_ASSERT (DST_AS_PTR (to_be_removed_beacon) == DST_AS (the_beacon));
+      return std::tuple<bool, bool, bool, Beacon *, ld> (true, false, false, to_be_removed_beacon,
+                                                         lowest_previous_score);
+    }
+
+  NS_ASSERT (the_beacon.beacon_direction != beacon_direction_t::PUSH_BASED ||
+             next_round_valid_beacons_count_per_dst_as.find (DST_AS (the_beacon)) !=
+                 next_round_valid_beacons_count_per_dst_as.end ());
+  return std::tuple<bool, bool, bool, Beacon *, ld> (false, false, false, NULL, 0);
+}
+
+void
+OnDemandOptimization::insert_to_algorithm_data_structures (Beacon *the_beacon, uint16_t sender_as,
+                                                           uint16_t remote_egress_if_no,
+                                                           uint16_t self_ingress_if_no)
+{
+  if (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED)
+    {
+      if (ORIGINATOR_PTR (the_beacon) == AS->as_number)
+        {
+          insert_to_forbidden_edges (the_beacon);
+          return;
+        }
+      else
+        {
+          visited_pull_based_src_dst_pair.insert (
+              std::make_pair (ORIGINATOR_PTR (the_beacon), DST_AS_PTR (the_beacon)));
+        }
+    }
+
+  auto &grouped_beacons =
+      (the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED)
+          ? push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group
+          : pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group.at (
+                pull_based_write);
+
+  uint16_t access_index = if_to_if_group.at (self_ingress_if_no);
+
+  if (grouped_beacons.find (the_beacon->optimization_target) == grouped_beacons.end ())
+    {
+      grouped_beacons.insert (
+          std::make_pair (the_beacon->optimization_target, beacons_with_the_same_opt_target_t ()));
+    }
+
+  if (grouped_beacons.at (the_beacon->optimization_target).find (access_index) ==
+      grouped_beacons.at (the_beacon->optimization_target).end ())
+    {
+      grouped_beacons.at (the_beacon->optimization_target)
+          .insert (std::make_pair (access_index,
+                                   beacons_with_the_same_opt_target_and_ingress_if_group_t ()));
+    }
+
+  ld incoming_beacon_score =
+      calculate_score (the_beacon->optimization_target, the_beacon->static_info_extension);
+
+  grouped_beacons.at (the_beacon->optimization_target)
+      .at (access_index)
+      .insert (std::make_pair (incoming_beacon_score, the_beacon));
+
+  if (the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED)
+    {
+      insert_to_forbidden_edges (the_beacon);
+    }
+}
+
+void
+OnDemandOptimization::delete_from_algorithm_data_structures (Beacon *the_beacon, ld replacement_key)
+{
+  if (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED &&
+      ORIGINATOR_PTR (the_beacon) == AS->as_number)
+    {
+      delete_from_forbidden_edges (the_beacon);
+      return;
+    }
+
+  uint16_t self_ingress_if = (the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED)
+                                 ? LOWER_16_BITS (the_beacon->the_path.back ())
+                                 : SECOND_UPPER_16_BITS (the_beacon->the_path.front ());
+
+  auto &grouped_beacons =
+      (the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED)
+          ? push_based_beacons_grouped_by_optimization_targets_and_ingress_if_group
+                .at (the_beacon->optimization_target)
+                .at (if_to_if_group.at (self_ingress_if))
+          : pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group
+                .at (pull_based_write)
+                .at (the_beacon->optimization_target)
+                .at (if_to_if_group.at (self_ingress_if));
+
+  for (auto it = grouped_beacons.lower_bound (replacement_key);
+       it != grouped_beacons.upper_bound (replacement_key); ++it)
+    {
+      if (it->second == the_beacon)
+        {
+          grouped_beacons.erase (it--);
+          break;
+        }
+    }
+
+  if (the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED)
+    {
+      delete_from_forbidden_edges (the_beacon);
+    }
+}
+
+ld
+OnDemandOptimization::calculate_score (const optimization_target_t *optimization_target,
+                                       const static_info_extension_t &static_info_extension)
+{
+  ld score = 0;
+  ld weights_sum = 0;
+  for (auto const &criteria : optimization_target->criteria)
+    {
+      weights_sum += criteria.second;
+      if (criteria.first == static_info_type_t::LATENCY)
+        { // in ms, assuming max latency is 1000 ms
+          score += (1 - static_info_extension.at (static_info_type_t::LATENCY) / 1000.0) *
+                   criteria.second;
+        }
+      else if (criteria.first == static_info_type_t::BW)
+        { // in Gbps, assuming max BW is 400 Gbps
+          score += static_info_extension.at (static_info_type_t::BW) / 400.0 * criteria.second;
+        }
+      else if (criteria.first == static_info_type_t::CO2)
+        { // in g/Gbps, assuming max is 10 g/Gbps
+          score +=
+              (1 - static_info_extension.at (static_info_type_t::CO2) / 10.0) * criteria.second;
+        }
+      else if (criteria.first == static_info_type_t::FORBIDDEN_EDGES)
+        {
+        }
+    }
+
+  if (weights_sum == 0)
+    {
+      return score;
+    }
+
+  return (score / weights_sum);
+}
+
+void
+OnDemandOptimization::update_algorithm_data_structures_periodic (Beacon *the_beacon,
+                                                                 bool invalidated)
+{
+  if (invalidated)
+    {
+      delete_from_forbidden_edges (the_beacon);
+    }
+}
+
+void
+OnDemandOptimization::update_state_before_beaconing ()
+{
+  BeaconServer::update_state_before_beaconing ();
+  if (now == first_pull_based_interval)
+    {
+      if (file_to_read_beacons != "none")
+        {
+          NS_ASSERT (!beacon_store.empty ());
+          for (auto const &dst_beacons : beacon_store)
+            {
+              for (auto const &len_beacons : dst_beacons.second)
+                {
+                  if (len_beacons.first == 1)
+                    {
+                      break;
+                    }
+
+                  for (auto const &the_beacon : len_beacons.second)
+                    {
+                      insert_to_forbidden_edges (the_beacon);
                     }
                 }
             }
-
-            check_max_tolerable_link_failures();
         }
 
-        NS_ASSERT(now == Simulator::Now().ToInteger(Time::MIN));
-        if (now >= first_pull_based_interval &&
-            (now / beaconing_period.ToInteger(Time::MIN)) % pull_based_dissemination_to_initiation_frequency == 0) {
-            if (!new_requested_pull_based_beacons.empty()) {
-                for (auto const &the_beacon : new_requested_pull_based_beacons) {
-                    NS_ASSERT(now - the_beacon->next_initiation_time >=  pull_based_dissemination_to_initiation_frequency * beaconing_period.ToInteger(Time::MIN));
-                    insert_to_forbidden_edges(the_beacon);
-                }
-                new_requested_pull_based_beacons.clear();
+      check_max_tolerable_link_failures ();
+    }
+
+  NS_ASSERT (now == Simulator::Now ().ToInteger (Time::MIN));
+  if (now >= first_pull_based_interval &&
+      (now / beaconing_period.ToInteger (Time::MIN)) %
+              pull_based_dissemination_to_initiation_frequency ==
+          0)
+    {
+      if (!new_requested_pull_based_beacons.empty ())
+        {
+          for (auto const &the_beacon : new_requested_pull_based_beacons)
+            {
+              NS_ASSERT (now - the_beacon->next_initiation_time >=
+                         pull_based_dissemination_to_initiation_frequency *
+                             beaconing_period.ToInteger (Time::MIN));
+              insert_to_forbidden_edges (the_beacon);
             }
-            visited_pull_based_src_dst_pair.clear();
-            if (now > first_pull_based_interval) {
-                check_max_tolerable_link_failures();
+          new_requested_pull_based_beacons.clear ();
+        }
+      visited_pull_based_src_dst_pair.clear ();
+      if (now > first_pull_based_interval)
+        {
+          check_max_tolerable_link_failures ();
+        }
+    }
+}
+
+void
+OnDemandOptimization::delete_from_forbidden_edges (Beacon *the_beacon)
+{
+  if (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED &&
+      ORIGINATOR_PTR (the_beacon) == AS->as_number &&
+      now - the_beacon->next_initiation_time <
+          pull_based_dissemination_to_initiation_frequency * beaconing_period.ToInteger (Time::MIN))
+    {
+      new_requested_pull_based_beacons.erase (the_beacon);
+      return;
+    }
+
+  uint16_t dst_as = DST_AS_PTR (the_beacon);
+
+  NS_ASSERT (the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED ||
+             ORIGINATOR_PTR (the_beacon) == AS->as_number);
+  NS_ASSERT (repetition_of_edges.find (dst_as) != repetition_of_edges.end ());
+
+  std::vector<link_information>::reverse_iterator hop = the_beacon->the_path.rbegin ();
+  for (; hop != the_beacon->the_path.rend (); ++hop)
+    {
+      uint32_t observed_edge;
+      uint16_t observed_as;
+      uint16_t observed_iface;
+
+      if (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED)
+        {
+          observed_edge = UPPER_32_BITS (*hop);
+          observed_as = UPPER_16_BITS (*hop);
+          observed_iface = SECOND_UPPER_16_BITS (*hop);
+        }
+      else
+        {
+          observed_edge = LOWER_32_BITS (*hop);
+          observed_as = SECOND_LOWER_16_BITS (*hop);
+          observed_iface = LOWER_16_BITS (*hop);
+        }
+      NS_ASSERT (repetition_of_edges.at (dst_as)->find (observed_edge) !=
+                 repetition_of_edges.at (dst_as)->end ());
+      repetition_of_edges.at (dst_as)->at (observed_edge)--;
+      edge_to_beacon.at (dst_as)->at (observed_edge).erase (the_beacon);
+
+      if (repetition_of_edges.at (dst_as)->at (observed_edge) == 0)
+        {
+          repetition_of_edges.at (dst_as)->erase (observed_edge);
+          edge_to_beacon.at (dst_as)->erase (observed_edge);
+          NS_ASSERT (set_of_forbidden_edges_per_destination_as.at (dst_as)->find (observed_as) !=
+                     set_of_forbidden_edges_per_destination_as.at (dst_as)->end ());
+          NS_ASSERT (
+              set_of_forbidden_edges_per_destination_as.at (dst_as)
+                  ->at (observed_as)
+                  ->find (observed_iface) !=
+              set_of_forbidden_edges_per_destination_as.at (dst_as)->at (observed_as)->end ());
+          set_of_forbidden_edges_per_destination_as.at (dst_as)
+              ->at (observed_as)
+              ->erase (observed_iface);
+          // We do not remove the observed AS as it is a set object in the heap
+        }
+    }
+}
+
+void
+OnDemandOptimization::insert_to_forbidden_edges (Beacon *the_beacon)
+{
+  if (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED &&
+      ORIGINATOR_PTR (the_beacon) == AS->as_number &&
+      now - the_beacon->next_initiation_time <
+          pull_based_dissemination_to_initiation_frequency * beaconing_period.ToInteger (Time::MIN))
+    {
+      new_requested_pull_based_beacons.insert (the_beacon);
+      return;
+    }
+
+  uint16_t dst_as = DST_AS_PTR (the_beacon);
+  NS_ASSERT (the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED ||
+             ORIGINATOR_PTR (the_beacon) == AS->as_number);
+
+  if (repetition_of_edges.find (dst_as) == repetition_of_edges.end ())
+    {
+      repetition_of_edges.insert (
+          std::make_pair (dst_as, new std::unordered_map<uint32_t, uint16_t> ()));
+      edge_to_beacon.insert (std::make_pair (
+          dst_as, new std::unordered_map<uint32_t, std::unordered_set<const Beacon *>> ()));
+      NS_ASSERT (set_of_forbidden_edges_per_destination_as.find (dst_as) ==
+                 set_of_forbidden_edges_per_destination_as.end ());
+      set_of_forbidden_edges_per_destination_as.insert (std::make_pair (
+          dst_as, new std::unordered_map<uint16_t, std::unordered_set<uint16_t> *> ()));
+    }
+
+  std::vector<link_information>::const_reverse_iterator hop = the_beacon->the_path.rbegin ();
+  for (; hop != the_beacon->the_path.rend (); ++hop)
+    {
+      uint32_t observed_edge;
+      uint16_t observed_as;
+      uint16_t observed_iface;
+
+      if (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED)
+        {
+          observed_edge = UPPER_32_BITS (*hop);
+          observed_as = UPPER_16_BITS (*hop);
+          observed_iface = SECOND_UPPER_16_BITS (*hop);
+        }
+      else
+        {
+          observed_edge = LOWER_32_BITS (*hop);
+          observed_as = SECOND_LOWER_16_BITS (*hop);
+          observed_iface = LOWER_16_BITS (*hop);
+        }
+
+      NS_ASSERT (repetition_of_edges.find (dst_as) != repetition_of_edges.end ());
+      NS_ASSERT (repetition_of_edges.at (dst_as) != NULL);
+      if (repetition_of_edges.at (dst_as)->find (observed_edge) ==
+          repetition_of_edges.at (dst_as)->end ())
+        {
+          repetition_of_edges.at (dst_as)->insert (std::make_pair (observed_edge, 0));
+          edge_to_beacon.at (dst_as)->insert (
+              std::make_pair (observed_edge, std::unordered_set<const Beacon *> ()));
+          NS_ASSERT (
+              set_of_forbidden_edges_per_destination_as.at (dst_as)->find (observed_as) ==
+                  set_of_forbidden_edges_per_destination_as.at (dst_as)->end () ||
+              set_of_forbidden_edges_per_destination_as.at (dst_as)
+                      ->at (observed_as)
+                      ->find (observed_iface) ==
+                  set_of_forbidden_edges_per_destination_as.at (dst_as)->at (observed_as)->end ());
+        }
+
+      edge_to_beacon.at (dst_as)->at (observed_edge).insert (the_beacon);
+      repetition_of_edges.at (dst_as)->at (observed_edge)++;
+      if (set_of_forbidden_edges_per_destination_as.at (dst_as)->find (observed_as) ==
+          set_of_forbidden_edges_per_destination_as.at (dst_as)->end ())
+        {
+          set_of_forbidden_edges_per_destination_as.at (dst_as)->insert (
+              std::make_pair (observed_as, new std::unordered_set<uint16_t> ()));
+        }
+      if (set_of_forbidden_edges_per_destination_as.at (dst_as)
+              ->at (observed_as)
+              ->find (observed_iface) ==
+          set_of_forbidden_edges_per_destination_as.at (dst_as)->at (observed_as)->end ())
+        {
+          set_of_forbidden_edges_per_destination_as.at (dst_as)
+              ->at (observed_as)
+              ->insert (observed_iface);
+        }
+    }
+}
+
+void
+OnDemandOptimization::check_max_tolerable_link_failures ()
+{
+  for (auto const &[dst_as, per_dst_edge_to_beacon] : edge_to_beacon)
+    {
+      auto per_dst_edge_to_beacon_copy = *per_dst_edge_to_beacon;
+
+      uint16_t max_tolerable_link_failure =
+          check_max_tolerable_link_failures_per_dst (per_dst_edge_to_beacon_copy, 0);
+
+      if (max_tolerable_link_failure < desired_max_tolerable_link_failures)
+        {
+          if (now == first_pull_based_interval)
+            {
+              create_optimization_targets_for_forbidden_edges (dst_as);
             }
+        }
+      else
+        {
+          remove_optimization_targets_for_forbidden_edges (dst_as);
+        }
+    }
+}
+
+uint16_t
+OnDemandOptimization::check_max_tolerable_link_failures_per_dst (
+    std::unordered_map<uint32_t, std::unordered_set<const Beacon *>> &per_dst_edge_to_beacon,
+    uint16_t max_tolerable_link_failure)
+{
+  if (per_dst_edge_to_beacon.empty ())
+    {
+      return max_tolerable_link_failure;
+    }
+
+  uint32_t max_edge = 0;
+  uint16_t max_repetition = 0;
+  for (auto const &[edge, beacons] : per_dst_edge_to_beacon)
+    {
+      if (beacons.size () > max_repetition)
+        {
+          max_edge = edge;
+          max_repetition = beacons.size ();
         }
     }
 
-    void OnDemandOptimization::delete_from_forbidden_edges(Beacon *the_beacon) {
-        if (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED &&
-            ORIGINATOR_PTR(the_beacon) == AS->as_number &&
-            now - the_beacon->next_initiation_time < pull_based_dissemination_to_initiation_frequency * beaconing_period.ToInteger(Time::MIN)) {
-            new_requested_pull_based_beacons.erase(the_beacon);
-            return;
-        }
+  for (auto const &the_beacon : per_dst_edge_to_beacon.at (max_edge))
+    {
+      std::vector<link_information>::const_reverse_iterator hop = the_beacon->the_path.rbegin ();
+      for (; hop != the_beacon->the_path.rend (); ++hop)
+        {
+          uint32_t observed_edge;
 
-        uint16_t dst_as = DST_AS_PTR(the_beacon);
-
-        NS_ASSERT(the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED ||
-                  ORIGINATOR_PTR(the_beacon) == AS->as_number);
-        NS_ASSERT(repetition_of_edges.find(dst_as) != repetition_of_edges.end());
-
-        std::vector<link_information>::reverse_iterator hop = the_beacon->the_path.rbegin();
-        for (; hop != the_beacon->the_path.rend(); ++hop) {
-            uint32_t observed_edge;
-            uint16_t observed_as;
-            uint16_t observed_iface;
-
-            if (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED) {
-                observed_edge = UPPER_32_BITS(*hop);
-                observed_as = UPPER_16_BITS(*hop);
-                observed_iface = SECOND_UPPER_16_BITS(*hop);
-            } else {
-                observed_edge = LOWER_32_BITS(*hop);
-                observed_as = SECOND_LOWER_16_BITS(*hop);
-                observed_iface = LOWER_16_BITS(*hop);
+          if (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED)
+            {
+              observed_edge = UPPER_32_BITS (*hop);
             }
-            NS_ASSERT(repetition_of_edges.at(dst_as)->find(observed_edge) != repetition_of_edges.at(dst_as)->end());
-            repetition_of_edges.at(dst_as)->at(observed_edge)--;
-            edge_to_beacon.at(dst_as)->at(observed_edge).erase(the_beacon);
-
-            if (repetition_of_edges.at(dst_as)->at(observed_edge) == 0) {
-                repetition_of_edges.at(dst_as)->erase(observed_edge);
-                edge_to_beacon.at(dst_as)->erase(observed_edge);
-                NS_ASSERT(set_of_forbidden_edges_per_destination_as.at(dst_as)->find(observed_as) !=
-                          set_of_forbidden_edges_per_destination_as.at(dst_as)->end());
-                NS_ASSERT(set_of_forbidden_edges_per_destination_as.at(dst_as)->at(observed_as)->find(observed_iface) !=
-                          set_of_forbidden_edges_per_destination_as.at(dst_as)->at(observed_as)->end());
-                set_of_forbidden_edges_per_destination_as.at(dst_as)->at(observed_as)->erase(observed_iface);
-                // We do not remove the observed AS as it is a set object in the heap
+          else
+            {
+              observed_edge = LOWER_32_BITS (*hop);
             }
+
+          if (observed_edge == max_edge)
+            {
+              continue;
+            }
+
+          per_dst_edge_to_beacon.at (observed_edge).erase (the_beacon);
         }
     }
 
-    void OnDemandOptimization::insert_to_forbidden_edges(Beacon *the_beacon) {
-        if (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED &&
-            ORIGINATOR_PTR(the_beacon) == AS->as_number &&
-            now - the_beacon->next_initiation_time < pull_based_dissemination_to_initiation_frequency * beaconing_period.ToInteger(Time::MIN)) {
-            new_requested_pull_based_beacons.insert(the_beacon);
-            return;
+  per_dst_edge_to_beacon.erase (max_edge);
+
+  for (auto it = per_dst_edge_to_beacon.begin (); it != per_dst_edge_to_beacon.end ();)
+    {
+      if (it->second.empty ())
+        {
+          it = per_dst_edge_to_beacon.erase (it);
         }
-
-        uint16_t dst_as = DST_AS_PTR(the_beacon);
-        NS_ASSERT(the_beacon->beacon_direction == beacon_direction_t::PUSH_BASED ||
-                  ORIGINATOR_PTR(the_beacon) == AS->as_number);
-
-        if (repetition_of_edges.find(dst_as) == repetition_of_edges.end()) {
-            repetition_of_edges.insert(std::make_pair(dst_as, new std::unordered_map<uint32_t, uint16_t>()));
-            edge_to_beacon.insert(std::make_pair(dst_as, new std::unordered_map<uint32_t, std::unordered_set<const Beacon*>>()));
-            NS_ASSERT(set_of_forbidden_edges_per_destination_as.find(dst_as) ==
-                      set_of_forbidden_edges_per_destination_as.end());
-            set_of_forbidden_edges_per_destination_as.insert(
-                    std::make_pair(dst_as, new std::unordered_map<uint16_t, std::unordered_set<uint16_t> *>()));
-        }
-
-        std::vector<link_information>::const_reverse_iterator hop = the_beacon->the_path.rbegin();
-        for (; hop != the_beacon->the_path.rend(); ++hop) {
-            uint32_t observed_edge;
-            uint16_t observed_as;
-            uint16_t observed_iface;
-
-            if (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED) {
-                observed_edge = UPPER_32_BITS(*hop);
-                observed_as = UPPER_16_BITS(*hop);
-                observed_iface = SECOND_UPPER_16_BITS(*hop);
-            } else {
-                observed_edge = LOWER_32_BITS(*hop);
-                observed_as = SECOND_LOWER_16_BITS(*hop);
-                observed_iface = LOWER_16_BITS(*hop);
-            }
-
-            NS_ASSERT(repetition_of_edges.find(dst_as) != repetition_of_edges.end());
-            NS_ASSERT(repetition_of_edges.at(dst_as) != NULL);
-            if (repetition_of_edges.at(dst_as)->find(observed_edge) == repetition_of_edges.at(dst_as)->end()) {
-                repetition_of_edges.at(dst_as)->insert(std::make_pair(observed_edge, 0));
-                edge_to_beacon.at(dst_as)->insert(std::make_pair(observed_edge, std::unordered_set<const Beacon*>()));
-                NS_ASSERT(set_of_forbidden_edges_per_destination_as.at(dst_as)->find(observed_as) ==
-                                  set_of_forbidden_edges_per_destination_as.at(dst_as)->end() ||
-                          set_of_forbidden_edges_per_destination_as.at(dst_as)->at(observed_as)->find(observed_iface) ==
-                                  set_of_forbidden_edges_per_destination_as.at(dst_as)->at(observed_as)->end());
-            }
-
-            edge_to_beacon.at(dst_as)->at(observed_edge).insert(the_beacon);
-            repetition_of_edges.at(dst_as)->at(observed_edge)++;
-            if (set_of_forbidden_edges_per_destination_as.at(dst_as)->find(observed_as) ==
-                set_of_forbidden_edges_per_destination_as.at(dst_as)->end()) {
-                set_of_forbidden_edges_per_destination_as.at(dst_as)->insert(
-                        std::make_pair(observed_as, new std::unordered_set<uint16_t>()));
-            }
-            if (set_of_forbidden_edges_per_destination_as.at(dst_as)->at(observed_as)->find(observed_iface) ==
-                set_of_forbidden_edges_per_destination_as.at(dst_as)->at(observed_as)->end()) {
-                set_of_forbidden_edges_per_destination_as.at(dst_as)->at(observed_as)->insert(observed_iface);
-            }
+      else
+        {
+          ++it;
         }
     }
 
-    void OnDemandOptimization::check_max_tolerable_link_failures() {
-        for (auto const & [dst_as, per_dst_edge_to_beacon] : edge_to_beacon) {
-            auto per_dst_edge_to_beacon_copy = *per_dst_edge_to_beacon;
+  return check_max_tolerable_link_failures_per_dst (per_dst_edge_to_beacon,
+                                                    max_tolerable_link_failure + 1);
+}
 
-            uint16_t max_tolerable_link_failure = check_max_tolerable_link_failures_per_dst( per_dst_edge_to_beacon_copy, 0);
+void
+OnDemandOptimization::create_optimization_targets_for_forbidden_edges (uint16_t dst_as)
+{
+  optimization_target_t *optimization_target =
+      new optimization_target_t (0xFFFF - AS->as_number, {{static_info_type_t::FORBIDDEN_EDGES, 1}},
+                                 optimization_direction_t::SYMMETRIC, dst_as, 0xFFFF, 1,
+                                 set_of_forbidden_edges_per_destination_as.at (dst_as));
 
-            if (max_tolerable_link_failure < desired_max_tolerable_link_failures) {
-                if (now == first_pull_based_interval) {
-                    create_optimization_targets_for_forbidden_edges(dst_as);
-                }
-            } else {
-                remove_optimization_targets_for_forbidden_edges(dst_as);
-            }
+  for (uint16_t iface = 0; iface < AS->GetNDevices (); ++iface)
+    {
+      if_to_pull_based_optimization_targets_map.insert (
+          std::make_pair (iface, optimization_target));
+    }
+}
+
+void
+OnDemandOptimization::remove_optimization_targets_for_forbidden_edges (uint16_t dst_as)
+{
+  for (auto it = if_to_pull_based_optimization_targets_map.begin ();
+       it != if_to_pull_based_optimization_targets_map.end ();)
+    {
+      if (it->second->target_as == dst_as)
+        {
+          it = if_to_pull_based_optimization_targets_map.erase (it);
+        }
+      else
+        {
+          ++it;
         }
     }
-
-    uint16_t OnDemandOptimization::check_max_tolerable_link_failures_per_dst(std::unordered_map<uint32_t, std::unordered_set<const Beacon*>>& per_dst_edge_to_beacon, uint16_t max_tolerable_link_failure) {
-        if (per_dst_edge_to_beacon.empty()) {
-            return max_tolerable_link_failure;
-        }
-
-        uint32_t max_edge = 0;
-        uint16_t max_repetition = 0;
-        for (auto const & [edge, beacons] : per_dst_edge_to_beacon) {
-            if (beacons.size() > max_repetition) {
-                max_edge = edge;
-                max_repetition = beacons.size();
-            }
-        }
-
-        for (auto const & the_beacon : per_dst_edge_to_beacon.at(max_edge)) {
-            std::vector<link_information>::const_reverse_iterator hop = the_beacon->the_path.rbegin();
-            for (; hop != the_beacon->the_path.rend(); ++hop) {
-                uint32_t observed_edge;
-
-                if (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED) {
-                    observed_edge = UPPER_32_BITS(*hop);
-                } else {
-                    observed_edge = LOWER_32_BITS(*hop);
-                }
-
-                if (observed_edge == max_edge) {
-                    continue;
-                }
-
-                per_dst_edge_to_beacon.at(observed_edge).erase(the_beacon);
-            }
-        }
-
-        per_dst_edge_to_beacon.erase(max_edge);
-
-        for (auto it = per_dst_edge_to_beacon.begin(); it != per_dst_edge_to_beacon.end();) {
-            if (it->second.empty()) {
-                it = per_dst_edge_to_beacon.erase(it);
-            } else {
-                ++it;
-            }
-        }
-
-        return check_max_tolerable_link_failures_per_dst(per_dst_edge_to_beacon, max_tolerable_link_failure + 1);
-
-    }
-
-
-    void OnDemandOptimization::create_optimization_targets_for_forbidden_edges(uint16_t dst_as) {
-        optimization_target_t *optimization_target = new optimization_target_t(
-                0xFFFF - AS->as_number, {{static_info_type_t::FORBIDDEN_EDGES, 1}}, optimization_direction_t::SYMMETRIC,
-                dst_as, 0xFFFF, 1, set_of_forbidden_edges_per_destination_as.at(dst_as));
-
-        for (uint16_t iface = 0; iface < AS->GetNDevices(); ++iface) {
-            if_to_pull_based_optimization_targets_map.insert(std::make_pair(iface, optimization_target));
-        }
-    }
-
-    void OnDemandOptimization::remove_optimization_targets_for_forbidden_edges(uint16_t dst_as) {
-        for (auto it = if_to_pull_based_optimization_targets_map.begin(); it != if_to_pull_based_optimization_targets_map.end();) {
-            if (it->second->target_as == dst_as) {
-                it = if_to_pull_based_optimization_targets_map.erase(it);
-            } else {
-                ++it;
-            }
-        }
-
-    }
+}
 
 } // namespace ns3

@@ -10,4 +10,5 @@
 #include "src/SCION/headers/scion_core_as.h"
 #include "src/SCION/headers/beaconing/beacon_server.h"
 
-namespace ns3 {}
+namespace ns3 {
+}

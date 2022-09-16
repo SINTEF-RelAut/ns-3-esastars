@@ -13,24 +13,30 @@
 
 namespace ns3 {
 
-    template<typename MEM, typename OBJ>
-    void RunParallelEvents(host_addr_t host_addr, MEM mem_ptr) {
-        omp_set_num_threads(NUM_CORE);
+template <typename MEM, typename OBJ>
+void
+RunParallelEvents (host_addr_t host_addr, MEM mem_ptr)
+{
+  omp_set_num_threads (NUM_CORE);
 #pragma omp parallel for schedule(dynamic)
-        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-            SCION_AS *node = dynamic_cast<SCION_AS *>(PeekPointer(nodes.Get(i)));
-            ((dynamic_cast<OBJ>(node->GetHost(host_addr)))->*mem_ptr)();
-        }
+  for (uint32_t i = 0; i < nodes.GetN (); ++i)
+    {
+      SCION_AS *node = dynamic_cast<SCION_AS *> (PeekPointer (nodes.Get (i)));
+      ((dynamic_cast<OBJ> (node->GetHost (host_addr)))->*mem_ptr) ();
     }
+}
 
-    template<typename MEM>
-    void RunParallelEvents(MEM mem_ptr) {
-        omp_set_num_threads(NUM_CORE);
+template <typename MEM>
+void
+RunParallelEvents (MEM mem_ptr)
+{
+  omp_set_num_threads (NUM_CORE);
 #pragma omp parallel for schedule(dynamic)
-        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-            SCION_AS *node = dynamic_cast<SCION_AS *>(PeekPointer(nodes.Get(i)));
-            ((node->GetBeaconServer())->*mem_ptr)();
-        }
+  for (uint32_t i = 0; i < nodes.GetN (); ++i)
+    {
+      SCION_AS *node = dynamic_cast<SCION_AS *> (PeekPointer (nodes.Get (i)));
+      ((node->GetBeaconServer ())->*mem_ptr) ();
     }
+}
 } // namespace ns3
 #endif //SCION_SIMULATOR_RUN_PARALLEL_EVENTS_H
