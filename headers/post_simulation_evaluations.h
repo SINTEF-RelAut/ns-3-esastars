@@ -40,19 +40,19 @@ public:
     REGISTER_FUN (PrintDistributionOfPathsWithSpecificHopCount)
     REGISTER_FUN (PrintNoBeaconsPerInterface)
     REGISTER_FUN (PrintNoBeaconsPerInterfacePerDstOrOpt)
-    REGISTER_FUN (PrintConsumedBWAtEachPeriod)
+    REGISTER_FUN (PrintConsumedBwAtEachPeriod)
     //             REGISTER_FUN(PrintPathQualities)
-    //             REGISTER_FUN(Evaluate_S_T_Connectivity)
+    //             REGISTER_FUN(EvaluateSTConnectivity)
     REGISTER_FUN (PrintMinimumLatencyDist)
     REGISTER_FUN (PrintPathNoDistribution)
-    REGISTER_FUN (FindMinLatencyToDNSRootServers)
+    REGISTER_FUN (FindMinLatencyToDnsRootServers)
     REGISTER_FUN (PrintPathPollutionIndex)
     REGISTER_FUN (PrintLeastPollutingPaths)
     REGISTER_FUN (PrintBestPerHopPollutionIndexes)
     //             REGISTER_FUN(PrintTransitTrafficBaseline)
     REGISTER_FUN (InvestigateAffectedTimeServers)
     REGISTER_FUN (PrintBeaconStores)
-    REGISTER_FUN (PrintConsumedBWForBeaconing)
+    REGISTER_FUN (PrintConsumedBwForBeaconing)
 
     REGISTER_FUN (PrintNumberOfValidBeaconEntriesInBeaconStore)
   }
@@ -71,17 +71,17 @@ public:
 
   void PrintNoBeaconsPerInterfacePerDstOrOpt ();
 
-  void PrintConsumedBWAtEachPeriod ();
+  void PrintConsumedBwAtEachPeriod ();
 
   void PrintPathQualities ();
 
-  void Evaluate_S_T_Connectivity ();
+  void EvaluateSTConnectivity ();
 
   void PrintMinimumLatencyDist ();
 
   void PrintPathNoDistribution ();
 
-  void FindMinLatencyToDNSRootServers ();
+  void FindMinLatencyToDnsRootServers ();
 
   void PrintPathPollutionIndex ();
 
@@ -93,7 +93,7 @@ public:
 
   void InvestigateAffectedTimeServers ();
 
-  void PrintConsumedBWForBeaconing ();
+  void PrintConsumedBwForBeaconing ();
 
   void PrintBeaconStores ();
 

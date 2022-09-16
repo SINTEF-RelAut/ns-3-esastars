@@ -85,7 +85,7 @@ PostSimulationEvaluations::PrintTrafficSentFromCollectorsPerDstPerPeriod ()
 }
 
 void
-PostSimulationEvaluations::FindMinLatencyToDNSRootServers ()
+PostSimulationEvaluations::FindMinLatencyToDnsRootServers ()
 {
   std::string probes_file = "/cluster/scratch/tabaeias/atlas_probes.xml";
   std::ifstream fin_probes (probes_file.c_str ());
@@ -701,7 +701,7 @@ PostSimulationEvaluations::PrintNoBeaconsPerInterface ()
 }
 
 void
-PostSimulationEvaluations::PrintConsumedBWAtEachPeriod ()
+PostSimulationEvaluations::PrintConsumedBwAtEachPeriod ()
 {
   for (Time t = Seconds (0.0); t < last_beaconing_event_time; t += beaconing_period)
     {
@@ -858,7 +858,7 @@ PostSimulationEvaluations::PrintPathNoDistribution ()
   for (uint32_t i = 0; i < AS_nodes.GetN (); ++i)
     {
       SCION_AS *node = dynamic_cast<SCION_AS *> (PeekPointer (AS_nodes.Get (i)));
-      for (auto const &dst_count_pair : node->GetBeaconServer ()->GetValidBeaconsCountPerDstAS ())
+      for (auto const &dst_count_pair : node->GetBeaconServer ()->GetValidBeaconsCountPerDstAs ())
         {
           if (distribution.find (dst_count_pair.second) == distribution.end ())
             {
@@ -1230,7 +1230,7 @@ PostSimulationEvaluations::PrintBestPerHopPollutionIndexes ()
 }
 
 void
-PostSimulationEvaluations::PrintConsumedBWForBeaconing ()
+PostSimulationEvaluations::PrintConsumedBwForBeaconing ()
 {
   for (uint32_t i = 0; i < AS_nodes.GetN (); ++i)
     {
@@ -1406,7 +1406,7 @@ PostSimulationEvaluations::InvestigateAffectedTimeServers ()
           time_server->path_selection = path_selection.first;
           time_server->number_of_paths_to_use_for_global_sync = path_selection.second;
 
-          time_server->construct_set_of_selected_paths ();
+          time_server->ConstructSetOfSelectedPaths ();
         }
 
       for (uint32_t rpt = 0; rpt < 20; ++rpt)

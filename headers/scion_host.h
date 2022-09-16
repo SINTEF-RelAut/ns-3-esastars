@@ -30,21 +30,21 @@ protected:
   cached_path_segs_dataset_t cached_core_path_segments;
   cached_path_segs_dataset_t cached_down_path_segments;
 
-  virtual void process_received_packet (uint16_t local_if, SCIONPacket *packet,
+  virtual void ProcessReceivedPacket (uint16_t local_if, SCIONPacket *packet,
                                         Time receive_time) override;
-  virtual void modify_pkt_upon_send (SCIONPacket *packet) override;
-  void remove_expired_segments ();
-  void search_in_cached_segments (ia_t dst_ia, std::vector<const PathSegment *> &path,
+  virtual void ModifyPktUponSend (SCIONPacket *packet) override;
+  void RemoveExpiredSegments ();
+  void SearchInCachedSegments (ia_t dst_ia, std::vector<const PathSegment *> &path,
                                   std::vector<uint8_t> &shortcuts);
-  void request_for_path_segments (ia_t dst_ia);
-  void send_request_for_path_segments (path_segment_type seg_type, ia_t src_ia, ia_t dst_ia);
+  void RequestForPathSegments (ia_t dst_ia);
+  void SendRequestForPathSegments (path_segment_type seg_type, ia_t src_ia, ia_t dst_ia);
 
-  void receive_registered_path_segments (path_segment_type seg_type, ia_t src_ia, ia_t dst_ia,
+  void ReceiveRegisteredPathSegments (path_segment_type seg_type, ia_t src_ia, ia_t dst_ia,
                                          const reg_path_segs_to_one_as_t *path_segments);
-  void receive_cached_path_segments (path_segment_type seg_type, ia_t src_ia, ia_t dst_ia,
+  void ReceiveCachedPathSegments (path_segment_type seg_type, ia_t src_ia, ia_t dst_ia,
                                      cached_path_segs_per_dst_t *path_seg);
 
-  void cache_path_segment (path_segment_type seg_type, ia_t src_ia, ia_t dst_ia,
+  void CachePathSegment (path_segment_type seg_type, ia_t src_ia, ia_t dst_ia,
                            PathSegment *path_seg);
 };
 } // namespace ns3

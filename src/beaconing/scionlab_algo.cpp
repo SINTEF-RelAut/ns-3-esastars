@@ -20,7 +20,7 @@ SCIONLAB::DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
 }
 
 void
-SCIONLAB::create_initial_static_info_extension (static_info_extension_t &static_info_extension,
+SCIONLAB::CreateInitialStaticInfoExtension (static_info_extension_t &static_info_extension,
                                                 uint16_t self_egress_if_no,
                                                 const optimization_target_t *optimization_target)
 {
@@ -30,7 +30,7 @@ SCIONLAB::create_initial_static_info_extension (static_info_extension_t &static_
 }
 
 void
-SCIONLAB::disseminate_beacons (neighbour_relation relation)
+SCIONLAB::DisseminateBeacons (neighbour_relation relation)
 {
   uint32_t neighbors_cnt = AS->neighbors.size ();
   std::vector<Beacon *> valid_candidates;
@@ -86,9 +86,9 @@ SCIONLAB::disseminate_beacons (neighbour_relation relation)
         }
 
       std::pair<Beacon *, int32_t> diversity_wr_to_selected =
-          select_most_diverse (selected_beacons_per_dst, selected_beacons_per_dst.at (0));
+          SelectMostDiverse (selected_beacons_per_dst, selected_beacons_per_dst.at (0));
       std::pair<Beacon *, int32_t> diversity_wr_to_rest =
-          select_most_diverse (rest_of_beacons, selected_beacons_per_dst.at (0));
+          SelectMostDiverse (rest_of_beacons, selected_beacons_per_dst.at (0));
 
       if (diversity_wr_to_rest.second > diversity_wr_to_selected.second)
         {
@@ -178,15 +178,15 @@ SCIONLAB::disseminate_beacons (neighbour_relation relation)
               static_info_extension.insert (std::make_pair (static_info_type_t::LATENCY, latency));
               static_info_extension.insert (std::make_pair (static_info_type_t::BW, bwd));
 
-              generate_beacon_and_send (the_beacon, egress_interface_no, remote_ingress_if_no,
-                                        remote_as, static_info_extension);
+              GenerateBeaconAndSend (the_beacon, egress_interface_no, remote_ingress_if_no,
+                                     remote_as, static_info_extension);
             }
         }
     }
 }
 
 std::tuple<bool, bool, bool, Beacon *, ld>
-SCIONLAB::alg_specific_import_policy (Beacon &the_beacon, uint16_t sender_as,
+SCIONLAB::AlgSpecificImportPolicy (Beacon &the_beacon, uint16_t sender_as,
                                       uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
                                       uint16_t now)
 {
@@ -207,24 +207,24 @@ SCIONLAB::alg_specific_import_policy (Beacon &the_beacon, uint16_t sender_as,
 }
 
 void
-SCIONLAB::insert_to_algorithm_data_structures (Beacon *the_beacon, uint16_t sender_as,
+SCIONLAB::InsertToAlgorithmDataStructures (Beacon *the_beacon, uint16_t sender_as,
                                                uint16_t remote_egress_if_no,
                                                uint16_t self_ingress_if_no)
 {
 }
 
 void
-SCIONLAB::delete_from_algorithm_data_structures (Beacon *the_beacon, ld replacement_key)
+SCIONLAB::DeleteFromAlgorithmDataStructures (Beacon *the_beacon, ld replacement_key)
 {
 }
 
 void
-SCIONLAB::update_algorithm_data_structures_periodic (Beacon *the_beacon, bool invalidated)
+SCIONLAB::UpdateAlgorithmDataStructuresPeriodic (Beacon *the_beacon, bool invalidated)
 {
 }
 
 std::pair<Beacon *, int32_t>
-SCIONLAB::select_most_diverse (std::vector<Beacon *> &beacons, Beacon *the_beacon)
+SCIONLAB::SelectMostDiverse (std::vector<Beacon *> &beacons, Beacon *the_beacon)
 {
   if (beacons.size () == 0)
     {
@@ -236,7 +236,7 @@ SCIONLAB::select_most_diverse (std::vector<Beacon *> &beacons, Beacon *the_beaco
 
   for (auto const &other_beacon : beacons)
     {
-      int32_t diversity = calc_diversity (the_beacon, other_beacon);
+      int32_t diversity = CalcDiversity (the_beacon, other_beacon);
       uint32_t l = other_beacon->the_path.size ();
 
       if (diversity > max_diversity || (diversity == max_diversity && min_len > l))
@@ -250,7 +250,7 @@ SCIONLAB::select_most_diverse (std::vector<Beacon *> &beacons, Beacon *the_beaco
 }
 
 int32_t
-SCIONLAB::calc_diversity (Beacon *beacon1, Beacon *beacon2)
+SCIONLAB::CalcDiversity (Beacon *beacon1, Beacon *beacon2)
 {
   int32_t diff = 0;
 

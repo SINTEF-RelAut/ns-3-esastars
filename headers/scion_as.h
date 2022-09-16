@@ -39,9 +39,9 @@ public:
   {
     PropertyContainer p = parseProperties (xml_node);
 
-    if (p.hasProperty ("isd"))
+    if (p.HasProperty ("isd"))
       {
-        isd_number = std::stoi (p.getProperty ("isd"));
+        isd_number = std::stoi (p.GetProperty ("isd"));
       }
     else
       {
@@ -65,7 +65,7 @@ public:
         border_routers_malicious_action = "no";
       }
 
-    instantiate_beacon_server (parallel_scheduler, xml_node, config);
+    InstantiateBeaconServer (parallel_scheduler, xml_node, config);
   }
 
   virtual ~SCION_AS ()
@@ -118,10 +118,10 @@ public:
 
   void AddHost (SCIONHost *host);
 
-  BorderRouter *AddBR (double latitude, double longitude, Time processing_delay,
+  BorderRouter *AddBr (double latitude, double longitude, Time processing_delay,
                        Time processing_throughput_delay);
 
-  void AddToRemoteASInfo (uint16_t remote_if, SCION_AS *remote_as);
+  void AddToRemoteAsInfo (uint16_t remote_if, SCION_AS *remote_as);
 
   friend class UserDefinedEvents;
 
@@ -136,10 +136,10 @@ protected:
 
   std::vector<std::pair<uint16_t, SCION_AS *>> remote_as_info;
 
-  void connect_internal_nodes (bool only_propagation_delay);
-  void initialize_latencies (bool only_propagation_delay);
+  void ConnectInternalNodes (bool only_propagation_delay);
+  void InitializeLatencies (bool only_propagation_delay);
 
-  void instantiate_beacon_server (bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
+  void InstantiateBeaconServer (bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
                                   const YAML::Node &config);
 };
 } // namespace ns3

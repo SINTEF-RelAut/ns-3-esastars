@@ -30,26 +30,25 @@ private:
   std::vector<std::vector<std::multimap<ld, Beacon *>>>
       beacons_per_dst_per_ing_if_sorted_by_latency;
 
-  void disseminate_beacons (neighbour_relation relation) override;
+  void DisseminateBeacons (neighbour_relation relation) override;
 
   std::tuple<bool, bool, bool, Beacon *, ld>
-  alg_specific_import_policy (Beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
+  AlgSpecificImportPolicy (Beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
                               uint16_t self_ingress_if_no, uint16_t now) override;
-  void insert_to_algorithm_data_structures (Beacon *the_beacon, uint16_t sender_as,
+  void InsertToAlgorithmDataStructures (Beacon *the_beacon, uint16_t sender_as,
                                             uint16_t remote_egress_if_no,
                                             uint16_t self_ingress_if_no) override;
 
-  void delete_from_algorithm_data_structures (Beacon *the_beacon, ld replacement_key) override;
+  void DeleteFromAlgorithmDataStructures (Beacon *the_beacon, ld replacement_key) override;
 
-  void
-  create_initial_static_info_extension (static_info_extension_t &static_info_extension,
+  void CreateInitialStaticInfoExtension (static_info_extension_t &static_info_extension,
                                         uint16_t self_egress_if_no,
                                         const optimization_target_t *optimization_target) override;
 
-  void update_algorithm_data_structures_periodic (Beacon *the_beacon, bool invalidated) override;
+  void UpdateAlgorithmDataStructuresPeriodic (Beacon *the_beacon, bool invalidated) override;
 
   std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>>
-  select_beacons_to_disseminate_per_dst_per_nbr (
+  SelectBeaconsToDisseminatePerDstPerNbr (
       uint16_t remote_as_no, uint16_t dst_as_no,
       const beacons_with_same_dst_as &beacons_to_the_dst_as);
 };

@@ -163,7 +163,7 @@ PropertyContainer::setProperty (const std::string &name, const std::string &valu
 }
 
 bool
-PropertyContainer::hasProperty (const std::string &name) const
+PropertyContainer::HasProperty (const std::string &name) const
 {
   propertiesType::const_iterator it = this->properties.find (name);
   if (it == this->properties.end ())

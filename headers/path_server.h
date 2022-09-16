@@ -41,16 +41,16 @@ private:
   cached_path_segs_dataset_t cached_up_segments;
   cached_path_segs_dataset_t cached_down_segments;
 
-  void process_received_packet (uint16_t local_if, SCIONPacket *packet, Time receive_time) override;
+  void ProcessReceivedPacket (uint16_t local_if, SCIONPacket *packet, Time receive_time) override;
 
-  void process_local_host_request_for_path (path_segment_type path_type, ia_t src_ia, ia_t dst_ia,
+  void ProcessLocalHostRequestForPath (path_segment_type path_type, ia_t src_ia, ia_t dst_ia,
                                             host_addr_t host_addr);
 
-  void send_registered_path_to_local_host (host_addr_t host_addr, path_segment_type path_type,
+  void SendRegisteredPathToLocalHost (host_addr_t host_addr, path_segment_type path_type,
                                            ia_t src_ia, ia_t dst_ia,
                                            const reg_path_segs_to_one_as_t *);
 
-  void return_list_of_all_core_ases (host_addr_t host_addr);
+  void ReturnListOfAllCoreAses (host_addr_t host_addr);
 };
 } // namespace ns3
 

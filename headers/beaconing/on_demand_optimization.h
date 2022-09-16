@@ -38,16 +38,16 @@ public:
 
         optimization_criteria_t optimization_criteria;
         PropertyContainer p = parseProperties (cur_target);
-        if (p.hasProperty ("bw") && std::stof (p.getProperty ("bw")) > 0.001)
+        if (p.HasProperty ("bw") && std::stof (p.GetProperty ("bw")) > 0.001)
           {
             optimization_criteria.insert (
-                std::make_pair (static_info_type_t::BW, std::stof (p.getProperty ("bw"))));
+                std::make_pair (static_info_type_t::BW, std::stof (p.GetProperty ("bw"))));
           }
 
-        if (p.hasProperty ("latency") && std::stof (p.getProperty ("latency")) > 0.001)
+        if (p.HasProperty ("latency") && std::stof (p.GetProperty ("latency")) > 0.001)
           {
             optimization_criteria.insert (std::make_pair (static_info_type_t::LATENCY,
-                                                          std::stof (p.getProperty ("latency"))));
+                                                          std::stof (p.GetProperty ("latency"))));
           }
 
         std::string direction = cur_target->first_node ("direction")->value ();
@@ -106,30 +106,29 @@ private:
       set_of_forbidden_edges_per_destination_as;
   std::unordered_set<Beacon *> new_requested_pull_based_beacons;
 
-  void initiate_beacons_per_interface (uint16_t self_egress_if_no, SCION_AS *remote_as,
+  void InitiateBeaconsPerInterface (uint16_t self_egress_if_no, SCION_AS *remote_as,
                                        uint16_t remote_ingress_if_no) override;
 
-  void
-  create_initial_static_info_extension (static_info_extension_t &static_info_extension,
+  void CreateInitialStaticInfoExtension (static_info_extension_t &static_info_extension,
                                         uint16_t self_egress_if_no,
                                         const optimization_target_t *optimization_target) override;
 
-  void disseminate_beacons (neighbour_relation relation) override;
+  void DisseminateBeacons (neighbour_relation relation) override;
 
   std::tuple<bool, bool, bool, Beacon *, ld>
-  alg_specific_import_policy (Beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
+  AlgSpecificImportPolicy (Beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
                               uint16_t self_ingress_if_no, uint16_t now) override;
 
-  void insert_to_algorithm_data_structures (Beacon *the_beacon, uint16_t sender_as,
+  void InsertToAlgorithmDataStructures (Beacon *the_beacon, uint16_t sender_as,
                                             uint16_t remote_egress_if_no,
                                             uint16_t self_ingress_if_no) override;
 
-  void delete_from_algorithm_data_structures (Beacon *the_beacon, ld replacement_key) override;
+  void DeleteFromAlgorithmDataStructures (Beacon *the_beacon, ld replacement_key) override;
 
-  static ld calculate_score (const optimization_target_t *optimization_target,
+  static ld CalculateScore (const optimization_target_t *optimization_target,
                              const static_info_extension_t &static_info_extension);
 
-  void select_beacons_to_disseminate_per_target_per_nbr (
+  void SelectBeaconsToDisseminatePerTargetPerNbr (
       uint16_t remote_as_no,
       const beacons_with_the_same_opt_target_t &beacons_with_the_same_opt_target,
       const optimization_target_t *optimization_target,
@@ -138,34 +137,34 @@ private:
                                                             SCION_AS *, static_info_extension_t>,
                                                  std::greater<ld>>> &selected_beacons);
 
-  void send_selected_beacons_per_target_per_nbr (
+  void SendSelectedBeaconsPerTargetPerNbr (
       const std::unordered_map<
           uint16_t,
           std::multimap<
               ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>,
               std::greater<ld>>> &selected_beacons);
 
-  void extend_static_info_extension (const Beacon *the_beacon, uint16_t beacon_ingress_if_no,
+  void ExtendStaticInfoExtension (const Beacon *the_beacon, uint16_t beacon_ingress_if_no,
                                      uint16_t candidate_egress_if_no,
                                      static_info_extension_t &propagation_static_info);
 
-  void update_state_before_beaconing () override;
+  void UpdateStateBeforeBeaconing () override;
 
-  void update_algorithm_data_structures_periodic (Beacon *the_beacon, bool invalidated) override;
+  void UpdateAlgorithmDataStructuresPeriodic (Beacon *the_beacon, bool invalidated) override;
 
-  void delete_from_forbidden_edges (Beacon *the_beacon);
+  void DeleteFromForbiddenEdges (Beacon *the_beacon);
 
-  void insert_to_forbidden_edges (Beacon *the_beacon);
+  void InsertToForbiddenEdges (Beacon *the_beacon);
 
-  void check_max_tolerable_link_failures ();
+  void CheckMaxTolerableLinkFailures ();
 
-  uint16_t check_max_tolerable_link_failures_per_dst (
+  uint16_t CheckMaxTolerableLinkFailuresPerDst (
       std::unordered_map<uint32_t, std::unordered_set<const Beacon *>> &per_dst_edge_to_beacon,
       uint16_t max_tolerable_link_failure);
 
-  void create_optimization_targets_for_forbidden_edges (uint16_t dst_as);
+  void CreateOptimizationTargetsForForbiddenEdges (uint16_t dst_as);
 
-  void remove_optimization_targets_for_forbidden_edges (uint16_t dst_as);
+  void RemoveOptimizationTargetsForForbiddenEdges (uint16_t dst_as);
 };
 } // namespace ns3
 #endif //SCION_SIMULATOR_ON_DEMAND_OPTIMIZATION_H

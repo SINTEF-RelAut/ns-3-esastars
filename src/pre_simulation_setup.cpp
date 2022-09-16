@@ -75,9 +75,9 @@ InstantiateASesFromTopo (rapidxml::xml_node<> *xml_root,
       PropertyContainer p = parseProperties (cur_xml_node);
       std::string type;
 
-      if (p.hasProperty ("type"))
+      if (p.HasProperty ("type"))
         {
-          type = p.getProperty ("type");
+          type = p.GetProperty ("type");
         }
       else
         {
@@ -87,8 +87,8 @@ InstantiateASesFromTopo (rapidxml::xml_node<> *xml_root,
       bool malicious_border_routers = false;
       if (config["border_router"] && config["border_router"]["malicious_action"])
         {
-          assert (p.hasProperty ("malicious"));
-          if (p.getProperty ("malicious") == "True")
+          assert (p.HasProperty ("malicious"));
+          if (p.GetProperty ("malicious") == "True")
             {
               malicious_border_routers = true;
             }
@@ -114,9 +114,9 @@ InstantiateASesFromTopo (rapidxml::xml_node<> *xml_root,
 
       int32_t real_as_no = std::stoi (getAttribute (cur_xml_node, "id"));
       uint16_t isd_number = 0;
-      if (p.hasProperty ("isd"))
+      if (p.HasProperty ("isd"))
         {
-          isd_number = std::stoi (p.getProperty ("isd"));
+          isd_number = std::stoi (p.GetProperty ("isd"));
         }
 
       as_to_isd_map.insert (std::make_pair (alias_as_no, isd_number));
@@ -351,10 +351,10 @@ InstantiateLinksFromTopo (rapidxml::xml_node<> *xml_root, NodeContainer &AS_node
 
       PropertyContainer p = parseProperties (curr_xml_node);
 
-      ld latitude = std::stod (p.getProperty ("latitude"));
-      ld longitude = std::stod (p.getProperty ("longitude"));
-      int32_t bwd = std::stoi (p.getProperty ("capacity"));
-      std::string rel = "core"; //p.getProperty("rel");
+      ld latitude = std::stod (p.GetProperty ("latitude"));
+      ld longitude = std::stod (p.GetProperty ("longitude"));
+      int32_t bwd = std::stoi (p.GetProperty ("capacity"));
+      std::string rel = "core"; //p.GetProperty("rel");
       neighbour_relation relation;
 
       // Check for the 3 possibilities in CAIDA topology
@@ -390,24 +390,24 @@ InstantiateLinksFromTopo (rapidxml::xml_node<> *xml_root, NodeContainer &AS_node
       PointToPointHelper helper;
       helper.Install (from_AS, to_AS);
 
-      to_AS->AddToRemoteASInfo (from_AS->GetNDevices () - 1, PeekPointer (from_AS));
+      to_AS->AddToRemoteAsInfo (from_AS->GetNDevices () - 1, PeekPointer (from_AS));
       to_AS->interfaces_coordinates.push_back (std::pair<ld, ld> (latitude, longitude));
       to_AS->coordinates_to_interfaces.insert (std::make_pair (
           std::pair<ld, ld> (latitude, longitude), to_AS->interfaces_coordinates.size () - 1));
 
-      if (p.hasProperty ("to_if_id"))
+      if (p.HasProperty ("to_if_id"))
         {
-          assert ((uint32_t) std::stoi (p.getProperty ("to_if_id")) == to_AS->GetNDevices () - 1);
+          assert ((uint32_t) std::stoi (p.GetProperty ("to_if_id")) == to_AS->GetNDevices () - 1);
         }
 
-      from_AS->AddToRemoteASInfo (to_AS->GetNDevices () - 1, PeekPointer (to_AS));
+      from_AS->AddToRemoteAsInfo (to_AS->GetNDevices () - 1, PeekPointer (to_AS));
       from_AS->interfaces_coordinates.push_back (std::pair<ld, ld> (latitude, longitude));
       from_AS->coordinates_to_interfaces.insert (std::make_pair (
           std::pair<ld, ld> (latitude, longitude), from_AS->interfaces_coordinates.size () - 1));
 
-      if (p.hasProperty ("from_if_id"))
+      if (p.HasProperty ("from_if_id"))
         {
-          assert ((uint32_t) std::stoi (p.getProperty ("from_if_id")) ==
+          assert ((uint32_t) std::stoi (p.GetProperty ("from_if_id")) ==
                   from_AS->GetNDevices () - 1);
         }
 
@@ -446,9 +446,9 @@ InstantiateLinksFromTopo (rapidxml::xml_node<> *xml_root, NodeContainer &AS_node
               from_processing_throughput_delay = PicoSeconds (200);
             }
 
-          BorderRouter *to_br = to_AS->AddBR (latitude, longitude, to_processing_delay,
+          BorderRouter *to_br = to_AS->AddBr (latitude, longitude, to_processing_delay,
                                               to_processing_throughput_delay);
-          BorderRouter *from_br = from_AS->AddBR (latitude, longitude, from_processing_delay,
+          BorderRouter *from_br = from_AS->AddBr (latitude, longitude, from_processing_delay,
                                                   from_processing_throughput_delay);
 
           to_br->AddToPropagationDelays (to_propagation_delay);
@@ -457,8 +457,8 @@ InstantiateLinksFromTopo (rapidxml::xml_node<> *xml_root, NodeContainer &AS_node
           from_br->AddToPropagationDelays (from_propagation_delay);
           from_br->AddToTransmissionDelays (from_transmission_delay);
 
-          to_br->AddToIFForwadingTable (to_AS->GetNDevices () - 1, to_br->GetNDevices () - 1);
-          from_br->AddToIFForwadingTable (from_AS->GetNDevices () - 1, from_br->GetNDevices () - 1);
+          to_br->AddToIfForwadingTable (to_AS->GetNDevices () - 1, to_br->GetNDevices () - 1);
+          from_br->AddToIfForwadingTable (from_AS->GetNDevices () - 1, from_br->GetNDevices () - 1);
 
           to_br->AddToRemoteNodesInfo (from_br, from_br->GetNDevices () - 1, from_AS->isd_number,
                                        from_AS->as_number);

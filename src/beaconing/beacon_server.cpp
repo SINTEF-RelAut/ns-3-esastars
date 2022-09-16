@@ -30,7 +30,7 @@ void BeaconServer::PerLinkInitializations (rapidxml::xml_node<> *xml_node,
                                            const YAML::Node &config){};
 
 void
-BeaconServer::SetAS (SCION_AS *AS)
+BeaconServer::SetAs (SCION_AS *AS)
 {
   this->AS = AS;
 }
@@ -41,10 +41,10 @@ BeaconServer::ScheduleBeaconing (Time last_beaconing_event_time)
   if (parallel_scheduler)
     {
       Simulator::Schedule (Seconds (0), &RunParallelEvents<void (BeaconServer::*) ()>,
-                           &BeaconServer::read_beacons);
+                           &BeaconServer::ReadBeacons);
       Simulator::Schedule (last_beaconing_event_time + TimeStep (2),
                            &RunParallelEvents<void (BeaconServer::*) ()>,
-                           &BeaconServer::write_beacons);
+                           &BeaconServer::WriteBeacons);
     }
   for (Time t = Seconds (0); t <= last_beaconing_event_time; t += beaconing_period)
     {
@@ -54,27 +54,27 @@ BeaconServer::ScheduleBeaconing (Time last_beaconing_event_time)
             {
               Simulator::Schedule (t + AS->latency_between_path_server_and_beacon_server,
                                    &RunParallelEvents<void (BeaconServer::*) ()>,
-                                   &BeaconServer::register_to_local_path_server);
+                                   &BeaconServer::RegisterToLocalPathServer);
             }
           Simulator::Schedule (t, &RunParallelEvents<void (BeaconServer::*) ()>,
-                               &BeaconServer::update_state_before_beaconing);
+                               &BeaconServer::UpdateStateBeforeBeaconing);
 
           Simulator::Schedule (t + TimeStep (1), &RunParallelEvents<void (BeaconServer::*) ()>,
-                               &BeaconServer::update_state_periodic);
+                               &BeaconServer::UpdateStatePeriodic);
         }
 
       if (dynamic_cast<SCION_Core_AS *> (AS) != NULL)
         {
-          Simulator::Schedule (t, &BeaconServer::disseminate_beacons, this,
+          Simulator::Schedule (t, &BeaconServer::DisseminateBeacons, this,
                                neighbour_relation::CORE);
 
-          Simulator::Schedule (t, &BeaconServer::initiate_beacons, this, neighbour_relation::CORE);
-          Simulator::Schedule (t, &BeaconServer::initiate_beacons, this,
+          Simulator::Schedule (t, &BeaconServer::InitiateBeacons, this, neighbour_relation::CORE);
+          Simulator::Schedule (t, &BeaconServer::InitiateBeacons, this,
                                neighbour_relation::CUSTOMER);
         }
       else
         {
-          Simulator::Schedule (t, &BeaconServer::disseminate_beacons, this,
+          Simulator::Schedule (t, &BeaconServer::DisseminateBeacons, this,
                                neighbour_relation::CUSTOMER);
         }
     }
@@ -120,7 +120,7 @@ BeaconServer::InsertPulledBeaconsToBeaconStore ()
 }
 
 void
-BeaconServer::update_beacon_state (Beacon *the_beacon)
+BeaconServer::UpdateBeaconState (Beacon *the_beacon)
 {
   uint16_t dst_as = DST_AS_PTR (the_beacon);
   NS_ASSERT (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED ||
@@ -134,7 +134,7 @@ BeaconServer::update_beacon_state (Beacon *the_beacon)
           if (!the_beacon->is_valid)
             {
               the_beacon->is_valid = true;
-              increment_valid_beacons_count (dst_as);
+              IncrementValidBeaconsCount (dst_as);
             }
           the_beacon->initiation_time = the_beacon->next_initiation_time;
           the_beacon->expiration_time = the_beacon->next_expiration_time;
@@ -144,20 +144,20 @@ BeaconServer::update_beacon_state (Beacon *the_beacon)
   if (the_beacon->expiration_time <= next_period && the_beacon->is_valid)
     {
       the_beacon->is_valid = false;
-      decrement_valid_beacons_count (dst_as);
-      decrement_next_round_valid_beacons_count (dst_as);
+      DecrementValidBeaconsCount (dst_as);
+      DecrementNextRoundValidBeaconsCount (dst_as);
     }
 }
 
 void
-BeaconServer::create_initial_static_info_extension (
+BeaconServer::CreateInitialStaticInfoExtension (
     static_info_extension_t &static_info_extension, uint16_t self_egress_if_no,
     const optimization_target_t *optimization_target)
 {
 }
 
 void
-BeaconServer::initiate_beacons (neighbour_relation relation)
+BeaconServer::InitiateBeacons (neighbour_relation relation)
 {
   NS_ASSERT (now == (uint16_t) Simulator::Now ().ToInteger (Time::MIN));
   uint32_t neighbors_cnt = AS->neighbors.size ();
@@ -181,24 +181,24 @@ BeaconServer::initiate_beacons (neighbour_relation relation)
           uint16_t remote_ingress_if_no = remote_as_if_pair.first;
           SCION_AS *remote_as = remote_as_if_pair.second;
 
-          initiate_beacons_per_interface (self_egress_if_no, remote_as, remote_ingress_if_no);
+          InitiateBeaconsPerInterface (self_egress_if_no, remote_as, remote_ingress_if_no);
         }
     }
 }
 
 void
-BeaconServer::initiate_beacons_per_interface (uint16_t self_egress_if_no, SCION_AS *remote_as,
+BeaconServer::InitiateBeaconsPerInterface (uint16_t self_egress_if_no, SCION_AS *remote_as,
                                               uint16_t remote_ingress_if_no)
 {
   static_info_extension_t static_info_extension;
-  create_initial_static_info_extension (static_info_extension, self_egress_if_no, NULL);
+  CreateInitialStaticInfoExtension (static_info_extension, self_egress_if_no, NULL);
 
-  generate_beacon_and_send (NULL, self_egress_if_no, remote_ingress_if_no, remote_as,
-                            static_info_extension);
+  GenerateBeaconAndSend (NULL, self_egress_if_no, remote_ingress_if_no, remote_as,
+                         static_info_extension);
 }
 
 void
-BeaconServer::generate_beacon_and_send (Beacon *selected_beacon, uint16_t self_egress_if_no,
+BeaconServer::GenerateBeaconAndSend (Beacon *selected_beacon, uint16_t self_egress_if_no,
                                         uint16_t remote_ingress_if_no, SCION_AS *remote_as,
                                         static_info_extension_t &static_info_extension,
                                         const optimization_target_t *optimization_target,
@@ -257,13 +257,13 @@ BeaconServer::generate_beacon_and_send (Beacon *selected_beacon, uint16_t self_e
                                 initiation_time, expiration_time, next_initiation_time,
                                 next_expiration_time, true, false, new_path, key, new_isd_path);
 
-  increment_control_plane_bytes_sent (to_disseminate_beacon, self_egress_if_no);
+  IncrementControlPlaneBytesSent (to_disseminate_beacon, self_egress_if_no);
   remote_as->ReceiveBeacon (to_disseminate_beacon, AS->as_number, self_egress_if_no,
                             remote_ingress_if_no);
 }
 
 void
-BeaconServer::update_state_periodic ()
+BeaconServer::UpdateStatePeriodic ()
 {
   pull_based_read = (pull_based_read + 1) % 2;
   pull_based_write = (pull_based_write + 1) % 2;
@@ -277,17 +277,17 @@ BeaconServer::update_state_periodic ()
           Beacon *the_beacon = &the_beacon_pair.second;
 
           bool was_valid = the_beacon->is_valid;
-          update_beacon_state (the_beacon);
+          UpdateBeaconState (the_beacon);
           bool is_valid = the_beacon->is_valid;
           bool invalidated = was_valid && (!is_valid);
 
-          update_algorithm_data_structures_periodic (the_beacon, invalidated);
+          UpdateAlgorithmDataStructuresPeriodic (the_beacon, invalidated);
         }
     }
 }
 
 void
-BeaconServer::insert_beacon (Beacon &the_beacon, uint16_t dst_as, uint16_t sender_as,
+BeaconServer::InsertBeacon (Beacon &the_beacon, uint16_t dst_as, uint16_t sender_as,
                              uint16_t remote_egress_if, uint16_t local_ingress_if, bool path_exists,
                              bool existing_path_valid, Beacon *beacon_to_replace)
 {
@@ -303,11 +303,11 @@ BeaconServer::insert_beacon (Beacon &the_beacon, uint16_t dst_as, uint16_t sende
 
       if (ORIGINATOR (the_beacon) == AS->as_number)
         {
-          increment_next_round_valid_beacons_count (dst_as);
+          IncrementNextRoundValidBeaconsCount (dst_as);
         }
 
-      insert_to_algorithm_data_structures (to_insert_beacon, sender_as, remote_egress_if,
-                                           local_ingress_if);
+      InsertToAlgorithmDataStructures (to_insert_beacon, sender_as, remote_egress_if,
+                                       local_ingress_if);
       return;
     }
 
@@ -319,15 +319,15 @@ BeaconServer::insert_beacon (Beacon &the_beacon, uint16_t dst_as, uint16_t sende
 
       if (!existing_path_valid)
         {
-          increment_next_round_valid_beacons_count (dst_as);
-          insert_to_algorithm_data_structures (beacon_to_replace, sender_as, remote_egress_if,
-                                               local_ingress_if);
+          IncrementNextRoundValidBeaconsCount (dst_as);
+          InsertToAlgorithmDataStructures (beacon_to_replace, sender_as, remote_egress_if,
+                                           local_ingress_if);
         }
       return;
     }
   else
     {
-      increment_next_round_valid_beacons_count (dst_as);
+      IncrementNextRoundValidBeaconsCount (dst_as);
 
       NS_ASSERT (push_based_beacon_container.find (the_beacon.key) ==
                  push_based_beacon_container.end ());
@@ -353,13 +353,13 @@ BeaconServer::insert_beacon (Beacon &the_beacon, uint16_t dst_as, uint16_t sende
           beacon_store.at (dst_as).at (path_len).insert (to_insert_beacon);
         }
 
-      insert_to_algorithm_data_structures (to_insert_beacon, sender_as, remote_egress_if,
-                                           local_ingress_if);
+      InsertToAlgorithmDataStructures (to_insert_beacon, sender_as, remote_egress_if,
+                                       local_ingress_if);
     }
 }
 
 void
-BeaconServer::increment_valid_beacons_count (uint16_t dst_as)
+BeaconServer::IncrementValidBeaconsCount (uint16_t dst_as)
 {
   if (valid_beacons_count_per_dst_as.find (dst_as) == valid_beacons_count_per_dst_as.end ())
     {
@@ -372,7 +372,7 @@ BeaconServer::increment_valid_beacons_count (uint16_t dst_as)
 }
 
 void
-BeaconServer::increment_next_round_valid_beacons_count (uint16_t dst_as)
+BeaconServer::IncrementNextRoundValidBeaconsCount (uint16_t dst_as)
 {
   if (next_round_valid_beacons_count_per_dst_as.find (dst_as) ==
       next_round_valid_beacons_count_per_dst_as.end ())
@@ -386,7 +386,7 @@ BeaconServer::increment_next_round_valid_beacons_count (uint16_t dst_as)
 }
 
 void
-BeaconServer::delete_beacon (Beacon *to_be_removed_beacon, ld replacement_key, uint16_t dst_as)
+BeaconServer::DeleteBeacon (Beacon *to_be_removed_beacon, ld replacement_key, uint16_t dst_as)
 {
   if (to_be_removed_beacon->beacon_direction == beacon_direction_t::PUSH_BASED)
     {
@@ -417,12 +417,12 @@ BeaconServer::delete_beacon (Beacon *to_be_removed_beacon, ld replacement_key, u
     {
       if (to_be_removed_beacon->is_new)
         {
-          decrement_next_round_valid_beacons_count (dst_as);
+          DecrementNextRoundValidBeaconsCount (dst_as);
         }
       else if (to_be_removed_beacon->is_valid)
         {
-          decrement_valid_beacons_count (dst_as);
-          decrement_next_round_valid_beacons_count (dst_as);
+          DecrementValidBeaconsCount (dst_as);
+          DecrementNextRoundValidBeaconsCount (dst_as);
         }
     }
 
@@ -435,12 +435,12 @@ BeaconServer::delete_beacon (Beacon *to_be_removed_beacon, ld replacement_key, u
 
   NS_ASSERT (beacon_container.find (to_be_removed_beacon->key) != beacon_container.end ());
 
-  delete_from_algorithm_data_structures (to_be_removed_beacon, replacement_key);
+  DeleteFromAlgorithmDataStructures (to_be_removed_beacon, replacement_key);
   beacon_container.erase (to_be_removed_beacon->key);
 }
 
 void
-BeaconServer::decrement_valid_beacons_count (uint16_t dst_as)
+BeaconServer::DecrementValidBeaconsCount (uint16_t dst_as)
 {
   NS_ASSERT (valid_beacons_count_per_dst_as.find (dst_as) !=
                  valid_beacons_count_per_dst_as.end () &&
@@ -453,7 +453,7 @@ BeaconServer::decrement_valid_beacons_count (uint16_t dst_as)
 }
 
 void
-BeaconServer::decrement_next_round_valid_beacons_count (uint16_t dst_as)
+BeaconServer::DecrementNextRoundValidBeaconsCount (uint16_t dst_as)
 {
   NS_ASSERT (next_round_valid_beacons_count_per_dst_as.find (dst_as) !=
                  next_round_valid_beacons_count_per_dst_as.end () &&
@@ -466,7 +466,7 @@ BeaconServer::decrement_next_round_valid_beacons_count (uint16_t dst_as)
 }
 
 void
-BeaconServer::increment_control_plane_bytes_sent (Beacon &the_beacon, uint16_t interface)
+BeaconServer::IncrementControlPlaneBytesSent (Beacon &the_beacon, uint16_t interface)
 {
   beacons_sent_per_interface.at (interface)++;
   beacons_sent_per_interface_per_period.at (now).at (interface)++;
@@ -511,7 +511,7 @@ BeaconServer::ReceiveBeacon (Beacon &received_beacon, uint16_t sender_as, uint16
   ld replacement_key;
 
   std::tie (to_import, path_exists, existing_path_valid, beacon_to_replace, replacement_key) =
-      import_policy (received_beacon, sender_as, remote_if, local_if, now);
+      ImportPolicy (received_beacon, sender_as, remote_if, local_if, now);
 
   NS_ASSERT (received_beacon.beacon_direction != beacon_direction_t::PUSH_BASED ||
              next_round_valid_beacons_count_per_dst_as.find (dst_as) !=
@@ -526,15 +526,15 @@ BeaconServer::ReceiveBeacon (Beacon &received_beacon, uint16_t sender_as, uint16
   if (!path_exists && beacon_to_replace != NULL)
     {
       NS_ASSERT (DST_AS_PTR (beacon_to_replace) == DST_AS (received_beacon));
-      delete_beacon (beacon_to_replace, replacement_key, dst_as);
+      DeleteBeacon (beacon_to_replace, replacement_key, dst_as);
     }
 
-  insert_beacon (received_beacon, dst_as, sender_as, remote_if, local_if, path_exists,
-                 existing_path_valid, beacon_to_replace);
+  InsertBeacon (received_beacon, dst_as, sender_as, remote_if, local_if, path_exists,
+                existing_path_valid, beacon_to_replace);
 }
 
 std::tuple<bool, bool, bool, Beacon *, ld>
-BeaconServer::import_policy (Beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
+BeaconServer::ImportPolicy (Beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
                              uint16_t self_ingress_if_no, uint16_t now)
 {
   if (the_beacon.beacon_direction == beacon_direction_t::PUSH_BASED)
@@ -558,12 +558,12 @@ BeaconServer::import_policy (Beacon &the_beacon, uint16_t sender_as, uint16_t re
         }
     }
 
-  return alg_specific_import_policy (the_beacon, sender_as, remote_egress_if_no, self_ingress_if_no,
-                                     now);
+  return AlgSpecificImportPolicy (the_beacon, sender_as, remote_egress_if_no, self_ingress_if_no,
+                                  now);
 }
 
 void
-BeaconServer::update_state_before_beaconing ()
+BeaconServer::UpdateStateBeforeBeaconing ()
 {
   now = (uint16_t) Simulator::Now ().ToInteger (Time::MIN);
   next_period = now + (uint16_t) beaconing_period.ToInteger (Time::MIN);
@@ -580,7 +580,7 @@ BeaconServer::GetCurrentTime () const
 }
 
 void
-BeaconServer::register_to_local_path_server ()
+BeaconServer::RegisterToLocalPathServer ()
 {
   std::map<int32_t, std::unordered_map<std::string, Beacon> &> beacon_containers = {
       {1, push_based_beacon_container}, {2, requested_pull_based_beacon_container}};
@@ -615,7 +615,7 @@ BeaconServer::register_to_local_path_server ()
 }
 
 std::pair<ld, ld>
-BeaconServer::calculate_final_diversity_scores (Beacon *the_beacon)
+BeaconServer::CalculateFinalDiversityScores (Beacon *the_beacon)
 {
   ld AS_level_diversity_score = 0;
   ld link_level_diversity_score = 0;
@@ -643,7 +643,7 @@ BeaconServer::calculate_final_diversity_scores (Beacon *the_beacon)
 }
 
 const std::vector<std::vector<ld>> &
-BeaconServer::GetIntraASEnergies () const
+BeaconServer::GetIntraAsEnergies () const
 {
   return intra_as_energies;
 }
@@ -673,13 +673,13 @@ BeaconServer::GetPathMapToBeacon () const
 }
 
 const std::unordered_map<uint16_t, uint32_t> &
-BeaconServer::GetValidBeaconsCountPerDstAS () const
+BeaconServer::GetValidBeaconsCountPerDstAs () const
 {
   return valid_beacons_count_per_dst_as;
 }
 
 const std::unordered_map<uint16_t, uint32_t> &
-BeaconServer::GetNextRoundValidBeaconsCountPerDstAS () const
+BeaconServer::GetNextRoundValidBeaconsCountPerDstAs () const
 {
   return next_round_valid_beacons_count_per_dst_as;
 }
@@ -719,7 +719,7 @@ BeaconServer::GetBeaconsSentPerInterface () const
 }
 
 void
-BeaconServer::read_beacons ()
+BeaconServer::ReadBeacons ()
 {
   if (file_to_read_beacons == "none")
     {
@@ -766,13 +766,13 @@ BeaconServer::read_beacons ()
           beacon_store.at (dst_as).at (path_len).insert (to_insert_beacon);
         }
 
-      increment_valid_beacons_count (dst_as);
-      increment_next_round_valid_beacons_count (dst_as);
+      IncrementValidBeaconsCount (dst_as);
+      IncrementNextRoundValidBeaconsCount (dst_as);
     }
 }
 
 void
-BeaconServer::write_beacons ()
+BeaconServer::WriteBeacons ()
 {
   if (file_to_write_beacons == "none")
     {

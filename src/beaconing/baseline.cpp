@@ -21,7 +21,7 @@ Baseline::DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
 }
 
 void
-Baseline::create_initial_static_info_extension (static_info_extension_t &static_info_extension,
+Baseline::CreateInitialStaticInfoExtension (static_info_extension_t &static_info_extension,
                                                 uint16_t self_egress_if_no,
                                                 const optimization_target_t *optimization_target)
 {
@@ -31,7 +31,7 @@ Baseline::create_initial_static_info_extension (static_info_extension_t &static_
 }
 
 void
-Baseline::disseminate_beacons (neighbour_relation relation)
+Baseline::DisseminateBeacons (neighbour_relation relation)
 {
   uint32_t neighbors_cnt = AS->neighbors.size ();
   omp_set_num_threads (NUM_CORE);
@@ -120,9 +120,8 @@ Baseline::disseminate_beacons (neighbour_relation relation)
                           std::make_pair (static_info_type_t::LATENCY, latency));
                       static_info_extension.insert (std::make_pair (static_info_type_t::BW, bwd));
 
-                      generate_beacon_and_send (the_beacon, egress_interface_no,
-                                                remote_ingress_if_no, remote_as,
-                                                static_info_extension);
+                      GenerateBeaconAndSend (the_beacon, egress_interface_no, remote_ingress_if_no,
+                                             remote_as, static_info_extension);
                     }
                 }
             }
@@ -131,7 +130,7 @@ Baseline::disseminate_beacons (neighbour_relation relation)
 }
 
 std::tuple<bool, bool, bool, Beacon *, ld>
-Baseline::alg_specific_import_policy (Beacon &the_beacon, uint16_t sender_as,
+Baseline::AlgSpecificImportPolicy (Beacon &the_beacon, uint16_t sender_as,
                                       uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
                                       uint16_t now)
 {
@@ -152,19 +151,19 @@ Baseline::alg_specific_import_policy (Beacon &the_beacon, uint16_t sender_as,
 }
 
 void
-Baseline::insert_to_algorithm_data_structures (Beacon *the_beacon, uint16_t sender_as,
+Baseline::InsertToAlgorithmDataStructures (Beacon *the_beacon, uint16_t sender_as,
                                                uint16_t remote_egress_if_no,
                                                uint16_t self_ingress_if_no)
 {
 }
 
 void
-Baseline::delete_from_algorithm_data_structures (Beacon *the_beacon, ld replacement_key)
+Baseline::DeleteFromAlgorithmDataStructures (Beacon *the_beacon, ld replacement_key)
 {
 }
 
 void
-Baseline::update_algorithm_data_structures_periodic (Beacon *the_beacon, bool invalidated)
+Baseline::UpdateAlgorithmDataStructuresPeriodic (Beacon *the_beacon, bool invalidated)
 {
 }
 

@@ -28,7 +28,7 @@ void
 SCION_AS::DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
                              const YAML::Node &config)
 {
-  initialize_latencies (true);
+  InitializeLatencies (true);
 
   AS_max_bwd = 0;
   for (auto const curr_bwd : inter_as_bwds)
@@ -46,8 +46,8 @@ void
 SCION_AS::DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
                              const YAML::Node &config, bool only_propagation_delay)
 {
-  connect_internal_nodes (only_propagation_delay);
-  initialize_latencies (only_propagation_delay);
+  ConnectInternalNodes (only_propagation_delay);
+  InitializeLatencies (only_propagation_delay);
 
   for (auto const &br : border_routers)
     {
@@ -140,7 +140,7 @@ SCION_AS::AddHost (SCIONHost *host)
 }
 
 BorderRouter *
-SCION_AS::AddBR (double latitude, double longitude, Time processing_delay,
+SCION_AS::AddBr (double latitude, double longitude, Time processing_delay,
                  Time processing_throughput_delay)
 {
   BorderRouter *the_br = new BorderRouter (0, isd_number, as_number, 0, latitude, longitude, this);
@@ -153,7 +153,7 @@ SCION_AS::AddBR (double latitude, double longitude, Time processing_delay,
 }
 
 void
-SCION_AS::connect_internal_nodes (bool only_propagation_delay)
+SCION_AS::ConnectInternalNodes (bool only_propagation_delay)
 {
   Time malicious_delay = TimeStep (0);
   if (malicious_border_routers &&
@@ -229,12 +229,12 @@ SCION_AS::connect_internal_nodes (bool only_propagation_delay)
 
           for (uint16_t as_if : border_router_to_if.at (br1))
             {
-              br2->AddToIFForwadingTable (as_if, br2->GetNDevices () - 1);
+              br2->AddToIfForwadingTable (as_if, br2->GetNDevices () - 1);
             }
 
           for (uint16_t as_if : border_router_to_if.at (br2))
             {
-              br1->AddToIFForwadingTable (as_if, br1->GetNDevices () - 1);
+              br1->AddToIfForwadingTable (as_if, br1->GetNDevices () - 1);
             }
         }
     }
@@ -273,7 +273,7 @@ SCION_AS::connect_internal_nodes (bool only_propagation_delay)
 
           for (uint16_t as_if : border_router_to_if.at (br))
             {
-              host->AddToIFForwadingTable (as_if, host->GetNDevices () - 1);
+              host->AddToIfForwadingTable (as_if, host->GetNDevices () - 1);
             }
 
           br->AddToAddressForwardingTable (host->GetLocalAddress (), br->GetNDevices () - 1);
@@ -312,7 +312,7 @@ SCION_AS::connect_internal_nodes (bool only_propagation_delay)
 
       for (uint16_t as_if : border_router_to_if.at (br))
         {
-          path_server->AddToIFForwadingTable (as_if, path_server->GetNDevices () - 1);
+          path_server->AddToIfForwadingTable (as_if, path_server->GetNDevices () - 1);
         }
 
       br->AddToAddressForwardingTable (path_server->GetLocalAddress (), br->GetNDevices () - 1);
@@ -392,7 +392,7 @@ SCION_AS::connect_internal_nodes (bool only_propagation_delay)
 }
 
 void
-SCION_AS::initialize_latencies (bool only_propagation_delay)
+SCION_AS::InitializeLatencies (bool only_propagation_delay)
 {
   latencies_between_interfaces.resize (GetNDevices ());
 
@@ -424,13 +424,13 @@ SCION_AS::initialize_latencies (bool only_propagation_delay)
 }
 
 void
-SCION_AS::AddToRemoteASInfo (uint16_t remote_if, SCION_AS *remote_as)
+SCION_AS::AddToRemoteAsInfo (uint16_t remote_if, SCION_AS *remote_as)
 {
   remote_as_info.push_back (std::make_pair (remote_if, remote_as));
 }
 
 void
-SCION_AS::instantiate_beacon_server (bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
+SCION_AS::InstantiateBeaconServer (bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
                                      const YAML::Node &config)
 {
   std::string beaconing_policy_str = config["beacon_service"]["policy"].as<std::string> ();

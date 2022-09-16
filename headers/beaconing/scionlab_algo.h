@@ -25,29 +25,28 @@ public:
                           const YAML::Node &config) override;
 
 private:
-  void disseminate_beacons (neighbour_relation relation) override;
+  void DisseminateBeacons (neighbour_relation relation) override;
 
   std::tuple<bool, bool, bool, Beacon *, ld>
-  alg_specific_import_policy (Beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
+  AlgSpecificImportPolicy (Beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
                               uint16_t self_ingress_if_no, uint16_t now) override;
 
-  void insert_to_algorithm_data_structures (Beacon *the_beacon, uint16_t sender_as,
+  void InsertToAlgorithmDataStructures (Beacon *the_beacon, uint16_t sender_as,
                                             uint16_t remote_egress_if_no,
                                             uint16_t self_ingress_if_no) override;
 
-  void delete_from_algorithm_data_structures (Beacon *the_beacon, ld replacement_key) override;
+  void DeleteFromAlgorithmDataStructures (Beacon *the_beacon, ld replacement_key) override;
 
-  void
-  create_initial_static_info_extension (static_info_extension_t &static_info_extension,
+  void CreateInitialStaticInfoExtension (static_info_extension_t &static_info_extension,
                                         uint16_t self_egress_if_no,
                                         const optimization_target_t *optimization_target) override;
 
-  void update_algorithm_data_structures_periodic (Beacon *the_beacon, bool invalidated) override;
+  void UpdateAlgorithmDataStructuresPeriodic (Beacon *the_beacon, bool invalidated) override;
 
-  std::pair<Beacon *, int32_t> select_most_diverse (std::vector<Beacon *> &beacons,
+  std::pair<Beacon *, int32_t> SelectMostDiverse (std::vector<Beacon *> &beacons,
                                                     Beacon *the_beacon);
 
-  static int32_t calc_diversity (Beacon *beacon1, Beacon *beacon2);
+  static int32_t CalcDiversity (Beacon *beacon1, Beacon *beacon2);
 };
 } // namespace ns3
 #endif //SCION_SIMULATOR_SCIONLAB_ALGO_H

@@ -45,9 +45,9 @@ std::string getAttribute (rapidxml::xml_node<> *node, const std::string &name);
 class PropertyContainer
 {
 public:
-  std::string getProperty (const std::string &name) const;
+  std::string GetProperty (const std::string &name) const;
   void setProperty (const std::string &name, const std::string &value);
-  bool hasProperty (const std::string &name) const;
+  bool HasProperty (const std::string &name) const;
 
 private:
   typedef std::map<std::string, std::string> propertiesType;

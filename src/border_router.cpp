@@ -8,7 +8,7 @@
 namespace ns3 {
 NS_LOG_COMPONENT_DEFINE ("BorderRouter");
 void
-BorderRouter::process_received_packet (uint16_t if_rcv, SCIONPacket *packet, Time receive_time)
+BorderRouter::ProcessReceivedPacket (uint16_t if_rcv, SCIONPacket *packet, Time receive_time)
 {
   NS_LOG_FUNCTION ("packet received " << packet);
   NS_LOG_FUNCTION (
@@ -23,7 +23,7 @@ BorderRouter::process_received_packet (uint16_t if_rcv, SCIONPacket *packet, Tim
       << ", ing:" << GET_HOP_ING_IF (packet->path.at (packet->curr_inf)->hops.at (packet->cur_hopf))
       << ", eg:" << GET_HOP_EG_IF (packet->path.at (packet->curr_inf)->hops.at (packet->cur_hopf)));
 
-  SCIONCapableNode::process_received_packet (if_rcv, packet, Time ());
+  SCIONCapableNode::ProcessReceivedPacket (if_rcv, packet, Time ());
 
   if (packet->src_ia == packet->dst_ia)
     {
@@ -45,7 +45,7 @@ BorderRouter::process_received_packet (uint16_t if_rcv, SCIONPacket *packet, Tim
         }
 
       uint16_t local_if_to_send = forwarding_table_to_addresses_inside_as.at (packet->dst_host);
-      schedule_for_send (local_if_to_send, packet);
+      ScheduleForSend (local_if_to_send, packet);
 
       return;
     }
@@ -116,7 +116,7 @@ BorderRouter::process_received_packet (uint16_t if_rcv, SCIONPacket *packet, Tim
   NS_ASSERT (packet->cur_hopf < packet->path.at (packet->curr_inf)->hops.size ());
 
   uint16_t local_if_to_send = forwarding_table_to_other_AS_ifaces.at (as_if_to_send);
-  schedule_for_send (local_if_to_send, packet);
+  ScheduleForSend (local_if_to_send, packet);
 }
 
 } // namespace ns3

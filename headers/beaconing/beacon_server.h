@@ -44,14 +44,14 @@ public:
   {
     non_requested_pull_based_beacon_container.resize (2);
     PropertyContainer p = parseProperties (xml_node);
-    if (p.hasProperty ("dirty_energy_ratio"))
+    if (p.HasProperty ("dirty_energy_ratio"))
       {
-        dirty_energy_ratio = std::stod (p.getProperty ("dirty_energy_ratio"));
+        dirty_energy_ratio = std::stod (p.GetProperty ("dirty_energy_ratio"));
       }
 
-    if (p.hasProperty ("sun_energy_ratio"))
+    if (p.HasProperty ("sun_energy_ratio"))
       {
-        sun_energy_ratio = std::stod (p.getProperty ("sun_energy_ratio"));
+        sun_energy_ratio = std::stod (p.GetProperty ("sun_energy_ratio"));
       }
 
     if (config["beacon_service"]["read_beacons_directory"])
@@ -82,7 +82,7 @@ public:
 
   virtual void PerLinkInitializations (rapidxml::xml_node<> *xml_node, const YAML::Node &config);
 
-  void SetAS (SCION_AS *AS);
+  void SetAs (SCION_AS *AS);
 
   void ReceiveBeacon (Beacon &received_beacon, uint16_t sender_as, uint16_t remote_if,
                       uint16_t local_if);
@@ -93,7 +93,7 @@ public:
 
   const uint16_t GetCurrentTime () const;
 
-  const std::vector<std::vector<ld>> &GetIntraASEnergies () const;
+  const std::vector<std::vector<ld>> &GetIntraAsEnergies () const;
 
   float GetDirtyEnergyRatio () const;
 
@@ -103,9 +103,9 @@ public:
 
   const std::unordered_map<std::string, Beacon> &GetPathMapToBeacon () const;
 
-  const std::unordered_map<uint16_t, uint32_t> &GetValidBeaconsCountPerDstAS () const;
+  const std::unordered_map<uint16_t, uint32_t> &GetValidBeaconsCountPerDstAs () const;
 
-  const std::unordered_map<uint16_t, uint32_t> &GetNextRoundValidBeaconsCountPerDstAS () const;
+  const std::unordered_map<uint16_t, uint32_t> &GetNextRoundValidBeaconsCountPerDstAs () const;
 
   const std::unordered_map<uint16_t, std::vector<uint32_t>> &
   GetBytesSentPerInterfacePerPeriod () const;
@@ -166,75 +166,73 @@ protected:
 
   std::vector<uint64_t> beacons_sent_per_interface;
 
-  void initiate_beacons (neighbour_relation relation);
+  void InitiateBeacons (neighbour_relation relation);
 
-  virtual void initiate_beacons_per_interface (uint16_t self_egress_if_no, SCION_AS *remote_as,
+  virtual void InitiateBeaconsPerInterface (uint16_t self_egress_if_no, SCION_AS *remote_as,
                                                uint16_t remote_ingress_if_no);
 
-  virtual void
-  create_initial_static_info_extension (static_info_extension_t &static_info_extension,
+  virtual void CreateInitialStaticInfoExtension (static_info_extension_t &static_info_extension,
                                         uint16_t self_egress_if_no,
                                         const optimization_target_t *optimization_target);
 
-  virtual void disseminate_beacons (neighbour_relation relation) = 0;
+  virtual void DisseminateBeacons (neighbour_relation relation) = 0;
 
-  void
-  generate_beacon_and_send (Beacon *selected_beacon, uint16_t self_egress_if_no,
+  void GenerateBeaconAndSend (Beacon *selected_beacon, uint16_t self_egress_if_no,
                             uint16_t remote_ingress_if_no, SCION_AS *remote_as,
                             static_info_extension_t &static_info_extension,
                             const optimization_target_t *optimization_target = NULL,
                             beacon_direction_t beacon_direction = beacon_direction_t::PUSH_BASED);
 
-  std::tuple<bool, bool, bool, Beacon *, ld> import_policy (Beacon &the_beacon, uint16_t sender_as,
+  std::tuple<bool, bool, bool, Beacon *, ld> ImportPolicy (Beacon &the_beacon, uint16_t sender_as,
                                                             uint16_t remote_egress_if_no,
                                                             uint16_t self_ingress_if_no,
                                                             uint16_t now);
 
-  void insert_beacon (Beacon &the_beacon, uint16_t dst_as, uint16_t sender_as,
+  void InsertBeacon (Beacon &the_beacon, uint16_t dst_as, uint16_t sender_as,
                       uint16_t remote_egress_if, uint16_t local_ingress_if, bool path_exists,
                       bool existing_path_valid, Beacon *beacon_to_replace);
 
-  void increment_valid_beacons_count (uint16_t dst_as);
+  void IncrementValidBeaconsCount (uint16_t dst_as);
 
-  void increment_next_round_valid_beacons_count (uint16_t dst_as);
+  void IncrementNextRoundValidBeaconsCount (uint16_t dst_as);
 
-  void delete_beacon (Beacon *to_be_removed_beacon, ld replacement_key, uint16_t dst_as);
+  void DeleteBeacon (Beacon *to_be_removed_beacon, ld replacement_key, uint16_t dst_as);
 
-  void decrement_valid_beacons_count (uint16_t dst_as);
+  void DecrementValidBeaconsCount (uint16_t dst_as);
 
-  void decrement_next_round_valid_beacons_count (uint16_t dst_as);
+  void DecrementNextRoundValidBeaconsCount (uint16_t dst_as);
 
   virtual std::tuple<bool, bool, bool, Beacon *, ld>
-  alg_specific_import_policy (Beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
+  AlgSpecificImportPolicy (Beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
                               uint16_t self_ingress_if_no, uint16_t now) = 0;
 
-  virtual void insert_to_algorithm_data_structures (Beacon *the_beacon, uint16_t sender_as,
+  virtual void InsertToAlgorithmDataStructures (Beacon *the_beacon, uint16_t sender_as,
                                                     uint16_t remote_egress_if_no,
                                                     uint16_t self_ingress_if_no) = 0;
 
-  virtual void delete_from_algorithm_data_structures (Beacon *the_beacon, ld replacement_key) = 0;
+  virtual void DeleteFromAlgorithmDataStructures (Beacon *the_beacon, ld replacement_key) = 0;
 
-  void update_state_periodic ();
+  void UpdateStatePeriodic ();
 
-  virtual void update_state_before_beaconing ();
+  virtual void UpdateStateBeforeBeaconing ();
 
-  void update_beacon_state (Beacon *the_beacon);
+  void UpdateBeaconState (Beacon *the_beacon);
 
-  virtual void update_algorithm_data_structures_periodic (Beacon *the_beacon, bool invalidated) = 0;
+  virtual void UpdateAlgorithmDataStructuresPeriodic (Beacon *the_beacon, bool invalidated) = 0;
 
-  void register_to_local_path_server ();
+  void RegisterToLocalPathServer ();
 
-  void increment_control_plane_bytes_sent (Beacon &the_beacon, uint16_t interface);
+  void IncrementControlPlaneBytesSent (Beacon &the_beacon, uint16_t interface);
 
-  std::pair<ld, ld> calculate_final_diversity_scores (Beacon *the_beacon);
+  std::pair<ld, ld> CalculateFinalDiversityScores (Beacon *the_beacon);
 
   friend void ReadBr2BrEnergy (ns3::NodeContainer AS_nodes,
                                std::map<int32_t, uint16_t> real_to_alias_as_no,
                                const YAML::Node &config);
 
-  void read_beacons ();
+  void ReadBeacons ();
 
-  void write_beacons ();
+  void WriteBeacons ();
 };
 
 void ReadBr2BrEnergy (NodeContainer AS_nodes, std::map<int32_t, uint16_t> real_to_alias_as_no,

@@ -67,7 +67,7 @@ PeriodicBeaconingCheckPoint ()
     {
       all_connected_pairs += DynamicCast<SCION_AS> (nodes.Get (i))
                                  ->GetBeaconServer ()
-                                 ->GetValidBeaconsCountPerDstAS ()
+                                 ->GetValidBeaconsCountPerDstAs ()
                                  .size ();
     }
   std::cout << all_connected_pairs << std::endl;

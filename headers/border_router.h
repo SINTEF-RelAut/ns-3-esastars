@@ -25,7 +25,7 @@ public:
   }
 
 private:
-  void process_received_packet (uint16_t local_if, SCIONPacket *packet, Time receive_time) override;
+  void ProcessReceivedPacket (uint16_t local_if, SCIONPacket *packet, Time receive_time) override;
 };
 } // namespace ns3
 #endif //SCION_SIMULATOR_BORDER_ROUTER_H

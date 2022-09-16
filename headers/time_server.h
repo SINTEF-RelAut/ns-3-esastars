@@ -173,55 +173,55 @@ private:
 
   std::unordered_map<ia_t, std::unordered_set<const PathSegment *>> set_of_selected_paths;
 
-  Time get_reference_time ();
+  Time GetReferenceTime ();
 
-  Time get_max_drift (Time duration);
+  Time GetMaxDrift (Time duration);
 
-  void request_set_of_all_core_ases_from_path_server ();
+  void RequestSetOfAllCoreAsesFromPathServer ();
 
-  void request_for_paths_to_all_core_ases ();
+  void RequestForPathsToAllCoreAses ();
 
-  void send_set_of_all_core_ases_to_neighbors ();
+  void SendSetOfAllCoreAsesToNeighbors ();
 
-  void send_ntp_req_to_peers ();
+  void SendNtpReqToPeers ();
 
-  void modify_pkt_upon_send (SCIONPacket *packet) override;
+  void ModifyPktUponSend (SCIONPacket *packet) override;
 
-  void receive_set_of_all_core_ases_from_path_server (SCIONPacket *packet);
+  void ReceiveSetOfAllCoreAsesFromPathServer (SCIONPacket *packet);
 
-  void construct_set_of_selected_paths ();
+  void ConstructSetOfSelectedPaths ();
 
-  void construct_set_of_shortest_paths ();
+  void ConstructSetOfShortestPaths ();
 
-  void construct_set_of_random_paths ();
+  void ConstructSetOfRandomPaths ();
 
-  void construct_set_of_most_disjoint_paths ();
+  void ConstructSetOfMostDisjointPaths ();
 
-  void read_set_of_disjoint_paths ();
+  void ReadSetOfDisjointPaths ();
 
-  void write_set_of_disjoint_paths ();
+  void WriteSetOfDisjointPaths ();
 
-  void receive_set_of_all_core_ases_from_other_time_server (SCIONPacket *packet);
+  void ReceiveSetOfAllCoreAsesFromOtherTimeServer (SCIONPacket *packet);
 
-  void receive_ntp_req_from_peer (SCIONPacket *packet, Time receive_time);
+  void ReceiveNtpReqFromPeer (SCIONPacket *packet, Time receive_time);
 
-  void receive_ntp_res_from_peer (SCIONPacket *packet, Time receive_time);
+  void ReceiveNtpResFromPeer (SCIONPacket *packet, Time receive_time);
 
-  void trigger_core_time_sync_algo ();
+  void TriggerCoreTimeSyncAlgo ();
 
-  void continue_global_time_sync ();
+  void ContinueGlobalTimeSync ();
 
-  void correct_local_time (int64_t corr, Time duration, double coefficient);
+  void CorrectLocalTime (int64_t corr, Time duration, double coefficient);
 
-  void process_received_packet (uint16_t local_if, SCIONPacket *packet, Time receive_time) override;
+  void ProcessReceivedPacket (uint16_t local_if, SCIONPacket *packet, Time receive_time) override;
 
-  void capture_local_snapshot ();
+  void CaptureLocalSnapshot ();
 
-  void capture_offset_diff ();
+  void CaptureOffsetDiff ();
 
-  void compare_offs_with_real_offs ();
+  void CompareOffsWithRealOffs ();
 
-  void reset_time ();
+  void ResetTime ();
 };
 } // namespace ns3
 
