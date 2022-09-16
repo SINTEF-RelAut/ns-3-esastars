@@ -33,7 +33,7 @@ def build(bld):
     headers = bld(features='ns3header')
     headers.module = 'SCION'
 
-    model.source = ['model/beaconing/baseline.h',
+    headers.source = ['model/beaconing/baseline.h',
                          'model/beaconing/beacon.h',
                          'model/beaconing/beacon_server.h',
                          'model/beaconing/diversity_age_based.h',
