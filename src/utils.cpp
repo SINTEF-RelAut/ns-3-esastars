@@ -145,7 +145,7 @@ getAttribute (rapidxml::xml_node<> *node, const std::string &name)
 }
 
 std::string
-PropertyContainer::getProperty (const std::string &name) const
+PropertyContainer::GetProperty (const std::string &name) const
 {
   propertiesType::const_iterator it;
   it = this->properties.find (name);
@@ -157,7 +157,7 @@ PropertyContainer::getProperty (const std::string &name) const
 }
 
 void
-PropertyContainer::setProperty (const std::string &name, const std::string &value)
+PropertyContainer::SetProperty (const std::string &name, const std::string &value)
 {
   this->properties[name] = value;
 }
@@ -187,7 +187,7 @@ parseProperties (rapidxml::xml_node<> *node)
       std::string name = getAttribute (curNode, "name");
       if (name != "")
         {
-          p.setProperty (name, curNode->value ());
+          p.SetProperty (name, curNode->value ());
         }
       curNode = curNode->next_sibling ("property");
     }

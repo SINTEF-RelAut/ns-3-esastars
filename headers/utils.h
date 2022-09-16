@@ -46,7 +46,7 @@ class PropertyContainer
 {
 public:
   std::string GetProperty (const std::string &name) const;
-  void setProperty (const std::string &name, const std::string &value);
+  void SetProperty (const std::string &name, const std::string &value);
   bool HasProperty (const std::string &name) const;
 
 private:
