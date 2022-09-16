@@ -72,7 +72,7 @@ InstantiateASesFromTopo (rapidxml::xml_node<> *xml_root,
 
   while (cur_xml_node)
     {
-      PropertyContainer p = parseProperties (cur_xml_node);
+      PropertyContainer p = ParseProperties (cur_xml_node);
       std::string type;
 
       if (p.HasProperty ("type"))
@@ -112,7 +112,7 @@ InstantiateASesFromTopo (rapidxml::xml_node<> *xml_root,
         }
       AS_nodes.Add (AS_node);
 
-      int32_t real_as_no = std::stoi (getAttribute (cur_xml_node, "id"));
+      int32_t real_as_no = std::stoi (GetAttribute (cur_xml_node, "id"));
       uint16_t isd_number = 0;
       if (p.HasProperty ("isd"))
         {
@@ -349,7 +349,7 @@ InstantiateLinksFromTopo (rapidxml::xml_node<> *xml_root, NodeContainer &AS_node
       int32_t to = std::stoi (curr_xml_node->first_node ("to")->value ());
       int32_t from = std::stoi (curr_xml_node->first_node ("from")->value ());
 
-      PropertyContainer p = parseProperties (curr_xml_node);
+      PropertyContainer p = ParseProperties (curr_xml_node);
 
       ld latitude = std::stod (p.GetProperty ("latitude"));
       ld longitude = std::stod (p.GetProperty ("longitude"));

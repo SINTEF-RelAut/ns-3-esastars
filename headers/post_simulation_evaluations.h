@@ -100,7 +100,7 @@ public:
   void PrintNumberOfValidBeaconEntriesInBeaconStore ();
 
   friend void
-  sort_beacons_by_pollution_by_latency (NodeContainer &AS_nodes, ScionAs *AS1, ScionAs *AS2,
+  SortBeaconsByPollutionByLatency (NodeContainer &AS_nodes, ScionAs *AS1, ScionAs *AS2,
                                         std::string beaconing_policy_str,
                                         std::map<double, std::map<double, std::set<Beacon *>>>
                                             &sorted_beacons_by_pollution_by_latency);
@@ -121,7 +121,7 @@ private:
   std::unordered_map<std::string, void (PostSimulationEvaluations::*) ()> function_name_to_function;
 };
 
-void sort_beacons_by_pollution_by_latency (
+void SortBeaconsByPollutionByLatency (
     NodeContainer &AS_nodes, ScionAs *AS1, ScionAs *AS2, std::string beaconing_policy_str,
     std::map<double, std::map<double, std::set<Beacon *>>> &sorted_beacons_by_pollution_by_latency);
 

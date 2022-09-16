@@ -193,9 +193,9 @@ ScionAs::ConnectInternalNodes (bool only_propagation_delay)
           BorderRouter *br2 = border_routers_vec.at (j);
 
           Time propagation_delay1 = NanoSeconds ((int64_t) floor (
-              1e6 *
-              calculate_great_circle_latency ((ld) br1->GetLatitude (), (ld) br1->GetLogitude (),
-                                              (ld) br2->GetLatitude (), (ld) br2->GetLogitude ())));
+              1e6 * CalculateGreatCircleLatency ((ld) br1->GetLatitude (), (ld) br1->GetLogitude (),
+                                                 (ld) br2->GetLatitude (),
+                                                 (ld) br2->GetLogitude ())));
           Time propagation_delay2 = propagation_delay1;
 
           if (border_routers_malicious_action == "symmetric_delay")
@@ -248,9 +248,9 @@ ScionAs::ConnectInternalNodes (bool only_propagation_delay)
           ScionHost *host = hosts.at (j);
 
           Time propagation_delay = NanoSeconds (
-              (int64_t) floor (1e6 * calculate_great_circle_latency (
-                                         (ld) br->GetLatitude (), (ld) br->GetLogitude (),
-                                         (ld) host->GetLatitude (), (ld) host->GetLogitude ())));
+              (int64_t) floor (1e6 * CalculateGreatCircleLatency ((ld) br->GetLatitude (), (ld) br->GetLogitude (),
+                                                 (ld) host->GetLatitude (),
+                                                 (ld) host->GetLogitude ())));
 
           br->AddToPropagationDelays (propagation_delay);
           host->AddToPropagationDelays (propagation_delay);
@@ -286,9 +286,9 @@ ScionAs::ConnectInternalNodes (bool only_propagation_delay)
       BorderRouter *br = border_routers_vec.at (i);
 
       Time propagation_delay = NanoSeconds ((int64_t) floor (
-          1e6 * calculate_great_circle_latency ((ld) br->GetLatitude (), (ld) br->GetLogitude (),
-                                                (ld) path_server->GetLatitude (),
-                                                (ld) path_server->GetLogitude ())));
+          1e6 * CalculateGreatCircleLatency ((ld) br->GetLatitude (), (ld) br->GetLogitude (),
+                                             (ld) path_server->GetLatitude (),
+                                             (ld) path_server->GetLogitude ())));
 
       br->AddToPropagationDelays (propagation_delay);
       path_server->AddToPropagationDelays (propagation_delay);
@@ -324,9 +324,9 @@ ScionAs::ConnectInternalNodes (bool only_propagation_delay)
       ScionHost *host = hosts.at (i);
 
       Time propagation_delay = NanoSeconds ((int64_t) floor (
-          1e6 * calculate_great_circle_latency (
-                    (ld) host->GetLatitude (), (ld) host->GetLogitude (),
-                    (ld) path_server->GetLatitude (), (ld) path_server->GetLogitude ())));
+          1e6 * CalculateGreatCircleLatency ((ld) host->GetLatitude (), (ld) host->GetLogitude (),
+                                             (ld) path_server->GetLatitude (),
+                                             (ld) path_server->GetLogitude ())));
 
       host->AddToPropagationDelays (propagation_delay);
       path_server->AddToPropagationDelays (propagation_delay);
@@ -362,9 +362,9 @@ ScionAs::ConnectInternalNodes (bool only_propagation_delay)
           ScionHost *h2 = hosts.at (j);
 
           Time propagation_delay = NanoSeconds ((int64_t) floor (
-              1e6 *
-              calculate_great_circle_latency ((ld) h1->GetLatitude (), (ld) h1->GetLogitude (),
-                                              (ld) h2->GetLatitude (), (ld) h2->GetLogitude ())));
+              1e6 * CalculateGreatCircleLatency ((ld) h1->GetLatitude (), (ld) h1->GetLogitude (),
+                                                 (ld) h2->GetLatitude (),
+                                                 (ld) h2->GetLogitude ())));
 
           h1->AddToPropagationDelays (propagation_delay);
           h2->AddToPropagationDelays (propagation_delay);
@@ -405,7 +405,7 @@ ScionAs::InitializeLatencies (bool only_propagation_delay)
     {
       for (uint32_t j = i + 1; j < GetNDevices (); ++j)
         {
-          latencies_between_interfaces.at (i).at (j) = calculate_great_circle_latency (
+          latencies_between_interfaces.at (i).at (j) = CalculateGreatCircleLatency (
               interfaces_coordinates.at (i).first, interfaces_coordinates.at (i).second,
               interfaces_coordinates.at (j).first, interfaces_coordinates.at (j).second);
           latencies_between_interfaces.at (j).at (i) = latencies_between_interfaces.at (i).at (j);

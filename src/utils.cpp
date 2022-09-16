@@ -40,7 +40,7 @@ GetMedian (std::multiset<int64_t> &data)
 }
 
 std::vector<std::string> &
-split (const std::string &s, char delim, std::vector<std::string> &elems)
+Split (const std::string &s, char delim, std::vector<std::string> &elems)
 {
   std::stringstream ss (s);
   std::string item;
@@ -52,7 +52,7 @@ split (const std::string &s, char delim, std::vector<std::string> &elems)
 }
 
 ld
-link_level_jaccard_distance_between_two_paths (Beacon *beacon1, Beacon *beacon2)
+LinkLevelJaccardDistanceBetweenTwoPaths (Beacon *beacon1, Beacon *beacon2)
 {
   std::set<uint32_t> set_of_links_on_path1;
   int32_t intersection = 0;
@@ -78,7 +78,7 @@ link_level_jaccard_distance_between_two_paths (Beacon *beacon1, Beacon *beacon2)
 }
 
 ld
-AS_level_jaccard_distance_between_two_paths (Beacon *beacon1, Beacon *beacon2)
+AsLevelJaccardDistanceBetweenTwoPaths (Beacon *beacon1, Beacon *beacon2)
 {
   std::set<uint16_t> set_of_ASes_on_path1;
   int32_t intersection = 0;
@@ -103,16 +103,16 @@ AS_level_jaccard_distance_between_two_paths (Beacon *beacon1, Beacon *beacon2)
 }
 
 ld
-calculate_great_circle_latency (ld lat1_deg, ld long1_deg, ld lat2_deg, ld long2_deg)
+CalculateGreatCircleLatency (ld lat1_deg, ld long1_deg, ld lat2_deg, ld long2_deg)
 {
-  ld distance = calculate_great_circle_distance (lat1_deg, long1_deg, lat2_deg, long2_deg);
+  ld distance = CalculateGreatCircleDistance (lat1_deg, long1_deg, lat2_deg, long2_deg);
   // 0.005 millisecods of latency per kilometer
   ld latency = distance * 0.005;
   return latency;
 }
 
 ld
-calculate_great_circle_distance (ld lat1_deg, ld long1_deg, ld lat2_deg, ld long2_deg)
+CalculateGreatCircleDistance (ld lat1_deg, ld long1_deg, ld lat2_deg, ld long2_deg)
 {
   ld lat1 = lat1_deg * (M_PI) / 180;
   ld long1 = long1_deg * (M_PI) / 180;
@@ -131,7 +131,7 @@ calculate_great_circle_distance (ld lat1_deg, ld long1_deg, ld lat2_deg, ld long
 }
 
 std::string
-getAttribute (rapidxml::xml_node<> *node, const std::string &name)
+GetAttribute (rapidxml::xml_node<> *node, const std::string &name)
 {
   rapidxml::xml_attribute<> *attr = node->first_attribute (name.c_str ());
   if (attr)
@@ -177,14 +177,14 @@ PropertyContainer::HasProperty (const std::string &name) const
 }
 
 PropertyContainer
-parseProperties (rapidxml::xml_node<> *node)
+ParseProperties (rapidxml::xml_node<> *node)
 {
   PropertyContainer p;
   rapidxml::xml_node<> *curNode = node->first_node ("property");
 
   while (curNode)
     {
-      std::string name = getAttribute (curNode, "name");
+      std::string name = GetAttribute (curNode, "name");
       if (name != "")
         {
           p.SetProperty (name, curNode->value ());

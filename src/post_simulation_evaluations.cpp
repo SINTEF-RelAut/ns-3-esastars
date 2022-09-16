@@ -177,7 +177,7 @@ PostSimulationEvaluations::FindMinLatencyToDnsRootServers ()
                       uint16_t first_br = LOWER_16_BITS (the_beacon->the_path.back ());
                       std::pair<double, double> first_br_coordinates =
                           src_alias_as_no->interfaces_coordinates.at (first_br);
-                      double latency_from_probe_to_first_hop = calculate_great_circle_latency (
+                      double latency_from_probe_to_first_hop = CalculateGreatCircleLatency (
                           probe_lat, probe_long, first_br_coordinates.first,
                           first_br_coordinates.second);
                       if (the_beacon->static_info_extension.at (StaticInfoType::LATENCY) +
@@ -205,8 +205,7 @@ PostSimulationEvaluations::FindMinLatencyToDnsRootServers ()
               double instance_long = std::stod (currSite->first_node ("Longitude")->value ());
               std::pair<double, double> last_br_coordinates =
                   dst_as->interfaces_coordinates.at (last_br);
-              double overall_latency = min_latency_to_dst_as +
-                                       calculate_great_circle_latency (instance_lat, instance_long,
+              double overall_latency = min_latency_to_dst_as + CalculateGreatCircleLatency (instance_lat, instance_long,
                                                                        last_br_coordinates.first,
                                                                        last_br_coordinates.second);
               if (overall_latency < min_overall_latency)
@@ -223,9 +222,9 @@ PostSimulationEvaluations::FindMinLatencyToDnsRootServers ()
               << "|"
               // << "(" << selected_instance_coordinates.first << ", " << selected_instance_coordinates.second << ")" << "|"
               << min_overall_latency << "|"
-              << calculate_great_circle_distance (probe_lat, probe_long,
-                                                  selected_instance_coordinates.first,
-                                                  selected_instance_coordinates.second)
+              << CalculateGreatCircleDistance (probe_lat, probe_long,
+                                               selected_instance_coordinates.first,
+                                               selected_instance_coordinates.second)
               << "|"
               << "(" << probe_lat << ", " << probe_long << ")"
               << "|";
@@ -1039,7 +1038,7 @@ PostSimulationEvaluations::PrintLeastPollutingPaths ()
   while (getline (bgp_paths_file, line))
     {
       std::vector<std::string> fields;
-      fields = split (line, '|', fields);
+      fields = Split (line, '|', fields);
 
       int from = std::stoi (fields[0]);
       int to = std::stoi (fields[1]);
@@ -1071,8 +1070,8 @@ PostSimulationEvaluations::PrintLeastPollutingPaths ()
           std::map<double, std::map<double, std::set<Beacon *>>>
               sorted_beacons_by_pollution_by_latency =
                   std::map<double, std::map<double, std::set<Beacon *>>> ();
-          sort_beacons_by_pollution_by_latency (AS_nodes, AS1, AS2, beaconing_policy_str,
-                                                sorted_beacons_by_pollution_by_latency);
+          SortBeaconsByPollutionByLatency (AS_nodes, AS1, AS2, beaconing_policy_str,
+                                           sorted_beacons_by_pollution_by_latency);
 
           double min_pollution = sorted_beacons_by_pollution_by_latency.begin ()->first;
           double latency_of_min_pollution =
@@ -1522,7 +1521,7 @@ PostSimulationEvaluations::InvestigateAffectedTimeServers ()
 }
 
 void
-sort_beacons_by_pollution_by_latency (
+SortBeaconsByPollutionByLatency (
     NodeContainer &AS_nodes, ScionAs *AS1, ScionAs *AS2, std::string beaconing_policy_str,
     std::map<double, std::map<double, std::set<Beacon *>>> &sorted_beacons_by_pollution_by_latency)
 {

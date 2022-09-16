@@ -37,7 +37,7 @@ public:
         uint16_t target_id = std::stoi (cur_target->first_node ("target_id")->value ());
 
         optimization_criteria_t optimization_criteria;
-        PropertyContainer p = parseProperties (cur_target);
+        PropertyContainer p = ParseProperties (cur_target);
         if (p.HasProperty ("bw") && std::stof (p.GetProperty ("bw")) > 0.001)
           {
             optimization_criteria.insert (

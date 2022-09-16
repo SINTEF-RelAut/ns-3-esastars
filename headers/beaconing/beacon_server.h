@@ -43,7 +43,7 @@ public:
             Time (config["beacon_service"]["last_beaconing"].as<std::string> ()))
   {
     non_requested_pull_based_beacon_container.resize (2);
-    PropertyContainer p = parseProperties (xml_node);
+    PropertyContainer p = ParseProperties (xml_node);
     if (p.HasProperty ("dirty_energy_ratio"))
       {
         dirty_energy_ratio = std::stod (p.GetProperty ("dirty_energy_ratio"));

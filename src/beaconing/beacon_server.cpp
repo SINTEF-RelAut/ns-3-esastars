@@ -630,9 +630,9 @@ BeaconServer::CalculateFinalDiversityScores (Beacon *the_beacon)
           if (curr_beacon != the_beacon)
             {
               AS_level_diversity_score +=
-                  AS_level_jaccard_distance_between_two_paths (the_beacon, curr_beacon);
+                  AsLevelJaccardDistanceBetweenTwoPaths (the_beacon, curr_beacon);
               link_level_diversity_score +=
-                  link_level_jaccard_distance_between_two_paths (the_beacon, curr_beacon);
+                  LinkLevelJaccardDistanceBetweenTwoPaths (the_beacon, curr_beacon);
               counter++;
             }
         }
@@ -809,7 +809,7 @@ ReadBr2BrEnergy (NodeContainer AS_nodes, std::map<int32_t, uint16_t> real_to_ali
   while (getline (energy_file, line))
     {
       std::vector<std::string> fields;
-      fields = split (line, '\t', fields);
+      fields = Split (line, '\t', fields);
 
       int as_no = std::stoi (fields[0]);
 

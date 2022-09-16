@@ -37,7 +37,7 @@ public:
             Time local_time)
       : Node (system_id)
   {
-    PropertyContainer p = parseProperties (xml_node);
+    PropertyContainer p = ParseProperties (xml_node);
 
     if (p.HasProperty ("isd"))
       {

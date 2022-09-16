@@ -29,7 +29,7 @@ OnDemandOptimization::PerLinkInitializations (rapidxml::xml_node<> *cur_xml_link
   uint16_t interface_id = 0;
   uint16_t neighbor_as = 0;
 
-  PropertyContainer p = parseProperties (cur_xml_link);
+  PropertyContainer p = ParseProperties (cur_xml_link);
   if (real_to_alias_as_no.at (to) == AS->as_number)
     {
       target_element_str = "to" + target_element_str;
