@@ -22,12 +22,12 @@ namespace ns3 {
 #define ORIGINATOR(beacon) (UPPER_16_BITS (beacon.the_path.front ()))
 #define ORIGINATOR_PTR(beacon) (UPPER_16_BITS (beacon->the_path.front ()))
 #define DST_AS(beacon)                                       \
-  (beacon.beacon_direction == beacon_direction_t::PULL_BASED \
+  (beacon.beacon_direction == BeaconDirectionT::PULL_BASED \
        ? beacon.optimization_target->target_as               \
        : UPPER_16_BITS (beacon.the_path.front ()))
 
 #define DST_AS_PTR(beacon)                                    \
-  (beacon->beacon_direction == beacon_direction_t::PULL_BASED \
+  (beacon->beacon_direction == BeaconDirectionT::PULL_BASED \
        ? beacon->optimization_target->target_as               \
        : UPPER_16_BITS (beacon->the_path.front ()))
 
@@ -39,27 +39,27 @@ typedef uint64_t link_information; // sender_as   eg_if   receiver_as   ing_if
 typedef std::vector<link_information> path;
 typedef std::vector<uint16_t> isd_path;
 
-enum static_info_type_t { LATENCY = 0, BW = 1, CO2 = 2, FORBIDDEN_EDGES = 3 };
-typedef std::map<static_info_type_t, float> static_info_extension_t;
+enum StaticInfoType { LATENCY = 0, BW = 1, CO2 = 2, FORBIDDEN_EDGES = 3 };
+typedef std::map<StaticInfoType, float> static_info_extension_t;
 
-typedef std::map<static_info_type_t, float> optimization_criteria_t;
-enum optimization_direction_t { FORWARD = 0, BACKWARD = 1, SYMMETRIC = 2 };
+typedef std::map<StaticInfoType, float> optimization_criteria_t;
+enum OptimizationDirection { FORWARD = 0, BACKWARD = 1, SYMMETRIC = 2 };
 typedef uint16_t target_as_t;
 typedef uint16_t target_id_t;
 typedef uint16_t target_if_group_t;
 
-struct optimization_target_t
+struct OptimizationTarget
 {
   const target_id_t target_id;
   const optimization_criteria_t criteria;
-  const optimization_direction_t direction;
+  const OptimizationDirection direction;
   const target_as_t target_as;
   const target_if_group_t target_if_group;
   const uint16_t no_beacons_per_optimization_target;
   const std::unordered_map<uint16_t, std::unordered_set<uint16_t> *> *const set_of_forbidden_edges;
 
-  optimization_target_t (
-      target_id_t target_id, optimization_criteria_t criteria, optimization_direction_t direction,
+  OptimizationTarget (
+      target_id_t target_id, optimization_criteria_t criteria, OptimizationDirection direction,
       target_as_t target_as, target_if_group_t target_if_group,
       uint16_t no_beacons_per_optimization_target,
       const std::unordered_map<uint16_t, std::unordered_set<uint16_t> *> *set_of_forbidden_edges)
@@ -74,15 +74,15 @@ struct optimization_target_t
   }
 };
 
-enum beacon_direction_t { PUSH_BASED = 0, PULL_BASED = 1 };
+enum BeaconDirectionT { PUSH_BASED = 0, PULL_BASED = 1 };
 
 struct Beacon
 {
   static_info_extension_t static_info_extension;
 
-  const optimization_target_t *optimization_target;
+  const OptimizationTarget *optimization_target;
 
-  beacon_direction_t beacon_direction;
+  BeaconDirectionT beacon_direction;
 
   uint16_t initiation_time;
   uint16_t expiration_time;
@@ -100,7 +100,7 @@ struct Beacon
   isd_path the_isd_path;
 
   Beacon (static_info_extension_t &static_info_extension,
-          const optimization_target_t *optimization_target, beacon_direction_t beacon_direction,
+          const OptimizationTarget *optimization_target, BeaconDirectionT beacon_direction,
           uint16_t i, uint16_t e, uint16_t nxt_i, uint16_t nxt_e, bool n, bool v, path &p,
           std::string &k, isd_path &isdp)
       : static_info_extension (static_info_extension),

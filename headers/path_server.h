@@ -16,12 +16,12 @@
 #include "src/SCION/headers/scion_packet.h"
 
 namespace ns3 {
-class PathServer : public SCIONCapableNode
+class PathServer : public ScionCapableNode
 {
 public:
   PathServer (uint32_t system_id, uint16_t isd_number, uint16_t as_number,
-              host_addr_t local_address, double latitude, double longitude, SCION_AS *AS)
-      : SCIONCapableNode (system_id, isd_number, as_number, local_address, latitude, longitude, AS)
+              host_addr_t local_address, double latitude, double longitude, ScionAs *AS)
+      : ScionCapableNode (system_id, isd_number, as_number, local_address, latitude, longitude, AS)
   {
     set_of_all_core_ases.insert (ia_addr);
   }
@@ -41,12 +41,12 @@ private:
   cached_path_segs_dataset_t cached_up_segments;
   cached_path_segs_dataset_t cached_down_segments;
 
-  void ProcessReceivedPacket (uint16_t local_if, SCIONPacket *packet, Time receive_time) override;
+  void ProcessReceivedPacket (uint16_t local_if, ScionPacket *packet, Time receive_time) override;
 
-  void ProcessLocalHostRequestForPath (path_segment_type path_type, ia_t src_ia, ia_t dst_ia,
+  void ProcessLocalHostRequestForPath (PathSegmentType path_type, ia_t src_ia, ia_t dst_ia,
                                             host_addr_t host_addr);
 
-  void SendRegisteredPathToLocalHost (host_addr_t host_addr, path_segment_type path_type,
+  void SendRegisteredPathToLocalHost (host_addr_t host_addr, PathSegmentType path_type,
                                            ia_t src_ia, ia_t dst_ia,
                                            const reg_path_segs_to_one_as_t *);
 

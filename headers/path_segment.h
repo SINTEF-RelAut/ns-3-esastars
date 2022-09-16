@@ -34,7 +34,7 @@ typedef uint64_t src_dst_ia_t;
 #define GET_HOP_EG_IF(input) ((uint16_t) ((input) &0x000000000000ffff))
 #define GET_HOP_AS_ING(input) ((uint32_t) (((input) &0x0000ffffffff0000) >> 16))
 
-enum path_segment_type { CORE_SEG = 0, UP_SEG = 1, DOWN_SEG = 2 };
+enum PathSegmentType { CORE_SEG = 0, UP_SEG = 1, DOWN_SEG = 2 };
 
 struct PathSegment
 {

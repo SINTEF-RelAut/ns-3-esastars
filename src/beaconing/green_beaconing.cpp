@@ -44,10 +44,10 @@ GreenBeaconing::GetBeaconsSortedByPollution () const
 void
 GreenBeaconing::CreateInitialStaticInfoExtension (
     static_info_extension_t &static_info_extension, uint16_t self_egress_if_no,
-    const optimization_target_t *optimization_target)
+    const OptimizationTarget *optimization_target)
 {
-  static_info_extension.insert (std::make_pair (static_info_type_t::LATENCY, 0));
-  static_info_extension.insert (std::make_pair (static_info_type_t::CO2, 0));
+  static_info_extension.insert (std::make_pair (StaticInfoType::LATENCY, 0));
+  static_info_extension.insert (std::make_pair (StaticInfoType::CO2, 0));
 }
 
 std::tuple<bool, bool, bool, Beacon *, ld>
@@ -63,7 +63,7 @@ GreenBeaconing::AlgSpecificImportPolicy (Beacon &the_beacon, uint16_t sender_as,
       return std::tuple<bool, bool, bool, Beacon *, ld> (true, false, false, NULL, 0);
     }
 
-  ld pollution_index = the_beacon.static_info_extension.at (static_info_type_t::CO2);
+  ld pollution_index = the_beacon.static_info_extension.at (StaticInfoType::CO2);
 
   std::multimap<ld, Beacon *>::reverse_iterator highest_previous_pollution_iterator =
       beacons_per_dst_per_ing_if_sorted_by_pollution.at (dst_as).at (self_ingress_if_no).rbegin ();
@@ -102,14 +102,14 @@ GreenBeaconing::InsertToAlgorithmDataStructures (Beacon *the_beacon, uint16_t se
 {
   uint16_t dst_as = UPPER_16_BITS (the_beacon->the_path.at (0));
   uint16_t self_ingress_if = LOWER_16_BITS (the_beacon->the_path.back ());
-  ld pollution_index = the_beacon->static_info_extension.at (static_info_type_t::CO2);
+  ld pollution_index = the_beacon->static_info_extension.at (StaticInfoType::CO2);
   beacons_per_dst_per_ing_if_sorted_by_pollution.at (dst_as)
       .at (self_ingress_if)
       .insert (std::make_pair (pollution_index, the_beacon));
 }
 
 void
-GreenBeaconing::DisseminateBeacons (neighbour_relation relation)
+GreenBeaconing::DisseminateBeacons (NeighbourRelation relation)
 {
   uint32_t neighbors_cnt = AS->neighbors.size ();
   omp_set_num_threads (NUM_CORE);
@@ -133,7 +133,7 @@ GreenBeaconing::DisseminateBeacons (neighbour_relation relation)
             }
 
           std::multimap<
-              ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>>
+              ld, std::tuple<Beacon *, uint16_t, uint16_t, ScionAs *, static_info_extension_t>>
               selected_beacons;
           SelectBeaconsToDisseminatePerDstPerNbr (remote_as_no, dst_as_no, beacons_to_the_dst_as,
                                                   selected_beacons);
@@ -143,7 +143,7 @@ GreenBeaconing::DisseminateBeacons (neighbour_relation relation)
               Beacon *the_beacon;
               uint16_t remote_ingress_if_no;
               uint16_t self_egress_if_no;
-              SCION_AS *remote_as;
+              ScionAs *remote_as;
               static_info_extension_t static_info_extension;
 
               std::tie (the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as,
@@ -160,7 +160,7 @@ void
 GreenBeaconing::SelectBeaconsToDisseminatePerDstPerNbr (
     uint16_t remote_as_no, uint16_t dst_as_no,
     const beacons_with_same_dst_as &beacons_to_the_dst_as,
-    std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>>
+    std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, ScionAs *, static_info_extension_t>>
         &pollution_index_map_to_beacon_and_metadata)
 {
   std::map<uint16_t, std::multimap<ld, Beacon *>> valid_candidates;
@@ -200,7 +200,7 @@ GreenBeaconing::SelectBeaconsToDisseminatePerDstPerNbr (
           for (auto const &self_egress_if_no : interfaces)
             {
               ld pollution_index =
-                  the_beacon->static_info_extension.at (static_info_type_t::CO2) +
+                  the_beacon->static_info_extension.at (StaticInfoType::CO2) +
                   CalculatePollutionBetweenBorderRouters (
                       LOWER_16_BITS (the_beacon->the_path.back ()), self_egress_if_no);
               valid_candidates.at (self_egress_if_no)
@@ -225,20 +225,20 @@ GreenBeaconing::SelectBeaconsToDisseminatePerDstPerNbr (
           Beacon *the_beacon = pollution_beacon_pair.second;
 
           uint16_t remote_ingress_if_no = AS->GetRemoteAsInfo (self_egress_if_no).first;
-          SCION_AS *remote_as = AS->GetRemoteAsInfo (self_egress_if_no).second;
+          ScionAs *remote_as = AS->GetRemoteAsInfo (self_egress_if_no).second;
 
           ld latency =
-              the_beacon->static_info_extension.at (static_info_type_t::LATENCY) +
+              the_beacon->static_info_extension.at (StaticInfoType::LATENCY) +
               AS->latencies_between_interfaces.at (LOWER_16_BITS (the_beacon->the_path.back ()))
                   .at (self_egress_if_no);
 
           static_info_extension_t static_info_extension;
-          static_info_extension.insert (std::make_pair (static_info_type_t::LATENCY, latency));
-          static_info_extension.insert (std::make_pair (static_info_type_t::CO2, pollution_index));
+          static_info_extension.insert (std::make_pair (StaticInfoType::LATENCY, latency));
+          static_info_extension.insert (std::make_pair (StaticInfoType::CO2, pollution_index));
 
           pollution_index_map_to_beacon_and_metadata.insert (std::make_pair (
               pollution_index,
-              std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t> (
+              std::tuple<Beacon *, uint16_t, uint16_t, ScionAs *, static_info_extension_t> (
                   the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as,
                   static_info_extension)));
         }
@@ -262,7 +262,7 @@ GreenBeaconing::UpdateAlgorithmDataStructuresPeriodic (Beacon *the_beacon, bool 
   if (invalidated)
     {
       DeleteFromAlgorithmDataStructures (
-          the_beacon, the_beacon->static_info_extension.at (static_info_type_t::CO2));
+          the_beacon, the_beacon->static_info_extension.at (StaticInfoType::CO2));
     }
 }
 

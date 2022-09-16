@@ -17,9 +17,9 @@ namespace ns3 {
 typedef uint16_t host_addr_t;
 typedef uint32_t packet_id_t;
 
-class SCIONCapableNode;
+class ScionCapableNode;
 
-enum payload_type_t {
+enum PayloadType {
   EMPTY = 0,
   PATH_REQ_FROM_HOST = 1,
   REG_PATHS_FROM_LOCAL_PS = 2,
@@ -34,14 +34,14 @@ enum payload_type_t {
 struct PathReqFromHost
 {
   ia_t src_ia, dst_ia;
-  path_segment_type seg_type;
+  PathSegmentType seg_type;
 };
 
-struct RegPathsFromLocalPS
+struct RegPathsFromLocalPs
 {
   const reg_path_segs_to_one_as_t *registered_path_segments;
   ia_t src_ia, dst_ia;
-  path_segment_type seg_type;
+  PathSegmentType seg_type;
 };
 
 struct ListOfAllASes
@@ -49,24 +49,24 @@ struct ListOfAllASes
   std::set<ia_t> *set_of_all_ases;
 };
 
-struct NTPReqOrResp
+struct NtpReqOrResp
 {
   int64_t t0, t1, t2, t3;
 };
 
 union Payload {
   PathReqFromHost path_req_from_host;
-  RegPathsFromLocalPS registered_paths_from_local_ps;
+  RegPathsFromLocalPs registered_paths_from_local_ps;
   ListOfAllASes list_of_all_ases;
-  NTPReqOrResp ntp_req_or_resp;
+  NtpReqOrResp ntp_req_or_resp;
 };
 
-struct SCIONPacket
+struct ScionPacket
 {
 public:
   Time timestamp;
 
-  SCIONCapableNode *const packet_originator; // This field is used for memory management of packets
+  ScionCapableNode *const packet_originator; // This field is used for memory management of packets
 
   std::vector<const PathSegment *> path;
 
@@ -76,7 +76,7 @@ public:
 
   ia_t src_ia, dst_ia;
 
-  payload_type_t payload_type;
+  PayloadType payload_type;
 
   host_addr_t src_host, dst_host;
 
@@ -89,7 +89,7 @@ public:
 
   bool path_reversed;
 
-  SCIONPacket (SCIONCapableNode *const packet_originator, packet_id_t id)
+  ScionPacket (ScionCapableNode *const packet_originator, packet_id_t id)
       : packet_originator (packet_originator), id (id)
   {
   }

@@ -23,7 +23,7 @@ namespace ns3 {
 #define MAX_BEACONS_TO_STORE 20
 #define MAX_BEACONS_TO_SEND 5
 
-class SCION_AS;
+class ScionAs;
 
 typedef std::unordered_set<Beacon *> beacons_with_equal_length;
 typedef std::map<uint16_t, beacons_with_equal_length> beacons_with_same_dst_as;
@@ -32,7 +32,7 @@ typedef std::pair<Time, uint16_t> beaconing_timing_params;
 class BeaconServer
 {
 public:
-  BeaconServer (SCION_AS *AS, bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
+  BeaconServer (ScionAs *AS, bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
                 const YAML::Node &config)
       : AS (AS),
         parallel_scheduler (parallel_scheduler),
@@ -82,7 +82,7 @@ public:
 
   virtual void PerLinkInitializations (rapidxml::xml_node<> *xml_node, const YAML::Node &config);
 
-  void SetAs (SCION_AS *AS);
+  void SetAs (ScionAs *AS);
 
   void ReceiveBeacon (Beacon &received_beacon, uint16_t sender_as, uint16_t remote_if,
                       uint16_t local_if);
@@ -115,15 +115,15 @@ public:
 
   const std::vector<std::unordered_map<uint16_t, uint32_t>> &
   GetBeaconsSentPerDstPerInterfacePerPeriod () const;
-  const std::vector<std::unordered_map<const optimization_target_t *, uint32_t>> &
+  const std::vector<std::unordered_map<const OptimizationTarget *, uint32_t>> &
   GetPushBasedBeaconsSentPerOptPerInterfacePerPeriod () const;
-  const std::vector<std::unordered_map<const optimization_target_t *, uint32_t>> &
+  const std::vector<std::unordered_map<const OptimizationTarget *, uint32_t>> &
   GetPullBasedBeaconsSentPerOptPerInterfacePerPeriod () const;
 
   const std::vector<uint64_t> &GetBeaconsSentPerInterface () const;
 
 protected:
-  SCION_AS *AS;
+  ScionAs *AS;
 
   const bool parallel_scheduler;
 
@@ -159,29 +159,29 @@ protected:
   std::unordered_map<uint16_t, std::vector<uint32_t>> beacons_sent_per_interface_per_period;
 
   std::vector<std::unordered_map<uint16_t, uint32_t>> beacons_sent_per_dst_per_interface;
-  std::vector<std::unordered_map<const optimization_target_t *, uint32_t>>
+  std::vector<std::unordered_map<const OptimizationTarget *, uint32_t>>
       push_based_beacons_sent_per_opt_per_interface;
-  std::vector<std::unordered_map<const optimization_target_t *, uint32_t>>
+  std::vector<std::unordered_map<const OptimizationTarget *, uint32_t>>
       pull_based_beacons_sent_per_opt_per_interface;
 
   std::vector<uint64_t> beacons_sent_per_interface;
 
-  void InitiateBeacons (neighbour_relation relation);
+  void InitiateBeacons (NeighbourRelation relation);
 
-  virtual void InitiateBeaconsPerInterface (uint16_t self_egress_if_no, SCION_AS *remote_as,
+  virtual void InitiateBeaconsPerInterface (uint16_t self_egress_if_no, ScionAs *remote_as,
                                                uint16_t remote_ingress_if_no);
 
   virtual void CreateInitialStaticInfoExtension (static_info_extension_t &static_info_extension,
                                         uint16_t self_egress_if_no,
-                                        const optimization_target_t *optimization_target);
+                                        const OptimizationTarget *optimization_target);
 
-  virtual void DisseminateBeacons (neighbour_relation relation) = 0;
+  virtual void DisseminateBeacons (NeighbourRelation relation) = 0;
 
   void GenerateBeaconAndSend (Beacon *selected_beacon, uint16_t self_egress_if_no,
-                            uint16_t remote_ingress_if_no, SCION_AS *remote_as,
+                            uint16_t remote_ingress_if_no, ScionAs *remote_as,
                             static_info_extension_t &static_info_extension,
-                            const optimization_target_t *optimization_target = NULL,
-                            beacon_direction_t beacon_direction = beacon_direction_t::PUSH_BASED);
+                            const OptimizationTarget *optimization_target = NULL,
+                              BeaconDirectionT beacon_direction = BeaconDirectionT::PUSH_BASED);
 
   std::tuple<bool, bool, bool, Beacon *, ld> ImportPolicy (Beacon &the_beacon, uint16_t sender_as,
                                                             uint16_t remote_egress_if_no,

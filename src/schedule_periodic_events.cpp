@@ -26,7 +26,7 @@ SchedulePeriodicEvents (YAML::Node &config)
 {
   for (uint32_t i = 0; i < nodes.GetN (); ++i)
     {
-      Ptr<SCION_AS> node = DynamicCast<SCION_AS> (nodes.Get (i));
+      Ptr<ScionAs> node = DynamicCast<ScionAs> (nodes.Get (i));
 
       if (config["beacon_service"])
         {
@@ -57,7 +57,7 @@ void
 PeriodicBeaconingCheckPoint ()
 {
   std::cout << "################################## "
-            << DynamicCast<SCION_AS> (nodes.Get (0))->GetBeaconServer ()->GetCurrentTime ()
+            << DynamicCast<ScionAs> (nodes.Get (0))->GetBeaconServer ()->GetCurrentTime ()
             << " #########################################" << std::endl;
   uint32_t node_number = nodes.GetN ();
 
@@ -65,7 +65,7 @@ PeriodicBeaconingCheckPoint ()
   uint32_t all_connected_pairs = 0;
   for (uint32_t i = 0; i < node_number; ++i)
     {
-      all_connected_pairs += DynamicCast<SCION_AS> (nodes.Get (i))
+      all_connected_pairs += DynamicCast<ScionAs> (nodes.Get (i))
                                  ->GetBeaconServer ()
                                  ->GetValidBeaconsCountPerDstAs ()
                                  .size ();

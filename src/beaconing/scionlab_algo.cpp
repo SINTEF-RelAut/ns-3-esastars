@@ -13,24 +13,24 @@
 namespace ns3 {
 
 void
-SCIONLAB::DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
+Scionlab::DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
                              const YAML::Node &config)
 {
   BeaconServer::DoInitializations (num_ASes, xml_node, config);
 }
 
 void
-SCIONLAB::CreateInitialStaticInfoExtension (static_info_extension_t &static_info_extension,
+Scionlab::CreateInitialStaticInfoExtension (static_info_extension_t &static_info_extension,
                                                 uint16_t self_egress_if_no,
-                                                const optimization_target_t *optimization_target)
+                                                const OptimizationTarget *optimization_target)
 {
-  static_info_extension.insert (std::make_pair (static_info_type_t::LATENCY, 0));
+  static_info_extension.insert (std::make_pair (StaticInfoType::LATENCY, 0));
   static_info_extension.insert (
-      std::make_pair (static_info_type_t::BW, AS->inter_as_bwds.at (self_egress_if_no)));
+      std::make_pair (StaticInfoType::BW, AS->inter_as_bwds.at (self_egress_if_no)));
 }
 
 void
-SCIONLAB::DisseminateBeacons (neighbour_relation relation)
+Scionlab::DisseminateBeacons (NeighbourRelation relation)
 {
   uint32_t neighbors_cnt = AS->neighbors.size ();
   std::vector<Beacon *> valid_candidates;
@@ -159,24 +159,24 @@ SCIONLAB::DisseminateBeacons (neighbour_relation relation)
           // Iterate over all the valid interfaces of this remote AS and send the beacons
           for (auto const &egress_interface_no : interfaces)
             {
-              std::pair<uint16_t, SCION_AS *> remote_as_if_pair =
+              std::pair<uint16_t, ScionAs *> remote_as_if_pair =
                   AS->GetRemoteAsInfo (egress_interface_no);
 
               uint16_t remote_ingress_if_no = remote_as_if_pair.first;
-              SCION_AS *remote_as = remote_as_if_pair.second;
+              ScionAs *remote_as = remote_as_if_pair.second;
 
               ld latency =
-                  the_beacon->static_info_extension.at (static_info_type_t::LATENCY) +
+                  the_beacon->static_info_extension.at (StaticInfoType::LATENCY) +
                   AS->latencies_between_interfaces.at (LOWER_16_BITS (the_beacon->the_path.back ()))
                       .at (egress_interface_no);
-              ld bwd = the_beacon->static_info_extension.at (static_info_type_t::BW) >
+              ld bwd = the_beacon->static_info_extension.at (StaticInfoType::BW) >
                                (ld) AS->inter_as_bwds.at (egress_interface_no)
                            ? (ld) AS->inter_as_bwds.at (egress_interface_no)
-                           : the_beacon->static_info_extension.at (static_info_type_t::BW);
+                           : the_beacon->static_info_extension.at (StaticInfoType::BW);
 
               static_info_extension_t static_info_extension;
-              static_info_extension.insert (std::make_pair (static_info_type_t::LATENCY, latency));
-              static_info_extension.insert (std::make_pair (static_info_type_t::BW, bwd));
+              static_info_extension.insert (std::make_pair (StaticInfoType::LATENCY, latency));
+              static_info_extension.insert (std::make_pair (StaticInfoType::BW, bwd));
 
               GenerateBeaconAndSend (the_beacon, egress_interface_no, remote_ingress_if_no,
                                      remote_as, static_info_extension);
@@ -186,7 +186,7 @@ SCIONLAB::DisseminateBeacons (neighbour_relation relation)
 }
 
 std::tuple<bool, bool, bool, Beacon *, ld>
-SCIONLAB::AlgSpecificImportPolicy (Beacon &the_beacon, uint16_t sender_as,
+Scionlab::AlgSpecificImportPolicy (Beacon &the_beacon, uint16_t sender_as,
                                       uint16_t remote_egress_if_no, uint16_t self_ingress_if_no,
                                       uint16_t now)
 {
@@ -207,24 +207,24 @@ SCIONLAB::AlgSpecificImportPolicy (Beacon &the_beacon, uint16_t sender_as,
 }
 
 void
-SCIONLAB::InsertToAlgorithmDataStructures (Beacon *the_beacon, uint16_t sender_as,
+Scionlab::InsertToAlgorithmDataStructures (Beacon *the_beacon, uint16_t sender_as,
                                                uint16_t remote_egress_if_no,
                                                uint16_t self_ingress_if_no)
 {
 }
 
 void
-SCIONLAB::DeleteFromAlgorithmDataStructures (Beacon *the_beacon, ld replacement_key)
+Scionlab::DeleteFromAlgorithmDataStructures (Beacon *the_beacon, ld replacement_key)
 {
 }
 
 void
-SCIONLAB::UpdateAlgorithmDataStructuresPeriodic (Beacon *the_beacon, bool invalidated)
+Scionlab::UpdateAlgorithmDataStructuresPeriodic (Beacon *the_beacon, bool invalidated)
 {
 }
 
 std::pair<Beacon *, int32_t>
-SCIONLAB::SelectMostDiverse (std::vector<Beacon *> &beacons, Beacon *the_beacon)
+Scionlab::SelectMostDiverse (std::vector<Beacon *> &beacons, Beacon *the_beacon)
 {
   if (beacons.size () == 0)
     {
@@ -250,7 +250,7 @@ SCIONLAB::SelectMostDiverse (std::vector<Beacon *> &beacons, Beacon *the_beacon)
 }
 
 int32_t
-SCIONLAB::CalcDiversity (Beacon *beacon1, Beacon *beacon2)
+Scionlab::CalcDiversity (Beacon *beacon1, Beacon *beacon2)
 {
   int32_t diff = 0;
 

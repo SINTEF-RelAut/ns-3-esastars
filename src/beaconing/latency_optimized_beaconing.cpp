@@ -36,9 +36,9 @@ LatencyOptimized::DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xm
 void
 LatencyOptimized::CreateInitialStaticInfoExtension (
     static_info_extension_t &static_info_extension, uint16_t self_egress_if_no,
-    const optimization_target_t *optimization_target)
+    const OptimizationTarget *optimization_target)
 {
-  static_info_extension.insert (std::make_pair (static_info_type_t::LATENCY, 0));
+  static_info_extension.insert (std::make_pair (StaticInfoType::LATENCY, 0));
 }
 
 std::tuple<bool, bool, bool, Beacon *, ld>
@@ -54,7 +54,7 @@ LatencyOptimized::AlgSpecificImportPolicy (Beacon &the_beacon, uint16_t sender_a
       return std::tuple<bool, bool, bool, Beacon *, ld> (true, false, false, NULL, 0);
     }
 
-  ld latency = the_beacon.static_info_extension.at (static_info_type_t::LATENCY);
+  ld latency = the_beacon.static_info_extension.at (StaticInfoType::LATENCY);
 
   std::multimap<ld, Beacon *>::reverse_iterator highest_previous_latency_iterator =
       beacons_per_dst_per_ing_if_sorted_by_latency.at (dst_as).at (self_ingress_if_no).rbegin ();
@@ -93,14 +93,14 @@ LatencyOptimized::InsertToAlgorithmDataStructures (Beacon *the_beacon, uint16_t 
 {
   uint16_t dst_as = UPPER_16_BITS (the_beacon->the_path.at (0));
   uint16_t self_ingress_if = LOWER_16_BITS (the_beacon->the_path.back ());
-  ld latency = the_beacon->static_info_extension.at (static_info_type_t::LATENCY);
+  ld latency = the_beacon->static_info_extension.at (StaticInfoType::LATENCY);
   beacons_per_dst_per_ing_if_sorted_by_latency.at (dst_as)
       .at (self_ingress_if)
       .insert (std::make_pair (latency, the_beacon));
 }
 
 void
-LatencyOptimized::DisseminateBeacons (neighbour_relation relation)
+LatencyOptimized::DisseminateBeacons (NeighbourRelation relation)
 {
   uint32_t neighbors_cnt = AS->neighbors.size ();
   omp_set_num_threads (NUM_CORE);
@@ -125,7 +125,7 @@ LatencyOptimized::DisseminateBeacons (neighbour_relation relation)
             }
 
           std::multimap<
-              ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>>
+              ld, std::tuple<Beacon *, uint16_t, uint16_t, ScionAs *, static_info_extension_t>>
               selected_beacons = SelectBeaconsToDisseminatePerDstPerNbr (remote_as_no, dst_as_no,
                                                                          beacons_to_the_dst_as);
 
@@ -134,7 +134,7 @@ LatencyOptimized::DisseminateBeacons (neighbour_relation relation)
               Beacon *the_beacon;
               uint16_t remote_ingress_if_no;
               uint16_t self_egress_if_no;
-              SCION_AS *remote_as;
+              ScionAs *remote_as;
               static_info_extension_t static_info_extension;
 
               std::tie (the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as,
@@ -147,12 +147,12 @@ LatencyOptimized::DisseminateBeacons (neighbour_relation relation)
     }
 }
 
-std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>>
+std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, ScionAs *, static_info_extension_t>>
 LatencyOptimized::SelectBeaconsToDisseminatePerDstPerNbr (
     uint16_t remote_as_no, uint16_t dst_as_no,
     const beacons_with_same_dst_as &beacons_to_the_dst_as)
 {
-  std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>>
+  std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, ScionAs *, static_info_extension_t>>
       latency_map_to_beacon_and_metadata;
   std::map<uint16_t, std::multimap<ld, Beacon *>> valid_candidates;
 
@@ -186,7 +186,7 @@ LatencyOptimized::SelectBeaconsToDisseminatePerDstPerNbr (
           for (auto const &self_egress_if_no : interfaces)
             {
               ld latency =
-                  the_beacon->static_info_extension.at (static_info_type_t::LATENCY) +
+                  the_beacon->static_info_extension.at (StaticInfoType::LATENCY) +
                   AS->latencies_between_interfaces.at (LOWER_16_BITS (the_beacon->the_path.back ()))
                       .at (self_egress_if_no);
 
@@ -219,14 +219,14 @@ LatencyOptimized::SelectBeaconsToDisseminatePerDstPerNbr (
           Beacon *the_beacon = latency_beacon_pair.second;
 
           uint16_t remote_ingress_if_no = AS->GetRemoteAsInfo (self_egress_if_no).first;
-          SCION_AS *remote_as = AS->GetRemoteAsInfo (self_egress_if_no).second;
+          ScionAs *remote_as = AS->GetRemoteAsInfo (self_egress_if_no).second;
 
           static_info_extension_t static_info_extension;
-          static_info_extension.insert (std::make_pair (static_info_type_t::LATENCY, latency));
+          static_info_extension.insert (std::make_pair (StaticInfoType::LATENCY, latency));
 
           latency_map_to_beacon_and_metadata.insert (std::make_pair (
               latency,
-              std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t> (
+              std::tuple<Beacon *, uint16_t, uint16_t, ScionAs *, static_info_extension_t> (
                   the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as,
                   static_info_extension)));
         }
@@ -240,7 +240,7 @@ LatencyOptimized::UpdateAlgorithmDataStructuresPeriodic (Beacon *the_beacon, boo
   if (invalidated)
     {
       DeleteFromAlgorithmDataStructures (
-          the_beacon, the_beacon->static_info_extension.at (static_info_type_t::LATENCY));
+          the_beacon, the_beacon->static_info_extension.at (StaticInfoType::LATENCY));
     }
 }
 

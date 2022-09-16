@@ -25,7 +25,7 @@
 namespace ns3 {
 
 void
-SCION_AS::DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
+ScionAs::DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
                              const YAML::Node &config)
 {
   InitializeLatencies (true);
@@ -43,7 +43,7 @@ SCION_AS::DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
 }
 
 void
-SCION_AS::DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
+ScionAs::DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
                              const YAML::Node &config, bool only_propagation_delay)
 {
   ConnectInternalNodes (only_propagation_delay);
@@ -73,74 +73,74 @@ SCION_AS::DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
   beacon_server->DoInitializations (num_ASes, xml_node, config);
 }
 
-std::pair<uint16_t, SCION_AS *>
-SCION_AS::GetRemoteAsInfo (uint16_t egress_interface_no)
+std::pair<uint16_t, ScionAs *>
+ScionAs::GetRemoteAsInfo (uint16_t egress_interface_no)
 {
   return remote_as_info.at (egress_interface_no);
 }
 
 void
-SCION_AS::ReceiveBeacon (Beacon &received_beacon, uint16_t sender_as, uint16_t remote_if,
+ScionAs::ReceiveBeacon (Beacon &received_beacon, uint16_t sender_as, uint16_t remote_if,
                          uint16_t local_if)
 {
   beacon_server->ReceiveBeacon (received_beacon, sender_as, remote_if, local_if);
 }
 
 void
-SCION_AS::SetBeaconServer (BeaconServer *the_beaconServer)
+ScionAs::SetBeaconServer (BeaconServer *the_beaconServer)
 {
   this->beacon_server = the_beaconServer;
 }
 
 void
-SCION_AS::AdvanceTime (ns3::Time advance)
+ScionAs::AdvanceTime (ns3::Time advance)
 {
   local_time += advance;
 }
 
 BeaconServer *
-SCION_AS::GetBeaconServer ()
+ScionAs::GetBeaconServer ()
 {
   return this->beacon_server;
 }
 
 PathServer *
-SCION_AS::GetPathServer ()
+ScionAs::GetPathServer ()
 {
   return this->path_server;
 }
 
 void
-SCION_AS::SetPathServer (PathServer *the_pathServer)
+ScionAs::SetPathServer (PathServer *the_pathServer)
 {
   this->path_server = the_pathServer;
 }
 
-SCIONCapableNode *
-SCION_AS::GetHost (host_addr_t host_addr)
+ScionCapableNode *
+ScionAs::GetHost (host_addr_t host_addr)
 {
   if (host_addr == 1)
     {
       return GetPathServer ();
     }
 
-  return ((SCIONCapableNode *) hosts.at (host_addr - 2));
+  return ((ScionCapableNode *) hosts.at (host_addr - 2));
 }
 
 uint32_t
-SCION_AS::GetNHosts ()
+ScionAs::GetNHosts ()
 {
   return hosts.size ();
 }
 
 void
-SCION_AS::AddHost (SCIONHost *host)
+ScionAs::AddHost (ScionHost *host)
 {
   hosts.push_back (host);
 }
 
 BorderRouter *
-SCION_AS::AddBr (double latitude, double longitude, Time processing_delay,
+ScionAs::AddBr (double latitude, double longitude, Time processing_delay,
                  Time processing_throughput_delay)
 {
   BorderRouter *the_br = new BorderRouter (0, isd_number, as_number, 0, latitude, longitude, this);
@@ -153,7 +153,7 @@ SCION_AS::AddBr (double latitude, double longitude, Time processing_delay,
 }
 
 void
-SCION_AS::ConnectInternalNodes (bool only_propagation_delay)
+ScionAs::ConnectInternalNodes (bool only_propagation_delay)
 {
   Time malicious_delay = TimeStep (0);
   if (malicious_border_routers &&
@@ -245,7 +245,7 @@ SCION_AS::ConnectInternalNodes (bool only_propagation_delay)
       BorderRouter *br = border_routers_vec.at (i);
       for (uint32_t j = 0; j < hosts.size (); ++j)
         {
-          SCIONHost *host = hosts.at (j);
+          ScionHost *host = hosts.at (j);
 
           Time propagation_delay = NanoSeconds (
               (int64_t) floor (1e6 * calculate_great_circle_latency (
@@ -321,7 +321,7 @@ SCION_AS::ConnectInternalNodes (bool only_propagation_delay)
   // Connect hosts to local path server
   for (uint32_t i = 0; i < hosts.size (); ++i)
     {
-      SCIONHost *host = hosts.at (i);
+      ScionHost *host = hosts.at (i);
 
       Time propagation_delay = NanoSeconds ((int64_t) floor (
           1e6 * calculate_great_circle_latency (
@@ -356,10 +356,10 @@ SCION_AS::ConnectInternalNodes (bool only_propagation_delay)
   // Connect hosts to each other
   for (uint32_t i = 0; i < hosts.size () - 1; ++i)
     {
-      SCIONHost *h1 = hosts.at (i);
+      ScionHost *h1 = hosts.at (i);
       for (uint32_t j = i + 1; j < hosts.size (); ++j)
         {
-          SCIONHost *h2 = hosts.at (j);
+          ScionHost *h2 = hosts.at (j);
 
           Time propagation_delay = NanoSeconds ((int64_t) floor (
               1e6 *
@@ -392,7 +392,7 @@ SCION_AS::ConnectInternalNodes (bool only_propagation_delay)
 }
 
 void
-SCION_AS::InitializeLatencies (bool only_propagation_delay)
+ScionAs::InitializeLatencies (bool only_propagation_delay)
 {
   latencies_between_interfaces.resize (GetNDevices ());
 
@@ -424,13 +424,13 @@ SCION_AS::InitializeLatencies (bool only_propagation_delay)
 }
 
 void
-SCION_AS::AddToRemoteAsInfo (uint16_t remote_if, SCION_AS *remote_as)
+ScionAs::AddToRemoteAsInfo (uint16_t remote_if, ScionAs *remote_as)
 {
   remote_as_info.push_back (std::make_pair (remote_if, remote_as));
 }
 
 void
-SCION_AS::InstantiateBeaconServer (bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
+ScionAs::InstantiateBeaconServer (bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
                                      const YAML::Node &config)
 {
   std::string beaconing_policy_str = config["beacon_service"]["policy"].as<std::string> ();
@@ -456,7 +456,7 @@ SCION_AS::InstantiateBeaconServer (bool parallel_scheduler, rapidxml::xml_node<>
     }
   else if (beaconing_policy_str == "scionlab")
     {
-      beacon_server = (BeaconServer *) new SCIONLAB (this, parallel_scheduler, xml_node, config);
+      beacon_server = (BeaconServer *) new Scionlab (this, parallel_scheduler, xml_node, config);
     }
   else if (beaconing_policy_str == "on_demand")
     {

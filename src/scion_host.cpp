@@ -14,7 +14,7 @@ namespace ns3 {
 NS_LOG_COMPONENT_DEFINE ("SCIONHost");
 
 void
-SCIONHost::ReceiveRegisteredPathSegments (path_segment_type seg_type, ia_t src_ia, ia_t dst_ia,
+ScionHost::ReceiveRegisteredPathSegments (PathSegmentType seg_type, ia_t src_ia, ia_t dst_ia,
                                              const reg_path_segs_to_one_as_t *path_segments)
 {
   NS_LOG_FUNCTION ("I am host " << isd_number << ":" << as_number << ":" << local_address
@@ -34,45 +34,45 @@ SCIONHost::ReceiveRegisteredPathSegments (path_segment_type seg_type, ia_t src_i
 }
 
 void
-SCIONHost::ReceiveCachedPathSegments (path_segment_type seg_type, ia_t src_ia, ia_t dst_ia,
+ScionHost::ReceiveCachedPathSegments (PathSegmentType seg_type, ia_t src_ia, ia_t dst_ia,
                                          cached_path_segs_per_dst_t *path_seg)
 {
 }
 
 void
-SCIONHost::RemoveExpiredSegments ()
+ScionHost::RemoveExpiredSegments ()
 {
 }
 
 void
-SCIONHost::RequestForPathSegments (ia_t dst_ia)
+ScionHost::RequestForPathSegments (ia_t dst_ia)
 {
   uint16_t dst_isd = GET_ISDN (dst_ia);
 
-  SendRequestForPathSegments (path_segment_type::UP_SEG, ia_addr, 0);
+  SendRequestForPathSegments (PathSegmentType::UP_SEG, ia_addr, 0);
   if (dst_isd == isd_number)
     {
-      SendRequestForPathSegments (path_segment_type::CORE_SEG, 0, 0);
-      SendRequestForPathSegments (path_segment_type::DOWN_SEG, 0, dst_ia);
+      SendRequestForPathSegments (PathSegmentType::CORE_SEG, 0, 0);
+      SendRequestForPathSegments (PathSegmentType::DOWN_SEG, 0, dst_ia);
     }
   else
     {
-      SendRequestForPathSegments (path_segment_type::CORE_SEG, 0, MAKE_IA (dst_isd, 0));
-      SendRequestForPathSegments (path_segment_type::DOWN_SEG, MAKE_IA (dst_isd, 0), dst_ia);
+      SendRequestForPathSegments (PathSegmentType::CORE_SEG, 0, MAKE_IA (dst_isd, 0));
+      SendRequestForPathSegments (PathSegmentType::DOWN_SEG, MAKE_IA (dst_isd, 0), dst_ia);
     }
 }
 
 void
-SCIONHost::CachePathSegment (path_segment_type seg_type, ia_t src_ia, ia_t dst_ia,
+ScionHost::CachePathSegment (PathSegmentType seg_type, ia_t src_ia, ia_t dst_ia,
                                PathSegment *path_seg)
 {
   cached_path_segs_dataset_t *cached_path_segs_data_set;
 
-  if (seg_type == path_segment_type::CORE_SEG)
+  if (seg_type == PathSegmentType::CORE_SEG)
     {
       cached_path_segs_data_set = &cached_core_path_segments;
     }
-  else if (seg_type == path_segment_type::UP_SEG)
+  else if (seg_type == PathSegmentType::UP_SEG)
     {
       cached_path_segs_data_set = &cached_up_path_segments;
     }
@@ -99,21 +99,21 @@ SCIONHost::CachePathSegment (path_segment_type seg_type, ia_t src_ia, ia_t dst_i
 }
 
 void
-SCIONHost::SendRequestForPathSegments (path_segment_type seg_type, ia_t src_ia, ia_t dst_ia)
+ScionHost::SendRequestForPathSegments (PathSegmentType seg_type, ia_t src_ia, ia_t dst_ia)
 {
-  payload_type_t payload_type = payload_type_t::PATH_REQ_FROM_HOST;
+  PayloadType payload_type = PayloadType::PATH_REQ_FROM_HOST;
 
   Payload payload;
   payload.path_req_from_host.src_ia = src_ia;
   payload.path_req_from_host.dst_ia = dst_ia;
   payload.path_req_from_host.seg_type = seg_type;
 
-  SCIONPacket *packet = CreateScionPacket (payload, payload_type, ia_addr, 1, 0);
+  ScionPacket *packet = CreateScionPacket (payload, payload_type, ia_addr, 1, 0);
   SendScionPacket (packet);
 }
 
 void
-SCIONHost::SearchInCachedSegments (ia_t dst_ia, std::vector<const PathSegment *> &path,
+ScionHost::SearchInCachedSegments (ia_t dst_ia, std::vector<const PathSegment *> &path,
                                       std::vector<uint8_t> &shortcuts)
 {
   if (dst_ia == ia_addr)
@@ -141,7 +141,7 @@ SCIONHost::SearchInCachedSegments (ia_t dst_ia, std::vector<const PathSegment *>
       return;
     }
 
-  if (dst_in_which_cache == 0 && dynamic_cast<SCION_Core_AS *> (AS) != NULL &&
+  if (dst_in_which_cache == 0 && dynamic_cast<ScionCoreAs *> (AS) != NULL &&
       cached_core_path_segments.at (dst_ia)->find (ia_addr) !=
           cached_core_path_segments.at (dst_ia)->end ())
     {
@@ -149,7 +149,7 @@ SCIONHost::SearchInCachedSegments (ia_t dst_ia, std::vector<const PathSegment *>
       return;
     }
 
-  if (dst_in_which_cache == 0 && dynamic_cast<SCION_Core_AS *> (AS) == NULL)
+  if (dst_in_which_cache == 0 && dynamic_cast<ScionCoreAs *> (AS) == NULL)
     {
       for (auto const &[core_seg_src_ia, core_path_segs] : *cached_core_path_segments.at (dst_ia))
         {
@@ -168,7 +168,7 @@ SCIONHost::SearchInCachedSegments (ia_t dst_ia, std::vector<const PathSegment *>
       return;
     }
 
-  if (dst_in_which_cache == 1 && dynamic_cast<SCION_Core_AS *> (AS) == NULL)
+  if (dst_in_which_cache == 1 && dynamic_cast<ScionCoreAs *> (AS) == NULL)
     {
       NS_ASSERT (cached_up_path_segments.at (dst_ia)->find (ia_addr) !=
                  cached_up_path_segments.at (dst_ia)->end ());
@@ -176,7 +176,7 @@ SCIONHost::SearchInCachedSegments (ia_t dst_ia, std::vector<const PathSegment *>
       return;
     }
 
-  if (dst_in_which_cache == 2 && dynamic_cast<SCION_Core_AS *> (AS) != NULL)
+  if (dst_in_which_cache == 2 && dynamic_cast<ScionCoreAs *> (AS) != NULL)
     {
       if (cached_down_path_segments.at (dst_ia)->find (ia_addr) !=
           cached_down_path_segments.at (dst_ia)->end ())
@@ -202,7 +202,7 @@ SCIONHost::SearchInCachedSegments (ia_t dst_ia, std::vector<const PathSegment *>
       return;
     }
 
-  if (dst_in_which_cache == 2 && dynamic_cast<SCION_Core_AS *> (AS) == NULL)
+  if (dst_in_which_cache == 2 && dynamic_cast<ScionCoreAs *> (AS) == NULL)
     {
       for (auto const &[down_seg_src_ia, down_path_segs] : *cached_down_path_segments.at (dst_ia))
         {
@@ -232,18 +232,18 @@ SCIONHost::SearchInCachedSegments (ia_t dst_ia, std::vector<const PathSegment *>
 }
 
 void
-SCIONHost::ProcessReceivedPacket (uint16_t local_if, SCIONPacket *packet, Time receive_time)
+ScionHost::ProcessReceivedPacket (uint16_t local_if, ScionPacket *packet, Time receive_time)
 {
   NS_ASSERT (packet->dst_ia == ia_addr && packet->dst_host == local_address);
   NS_LOG_FUNCTION ("I am host " << isd_number << ":" << as_number << ":" << local_address
                                 << ". Packet received from " << GET_ISDN (packet->src_ia) << ":"
                                 << GET_ASN (packet->src_ia) << ":" << packet->src_host);
 
-  SCIONCapableNode::ProcessReceivedPacket (local_if, packet, receive_time);
+  ScionCapableNode::ProcessReceivedPacket (local_if, packet, receive_time);
 
-  if (packet->payload_type == payload_type_t::REG_PATHS_FROM_LOCAL_PS)
+  if (packet->payload_type == PayloadType::REG_PATHS_FROM_LOCAL_PS)
     {
-      RegPathsFromLocalPS registered_paths_from_local_ps =
+      RegPathsFromLocalPs registered_paths_from_local_ps =
           packet->payload.registered_paths_from_local_ps;
       ReceiveRegisteredPathSegments (registered_paths_from_local_ps.seg_type,
                                      registered_paths_from_local_ps.src_ia,
@@ -267,14 +267,14 @@ SCIONHost::ProcessReceivedPacket (uint16_t local_if, SCIONPacket *packet, Time r
 }
 
 void
-SCIONHost::SendArbitraryPacket (ia_t dst_ia, host_addr_t dst_host)
+ScionHost::SendArbitraryPacket (ia_t dst_ia, host_addr_t dst_host)
 {
   Payload payload;
-  payload_type_t payload_type = payload_type_t::EMPTY;
+  PayloadType payload_type = PayloadType::EMPTY;
 
   if (dst_ia == ia_addr)
     {
-      SCIONPacket *packet = CreateScionPacket (payload, payload_type, dst_ia, dst_host, 0);
+      ScionPacket *packet = CreateScionPacket (payload, payload_type, dst_ia, dst_host, 0);
       SendScionPacket (packet);
     }
   else
@@ -286,21 +286,21 @@ SCIONHost::SendArbitraryPacket (ia_t dst_ia, host_addr_t dst_host)
 
       if (the_path.size () != 0)
         {
-          SCIONPacket *packet =
+          ScionPacket *packet =
               CreateScionPacket (payload, payload_type, dst_ia, dst_host, 0, the_path, shortcuts);
           SendScionPacket (packet);
         }
       else
         {
           RequestForPathSegments (dst_ia);
-          Simulator::Schedule (MilliSeconds (300), &SCIONHost::SendArbitraryPacket, this, dst_ia,
+          Simulator::Schedule (MilliSeconds (300), &ScionHost::SendArbitraryPacket, this, dst_ia,
                                dst_host);
         }
     }
 }
 
 void
-SCIONHost::ModifyPktUponSend (SCIONPacket *packet)
+ScionHost::ModifyPktUponSend (ScionPacket *packet)
 {
 }
 } // namespace ns3

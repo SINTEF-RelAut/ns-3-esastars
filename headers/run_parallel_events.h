@@ -21,7 +21,7 @@ RunParallelEvents (host_addr_t host_addr, MEM mem_ptr)
 #pragma omp parallel for schedule(dynamic)
   for (uint32_t i = 0; i < nodes.GetN (); ++i)
     {
-      SCION_AS *node = dynamic_cast<SCION_AS *> (PeekPointer (nodes.Get (i)));
+      ScionAs *node = dynamic_cast<ScionAs *> (PeekPointer (nodes.Get (i)));
       ((dynamic_cast<OBJ> (node->GetHost (host_addr)))->*mem_ptr) ();
     }
 }
@@ -34,7 +34,7 @@ RunParallelEvents (MEM mem_ptr)
 #pragma omp parallel for schedule(dynamic)
   for (uint32_t i = 0; i < nodes.GetN (); ++i)
     {
-      SCION_AS *node = dynamic_cast<SCION_AS *> (PeekPointer (nodes.Get (i)));
+      ScionAs *node = dynamic_cast<ScionAs *> (PeekPointer (nodes.Get (i)));
       ((node->GetBeaconServer ())->*mem_ptr) ();
     }
 }

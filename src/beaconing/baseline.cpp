@@ -23,15 +23,15 @@ Baseline::DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
 void
 Baseline::CreateInitialStaticInfoExtension (static_info_extension_t &static_info_extension,
                                                 uint16_t self_egress_if_no,
-                                                const optimization_target_t *optimization_target)
+                                                const OptimizationTarget *optimization_target)
 {
-  static_info_extension.insert (std::make_pair (static_info_type_t::LATENCY, 0));
+  static_info_extension.insert (std::make_pair (StaticInfoType::LATENCY, 0));
   static_info_extension.insert (
-      std::make_pair (static_info_type_t::BW, AS->inter_as_bwds.at (self_egress_if_no)));
+      std::make_pair (StaticInfoType::BW, AS->inter_as_bwds.at (self_egress_if_no)));
 }
 
 void
-Baseline::DisseminateBeacons (neighbour_relation relation)
+Baseline::DisseminateBeacons (NeighbourRelation relation)
 {
   uint32_t neighbors_cnt = AS->neighbors.size ();
   omp_set_num_threads (NUM_CORE);
@@ -99,26 +99,26 @@ Baseline::DisseminateBeacons (neighbour_relation relation)
                   // Iterate over all the valid interfaces of this remote AS and send the beacons
                   for (auto const &egress_interface_no : interfaces)
                     {
-                      std::pair<uint16_t, SCION_AS *> remote_as_if_pair =
+                      std::pair<uint16_t, ScionAs *> remote_as_if_pair =
                           AS->GetRemoteAsInfo (egress_interface_no);
 
                       uint16_t remote_ingress_if_no = remote_as_if_pair.first;
-                      SCION_AS *remote_as = remote_as_if_pair.second;
+                      ScionAs *remote_as = remote_as_if_pair.second;
 
                       ld latency =
-                          the_beacon->static_info_extension.at (static_info_type_t::LATENCY) +
+                          the_beacon->static_info_extension.at (StaticInfoType::LATENCY) +
                           AS->latencies_between_interfaces
                               .at (LOWER_16_BITS (the_beacon->the_path.back ()))
                               .at (egress_interface_no);
-                      ld bwd = the_beacon->static_info_extension.at (static_info_type_t::BW) >
+                      ld bwd = the_beacon->static_info_extension.at (StaticInfoType::BW) >
                                        (ld) AS->inter_as_bwds.at (egress_interface_no)
                                    ? (ld) AS->inter_as_bwds.at (egress_interface_no)
-                                   : the_beacon->static_info_extension.at (static_info_type_t::BW);
+                                   : the_beacon->static_info_extension.at (StaticInfoType::BW);
 
                       static_info_extension_t static_info_extension;
                       static_info_extension.insert (
-                          std::make_pair (static_info_type_t::LATENCY, latency));
-                      static_info_extension.insert (std::make_pair (static_info_type_t::BW, bwd));
+                          std::make_pair (StaticInfoType::LATENCY, latency));
+                      static_info_extension.insert (std::make_pair (StaticInfoType::BW, bwd));
 
                       GenerateBeaconAndSend (the_beacon, egress_interface_no, remote_ingress_if_no,
                                              remote_as, static_info_extension);

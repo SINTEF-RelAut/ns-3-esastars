@@ -22,7 +22,7 @@ namespace ns3 {
 class DiversityAgeBased : public BeaconServer
 {
 public:
-  DiversityAgeBased (SCION_AS *AS, bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
+  DiversityAgeBased (ScionAs *AS, bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
                      const YAML::Node &config)
       : BeaconServer (AS, parallel_scheduler, xml_node, config)
   {
@@ -39,7 +39,7 @@ private:
       links_jointnesses_on_sent_paths;
   std::vector<std::unordered_map<uint32_t, uint32_t> *> links_jointnesses_on_received_paths;
 
-  void DisseminateBeacons (neighbour_relation relation) override;
+  void DisseminateBeacons (NeighbourRelation relation) override;
 
   std::tuple<bool, bool, bool, Beacon *, ld>
   AlgSpecificImportPolicy (Beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
@@ -53,11 +53,11 @@ private:
 
   void CreateInitialStaticInfoExtension (static_info_extension_t &static_info_extension,
                                         uint16_t self_egress_if_no,
-                                        const optimization_target_t *optimization_target) override;
+                                        const OptimizationTarget *optimization_target) override;
 
   void UpdateAlgorithmDataStructuresPeriodic (Beacon *the_beacon, bool invalidated) override;
 
-  std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>>
+  std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, ScionAs *, static_info_extension_t>>
   SelectBeaconsToDisseminatePerDstPerNbr (
       uint16_t remote_as_no, uint16_t dst_as_no,
       const beacons_with_same_dst_as &beacons_to_the_dst_as);
@@ -88,7 +88,7 @@ private:
   void DecLinksJointnessesOnReceivedPaths (Beacon *the_beacon, uint16_t dst_as);
 
   inline ld CalculateRawScore (Beacon *the_beacon, uint16_t dst_as_no, uint16_t self_egress_if_no,
-                                 SCION_AS *remote_as);
+                               ScionAs *remote_as);
 
   inline ld CalculateImportRawScore (Beacon &the_beacon);
 };

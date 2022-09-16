@@ -126,10 +126,10 @@ UserDefinedEvents::time_references_down ()
 {
   for (uint32_t i = 0; i < AS_nodes.GetN (); ++i)
     {
-      SCION_AS *scion_as = dynamic_cast<SCION_AS *> (PeekPointer (AS_nodes.Get (i)));
+      ScionAs *scion_as = dynamic_cast<ScionAs *> (PeekPointer (AS_nodes.Get (i)));
       TimeServer *time_server = dynamic_cast<TimeServer *> (scion_as->GetHost (2));
 
-      time_server->reference_time_type = REFERENCE_TIME_TYPE::OFF;
+      time_server->reference_time_type = ReferenceTimeType::OFF;
     }
 }
 
@@ -138,10 +138,10 @@ UserDefinedEvents::time_references_up ()
 {
   for (uint32_t i = 0; i < AS_nodes.GetN (); ++i)
     {
-      SCION_AS *scion_as = dynamic_cast<SCION_AS *> (PeekPointer (AS_nodes.Get (i)));
+      ScionAs *scion_as = dynamic_cast<ScionAs *> (PeekPointer (AS_nodes.Get (i)));
       TimeServer *time_server = dynamic_cast<TimeServer *> (scion_as->GetHost (2));
 
-      time_server->reference_time_type = REFERENCE_TIME_TYPE::ON;
+      time_server->reference_time_type = ReferenceTimeType::ON;
     }
 }
 } // namespace ns3

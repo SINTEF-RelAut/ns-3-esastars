@@ -14,12 +14,12 @@
 #include "src/SCION/headers/scion_packet.h"
 
 namespace ns3 {
-class SCIONHost : public SCIONCapableNode
+class ScionHost : public ScionCapableNode
 {
 public:
-  SCIONHost (uint32_t system_id, uint16_t isd_number, uint16_t as_number, host_addr_t local_address,
-             double latitude, double longitude, SCION_AS *AS)
-      : SCIONCapableNode (system_id, isd_number, as_number, local_address, latitude, longitude, AS)
+  ScionHost (uint32_t system_id, uint16_t isd_number, uint16_t as_number, host_addr_t local_address,
+             double latitude, double longitude, ScionAs *AS)
+      : ScionCapableNode (system_id, isd_number, as_number, local_address, latitude, longitude, AS)
   {
   }
 
@@ -30,21 +30,21 @@ protected:
   cached_path_segs_dataset_t cached_core_path_segments;
   cached_path_segs_dataset_t cached_down_path_segments;
 
-  virtual void ProcessReceivedPacket (uint16_t local_if, SCIONPacket *packet,
+  virtual void ProcessReceivedPacket (uint16_t local_if, ScionPacket *packet,
                                         Time receive_time) override;
-  virtual void ModifyPktUponSend (SCIONPacket *packet) override;
+  virtual void ModifyPktUponSend (ScionPacket *packet) override;
   void RemoveExpiredSegments ();
   void SearchInCachedSegments (ia_t dst_ia, std::vector<const PathSegment *> &path,
                                   std::vector<uint8_t> &shortcuts);
   void RequestForPathSegments (ia_t dst_ia);
-  void SendRequestForPathSegments (path_segment_type seg_type, ia_t src_ia, ia_t dst_ia);
+  void SendRequestForPathSegments (PathSegmentType seg_type, ia_t src_ia, ia_t dst_ia);
 
-  void ReceiveRegisteredPathSegments (path_segment_type seg_type, ia_t src_ia, ia_t dst_ia,
+  void ReceiveRegisteredPathSegments (PathSegmentType seg_type, ia_t src_ia, ia_t dst_ia,
                                          const reg_path_segs_to_one_as_t *path_segments);
-  void ReceiveCachedPathSegments (path_segment_type seg_type, ia_t src_ia, ia_t dst_ia,
+  void ReceiveCachedPathSegments (PathSegmentType seg_type, ia_t src_ia, ia_t dst_ia,
                                      cached_path_segs_per_dst_t *path_seg);
 
-  void CachePathSegment (path_segment_type seg_type, ia_t src_ia, ia_t dst_ia,
+  void CachePathSegment (PathSegmentType seg_type, ia_t src_ia, ia_t dst_ia,
                            PathSegment *path_seg);
 };
 } // namespace ns3

@@ -8,7 +8,7 @@
 namespace ns3 {
 NS_LOG_COMPONENT_DEFINE ("BorderRouter");
 void
-BorderRouter::ProcessReceivedPacket (uint16_t if_rcv, SCIONPacket *packet, Time receive_time)
+BorderRouter::ProcessReceivedPacket (uint16_t if_rcv, ScionPacket *packet, Time receive_time)
 {
   NS_LOG_FUNCTION ("packet received " << packet);
   NS_LOG_FUNCTION (
@@ -23,7 +23,7 @@ BorderRouter::ProcessReceivedPacket (uint16_t if_rcv, SCIONPacket *packet, Time 
       << ", ing:" << GET_HOP_ING_IF (packet->path.at (packet->curr_inf)->hops.at (packet->cur_hopf))
       << ", eg:" << GET_HOP_EG_IF (packet->path.at (packet->curr_inf)->hops.at (packet->cur_hopf)));
 
-  SCIONCapableNode::ProcessReceivedPacket (if_rcv, packet, Time ());
+  ScionCapableNode::ProcessReceivedPacket (if_rcv, packet, Time ());
 
   if (packet->src_ia == packet->dst_ia)
     {

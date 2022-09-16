@@ -100,7 +100,7 @@ public:
   void PrintNumberOfValidBeaconEntriesInBeaconStore ();
 
   friend void
-  sort_beacons_by_pollution_by_latency (NodeContainer &AS_nodes, SCION_AS *AS1, SCION_AS *AS2,
+  sort_beacons_by_pollution_by_latency (NodeContainer &AS_nodes, ScionAs *AS1, ScionAs *AS2,
                                         std::string beaconing_policy_str,
                                         std::map<double, std::map<double, std::set<Beacon *>>>
                                             &sorted_beacons_by_pollution_by_latency);
@@ -122,7 +122,7 @@ private:
 };
 
 void sort_beacons_by_pollution_by_latency (
-    NodeContainer &AS_nodes, SCION_AS *AS1, SCION_AS *AS2, std::string beaconing_policy_str,
+    NodeContainer &AS_nodes, ScionAs *AS1, ScionAs *AS2, std::string beaconing_policy_str,
     std::map<double, std::map<double, std::set<Beacon *>>> &sorted_beacons_by_pollution_by_latency);
 
 } // namespace ns3

@@ -25,19 +25,19 @@ TimeServer::RequestSetOfAllCoreAsesFromPathServer ()
   NS_LOG_FUNCTION ("TimeSrv at " << isd_number << ":" << as_number
                                  << " sent req for all core ASes to PthSrv");
 
-  payload_type_t payload_type = payload_type_t::REQ_FOR_LIST_OF_ALL_CORE_ASES;
+  PayloadType payload_type = PayloadType::REQ_FOR_LIST_OF_ALL_CORE_ASES;
   Payload payload;
-  SCIONPacket *packet = CreateScionPacket (payload, payload_type, ia_addr, 1, 0);
+  ScionPacket *packet = CreateScionPacket (payload, payload_type, ia_addr, 1, 0);
 
   SendScionPacket (packet);
 }
 
 void
-TimeServer::ProcessReceivedPacket (uint16_t local_if, SCIONPacket *packet, Time receive_time)
+TimeServer::ProcessReceivedPacket (uint16_t local_if, ScionPacket *packet, Time receive_time)
 {
-  SCIONHost::ProcessReceivedPacket (local_if, packet, receive_time);
+  ScionHost::ProcessReceivedPacket (local_if, packet, receive_time);
 
-  if (packet->payload_type == payload_type_t::LIST_OF_ALL_CORE_ASES)
+  if (packet->payload_type == PayloadType::LIST_OF_ALL_CORE_ASES)
     {
       NS_LOG_FUNCTION ("TimeSrv at " << isd_number << ":" << as_number
                                      << " rcv all core ASes from PthSrv");
@@ -46,7 +46,7 @@ TimeServer::ProcessReceivedPacket (uint16_t local_if, SCIONPacket *packet, Time 
       return;
     }
 
-  if (packet->payload_type == payload_type_t::BROADCAST_LIST_OF_ALL_CORE_ASES)
+  if (packet->payload_type == PayloadType::BROADCAST_LIST_OF_ALL_CORE_ASES)
     {
       NS_LOG_FUNCTION ("TimeSrv at "
                        << isd_number << ":" << as_number << " rcv all core ASes from other TimeSrv "
@@ -56,7 +56,7 @@ TimeServer::ProcessReceivedPacket (uint16_t local_if, SCIONPacket *packet, Time 
       return;
     }
 
-  if (packet->payload_type == payload_type_t::NTP_REQ)
+  if (packet->payload_type == PayloadType::NTP_REQ)
     {
       NS_LOG_FUNCTION ("TimeSrv at " << isd_number << ":" << as_number << " rcv ntp req from "
                                      << GET_ISDN (packet->src_ia) << ":"
@@ -65,7 +65,7 @@ TimeServer::ProcessReceivedPacket (uint16_t local_if, SCIONPacket *packet, Time 
       return;
     }
 
-  if (packet->payload_type == payload_type_t::NTP_RESP)
+  if (packet->payload_type == PayloadType::NTP_RESP)
     {
       NS_LOG_FUNCTION ("TimeSrv at " << isd_number << ":" << as_number << " rcv ntp resp from "
                                      << GET_ISDN (packet->src_ia) << ":"
@@ -77,7 +77,7 @@ TimeServer::ProcessReceivedPacket (uint16_t local_if, SCIONPacket *packet, Time 
 }
 
 void
-TimeServer::ReceiveSetOfAllCoreAsesFromPathServer (SCIONPacket *packet)
+TimeServer::ReceiveSetOfAllCoreAsesFromPathServer (ScionPacket *packet)
 {
   if (*packet->payload.list_of_all_ases.set_of_all_ases != set_of_all_core_ases)
     {
@@ -95,20 +95,20 @@ TimeServer::ReceiveSetOfAllCoreAsesFromPathServer (SCIONPacket *packet)
 
       if (parallel_scheduler)
         {
-          if (read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::W ||
-              read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::NO_R_NO_W)
+          if (read_disjoint_paths == ReadOrWriteDisjointPaths::W ||
+              read_disjoint_paths == ReadOrWriteDisjointPaths::NO_R_NO_W)
             {
               Simulator::Schedule (MilliSeconds (300),
                                    &RunParallelEvents<void (TimeServer::*) (), TimeServer *>,
                                    local_address, &TimeServer::ConstructSetOfSelectedPaths);
-              if (read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::W)
+              if (read_disjoint_paths == ReadOrWriteDisjointPaths::W)
                 {
                   Simulator::Schedule (MilliSeconds (310),
                                        &RunParallelEvents<void (TimeServer::*) (), TimeServer *>,
                                        local_address, &TimeServer::WriteSetOfDisjointPaths);
                 }
             }
-          else if (read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::R)
+          else if (read_disjoint_paths == ReadOrWriteDisjointPaths::R)
             {
               if (set_of_selected_paths.empty ())
                 {
@@ -375,7 +375,7 @@ TimeServer::WriteSetOfDisjointPaths ()
 }
 
 void
-TimeServer::ReceiveSetOfAllCoreAsesFromOtherTimeServer (SCIONPacket *packet)
+TimeServer::ReceiveSetOfAllCoreAsesFromOtherTimeServer (ScionPacket *packet)
 {
   if (*packet->payload.list_of_all_ases.set_of_all_ases != set_of_all_core_ases)
     {
@@ -413,11 +413,11 @@ TimeServer::RequestForPathsToAllCoreAses ()
                                      << " send req for paths to isd " << isd);
       if (isd == isd_number)
         {
-          SendRequestForPathSegments (path_segment_type::CORE_SEG, 0, 0);
+          SendRequestForPathSegments (PathSegmentType::CORE_SEG, 0, 0);
         }
       else
         {
-          SendRequestForPathSegments (path_segment_type::CORE_SEG, 0, MAKE_IA (isd, 0));
+          SendRequestForPathSegments (PathSegmentType::CORE_SEG, 0, MAKE_IA (isd, 0));
         }
     }
 }
@@ -447,7 +447,7 @@ TimeServer::SendSetOfAllCoreAsesToNeighbors ()
                                      << " sent list of all ases to "
                                      << GET_HOP_ISD (path->hops.back ()) << ":"
                                      << GET_HOP_AS (path->hops.back ()));
-      payload_type_t payload_type = payload_type_t::BROADCAST_LIST_OF_ALL_CORE_ASES;
+      PayloadType payload_type = PayloadType::BROADCAST_LIST_OF_ALL_CORE_ASES;
 
       Payload payload;
       payload.list_of_all_ases.set_of_all_ases = &set_of_all_core_ases;
@@ -455,7 +455,7 @@ TimeServer::SendSetOfAllCoreAsesToNeighbors ()
       std::vector<const PathSegment *> the_path;
       the_path.push_back (path);
 
-      SCIONPacket *packet =
+      ScionPacket *packet =
           CreateScionPacket (payload, payload_type, GET_HOP_IA (path->hops.back ()), 2,
                              set_of_all_core_ases.size () * 8, the_path);
 
@@ -503,12 +503,12 @@ TimeServer::AdvanceLocalTime ()
 Time
 TimeServer::GetReferenceTime ()
 {
-  if (reference_time_type == REFERENCE_TIME_TYPE::OFF)
+  if (reference_time_type == ReferenceTimeType::OFF)
     {
       return local_time;
     }
 
-  if (reference_time_type == REFERENCE_TIME_TYPE::MALICIOUS_REF)
+  if (reference_time_type == ReferenceTimeType::MALICIOUS_REF)
     {
       if (malicious_offset_in_ps > 0)
         {
@@ -553,14 +553,14 @@ TimeServer::TriggerCoreTimeSyncAlgo ()
 {
   AdvanceLocalTime ();
 
-  if (alg_v == ALG_V::V4 || synchronization_round != 0 || alg_v == ALG_V::LOCAL_SYNC)
+  if (alg_v == AlgV::V4 || synchronization_round != 0 || alg_v == AlgV::LOCAL_SYNC)
     {
       int64_t loff = GetReferenceTime ().GetTimeStep () - local_time.GetTimeStep ();
-      double coefficient = (alg_v == ALG_V::V4) ? 1.25 : 1.0;
+      double coefficient = (alg_v == AlgV::V4) ? 1.25 : 1.0;
       CorrectLocalTime (loff, time_sync_period, coefficient);
     }
 
-  if (synchronization_round == 0 && alg_v != ALG_V::LOCAL_SYNC)
+  if (synchronization_round == 0 && alg_v != AlgV::LOCAL_SYNC)
     {
       SendNtpReqToPeers ();
       if (parallel_scheduler)
@@ -586,7 +586,7 @@ TimeServer::ContinueGlobalTimeSync ()
 
   int64_t loff;
   loff =
-      (alg_v == ALG_V::V4) ? 0 : (GetReferenceTime ().GetTimeStep () - local_time.GetTimeStep ());
+      (alg_v == AlgV::V4) ? 0 : (GetReferenceTime ().GetTimeStep () - local_time.GetTimeStep ());
   int64_t corr = loff;
 
   std::multiset<int64_t> off;
@@ -629,20 +629,20 @@ TimeServer::ContinueGlobalTimeSync ()
 
   if (std::abs (doff) > std::abs (global_cut_off.GetTimeStep ()))
     {
-      if (alg_v == ALG_V::V1 || alg_v == ALG_V::V2)
+      if (alg_v == AlgV::V1 || alg_v == AlgV::V2)
         {
           doff = doff > 0 ? std::abs (global_cut_off.GetTimeStep ())
                           : -std::abs (global_cut_off.GetTimeStep ());
           corr = goff + doff;
         }
-      else if (alg_v == ALG_V::V3 || alg_v == ALG_V::V4)
+      else if (alg_v == AlgV::V3 || alg_v == AlgV::V4)
         {
           corr = goff;
         }
     }
 
-  double coefficient = (alg_v == ALG_V::V4) ? 2.5 : 1.0;
-  Time duration = (alg_v == ALG_V::V1) ? time_sync_period : (G * time_sync_period);
+  double coefficient = (alg_v == AlgV::V4) ? 2.5 : 1.0;
+  Time duration = (alg_v == AlgV::V1) ? time_sync_period : (G * time_sync_period);
   CorrectLocalTime (corr, duration, coefficient);
 
   poff.clear ();
@@ -698,7 +698,7 @@ TimeServer::SendNtpReqToPeers ()
         {
           NS_LOG_FUNCTION ("TimeSrv at " << isd_number << ":" << as_number << " sent ntp req to "
                                          << GET_ISDN (peer_ia) << ":" << GET_ASN (peer_ia));
-          payload_type_t payload_type = payload_type_t::NTP_REQ;
+          PayloadType payload_type = PayloadType::NTP_REQ;
 
           Payload payload;
           payload.ntp_req_or_resp.t0 = local_time.GetTimeStep ();
@@ -706,7 +706,7 @@ TimeServer::SendNtpReqToPeers ()
           std::vector<const PathSegment *> the_path;
           the_path.push_back (path_seg);
 
-          SCIONPacket *packet = CreateScionPacket (payload, payload_type, peer_ia, 2,
+          ScionPacket *packet = CreateScionPacket (payload, payload_type, peer_ia, 2,
                                                    8 + 48 /* udp + ntp*/, the_path);
 
           SendScionPacket (packet);
@@ -715,15 +715,15 @@ TimeServer::SendNtpReqToPeers ()
 }
 
 void
-TimeServer::ModifyPktUponSend (SCIONPacket *packet)
+TimeServer::ModifyPktUponSend (ScionPacket *packet)
 {
-  if (packet->payload_type == payload_type_t::NTP_REQ)
+  if (packet->payload_type == PayloadType::NTP_REQ)
     {
       packet->payload.ntp_req_or_resp.t0 = local_time.GetTimeStep ();
       return;
     }
 
-  if (packet->payload_type == payload_type_t::NTP_RESP)
+  if (packet->payload_type == PayloadType::NTP_RESP)
     {
       packet->payload.ntp_req_or_resp.t2 = local_time.GetTimeStep ();
       return;
@@ -731,7 +731,7 @@ TimeServer::ModifyPktUponSend (SCIONPacket *packet)
 }
 
 void
-TimeServer::ReceiveNtpReqFromPeer (SCIONPacket *packet, Time receive_time)
+TimeServer::ReceiveNtpReqFromPeer (ScionPacket *packet, Time receive_time)
 {
   int64_t t0 = packet->payload.ntp_req_or_resp.t0;
   NS_LOG_FUNCTION ("ia_addr: " << isd_number << "-" << as_number << ", local_time: " << local_time
@@ -739,14 +739,14 @@ TimeServer::ReceiveNtpReqFromPeer (SCIONPacket *packet, Time receive_time)
                                << GET_ASN (packet->src_ia) << ", receive_time: " << receive_time
                                << ", t0: " << (t0 < 0 ? "-" : "+") << TimeStep (std::abs (t0)));
 
-  packet->payload_type = payload_type_t::NTP_RESP;
+  packet->payload_type = PayloadType::NTP_RESP;
   packet->payload.ntp_req_or_resp.t1 = receive_time.GetTimeStep ();
   packet->payload.ntp_req_or_resp.t2 = local_time.GetTimeStep ();
   ReturnScionPacket (packet);
 }
 
 void
-TimeServer::ReceiveNtpResFromPeer (SCIONPacket *packet, Time receive_time)
+TimeServer::ReceiveNtpResFromPeer (ScionPacket *packet, Time receive_time)
 {
   int64_t t0 = packet->payload.ntp_req_or_resp.t0;
   int64_t t1 = packet->payload.ntp_req_or_resp.t1;
@@ -811,7 +811,7 @@ TimeServer::CaptureLocalSnapshot ()
                 << std::endl;
     }
 
-  if (reference_time_type == REFERENCE_TIME_TYPE::MALICIOUS_REF)
+  if (reference_time_type == ReferenceTimeType::MALICIOUS_REF)
     {
       std::cout << "AS m " << isd_number << "-" << as_number << ": " << local_time << std::endl;
     }
@@ -842,7 +842,7 @@ TimeServer::CaptureOffsetDiff ()
 
   for (uint32_t i = 0; i < nodes.GetN (); ++i)
     {
-      SCION_AS *node = dynamic_cast<SCION_AS *> (PeekPointer (nodes.Get (i)));
+      ScionAs *node = dynamic_cast<ScionAs *> (PeekPointer (nodes.Get (i)));
       if (node->ia_addr == ia_addr)
         {
           continue;
@@ -887,7 +887,7 @@ TimeServer::CompareOffsWithRealOffs ()
   AdvanceLocalTime ();
   for (uint32_t i = 0; i < nodes.GetN (); ++i)
     {
-      SCION_AS *node = dynamic_cast<SCION_AS *> (PeekPointer (nodes.Get (i)));
+      ScionAs *node = dynamic_cast<ScionAs *> (PeekPointer (nodes.Get (i)));
       if (node->ia_addr == ia_addr)
         {
           continue;
@@ -921,7 +921,7 @@ TimeServer::CompareOffsWithRealOffs ()
 void
 TimeServer::ScheduleListOfAllASesRequest ()
 {
-  if (read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::W)
+  if (read_disjoint_paths == ReadOrWriteDisjointPaths::W)
     {
       Simulator::Schedule (first_event - Time (PATH_RQ_TIME_SYNC_DIFF),
                            &TimeServer::RequestSetOfAllCoreAsesFromPathServer, this);
@@ -949,8 +949,8 @@ TimeServer::ScheduleListOfAllASesRequest ()
 void
 TimeServer::ScheduleTimeSync ()
 {
-  if (read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::R ||
-      read_disjoint_paths == READ_OR_WRITE_DISJOINT_PATHS::NO_R_NO_W)
+  if (read_disjoint_paths == ReadOrWriteDisjointPaths::R ||
+      read_disjoint_paths == ReadOrWriteDisjointPaths::NO_R_NO_W)
     {
       Simulator::Schedule (first_event, &TimeServer::ResetTime, this);
       for (Time t = first_event; t < last_event; t += time_sync_period)
@@ -963,12 +963,12 @@ TimeServer::ScheduleTimeSync ()
 void
 TimeServer::ScheduleSnapShots ()
 {
-  if (snapshot_type == SNAPSHOT_TYPE::SNAPSHOT_OFF)
+  if (snapshot_type == SnapshotType::SNAPSHOT_OFF)
     {
       return;
     }
 
-  if (snapshot_type == SNAPSHOT_TYPE::LOCAL_SNAPSHOT)
+  if (snapshot_type == SnapshotType::LOCAL_SNAPSHOT)
     {
       Simulator::Schedule (first_event + TimeStep (1), &TimeServer::CaptureLocalSnapshot, this);
     }
@@ -980,17 +980,17 @@ TimeServer::ScheduleSnapShots ()
         {
           if ((diff_with_first_event.GetTimeStep () / time_sync_period.GetTimeStep ()) % G == 0)
             {
-              if (snapshot_type == SNAPSHOT_TYPE::LOCAL_SNAPSHOT)
+              if (snapshot_type == SnapshotType::LOCAL_SNAPSHOT)
                 {
                   Simulator::Schedule (t + Time (NTP_REQ_GLOBAL_SYNC_DIFF) + TimeStep (1),
                                        &TimeServer::CaptureLocalSnapshot, this);
                 }
-              else if (snapshot_type == SNAPSHOT_TYPE::PRINT_OFFSET_DIFF)
+              else if (snapshot_type == SnapshotType::PRINT_OFFSET_DIFF)
                 {
                   Simulator::Schedule (t + Time (NTP_REQ_GLOBAL_SYNC_DIFF),
                                        &TimeServer::CaptureOffsetDiff, this);
                 }
-              else if (snapshot_type == SNAPSHOT_TYPE::ASSERT_OFFSET_DIFF)
+              else if (snapshot_type == SnapshotType::ASSERT_OFFSET_DIFF)
                 {
                   Simulator::Schedule (t + Time (NTP_REQ_GLOBAL_SYNC_DIFF),
                                        &TimeServer::CompareOffsWithRealOffs, this);
@@ -998,7 +998,7 @@ TimeServer::ScheduleSnapShots ()
             }
           else
             {
-              if (snapshot_type == SNAPSHOT_TYPE::LOCAL_SNAPSHOT)
+              if (snapshot_type == SnapshotType::LOCAL_SNAPSHOT)
                 {
                   Simulator::Schedule (t + TimeStep (1), &TimeServer::CaptureLocalSnapshot, this);
                 }
@@ -1006,7 +1006,7 @@ TimeServer::ScheduleSnapShots ()
         }
       else
         {
-          if (snapshot_type == SNAPSHOT_TYPE::LOCAL_SNAPSHOT)
+          if (snapshot_type == SnapshotType::LOCAL_SNAPSHOT)
             {
               Simulator::Schedule (t, &TimeServer::CaptureLocalSnapshot, this);
             }

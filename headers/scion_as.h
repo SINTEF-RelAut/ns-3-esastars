@@ -25,14 +25,14 @@
 
 namespace ns3 {
 
-enum neighbour_relation { CORE = 0, PEER = 1, CUSTOMER = 2, PROVIDER = 3 };
+enum NeighbourRelation { CORE = 0, PEER = 1, CUSTOMER = 2, PROVIDER = 3 };
 
 class BeaconServer;
 
-class SCION_AS : public Node
+class ScionAs : public Node
 {
 public:
-  SCION_AS (uint32_t system_id, bool parallel_scheduler, uint16_t as_number,
+  ScionAs (uint32_t system_id, bool parallel_scheduler, uint16_t as_number,
             rapidxml::xml_node<> *xml_node, const YAML::Node &config, bool malicious_border_routers,
             Time local_time)
       : Node (system_id)
@@ -68,7 +68,7 @@ public:
     InstantiateBeaconServer (parallel_scheduler, xml_node, config);
   }
 
-  virtual ~SCION_AS ()
+  virtual ~ScionAs ()
   {
   }
 
@@ -83,7 +83,7 @@ public:
   std::vector<Time> latencies_between_interfaces_and_beacon_server;
   Time latency_between_path_server_and_beacon_server;
 
-  std::vector<std::pair<uint16_t, neighbour_relation>> neighbors;
+  std::vector<std::pair<uint16_t, NeighbourRelation>> neighbors;
   std::unordered_map<uint16_t, std::vector<uint16_t>> interfaces_per_neighbor_as;
   std::unordered_map<uint16_t, uint16_t> interface_to_neighbor_map;
   std::vector<std::pair<ld, ld>> interfaces_coordinates;
@@ -97,7 +97,7 @@ public:
   void DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
                           const YAML::Node &config);
 
-  std::pair<uint16_t, SCION_AS *> GetRemoteAsInfo (uint16_t egress_interface_no);
+  std::pair<uint16_t, ScionAs *> GetRemoteAsInfo (uint16_t egress_interface_no);
 
   void ReceiveBeacon (Beacon &the_beacon, uint16_t sender_as, uint16_t remote_if,
                       uint16_t local_if);
@@ -110,18 +110,18 @@ public:
 
   PathServer *GetPathServer ();
 
-  SCIONCapableNode *GetHost (host_addr_t host_addr);
+  ScionCapableNode *GetHost (host_addr_t host_addr);
 
   uint32_t GetNHosts ();
 
   void AdvanceTime (ns3::Time advance);
 
-  void AddHost (SCIONHost *host);
+  void AddHost (ScionHost *host);
 
   BorderRouter *AddBr (double latitude, double longitude, Time processing_delay,
                        Time processing_throughput_delay);
 
-  void AddToRemoteAsInfo (uint16_t remote_if, SCION_AS *remote_as);
+  void AddToRemoteAsInfo (uint16_t remote_if, ScionAs *remote_as);
 
   friend class UserDefinedEvents;
 
@@ -131,10 +131,10 @@ protected:
 
   BeaconServer *beacon_server;
   PathServer *path_server = NULL;
-  std::vector<SCIONHost *> hosts;
+  std::vector<ScionHost *> hosts;
   std::vector<BorderRouter *> border_routers;
 
-  std::vector<std::pair<uint16_t, SCION_AS *>> remote_as_info;
+  std::vector<std::pair<uint16_t, ScionAs *>> remote_as_info;
 
   void ConnectInternalNodes (bool only_propagation_delay);
   void InitializeLatencies (bool only_propagation_delay);

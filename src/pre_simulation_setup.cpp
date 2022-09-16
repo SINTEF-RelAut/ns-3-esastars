@@ -94,15 +94,15 @@ InstantiateASesFromTopo (rapidxml::xml_node<> *xml_root,
             }
         }
 
-      Ptr<SCION_AS> AS_node;
+      Ptr<ScionAs> AS_node;
       if (type == "core")
         {
-          AS_node = CreateObject<SCION_Core_AS> (0, (alias_as_no == 0), alias_as_no, cur_xml_node,
+          AS_node = CreateObject<ScionCoreAs> (0, (alias_as_no == 0), alias_as_no, cur_xml_node,
                                                  config, malicious_border_routers, Time (0));
         }
       else if (type == "non-core")
         {
-          AS_node = CreateObject<SCION_AS> (0, (alias_as_no == 0), alias_as_no, cur_xml_node,
+          AS_node = CreateObject<ScionAs> (0, (alias_as_no == 0), alias_as_no, cur_xml_node,
                                             config, malicious_border_routers, Time (0));
         }
       else
@@ -137,7 +137,7 @@ InstantiatePathServers (const YAML::Node &config, const NodeContainer &AS_nodes)
 
   for (uint32_t i = 0; i < AS_nodes.GetN (); ++i)
     {
-      SCION_AS *AS_node = dynamic_cast<SCION_AS *> (PeekPointer (AS_nodes.Get (i)));
+      ScionAs *AS_node = dynamic_cast<ScionAs *> (PeekPointer (AS_nodes.Get (i)));
       PathServer *path_server =
           new PathServer (0, AS_node->isd_number, AS_node->as_number, 1, 0.0, 0.0, AS_node);
       AS_node->SetPathServer (path_server);
@@ -296,13 +296,13 @@ InstantiateTimeServers (const YAML::Node &config, const NodeContainer &AS_nodes)
 
   for (uint32_t i = 0; i < AS_nodes.GetN (); ++i)
     {
-      SCION_AS *AS_node = dynamic_cast<SCION_AS *> (PeekPointer (AS_nodes.Get (i)));
+      ScionAs *AS_node = dynamic_cast<ScionAs *> (PeekPointer (AS_nodes.Get (i)));
       uint16_t alias_as_no = AS_node->as_number;
       assert (alias_as_no == i);
       uint16_t isd_number = AS_node->isd_number;
       bool parallel_scheduler = (alias_as_no == global_scheduler_and_printer);
 
-      SCIONHost *time_server = new TimeServer (
+      ScionHost *time_server = new TimeServer (
           0, isd_number, alias_as_no, 2, 0.0, 0.0, AS_node, parallel_scheduler,
           Time (config["time_service"]["max_initial_drift"].as<std::string> ()),
           Time (config["time_service"]["max_drift_per_day"].as<std::string> ()),
@@ -355,34 +355,34 @@ InstantiateLinksFromTopo (rapidxml::xml_node<> *xml_root, NodeContainer &AS_node
       ld longitude = std::stod (p.GetProperty ("longitude"));
       int32_t bwd = std::stoi (p.GetProperty ("capacity"));
       std::string rel = "core"; //p.GetProperty("rel");
-      neighbour_relation relation;
+      NeighbourRelation relation;
 
       // Check for the 3 possibilities in CAIDA topology
       if (rel == "peer")
         {
-          relation = neighbour_relation::PEER;
+          relation = NeighbourRelation::PEER;
         }
       else if (rel == "core")
         {
-          relation = neighbour_relation::CORE;
+          relation = NeighbourRelation::CORE;
         }
       else if (rel == "customer")
         {
-          relation = neighbour_relation::CUSTOMER;
+          relation = NeighbourRelation::CUSTOMER;
         }
       else
         {
-          relation = neighbour_relation::CORE;
+          relation = NeighbourRelation::CORE;
         }
 
-      Ptr<SCION_AS> from_AS;
-      Ptr<SCION_AS> to_AS;
+      Ptr<ScionAs> from_AS;
+      Ptr<ScionAs> to_AS;
 
       uint16_t to_alias_as_no = real_to_alias_as_no.at (to);
       uint16_t from_alias_as_no = real_to_alias_as_no.at (from);
 
-      to_AS = DynamicCast<SCION_AS> (AS_nodes.Get (to_alias_as_no));
-      from_AS = DynamicCast<SCION_AS> (AS_nodes.Get (from_alias_as_no));
+      to_AS = DynamicCast<ScionAs> (AS_nodes.Get (to_alias_as_no));
+      from_AS = DynamicCast<ScionAs> (AS_nodes.Get (from_alias_as_no));
 
       assert (to_AS->as_number == to_alias_as_no);
       assert (from_AS->as_number == from_alias_as_no);
@@ -469,27 +469,27 @@ InstantiateLinksFromTopo (rapidxml::xml_node<> *xml_root, NodeContainer &AS_node
       to_AS->inter_as_bwds.push_back (bwd);
       from_AS->inter_as_bwds.push_back (bwd);
 
-      neighbour_relation to_rel;
-      neighbour_relation from_rel;
+      NeighbourRelation to_rel;
+      NeighbourRelation from_rel;
 
       switch (relation)
         {
-        case neighbour_relation::PEER:
-          to_rel = neighbour_relation::PEER;
-          from_rel = neighbour_relation::PEER;
+        case NeighbourRelation::PEER:
+          to_rel = NeighbourRelation::PEER;
+          from_rel = NeighbourRelation::PEER;
           break;
-        case neighbour_relation::CORE:
-          to_rel = neighbour_relation::CORE;
-          from_rel = neighbour_relation::CORE;
+        case NeighbourRelation::CORE:
+          to_rel = NeighbourRelation::CORE;
+          from_rel = NeighbourRelation::CORE;
           break;
-        case neighbour_relation::CUSTOMER:
-          to_rel = neighbour_relation::PROVIDER;
-          from_rel = neighbour_relation::CUSTOMER;
+        case NeighbourRelation::CUSTOMER:
+          to_rel = NeighbourRelation::PROVIDER;
+          from_rel = NeighbourRelation::CUSTOMER;
           break;
-        case neighbour_relation::PROVIDER:
+        case NeighbourRelation::PROVIDER:
           // Should never happen, there is no "Provider" type in xml files
-          to_rel = neighbour_relation::CUSTOMER;
-          from_rel = neighbour_relation::PROVIDER;
+          to_rel = NeighbourRelation::CUSTOMER;
+          from_rel = NeighbourRelation::PROVIDER;
           assert (false);
         }
 
@@ -543,7 +543,7 @@ InitializeASesAttributes (const NodeContainer &AS_nodes,
     {
       for (uint64_t i = 0; i < AS_nodes.GetN (); ++i)
         {
-          SCION_AS *AS_node = dynamic_cast<SCION_AS *> (PeekPointer (AS_nodes.Get (i)));
+          ScionAs *AS_node = dynamic_cast<ScionAs *> (PeekPointer (AS_nodes.Get (i)));
           AS_node->DoInitializations (AS_nodes.GetN (), xml_node, config, only_propagation_delay);
         }
     }
@@ -551,7 +551,7 @@ InitializeASesAttributes (const NodeContainer &AS_nodes,
     {
       for (uint64_t i = 0; i < AS_nodes.GetN (); ++i)
         {
-          SCION_AS *AS_node = dynamic_cast<SCION_AS *> (PeekPointer (AS_nodes.Get (i)));
+          ScionAs *AS_node = dynamic_cast<ScionAs *> (PeekPointer (AS_nodes.Get (i)));
           AS_node->DoInitializations (AS_nodes.GetN (), xml_node, config);
         }
     }

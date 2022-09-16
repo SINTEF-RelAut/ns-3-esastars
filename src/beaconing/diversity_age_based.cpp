@@ -58,13 +58,13 @@ DiversityAgeBased::DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *x
 void
 DiversityAgeBased::CreateInitialStaticInfoExtension (
     static_info_extension_t &static_info_extension, uint16_t self_egress_if_no,
-    const optimization_target_t *optimization_target)
+    const OptimizationTarget *optimization_target)
 {
-  static_info_extension.insert (std::make_pair (static_info_type_t::LATENCY, 0));
+  static_info_extension.insert (std::make_pair (StaticInfoType::LATENCY, 0));
 }
 
 void
-DiversityAgeBased::DisseminateBeacons (neighbour_relation relation)
+DiversityAgeBased::DisseminateBeacons (NeighbourRelation relation)
 {
   uint32_t neighbors_cnt = AS->neighbors.size ();
   omp_set_num_threads (NUM_CORE);
@@ -89,7 +89,7 @@ DiversityAgeBased::DisseminateBeacons (neighbour_relation relation)
             }
 
           std::multimap<
-              ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>>
+              ld, std::tuple<Beacon *, uint16_t, uint16_t, ScionAs *, static_info_extension_t>>
               selected_beacons = SelectBeaconsToDisseminatePerDstPerNbr (remote_as_no, dst_as_no,
                                                                          beacons_to_the_dst_as);
 
@@ -98,7 +98,7 @@ DiversityAgeBased::DisseminateBeacons (neighbour_relation relation)
               Beacon *the_beacon;
               uint16_t remote_ingress_if_no;
               uint16_t self_egress_if_no;
-              SCION_AS *remote_as;
+              ScionAs *remote_as;
               static_info_extension_t static_info_extension;
 
               std::tie (the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as,
@@ -168,12 +168,12 @@ DiversityAgeBased::UpdateAlgorithmDataStructuresPeriodic (Beacon *the_beacon, bo
     }
 }
 
-std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>>
+std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, ScionAs *, static_info_extension_t>>
 DiversityAgeBased::SelectBeaconsToDisseminatePerDstPerNbr (
     uint16_t remote_as_no, uint16_t dst_as_no,
     const beacons_with_same_dst_as &beacons_to_the_dst_as)
 {
-  std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>>
+  std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, ScionAs *, static_info_extension_t>>
       score_map_to_beacon_and_metadata;
   std::map<std::pair<Beacon *, uint16_t>, std::pair<ld, ld>> valid_candidates;
 
@@ -183,7 +183,7 @@ DiversityAgeBased::SelectBeaconsToDisseminatePerDstPerNbr (
   uint16_t max_score_iface = 0;
 
   uint16_t remote_ingress_if_no;
-  SCION_AS *remote_as =
+  ScionAs *remote_as =
       AS->GetRemoteAsInfo (AS->interfaces_per_neighbor_as.at (remote_as_no).at (0)).second;
 
   uint32_t min_no_paths_to_send = (20 * AS->interfaces_per_neighbor_as.at (remote_as_no).size ()) /
@@ -280,17 +280,17 @@ DiversityAgeBased::SelectBeaconsToDisseminatePerDstPerNbr (
 
           remote_ingress_if_no = AS->GetRemoteAsInfo (max_score_iface).first;
 
-          ld latency = max_score_beacon->static_info_extension.at (static_info_type_t::LATENCY) +
+          ld latency = max_score_beacon->static_info_extension.at (StaticInfoType::LATENCY) +
                        AS->latencies_between_interfaces
                            .at (LOWER_16_BITS (max_score_beacon->the_path.back ()))
                            .at (max_score_iface);
 
           static_info_extension_t static_info_extension;
-          static_info_extension.insert (std::make_pair (static_info_type_t::LATENCY, latency));
+          static_info_extension.insert (std::make_pair (StaticInfoType::LATENCY, latency));
 
           score_map_to_beacon_and_metadata.insert (std::make_pair (
               max_score,
-              std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t> (
+              std::tuple<Beacon *, uint16_t, uint16_t, ScionAs *, static_info_extension_t> (
                   max_score_beacon, max_score_iface, remote_ingress_if_no, remote_as,
                   static_info_extension)));
 
@@ -361,7 +361,7 @@ DiversityAgeBased::SelectBeaconsToDisseminatePerDstPerNbr (
 
 inline ld
 DiversityAgeBased::CalculateRawScore (Beacon *the_beacon, uint16_t dst_as_no,
-                                        uint16_t self_egress_if_no, SCION_AS *remote_as)
+                                        uint16_t self_egress_if_no, ScionAs *remote_as)
 {
   ld link_diversity_score = CalculateLinkDiversityScoreForDissemination (
       remote_as->as_number, dst_as_no, self_egress_if_no, the_beacon);
