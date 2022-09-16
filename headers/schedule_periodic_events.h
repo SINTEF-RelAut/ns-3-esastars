@@ -13,9 +13,9 @@
 
 namespace ns3 {
 
-void SchedulePeriodicEvents (YAML::Node &config);
+    void SchedulePeriodicEvents(YAML::Node &config);
 
-void PeriodicBeaconingCheckPoint ();
+    void PeriodicBeaconingCheckPoint();
 } // namespace ns3
 
 #endif //SCION_SIMULATOR_SCHEDULE_PERIODIC_EVENTS_H

@@ -3,5 +3,4 @@
 //
 #include "src/SCION/headers/scion_packet.h"
 
-namespace ns3 {
-}
+namespace ns3 {}

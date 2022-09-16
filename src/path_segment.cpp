@@ -4,5 +4,4 @@
 
 #include "src/SCION/headers/path_segment.h"
 
-namespace ns3 {
-}
+namespace ns3 {}

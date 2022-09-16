@@ -15,17 +15,14 @@
 #include "src/SCION/headers/scion_capable_node.h"
 
 namespace ns3 {
-class BorderRouter : public ScionCapableNode
-{
-public:
-  BorderRouter (uint32_t systemId, uint16_t isdNumber, uint16_t asNumber, uint32_t localAddress,
-                double latitude, double longitude, ScionAs *as)
-      : ScionCapableNode (systemId, isdNumber, asNumber, localAddress, latitude, longitude, as)
-  {
-  }
+    class BorderRouter : public SCIONCapableNode {
+    public:
+        BorderRouter(uint32_t system_id, uint16_t isd_number, uint16_t as_number, uint32_t local_address,
+                     double latitude, double longitude, SCION_AS *AS)
+            : SCIONCapableNode(system_id, isd_number, as_number, local_address, latitude, longitude, AS) {}
 
-private:
-  void ProcessReceivedPacket (uint16_t localIf, ScionPacket *packet, Time receiveTime) override;
-};
+    private:
+        void process_received_packet(uint16_t local_if, SCIONPacket *packet, Time receive_time) override;
+    };
 } // namespace ns3
 #endif //SCION_SIMULATOR_BORDER_ROUTER_H

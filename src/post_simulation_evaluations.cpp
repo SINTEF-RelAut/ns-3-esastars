@@ -29,1521 +29,1227 @@
 
 namespace ns3 {
 
-void
-PostSimulationEvaluations::DoFinalEvaluations ()
-{
-  if (!config["post_eval"])
-    {
-      return;
-    }
-
-  const YAML::Node &evals = config["post_eval"];
-  for (auto it = evals.begin (); it != evals.end (); ++it)
-    {
-      const YAML::Node &eval = *it;
-      std::string func = eval["func"].as<std::string> ();
-      ((this)->*functionNameToFunction.at (func)) ();
-    }
-}
-
-void
-PostSimulationEvaluations::PrintTrafficSentFromCollectorsPerDstPerPeriod ()
-{
-  std::cout << "####################################### Traffic sent from each collector "
-               "#######################################"
-            << std::endl;
-  std::list<int32_t> collectors ({3303,  3130,  1239,  701,   5413,  34224, 7018,
-                                  53767, 3741,  31019, 22652, 2497,  57866, 37100,
-                                  3130,  3257,  3549,  6939,  18106, 1299,  23673,
-                                  2914,  11537, 2152,  852,   8492,  34224, 11686});
-  for (int32_t collector : collectors)
-    {
-      double_t consumedBwd = 0.0;
-      for (uint32_t i = 0; i < asNodes.GetN (); ++i)
-        {
-          ScionAs *as = dynamic_cast<ScionAs *> (PeekPointer (asNodes.Get (i)));
-          if (aliasToRealAsNo.at (as->asNumber) == collector)
-            {
-              double_t periods = 0.0;
-              for (Time t = Time (0); t < lastBeaconingEventTime; t += beaconingPeriod)
-                {
-                  periods += 1.0;
-                  for (uint32_t ifIndex = 0; ifIndex < as->GetNDevices (); ++ifIndex)
-                    {
-                      consumedBwd += (double_t) as->GetBeaconServer ()
-                                          ->GetBytesSentPerInterfacePerPeriod ()
-                                          .at ((uint16_t) t.ToInteger (Time::MIN))
-                                          .at (ifIndex);
-                    }
-                }
-              consumedBwd = (double_t) consumedBwd / as->GetNDevices () / periods;
-              break;
-            }
+    void PostSimulationEvaluations::DoFinalEvaluations() {
+        if (!config["post_eval"]) {
+            return;
         }
-      std::cout << collector << "\t" << consumedBwd << std::endl;
-    }
-}
 
-void
-PostSimulationEvaluations::FindMinLatencyToDnsRootServers ()
-{
-  std::string probesFile = "/cluster/scratch/tabaeias/atlas_probes.xml";
-  std::ifstream finProbes (probesFile.c_str ());
-  std::ostringstream probesSstr;
-  probesSstr << finProbes.rdbuf ();
-  probesSstr.flush ();
-  finProbes.close ();
-
-  std::string xmlProbesData = probesSstr.str ();
-  rapidxml::xml_document<> probesDoc;
-  probesDoc.parse<0> (&xmlProbesData[0]);
-
-  rapidxml::xml_node<> *probesRootNode = probesDoc.first_node ("root");
-  rapidxml::xml_node<> *probesNode = probesRootNode->first_node ("Probes");
-
-  std::list<std::string> rootServerNames ({"a-root", "b-root", "c-root", "d-root", "e-root",
-                                             "f-root", "h-root", "j-root", "k-root", "l-root",
-                                             "m-root"});
-  for (auto const &rootServerName : rootServerNames)
-    {
-      std::cout << "################################################## " << rootServerName
-                << " #########################################################" << std::endl;
-
-      std::string dnsRootFile = "/cluster/scratch/tabaeias/" + rootServerName + ".xml";
-      std::ifstream finDnsRoot (dnsRootFile.c_str ());
-      std::ostringstream dnsRootSstr;
-      dnsRootSstr << finDnsRoot.rdbuf ();
-      dnsRootSstr.flush ();
-      finDnsRoot.close ();
-
-      std::set<int32_t> set_of_src_ases;
-
-      std::string xmlDnsRootData = dnsRootSstr.str ();
-      rapidxml::xml_document<> dnsRootDoc;
-      dnsRootDoc.parse<0> (&xmlDnsRootData[0]);
-
-      rapidxml::xml_node<> *dnsRootNode = dnsRootDoc.first_node ("root");
-      int32_t dstAsNo = std::stoi (dnsRootNode->first_node ("ASN")->value ());
-
-      if (realToAliasAsNo.find (dstAsNo) == realToAliasAsNo.end ())
-        {
-          std::cout << rootServerName << ": " << dstAsNo
-                    << " The root DNS server's AS is not among the top 2000 g_realToAliasAsNo"
-                    << std::endl;
-          continue;
+        const YAML::Node &evals = config["post_eval"];
+        for (auto it = evals.begin(); it != evals.end(); ++it) {
+            const YAML::Node &eval = *it;
+            std::string func = eval["func"].as<std::string>();
+            ((this)->*function_name_to_function.at(func))();
         }
-      std::cout << "Probe|ASN|Latency|Distance|Probe coordinates|Path Coordinates|Instance "
-                   "Coordinates|g_realToAliasAsNo on Path"
-                << std::endl;
+    }
 
-      uint16_t dstAliasAsNo = realToAliasAsNo.at (dstAsNo);
-      ScionAs *dstAs = dynamic_cast<ScionAs *> (PeekPointer (asNodes.Get (dstAliasAsNo)));
-
-      rapidxml::xml_node<> *currProbe = probesNode->first_node ("item");
-      while (currProbe)
-        {
-          int32_t srcAsNo = std::stoi (currProbe->first_node ("ASN")->value ());
-          double probeLat = std::stod (currProbe->first_node ("Latitude")->value ());
-          double probeLong = std::stod (currProbe->first_node ("Longitude")->value ());
-
-          if (realToAliasAsNo.find (srcAsNo) == realToAliasAsNo.end ())
-            {
-              currProbe = currProbe->next_sibling ("item");
-              continue;
-            }
-
-          set_of_src_ases.insert (srcAsNo);
-
-          ScionAs *srcAliasAsNo = dynamic_cast<ScionAs *> (
-              PeekPointer (asNodes.Get (realToAliasAsNo.at (srcAsNo))));
-
-          uint16_t lastBr = 0;
-          double minLatencyToDstAs = std::numeric_limits<double>::max ();
-          Path_t *selectedPath = NULL;
-
-          auto const &beaconsToDnsRootAs =
-              srcAliasAsNo->GetBeaconServer ()->GetBeaconStore ().at (dstAliasAsNo);
-
-          for (auto const &lenBeaconsPair : beaconsToDnsRootAs)
-            {
-              auto const &sameLenBeacons = lenBeaconsPair.second;
-
-              for (auto const &theBeacon : sameLenBeacons)
-                {
-                  if (theBeacon->isValid)
-                    {
-                      assert (UPPER_16_BITS (theBeacon->path.at (0)) == dstAliasAsNo);
-
-                      uint16_t firstBr = LOWER_16_BITS (theBeacon->path.back ());
-                      std::pair<double, double> firstBrCoordinates =
-                          srcAliasAsNo->interfacesCoordinates.at (firstBr);
-                      double latencyFromProbeToFirstHop = CalculateGreatCircleLatency (
-                          probeLat, probeLong, firstBrCoordinates.first, firstBrCoordinates.second);
-                      if (theBeacon->staticInfoExtension.at (StaticInfoType::latency) +
-                              latencyFromProbeToFirstHop <
-                          minLatencyToDstAs)
-                        {
-                          minLatencyToDstAs =
-                              theBeacon->staticInfoExtension.at (StaticInfoType::latency) +
-                              latencyFromProbeToFirstHop;
-                          lastBr = SECOND_UPPER_16_BITS (theBeacon->path.at (0));
-                          selectedPath = &theBeacon->path;
+    void PostSimulationEvaluations::PrintTrafficSentFromCollectorsPerDstPerPeriod() {
+        std::cout << "####################################### Traffic sent from each collector "
+                     "#######################################"
+                  << std::endl;
+        std::list<int32_t> collectors({3303,  3130, 1239,  701,   5413, 34224, 7018,  53767, 3741,  31019,
+                                       22652, 2497, 57866, 37100, 3130, 3257,  3549,  6939,  18106, 1299,
+                                       23673, 2914, 11537, 2152,  852,  8492,  34224, 11686});
+        for (int32_t collector : collectors) {
+            double_t consumed_bwd = 0.0;
+            for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+                SCION_AS *as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+                if (alias_to_real_as_no.at(as->as_number) == collector) {
+                    double_t periods = 0.0;
+                    for (Time t = Time(0); t < last_beaconing_event_time; t += beaconing_period) {
+                        periods += 1.0;
+                        for (uint32_t if_index = 0; if_index < as->GetNDevices(); ++if_index) {
+                            consumed_bwd += (double_t) as->GetBeaconServer()
+                                                    ->GetBytesSentPerInterfacePerPeriod()
+                                                    .at((uint16_t) t.ToInteger(Time::MIN))
+                                                    .at(if_index);
                         }
                     }
+                    consumed_bwd = (double_t) consumed_bwd / as->GetNDevices() / periods;
+                    break;
                 }
             }
-
-          double minOverallLatency = std::numeric_limits<double>::max ();
-          std::pair<double, double> selectedInstanceCoordinates;
-
-          rapidxml::xml_node<> *sitesNode = dnsRootNode->first_node ("Sites");
-          rapidxml::xml_node<> *currSite = sitesNode->first_node ("item");
-          while (currSite)
-            {
-              double instanceLat = std::stod (currSite->first_node ("Latitude")->value ());
-              double instanceLong = std::stod (currSite->first_node ("Longitude")->value ());
-              std::pair<double, double> lastBrCoordinates =
-                  dstAs->interfacesCoordinates.at (lastBr);
-              double overallLatency =
-                  minLatencyToDstAs + CalculateGreatCircleLatency (instanceLat, instanceLong,
-                                                                   lastBrCoordinates.first,
-                                                                   lastBrCoordinates.second);
-              if (overallLatency < minOverallLatency)
-                {
-                  minOverallLatency = overallLatency;
-                  selectedInstanceCoordinates =
-                      std::pair<double, double> (instanceLat, instanceLong);
-                }
-              currSite = currSite->next_sibling ("item");
-            }
-
-          std::cout
-              << currProbe->first_node ("ID")->value () << "|" << srcAsNo
-              << "|"
-              // << "(" << selected_instance_coordinates.first << ", " << selected_instance_coordinates.second << ")" << "|"
-              << minOverallLatency << "|"
-              << CalculateGreatCircleDistance (probeLat, probeLong,
-                                               selectedInstanceCoordinates.first,
-                                               selectedInstanceCoordinates.second)
-              << "|"
-              << "(" << probeLat << ", " << probeLong << ")"
-              << "|";
-
-          uint32_t hopCnt = 0;
-          std::vector<LinkInformation_t>::reverse_iterator hop = selectedPath->rbegin ();
-          for (; hop != selectedPath->rend (); ++hop)
-            {
-              if (hopCnt != 0)
-                {
-                  std::cout << " ";
-                }
-
-              ScionAs *as =
-                  dynamic_cast<ScionAs *> (PeekPointer (asNodes.Get (UPPER_16_BITS (*hop))));
-              std::pair<double, double> brCoordinates =
-                  as->interfacesCoordinates.at (SECOND_UPPER_16_BITS (*hop));
-              std::cout << "(" << brCoordinates.first << ", " << brCoordinates.second << ")";
-              hopCnt++;
-            }
-
-          std::cout << "|"
-                    << "(" << selectedInstanceCoordinates.first << ", "
-                    << selectedInstanceCoordinates.second << ")"
-                    << "|";
-
-          hopCnt = 0;
-          hop = selectedPath->rbegin ();
-          for (; hop != selectedPath->rend (); ++hop)
-            {
-              if (hopCnt != 0)
-                {
-                  std::cout << " ";
-                }
-              std::cout << aliasToRealAsNo.at (SECOND_LOWER_16_BITS (*hop));
-              hopCnt++;
-            }
-
-          std::cout << " " << aliasToRealAsNo.at (UPPER_16_BITS (selectedPath->at (0)));
-
-          std::cout << std::endl;
-
-          currProbe = currProbe->next_sibling ("item");
-        }
-
-      for (auto const &srcAsNo : set_of_src_ases)
-        {
-          ScionAs *srcAs = dynamic_cast<ScionAs *> (
-              PeekPointer (asNodes.Get (realToAliasAsNo.at (srcAsNo))));
-          auto const &beaconsToDnsRootAs =
-              srcAs->GetBeaconServer ()->GetBeaconStore ().at (dstAliasAsNo);
-          for (auto const &lenBeaconsPair : beaconsToDnsRootAs)
-            {
-              auto const &sameLenBeacons = lenBeaconsPair.second;
-              for (auto const &theBeacon : sameLenBeacons)
-                {
-                  if (!theBeacon->isValid)
-                    {
-                      continue;
-                    }
-
-                  std::cout << srcAsNo << "|" << dstAsNo << "|";
-                  Path_t *thePath = &theBeacon->path;
-
-                  uint32_t hopCnt = 0;
-                  std::vector<LinkInformation_t>::reverse_iterator hop = thePath->rbegin ();
-                  for (; hop != thePath->rend (); ++hop)
-                    {
-                      if (hopCnt != 0)
-                        {
-                          std::cout << " ";
-                        }
-
-                      ScionAs *as = dynamic_cast<ScionAs *> (
-                          PeekPointer (asNodes.Get (UPPER_16_BITS (*hop))));
-                      std::pair<double, double> brCoordinates =
-                          as->interfacesCoordinates.at (SECOND_UPPER_16_BITS (*hop));
-                      std::cout << "(" << brCoordinates.first << ", " << brCoordinates.second
-                                << ")";
-                      hopCnt++;
-                    }
-
-                  std::cout << "|";
-
-                  hopCnt = 0;
-                  hop = thePath->rbegin ();
-                  for (; hop != thePath->rend (); ++hop)
-                    {
-                      if (hopCnt != 0)
-                        {
-                          std::cout << " ";
-                        }
-                      std::cout << aliasToRealAsNo.at (SECOND_LOWER_16_BITS (*hop));
-                      hopCnt++;
-                    }
-
-                  std::cout << " " << aliasToRealAsNo.at (UPPER_16_BITS (thePath->at (0)));
-
-                  std::cout << std::endl;
-                }
-            }
-        }
-    }
-}
-
-void
-PostSimulationEvaluations::PrintAllDiscoveredPaths ()
-{
-  std::cout << "################################################ Paths Information "
-               "##############################################################"
-            << std::endl;
-
-  for (uint32_t i = 0; i < asNodes.GetN (); ++i)
-    {
-      ScionAs *as = dynamic_cast<ScionAs *> (PeekPointer (asNodes.Get (i)));
-
-      std::cout << "From: " << aliasToRealAsNo.at (as->asNumber) << std::endl;
-
-      as->GetBeaconServer ()->InsertPulledBeaconsToBeaconStore ();
-
-      for (auto const &dstAsBeaconsPair : as->GetBeaconServer ()->GetBeaconStore ())
-        {
-          uint16_t dstAs = dstAsBeaconsPair.first;
-          auto const &sameDstAsBeacons = dstAsBeaconsPair.second;
-
-          std::cout << "\t"
-                    << "To: " << aliasToRealAsNo.at (dstAs) << std::endl;
-
-          for (auto const &beaconsFromSameNbr : sameDstAsBeacons)
-            {
-              for (auto const &theBeacon : beaconsFromSameNbr.second)
-                {
-                  if (!theBeacon->isValid)
-                    {
-                      continue;
-                    }
-                  std::cout << "\t"
-                            << "\t";
-                  uint32_t hopCnt = 0;
-                  std::vector<LinkInformation_t>::reverse_iterator hop = theBeacon->path.rbegin ();
-                  for (; hop != theBeacon->path.rend (); ++hop)
-                    {
-                      if (hopCnt != 0)
-                        {
-                          std::cout << ", ";
-                        }
-                      std::cout << aliasToRealAsNo.at (SECOND_LOWER_16_BITS (*hop)) << ":"
-                                << LOWER_16_BITS (*hop) << ", "
-                                << aliasToRealAsNo.at (UPPER_16_BITS (*hop)) << ":"
-                                << SECOND_UPPER_16_BITS (*hop);
-                      hopCnt++;
-                    }
-
-                  if (theBeacon->beaconDirection == BeaconDirection::pullBased)
-                    {
-                      std::cout << "; pull"
-                                << "; initiation_time = " << theBeacon->initiationTime;
-                    }
-                  else
-                    {
-                      std::cout << "; push";
-                    }
-
-                  std::cout << "; ";
-
-                  for (auto const &metric : theBeacon->staticInfoExtension)
-                    {
-                      if (metric.first == latency)
-                        {
-                          std::cout << "latency = " << metric.second;
-                          std::cout << "; ";
-                        }
-                      else if (metric.first == bw)
-                        {
-                          std::cout << "BWD = " << metric.second << ";";
-                        }
-                    }
-
-                  std::cout << std::endl;
-                }
-            }
-        }
-    }
-}
-
-void
-PostSimulationEvaluations::PrintAllPathsAttributes ()
-{
-  std::cout << "################################################ Paths Information "
-               "##############################################################"
-            << std::endl;
-
-  for (uint32_t i = 0; i < asNodes.GetN (); ++i)
-    {
-      ScionAs *as = dynamic_cast<ScionAs *> (PeekPointer (asNodes.Get (i)));
-
-      std::cout << "From: " << aliasToRealAsNo.at (as->asNumber) << std::endl;
-
-      for (auto const &dstAsBeaconsPair : as->GetBeaconServer ()->GetBeaconStore ())
-        {
-          uint16_t dstAs = dstAsBeaconsPair.first;
-          auto const &sameDstAsBeacons = dstAsBeaconsPair.second;
-
-          std::cout << "\t"
-                    << "To: " << aliasToRealAsNo.at (dstAs) << std::endl;
-
-          for (auto const &beaconsFromSameNbr : sameDstAsBeacons)
-            {
-              for (auto const &theBeacon : beaconsFromSameNbr.second)
-                {
-                  if (!theBeacon->isValid)
-                    {
-                      continue;
-                    }
-                  std::cout << "\t"
-                            << "\t";
-                  for (auto const &[attType, attValue] : theBeacon->staticInfoExtension)
-                    {
-                      if (attType == StaticInfoType::latency)
-                        {
-                          std::cout << "latency = " << attValue << "; ";
-                        }
-                      if (attType == StaticInfoType::bw)
-                        {
-                          std::cout << "BW = " << attValue << "; ";
-                        }
-                    }
-
-                  if (theBeacon->optimizationTarget != NULL)
-                    {
-                      for (auto const &[criteriaType, criteriaCoef] :
-                           theBeacon->optimizationTarget->criteria)
-                        {
-                          std::cout << "iface_group_id = "
-                                    << theBeacon->optimizationTarget->targetIfGroup << "; ";
-                          if (criteriaType == StaticInfoType::latency)
-                            {
-                              std::cout << "latency_coef = " << criteriaCoef << "; ";
-                            }
-                          if (criteriaType == StaticInfoType::bw)
-                            {
-                              std::cout << "BW_coef = " << criteriaCoef << "; ";
-                            }
-                        }
-                    }
-                  std::cout << std::endl;
-                }
-            }
-        }
-    }
-}
-
-void
-PostSimulationEvaluations::PrintNoBeaconsPerInterfacePerDstOrOpt ()
-{
-  std::cout
-      << "####################################### sent beacons on each interface in each period"
-         "#######################################"
-      << std::endl;
-  for (uint16_t time = 0; time <= lastBeaconingEventTime.ToInteger (Time::MIN);
-       time += beaconingPeriod.ToInteger (Time::MIN))
-    {
-      std::cout << time << "|";
-      for (uint32_t i = 0; i < asNodes.GetN (); ++i)
-        {
-          ScionAs *as = dynamic_cast<ScionAs *> (PeekPointer (asNodes.Get (i)));
-          auto const &countersPerPeriod =
-              as->GetBeaconServer ()->GetBeaconsSentPerInterfacePerPeriod ().at (time);
-          for (uint32_t ifIndex = 0; ifIndex < as->GetNDevices (); ++ifIndex)
-            {
-              uint64_t noSentBeacons = countersPerPeriod.at (ifIndex);
-              std::cout << aliasToRealAsNo.at (as->asNumber) << ":" << ifIndex << "="
-                        << noSentBeacons << ",";
-            }
-        }
-      std::cout << std::endl;
-    }
-
-  std::cout << "####################################### cumulative sent beacons on each interface "
-               "#######################################"
-            << std::endl;
-
-  for (uint32_t i = 0; i < asNodes.GetN (); ++i)
-    {
-      ScionAs *as = dynamic_cast<ScionAs *> (PeekPointer (asNodes.Get (i)));
-      for (uint32_t ifIndex = 0; ifIndex < as->GetNDevices (); ++ifIndex)
-        {
-          uint64_t noSentBeacons =
-              as->GetBeaconServer ()->GetBeaconsSentPerInterface ().at (ifIndex);
-          std::cout << aliasToRealAsNo.at (as->asNumber) << ":" << ifIndex << "="
-                    << noSentBeacons
-                    << ",";
+            std::cout << collector << "\t" << consumed_bwd << std::endl;
         }
     }
 
-  std::cout << std::endl;
-
-  std::cout << "####################################### sent beacons per interface per destination "
-               "#######################################"
-            << std::endl;
-
-  std::unordered_map<uint16_t, std::vector<uint32_t>> beaconsSentPerDstPerInterface;
-
-  for (uint32_t i = 0; i < asNodes.GetN (); ++i)
-    {
-      ScionAs *as = dynamic_cast<ScionAs *> (PeekPointer (asNodes.Get (i)));
-      auto &counters = as->GetBeaconServer ()->GetBeaconsSentPerDstPerInterfacePerPeriod ();
-      for (uint32_t ifIndex = 0; ifIndex < as->GetNDevices (); ++ifIndex)
-        {
-          auto &countersPerInterface = counters.at (ifIndex);
-          for (auto const &[dstAs, counter] : countersPerInterface)
-            {
-              if (beaconsSentPerDstPerInterface.find (dstAs) ==
-                  beaconsSentPerDstPerInterface.end ())
-                {
-                  beaconsSentPerDstPerInterface.insert (
-                      std::make_pair (dstAs, std::vector<uint32_t> ()));
-                }
-              beaconsSentPerDstPerInterface.at (dstAs).push_back (counter);
-            }
-        }
-    }
-
-  for (auto const &[dstAs, counters] : beaconsSentPerDstPerInterface)
-    {
-      std::cout << aliasToRealAsNo.at (dstAs) << "|";
-      for (auto const counter : counters)
-        {
-          std::cout << counter << ",";
-        }
-      std::cout << std::endl;
-    }
-
-  std::cout << "####################################### push sent beacons per interface per "
-               "optimization target "
-               "#######################################"
-            << std::endl;
-
-  std::unordered_map<const OptimizationTarget *, std::vector<uint32_t>>
-      beaconsSentPerOptPerInterface;
-
-  for (uint32_t i = 0; i < asNodes.GetN (); ++i)
-    {
-      ScionAs *as = dynamic_cast<ScionAs *> (PeekPointer (asNodes.Get (i)));
-      auto &counters =
-          as->GetBeaconServer ()->GetPushBasedBeaconsSentPerOptPerInterfacePerPeriod ();
-
-      for (uint32_t ifIndex = 0; ifIndex < as->GetNDevices (); ++ifIndex)
-        {
-          auto &countersPerInterface = counters.at (ifIndex);
-          for (auto const &[optTarget, counter] : countersPerInterface)
-            {
-              if (beaconsSentPerOptPerInterface.find (optTarget) ==
-                  beaconsSentPerOptPerInterface.end ())
-                {
-                  beaconsSentPerOptPerInterface.insert (
-                      std::make_pair (optTarget, std::vector<uint32_t> ()));
-                }
-              beaconsSentPerOptPerInterface.at (optTarget).push_back (counter);
-            }
-        }
-    }
-
-  for (auto const &[optTarget, counters] : beaconsSentPerOptPerInterface)
-    {
-      std::cout << int64_t (optTarget) << "|" << aliasToRealAsNo.at (optTarget->targetAs)
-                << "|" << optTarget->targetId << "|" << optTarget->targetIfGroup << "|";
-      for (auto const counter : counters)
-        {
-          std::cout << counter << ",";
-        }
-      std::cout << std::endl;
-    }
-
-  std::cout << "####################################### pull sent beacons per interface per "
-               "optimization target "
-               "#######################################"
-            << std::endl;
-
-  beaconsSentPerOptPerInterface.clear ();
-
-  for (uint32_t i = 0; i < asNodes.GetN (); ++i)
-    {
-      ScionAs *as = dynamic_cast<ScionAs *> (PeekPointer (asNodes.Get (i)));
-      auto &counters =
-          as->GetBeaconServer ()->GetPullBasedBeaconsSentPerOptPerInterfacePerPeriod ();
-
-      for (uint32_t ifIndex = 0; ifIndex < as->GetNDevices (); ++ifIndex)
-        {
-          auto &countersPerInterface = counters.at (ifIndex);
-          for (auto const &[optTarget, counter] : countersPerInterface)
-            {
-              if (beaconsSentPerOptPerInterface.find (optTarget) ==
-                  beaconsSentPerOptPerInterface.end ())
-                {
-                  beaconsSentPerOptPerInterface.insert (
-                      std::make_pair (optTarget, std::vector<uint32_t> ()));
-                }
-              beaconsSentPerOptPerInterface.at (optTarget).push_back (counter);
-            }
-        }
-    }
-
-  for (auto const &[optTarget, counters] : beaconsSentPerOptPerInterface)
-    {
-      std::cout << int64_t (optTarget) << "|" << aliasToRealAsNo.at (optTarget->targetAs)
-                << "|" << aliasToRealAsNo.at (0xFFFF - optTarget->targetId) << "|";
-      for (auto const counter : counters)
-        {
-          std::cout << counter << ",";
-        }
-      std::cout << std::endl;
-    }
-}
-
-void
-PostSimulationEvaluations::PrintNoBeaconsPerInterface ()
-{
-  std::cout << "####################################### cumulative sent beacons on each interface "
-               "#######################################"
-            << std::endl;
-  std::cout << "link"
-            << "\t"
-            << "sent beacons" << std::endl;
-  for (uint32_t i = 0; i < asNodes.GetN (); ++i)
-    {
-      ScionAs *as = dynamic_cast<ScionAs *> (PeekPointer (asNodes.Get (i)));
-      for (uint32_t ifIndex = 0; ifIndex < as->GetNDevices (); ++ifIndex)
-        {
-          uint64_t noSentBeacons =
-              as->GetBeaconServer ()->GetBeaconsSentPerInterface ().at (ifIndex);
-          std::cout << aliasToRealAsNo.at (as->asNumber) << ":" << ifIndex << "\t"
-                    << noSentBeacons
-                    << std::endl;
-        }
-    }
-
-  for (Time t = Seconds (0.0); t < lastBeaconingEventTime; t += beaconingPeriod)
-    {
-      std::cout << "####################################### frequencies of sent beacons at Time "
-                << t << " #######################################" << std::endl;
-
-      std::map<uint32_t, uint32_t> frequenciesOfSentBeaconNumbers;
-      for (uint32_t i = 0; i < asNodes.GetN (); ++i)
-        {
-          ScionAs *as = dynamic_cast<ScionAs *> (PeekPointer (asNodes.Get (i)));
-          for (uint32_t ifIndex = 0; ifIndex < as->GetNDevices (); ++ifIndex)
-            {
-              uint32_t noSentBeacons = as->GetBeaconServer ()
-                                             ->GetBeaconsSentPerInterfacePerPeriod ()
-                                             .at (t.ToInteger (Time::MIN))
-                                             .at (ifIndex);
-
-              if (frequenciesOfSentBeaconNumbers.find (noSentBeacons) !=
-                  frequenciesOfSentBeaconNumbers.end ())
-                {
-                  frequenciesOfSentBeaconNumbers.at (noSentBeacons)++;
-                }
-              else
-                {
-                  frequenciesOfSentBeaconNumbers.insert (std::make_pair (noSentBeacons, 1));
-                }
-            }
-        }
-
-      std::cout << "sent beacons on a link"
-                << "\t"
-                << "frequency" << std::endl;
-      for (auto const &bwdFreqPair : frequenciesOfSentBeaconNumbers)
-        {
-          std::cout << bwdFreqPair.first << "\t" << bwdFreqPair.second << std::endl;
-        }
-    }
-}
-
-void
-PostSimulationEvaluations::PrintConsumedBwAtEachPeriod ()
-{
-  for (Time t = Seconds (0.0); t < lastBeaconingEventTime; t += beaconingPeriod)
-    {
-      std::cout
-          << "####################################### frequencies of consumed bandwidth at Time "
-          << t << " #######################################" << std::endl;
-
-      std::map<uint32_t, uint32_t> frequenciesOfConsumedBwd;
-      for (uint32_t i = 0; i < asNodes.GetN (); ++i)
-        {
-          ScionAs *as = dynamic_cast<ScionAs *> (PeekPointer (asNodes.Get (i)));
-          for (uint32_t ifIndex = 0; ifIndex < as->GetNDevices (); ++ifIndex)
-            {
-              uint32_t consumedBwd = as->GetBeaconServer ()
-                                          ->GetBytesSentPerInterfacePerPeriod ()
-                                          .at (t.ToInteger (Time::MIN))
-                                          .at (ifIndex);
-
-              if (frequenciesOfConsumedBwd.find (consumedBwd) != frequenciesOfConsumedBwd.end ())
-                {
-                  frequenciesOfConsumedBwd.at (consumedBwd)++;
-                }
-              else
-                {
-                  frequenciesOfConsumedBwd.insert (std::make_pair (consumedBwd, 1));
-                }
-            }
-        }
-
-      std::cout << "consumed bandwidth on a link"
-                << "\t"
-                << "frequency" << std::endl;
-      for (auto const &bwdFreqPair : frequenciesOfConsumedBwd)
-        {
-          std::cout << bwdFreqPair.first << "\t" << bwdFreqPair.second << std::endl;
-        }
-    }
-}
-
-void
-PostSimulationEvaluations::PrintDistributionOfPathsWithSpecificHopCount ()
-{
-  for (uint32_t pathLength = 1; pathLength <= 4; ++pathLength)
-    {
-      std::cout << "######################################### frequencies of path counts per "
-                   "destination AS with "
-                   "hop count: "
-                << pathLength << "#########################################" << std::endl;
-      std::map<uint64_t, uint64_t> frequenciesOfPathCountsPerDstAsWithCertainLength;
-      for (uint32_t i = 0; i < asNodes.GetN (); ++i)
-        {
-          for (auto const &dstAsBeaconsPair :
-               DynamicCast<ScionAs> (asNodes.Get (i))->GetBeaconServer ()->GetBeaconStore ())
-            {
-              uint64_t numberOfPathsWithCertainLength = 0;
-              if (dstAsBeaconsPair.second.find (pathLength) == dstAsBeaconsPair.second.end ())
-                {
-                  continue;
-                }
-              else
-                {
-                  numberOfPathsWithCertainLength =
-                      dstAsBeaconsPair.second.at (pathLength).size ();
-                }
-
-              if (frequenciesOfPathCountsPerDstAsWithCertainLength.find (
-                      numberOfPathsWithCertainLength) !=
-                  frequenciesOfPathCountsPerDstAsWithCertainLength.end ())
-                {
-                  frequenciesOfPathCountsPerDstAsWithCertainLength.at (
-                      numberOfPathsWithCertainLength)++;
-                }
-              else
-                {
-                  frequenciesOfPathCountsPerDstAsWithCertainLength.insert (
-                      std::make_pair (numberOfPathsWithCertainLength, 1));
-                }
-            }
-        }
-
-      std::cout << "path count per source AS"
-                << "\t"
-                << "frequency" << std::endl;
-      for (auto const &countFreqPair : frequenciesOfPathCountsPerDstAsWithCertainLength)
-        {
-          std::cout << countFreqPair.first << "\t" << countFreqPair.second << std::endl;
-        }
-    }
-}
-
-void
-PostSimulationEvaluations::PrintMinimumLatencyDist ()
-{
-  std::cout << "###################################################### MINIMUM "
-               "LATENCY####################################"
-            << std::endl;
-
-  std::map<float, int> distribution;
-  for (uint32_t i = 0; i < asNodes.GetN (); i++)
-    {
-      ScionAs *as = dynamic_cast<ScionAs *> (PeekPointer (asNodes.Get (i)));
-      for (uint32_t j = 0; j < asNodes.GetN (); ++j)
-        {
-          if (i == j)
-            continue;
-          float minLatency = std::numeric_limits<float>::max ();
-          for (auto const &lenBeaconsPair : as->GetBeaconServer ()->GetBeaconStore ().at (j))
-            {
-              for (auto const &theBeacon : lenBeaconsPair.second)
-                {
-                  assert (theBeacon->path.size () != 1 ||
-                          theBeacon->staticInfoExtension.at (StaticInfoType::latency) ==
-                              (float) 0);
-                  if (theBeacon->staticInfoExtension.at (StaticInfoType::latency) < minLatency)
-                    {
-                      minLatency = theBeacon->staticInfoExtension.at (StaticInfoType::latency);
-                    }
-                }
-            }
-
-          if (distribution.find (minLatency) == distribution.end ())
-            {
-              distribution.insert (std::make_pair (minLatency, 0));
-            }
-          distribution.at (minLatency)++;
-        }
-    }
-
-  int cumulativeCounter = 0;
-  for (auto const &entry : distribution)
-    {
-      float latency = entry.first;
-      distribution.at (latency) += cumulativeCounter;
-      cumulativeCounter = distribution.at (latency);
-    }
-
-  for (auto const &entry : distribution)
-    {
-      std::cout << entry.first << "\t" << (double) entry.second / cumulativeCounter << std::endl;
-    }
-}
-
-void
-PostSimulationEvaluations::PrintPathNoDistribution ()
-{
-  std::cout << "############################################# Path No Distribution "
-               "##################################"
-            << std::endl;
-  std::map<uint32_t, uint32_t> distribution;
-  for (uint32_t i = 0; i < asNodes.GetN (); ++i)
-    {
-      ScionAs *node = dynamic_cast<ScionAs *> (PeekPointer (asNodes.Get (i)));
-      for (auto const &dstCountPair : node->GetBeaconServer ()->GetValidBeaconsCountPerDstAs ())
-        {
-          if (distribution.find (dstCountPair.second) == distribution.end ())
-            {
-              distribution.insert (std::make_pair (dstCountPair.second, 0));
-            }
-
-          distribution.at (dstCountPair.second) = distribution.at (dstCountPair.second) + 1;
-        }
-    }
-
-  uint32_t cumulativeCounter = 0;
-  for (auto const &pathCntCntPair : distribution)
-    {
-      distribution.at (pathCntCntPair.first) =
-          distribution.at (pathCntCntPair.first) + cumulativeCounter;
-      cumulativeCounter = distribution.at (pathCntCntPair.first);
-    }
-
-  for (auto const &entry : distribution)
-    {
-      std::cout << entry.first << "\t" << (double) entry.second / cumulativeCounter << std::endl;
-    }
-}
-
-void
-PostSimulationEvaluations::PrintPathPollutionIndex ()
-{
-  int x = 5;
-  std::map<double, uint32_t> minDistribution;
-  std::map<double, uint32_t> meanDistribution;
-  std::map<double, uint32_t> topXMeanDistribution;
-
-  std::cout
-      << "############################################# Latencies of paths; Min pollution; Mean of "
-      << x << "-least-polluting; Mean of all ##################################" << std::endl;
-
-  for (uint32_t i = 0; i < asNodes.GetN (); ++i)
-    {
-      ScionAs *as = dynamic_cast<ScionAs *> (PeekPointer (asNodes.Get (i)));
-
-      for (uint32_t j = 0; j < asNodes.GetN (); ++j)
-        {
-          if (i == j)
-            continue;
-
-          float min = std::numeric_limits<float>::max ();
-
-          float mean = (float) 0;
-          int cnt = 0;
-
-          float topXMean = (float) 0;
-          int topXCnt = 0;
-          std::multimap<float, float> pollutionIndexes;
-
-          float latencyOfPathWithMinPollution = 0;
-          float avgLatencyOfXLeastPollutingPaths = 0;
-          float avgLatencyOfAllPaths = 0;
-
-          for (auto const &lenBeaconsPair : as->GetBeaconServer ()->GetBeaconStore ().at (j))
-            {
-              for (auto const &theBeacon : lenBeaconsPair.second)
-                {
-                  pollutionIndexes.insert (std::make_pair (
-                      theBeacon->staticInfoExtension.at (StaticInfoType::co2),
-                      theBeacon->staticInfoExtension.at (StaticInfoType::latency)));
-
-                  cnt++;
-                  mean += theBeacon->staticInfoExtension.at (StaticInfoType::co2);
-                  avgLatencyOfAllPaths +=
-                      theBeacon->staticInfoExtension.at (StaticInfoType::latency);
-
-                  if (theBeacon->staticInfoExtension.at (StaticInfoType::co2) < min)
-                    {
-                      min = theBeacon->staticInfoExtension.at (StaticInfoType::co2);
-                      latencyOfPathWithMinPollution =
-                          theBeacon->staticInfoExtension.at (StaticInfoType::latency);
-                    }
-                }
-            }
-
-          for (auto const &pollutionIndexLatencyPair : pollutionIndexes)
-            {
-              if (topXCnt >= x)
-                break;
-              topXMean += pollutionIndexLatencyPair.first;
-              avgLatencyOfXLeastPollutingPaths += pollutionIndexLatencyPair.second;
-              topXCnt++;
-            }
-          pollutionIndexes.clear ();
-
-          topXMean /= topXCnt;
-          if (topXMeanDistribution.find (topXMean) == topXMeanDistribution.end ())
-            {
-              topXMeanDistribution.insert (std::make_pair (topXMean, 0));
-            }
-
-          mean /= cnt;
-          if (meanDistribution.find (mean) == meanDistribution.end ())
-            {
-              meanDistribution.insert (std::make_pair (mean, 0));
-            }
-
-          if (minDistribution.find (min) == minDistribution.end ())
-            {
-              minDistribution.insert (std::make_pair (min, 0));
-            }
-
-          topXMeanDistribution.at (topXMean)++;
-          meanDistribution.at (mean)++;
-          minDistribution.at (min)++;
-
-          avgLatencyOfAllPaths /= cnt;
-          avgLatencyOfXLeastPollutingPaths /= topXCnt;
-
-          std::cout << aliasToRealAsNo.at (i) << "\t" << aliasToRealAsNo.at (j) << "\t"
-                    << latencyOfPathWithMinPollution << "\t"
-                    << avgLatencyOfXLeastPollutingPaths
-                    << "\t" << avgLatencyOfAllPaths << std::endl;
-        }
-    }
-
-  uint32_t cumulativeCounter = 0;
-  for (auto const &pathCntCntPair : minDistribution)
-    {
-      minDistribution.at (pathCntCntPair.first) =
-          minDistribution.at (pathCntCntPair.first) + cumulativeCounter;
-      cumulativeCounter = minDistribution.at (pathCntCntPair.first);
-    }
-
-  std::cout << "############################################# MIN Pollution Index Distribution "
-               "##################################"
-            << std::endl;
-  for (auto const &entry : minDistribution)
-    {
-      std::cout << entry.first << "\t" << (double) entry.second / cumulativeCounter << std::endl;
-    }
-
-  cumulativeCounter = 0;
-  for (auto const &pathCntCntPair : topXMeanDistribution)
-    {
-      topXMeanDistribution.at (pathCntCntPair.first) =
-          topXMeanDistribution.at (pathCntCntPair.first) + cumulativeCounter;
-      cumulativeCounter = topXMeanDistribution.at (pathCntCntPair.first);
-    }
-
-  std::cout << "############################################# TOP" << x
-            << " Paths MEAN Pollution Index Distribution ##################################"
-            << std::endl;
-  for (auto const &entry : topXMeanDistribution)
-    {
-      std::cout << entry.first << "\t" << (double) entry.second / cumulativeCounter << std::endl;
-    }
-
-  cumulativeCounter = 0;
-  for (auto const &pathCntCntPair : meanDistribution)
-    {
-      meanDistribution.at (pathCntCntPair.first) =
-          meanDistribution.at (pathCntCntPair.first) + cumulativeCounter;
-      cumulativeCounter = meanDistribution.at (pathCntCntPair.first);
-    }
-
-  std::cout << "############################################# MEAN Pollution Index Distribution "
-               "##################################"
-            << std::endl;
-  for (auto const &entry : meanDistribution)
-    {
-      std::cout << entry.first << "\t" << (double) entry.second / cumulativeCounter << std::endl;
-    }
-}
-
-void
-PostSimulationEvaluations::PrintLeastPollutingPaths ()
-{
-  std::ifstream bgpPathsFile ("/cluster/scratch/tabaeias/BGP_path_and_pollution.txt");
-  std::string line;
-
-  std::map<std::tuple<int, int>, int> bgpPathNo = std::map<std::tuple<int, int>, int> ();
-  while (getline (bgpPathsFile, line))
-    {
-      std::vector<std::string> fields;
-      fields = Split (line, '|', fields);
-
-      int from = std::stoi (fields[0]);
-      int to = std::stoi (fields[1]);
-      int bgpPaths = std::stoi (fields[6]);
-
-      bgpPathNo.insert (std::make_pair (std::make_pair (from, to), bgpPaths));
-    }
-  bgpPathsFile.close ();
-
-  std::cout.precision (10);
-  for (uint32_t i = 0; i < asNodes.GetN (); ++i)
-    {
-      ScionAs *as1 = dynamic_cast<ScionAs *> (PeekPointer (asNodes.Get (i)));
-
-      for (uint32_t j = 0; j < asNodes.GetN (); ++j)
-        {
-          if (i == j)
-            continue;
-
-          ScionAs *as2 = dynamic_cast<ScionAs *> (PeekPointer (asNodes.Get (j)));
-
-          if (bgpPathNo.find (std::make_pair (aliasToRealAsNo.at (as1->asNumber),
-                                                aliasToRealAsNo.at (as2->asNumber))) ==
-              bgpPathNo.end ())
-            {
-              continue;
-            }
-
-          std::map<double, std::map<double, std::set<Beacon *>>> sortedBeaconsByPollutionByLatency =
-                  std::map<double, std::map<double, std::set<Beacon *>>> ();
-          SortBeaconsByPollutionByLatency (asNodes, as1, as2, beaconingPolicyStr,
-                                           sortedBeaconsByPollutionByLatency);
-
-          double minPollution = sortedBeaconsByPollutionByLatency.begin ()->first;
-          double latencyOfMinPollution =
-              sortedBeaconsByPollutionByLatency.begin ()->second.begin ()->first;
-          Beacon *minPollutingBeacon =
-              *sortedBeaconsByPollutionByLatency.begin ()->second.begin ()->second.begin ();
-
-          double avgPollutionTop5 = 0;
-          double avgPollutionTopN = 0;
-          double avgPollutionAll = 0;
-
-          double avgLatencyTop5 = 0;
-          double avgLatencyTopN = 0;
-          double avgLatencyAll = 0;
-
-          int counter = 0;
-          int n = bgpPathNo.at (std::make_pair (aliasToRealAsNo.at (as1->asNumber),
-                                                  aliasToRealAsNo.at (as2->asNumber)));
-
-          for (auto const &[pollution, latency2SetOfBeaconsMap] :
-               sortedBeaconsByPollutionByLatency)
-            {
-              for (auto const &[latency, setOfBeacons] : latency2SetOfBeaconsMap)
-                {
-                  for (uint32_t k = 0; k < setOfBeacons.size (); ++k)
-                    {
-                      avgPollutionAll += pollution;
-                      avgLatencyAll += latency;
-
-                      if (counter < 5)
-                        {
-                          avgPollutionTop5 += pollution;
-                          avgLatencyTop5 += latency;
-                        }
-
-                      if (counter < n)
-                        {
-                          avgPollutionTopN += pollution;
-                          avgLatencyTopN += latency;
-                        }
-
-                      counter += 1;
-                    }
-                }
-            }
-
-          avgPollutionAll /= counter;
-          avgLatencyAll /= counter;
-
-          if (counter < 5)
-            {
-              avgPollutionTop5 /= counter;
-              avgLatencyTop5 /= counter;
-            }
-          else
-            {
-              avgPollutionTop5 /= 5;
-              avgLatencyTop5 /= 5;
-            }
-
-          if (counter < n)
-            {
-              avgPollutionTopN /= counter;
-              avgLatencyTopN /= counter;
-            }
-          else
-            {
-              avgPollutionTopN /= n;
-              avgLatencyTopN /= n;
-            }
-
-          std::cout << aliasToRealAsNo.at (as1->asNumber) << "|"
-                    << aliasToRealAsNo.at (as2->asNumber) << "|" << minPollution << "|"
-                    << avgPollutionTop5 << "|" << avgPollutionTopN << "|" << avgPollutionAll << "|" << latencyOfMinPollution << "|" << avgLatencyTop5 << "|"
-                    << avgLatencyTopN
-                    << "|" << avgLatencyAll << "|" << counter << "|";
-
-          int hopCnt = 0;
-          std::vector<LinkInformation_t>::reverse_iterator hop =
-              minPollutingBeacon->path.rbegin ();
-          for (; hop != minPollutingBeacon->path.rend (); ++hop)
-            {
-              if (hopCnt != 0)
-                {
-                  std::cout << ", ";
-                }
-              std::cout << aliasToRealAsNo.at (SECOND_LOWER_16_BITS (*hop)) << ":"
-                        << LOWER_16_BITS (*hop) << ", "
-                        << aliasToRealAsNo.at (UPPER_16_BITS (*hop)) << ":"
-                        << SECOND_UPPER_16_BITS (*hop);
-              hopCnt++;
-            }
-
-          std::cout << "|";
-
-          hopCnt = 0;
-          hop = minPollutingBeacon->path.rbegin ();
-          for (; hop != minPollutingBeacon->path.rend (); ++hop)
-            {
-              if (hopCnt != 0)
-                {
-                  std::cout << ", ";
-                }
-              ScionAs *hopAs = dynamic_cast<ScionAs *> (
-                  PeekPointer (asNodes.Get (SECOND_LOWER_16_BITS (*hop))));
-              std::cout << "(" << hopAs->interfacesCoordinates.at (LOWER_16_BITS (*hop)).first
-                        << "," << hopAs->interfacesCoordinates.at (LOWER_16_BITS (*hop)).second
-                        << ")";
-              hopCnt++;
-            }
-
-          std::cout << std::endl;
-        }
-    }
-}
-
-void
-PostSimulationEvaluations::PrintBestPerHopPollutionIndexes ()
-{
-  std::cout
-      << "############################################### BestPerHopLatencyAndPollutionIndexes "
-         "########################################################################"
-      << std::endl;
-  for (uint32_t i = 0; i < asNodes.GetN (); ++i)
-    {
-      ScionAs *as = dynamic_cast<ScionAs *> (PeekPointer (asNodes.Get (i)));
-      for (auto const &theIfacesList1 : as->interfacesPerNeighborAs)
-        {
-          uint16_t theNeighbor1 = theIfacesList1.first;
-          for (auto const &theIfacesList2 : as->interfacesPerNeighborAs)
-            {
-              uint16_t theNeighbor2 = theIfacesList2.first;
-              if (theNeighbor1 == theNeighbor2)
+    void PostSimulationEvaluations::FindMinLatencyToDNSRootServers() {
+        std::string probes_file = "/cluster/scratch/tabaeias/atlas_probes.xml";
+        std::ifstream fin_probes(probes_file.c_str());
+        std::ostringstream probes_sstr;
+        probes_sstr << fin_probes.rdbuf();
+        probes_sstr.flush();
+        fin_probes.close();
+
+        std::string xmlProbesData = probes_sstr.str();
+        rapidxml::xml_document<> probes_doc;
+        probes_doc.parse<0>(&xmlProbesData[0]);
+
+        rapidxml::xml_node<> *probesRootNode = probes_doc.first_node("root");
+        rapidxml::xml_node<> *probesNode = probesRootNode->first_node("Probes");
+
+        std::list<std::string> root_server_names({"a-root", "b-root", "c-root", "d-root", "e-root", "f-root", "h-root",
+                                                  "j-root", "k-root", "l-root", "m-root"});
+        for (auto const &root_server_name : root_server_names) {
+            std::cout << "################################################## " << root_server_name
+                      << " #########################################################" << std::endl;
+
+            std::string dns_root_file = "/cluster/scratch/tabaeias/" + root_server_name + ".xml";
+            std::ifstream fin_dns_root(dns_root_file.c_str());
+            std::ostringstream dns_root_sstr;
+            dns_root_sstr << fin_dns_root.rdbuf();
+            dns_root_sstr.flush();
+            fin_dns_root.close();
+
+            std::set<int32_t> set_of_src_ases;
+
+            std::string xmlDNSRootData = dns_root_sstr.str();
+            rapidxml::xml_document<> dns_root_doc;
+            dns_root_doc.parse<0>(&xmlDNSRootData[0]);
+
+            rapidxml::xml_node<> *dnsRootNode = dns_root_doc.first_node("root");
+            int32_t dst_as_no = std::stoi(dnsRootNode->first_node("ASN")->value());
+
+            if (real_to_alias_as_no.find(dst_as_no) == real_to_alias_as_no.end()) {
+                std::cout << root_server_name << ": " << dst_as_no
+                          << " The root DNS server's AS is not among the top 2000 real_to_alias_as_no" << std::endl;
                 continue;
-              double minLatency = std::numeric_limits<double>::max ();
-              for (uint16_t iface1 : theIfacesList1.second)
-                {
-                  for (uint16_t iface2 : theIfacesList2.second)
-                    {
-                      if (as->latenciesBetweenInterfaces.at (iface1).at (iface2) < minLatency)
-                        {
-                          minLatency = as->latenciesBetweenInterfaces.at (iface1).at (iface2);
+            }
+            std::cout << "Probe|ASN|Latency|Distance|Probe coordinates|Path Coordinates|Instance "
+                         "Coordinates|real_to_alias_as_no on Path"
+                      << std::endl;
+
+            uint16_t dst_alias_as_no = real_to_alias_as_no.at(dst_as_no);
+            SCION_AS *dst_as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(dst_alias_as_no)));
+
+            rapidxml::xml_node<> *currProbe = probesNode->first_node("item");
+            while (currProbe) {
+                int32_t src_as_no = std::stoi(currProbe->first_node("ASN")->value());
+                double probe_lat = std::stod(currProbe->first_node("Latitude")->value());
+                double probe_long = std::stod(currProbe->first_node("Longitude")->value());
+
+                if (real_to_alias_as_no.find(src_as_no) == real_to_alias_as_no.end()) {
+                    currProbe = currProbe->next_sibling("item");
+                    continue;
+                }
+
+                set_of_src_ases.insert(src_as_no);
+
+                SCION_AS *src_alias_as_no =
+                        dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(real_to_alias_as_no.at(src_as_no))));
+
+                uint16_t last_br = 0;
+                double min_latency_to_dst_as = std::numeric_limits<double>::max();
+                path *selected_path = NULL;
+
+                auto const &beacons_to_dns_root_as =
+                        src_alias_as_no->GetBeaconServer()->GetBeaconStore().at(dst_alias_as_no);
+
+                for (auto const &len_beacons_pair : beacons_to_dns_root_as) {
+                    auto const &same_len_beacons = len_beacons_pair.second;
+
+                    for (auto const &the_beacon : same_len_beacons) {
+                        if (the_beacon->is_valid) {
+                            assert(UPPER_16_BITS(the_beacon->the_path.at(0)) == dst_alias_as_no);
+
+                            uint16_t first_br = LOWER_16_BITS(the_beacon->the_path.back());
+                            std::pair<double, double> first_br_coordinates =
+                                    src_alias_as_no->interfaces_coordinates.at(first_br);
+                            double latency_from_probe_to_first_hop = calculate_great_circle_latency(
+                                    probe_lat, probe_long, first_br_coordinates.first, first_br_coordinates.second);
+                            if (the_beacon->static_info_extension.at(static_info_type_t::LATENCY) +
+                                        latency_from_probe_to_first_hop <
+                                min_latency_to_dst_as) {
+                                min_latency_to_dst_as =
+                                        the_beacon->static_info_extension.at(static_info_type_t::LATENCY) +
+                                        latency_from_probe_to_first_hop;
+                                last_br = SECOND_UPPER_16_BITS(the_beacon->the_path.at(0));
+                                selected_path = &the_beacon->the_path;
+                            }
                         }
                     }
                 }
-              std::cout << aliasToRealAsNo.at (theNeighbor1) << " "
-                        << aliasToRealAsNo.at (as->asNumber) << " "
-                        << aliasToRealAsNo.at (theNeighbor2) << "\t"
-                        << minLatency *
-                               ((GreenBeaconing *) as->GetBeaconServer ())->GetDirtyEnergyRatio ()
-                        << "\t" << minLatency << "\t" << std::endl;
-            }
-        }
-    }
-}
 
-void
-PostSimulationEvaluations::PrintConsumedBwForBeaconing ()
-{
-  for (uint32_t i = 0; i < asNodes.GetN (); ++i)
-    {
-      ScionAs *asNode = dynamic_cast<ScionAs *> (PeekPointer (asNodes.Get (i)));
-      for (auto const &el : asNode->GetBeaconServer ()->GetBytesSentPerInterfacePerPeriod ())
-        {
-          auto const &vector = el.second;
-          std::cerr << "\nNode: " << realToAliasAsNo.at (asNode->asNumber) << " at time 0."
-                    << std::endl;
-          for (auto const &element : vector)
-            {
-              std::cerr << element << " ";
-            }
-        }
-    }
-}
+                double min_overall_latency = std::numeric_limits<double>::max();
+                std::pair<double, double> selected_instance_coordinates;
 
-void
-PostSimulationEvaluations::PrintBeaconStores ()
-{
-  for (uint32_t i = 0; i < asNodes.GetN (); ++i)
-    {
-      ScionAs *asNode = dynamic_cast<ScionAs *> (PeekPointer (asNodes.Get (i)));
-      std::cout << "From: " << realToAliasAsNo.at (asNode->asNumber) << std::endl;
-
-      for (auto const &dstAsBeaconsPair : asNode->GetBeaconServer ()->GetBeaconStore ())
-        {
-          uint16_t dstAs = dstAsBeaconsPair.first;
-          auto const &sameDstAsBeacons = dstAsBeaconsPair.second;
-
-          std::cout << "\t"
-                    << "To: " << realToAliasAsNo.at (dstAs) << std::endl;
-
-          for (auto const &beaconsFromSameNbr : sameDstAsBeacons)
-            {
-              for (auto const &theBeacon : beaconsFromSameNbr.second)
-                {
-                  if (!theBeacon->isValid)
-                    {
-                      continue;
+                rapidxml::xml_node<> *sitesNode = dnsRootNode->first_node("Sites");
+                rapidxml::xml_node<> *currSite = sitesNode->first_node("item");
+                while (currSite) {
+                    double instance_lat = std::stod(currSite->first_node("Latitude")->value());
+                    double instance_long = std::stod(currSite->first_node("Longitude")->value());
+                    std::pair<double, double> last_br_coordinates = dst_as->interfaces_coordinates.at(last_br);
+                    double overall_latency =
+                            min_latency_to_dst_as + calculate_great_circle_latency(instance_lat, instance_long,
+                                                                                   last_br_coordinates.first,
+                                                                                   last_br_coordinates.second);
+                    if (overall_latency < min_overall_latency) {
+                        min_overall_latency = overall_latency;
+                        selected_instance_coordinates = std::pair<double, double>(instance_lat, instance_long);
                     }
-                  std::cout << "\t"
-                            << "\t";
-                  uint32_t hopCnt = 0;
-                  std::vector<LinkInformation_t>::reverse_iterator hop = theBeacon->path.rbegin ();
-                  for (; hop != theBeacon->path.rend (); ++hop)
-                    {
-                      if (hopCnt != 0)
-                        {
-                          std::cout << ", ";
+                    currSite = currSite->next_sibling("item");
+                }
+
+                std::cout
+                        << currProbe->first_node("ID")->value() << "|" << src_as_no
+                        << "|"
+                        // << "(" << selected_instance_coordinates.first << ", " << selected_instance_coordinates.second << ")" << "|"
+                        << min_overall_latency << "|"
+                        << calculate_great_circle_distance(probe_lat, probe_long, selected_instance_coordinates.first,
+                                                           selected_instance_coordinates.second)
+                        << "|"
+                        << "(" << probe_lat << ", " << probe_long << ")"
+                        << "|";
+
+                uint32_t hop_cnt = 0;
+                std::vector<link_information>::reverse_iterator hop = selected_path->rbegin();
+                for (; hop != selected_path->rend(); ++hop) {
+                    if (hop_cnt != 0) {
+                        std::cout << " ";
+                    }
+
+                    SCION_AS *AS = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(UPPER_16_BITS(*hop))));
+                    std::pair<double, double> br_coordinates =
+                            AS->interfaces_coordinates.at(SECOND_UPPER_16_BITS(*hop));
+                    std::cout << "(" << br_coordinates.first << ", " << br_coordinates.second << ")";
+                    hop_cnt++;
+                }
+
+                std::cout << "|"
+                          << "(" << selected_instance_coordinates.first << ", " << selected_instance_coordinates.second
+                          << ")"
+                          << "|";
+
+                hop_cnt = 0;
+                hop = selected_path->rbegin();
+                for (; hop != selected_path->rend(); ++hop) {
+                    if (hop_cnt != 0) {
+                        std::cout << " ";
+                    }
+                    std::cout << alias_to_real_as_no.at(SECOND_LOWER_16_BITS(*hop));
+                    hop_cnt++;
+                }
+
+                std::cout << " " << alias_to_real_as_no.at(UPPER_16_BITS(selected_path->at(0)));
+
+                std::cout << std::endl;
+
+                currProbe = currProbe->next_sibling("item");
+            }
+
+            for (auto const &src_as_no : set_of_src_ases) {
+                SCION_AS *src_as =
+                        dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(real_to_alias_as_no.at(src_as_no))));
+                auto const &beacons_to_dns_root_as = src_as->GetBeaconServer()->GetBeaconStore().at(dst_alias_as_no);
+                for (auto const &len_beacons_pair : beacons_to_dns_root_as) {
+                    auto const &same_len_beacons = len_beacons_pair.second;
+                    for (auto const &the_beacon : same_len_beacons) {
+                        if (!the_beacon->is_valid) {
+                            continue;
                         }
-                      std::cout << realToAliasAsNo.at (SECOND_LOWER_16_BITS (*hop)) << ":"
-                                << LOWER_16_BITS (*hop) << ", "
-                                << realToAliasAsNo.at (UPPER_16_BITS (*hop)) << ":"
-                                << SECOND_UPPER_16_BITS (*hop);
-                      hopCnt++;
+
+                        std::cout << src_as_no << "|" << dst_as_no << "|";
+                        path *the_path = &the_beacon->the_path;
+
+                        uint32_t hop_cnt = 0;
+                        std::vector<link_information>::reverse_iterator hop = the_path->rbegin();
+                        for (; hop != the_path->rend(); ++hop) {
+                            if (hop_cnt != 0) {
+                                std::cout << " ";
+                            }
+
+                            SCION_AS *AS = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(UPPER_16_BITS(*hop))));
+                            std::pair<double, double> br_coordinates =
+                                    AS->interfaces_coordinates.at(SECOND_UPPER_16_BITS(*hop));
+                            std::cout << "(" << br_coordinates.first << ", " << br_coordinates.second << ")";
+                            hop_cnt++;
+                        }
+
+                        std::cout << "|";
+
+                        hop_cnt = 0;
+                        hop = the_path->rbegin();
+                        for (; hop != the_path->rend(); ++hop) {
+                            if (hop_cnt != 0) {
+                                std::cout << " ";
+                            }
+                            std::cout << alias_to_real_as_no.at(SECOND_LOWER_16_BITS(*hop));
+                            hop_cnt++;
+                        }
+
+                        std::cout << " " << alias_to_real_as_no.at(UPPER_16_BITS(the_path->at(0)));
+
+                        std::cout << std::endl;
                     }
-                  std::cout << "; ";
-                  std::cout << "latency = "
-                            << theBeacon->staticInfoExtension.at (StaticInfoType::latency);
-                  std::cout << "; ";
-                  std::cout << "BWD = "
-                            << theBeacon->staticInfoExtension.at (StaticInfoType::bw);
-                  std::cout << std::endl;
+                }
+            }
+        }
+    }
+
+    void PostSimulationEvaluations::PrintAllDiscoveredPaths() {
+        std::cout << "################################################ Paths Information "
+                     "##############################################################"
+                  << std::endl;
+
+        for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+            SCION_AS *as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+
+            std::cout << "From: " << alias_to_real_as_no.at(as->as_number) << std::endl;
+
+            as->GetBeaconServer()->InsertPulledBeaconsToBeaconStore();
+
+            for (auto const &dst_as_beacons_pair : as->GetBeaconServer()->GetBeaconStore()) {
+                uint16_t dst_as = dst_as_beacons_pair.first;
+                auto const &same_dst_as_beacons = dst_as_beacons_pair.second;
+
+                std::cout << "\t"
+                          << "To: " << alias_to_real_as_no.at(dst_as) << std::endl;
+
+                for (auto const &beacons_from_same_nbr : same_dst_as_beacons) {
+                    for (auto const &the_beacon : beacons_from_same_nbr.second) {
+                        if (!the_beacon->is_valid) {
+                            continue;
+                        }
+                        std::cout << "\t"
+                                  << "\t";
+                        uint32_t hop_cnt = 0;
+                        std::vector<link_information>::reverse_iterator hop = the_beacon->the_path.rbegin();
+                        for (; hop != the_beacon->the_path.rend(); ++hop) {
+                            if (hop_cnt != 0) {
+                                std::cout << ", ";
+                            }
+                            std::cout << alias_to_real_as_no.at(SECOND_LOWER_16_BITS(*hop)) << ":"
+                                      << LOWER_16_BITS(*hop) << ", " << alias_to_real_as_no.at(UPPER_16_BITS(*hop))
+                                      << ":" << SECOND_UPPER_16_BITS(*hop);
+                            hop_cnt++;
+                        }
+
+                        if (the_beacon->beacon_direction == beacon_direction_t::PULL_BASED) {
+                            std::cout << "; pull"
+                                      << "; initiation_time = " << the_beacon->initiation_time;
+                        } else {
+                            std::cout << "; push";
+                        }
+
+                        std::cout << "; ";
+
+                        for (auto const &metric : the_beacon->static_info_extension) {
+                            if (metric.first == LATENCY) {
+                                std::cout << "latency = " << metric.second;
+                                std::cout << "; ";
+                            } else if (metric.first == BW) {
+                                std::cout << "BWD = " << metric.second << ";";
+                            }
+                        }
+
+                        std::cout << std::endl;
+                    }
                 }
             }
         }
     }
-}
 
-void
-PostSimulationEvaluations::PrintNumberOfValidBeaconEntriesInBeaconStore ()
-{
-  for (uint32_t i = 0; i < asNodes.GetN (); ++i)
-    {
-      ScionAs *asNode = dynamic_cast<ScionAs *> (PeekPointer (asNodes.Get (i)));
-      std::cerr << "Beacon Store on Node: " << realToAliasAsNo.at (asNode->asNumber)
-                << std::endl;
-      for (auto const &srcAsBeaconsPair : asNode->GetBeaconServer ()->GetBeaconStore ())
-        {
-          auto const &srcAs = srcAsBeaconsPair.first;
-          auto const &beacons = srcAsBeaconsPair.second;
+    void PostSimulationEvaluations::PrintAllPathsAttributes() {
+        std::cout << "################################################ Paths Information "
+                     "##############################################################"
+                  << std::endl;
 
-          int count = 0;
-          for (auto const &lenBeaconSetPair : beacons)
-            {
-              auto const &length = lenBeaconSetPair.first;
-              auto const &beaconSet = lenBeaconSetPair.second;
-              std::cout << length;
-              for (auto b : beaconSet)
-                {
-                  if (b->isValid)
-                    {
-                      count++;
+        for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+            SCION_AS *as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+
+            std::cout << "From: " << alias_to_real_as_no.at(as->as_number) << std::endl;
+
+            for (auto const &dst_as_beacons_pair : as->GetBeaconServer()->GetBeaconStore()) {
+                uint16_t dst_as = dst_as_beacons_pair.first;
+                auto const &same_dst_as_beacons = dst_as_beacons_pair.second;
+
+                std::cout << "\t"
+                          << "To: " << alias_to_real_as_no.at(dst_as) << std::endl;
+
+                for (auto const &beacons_from_same_nbr : same_dst_as_beacons) {
+                    for (auto const &the_beacon : beacons_from_same_nbr.second) {
+                        if (!the_beacon->is_valid) {
+                            continue;
+                        }
+                        std::cout << "\t"
+                                  << "\t";
+                        for (auto const &[att_type, att_value] : the_beacon->static_info_extension) {
+                            if (att_type == static_info_type_t::LATENCY) {
+                                std::cout << "latency = " << att_value << "; ";
+                            }
+                            if (att_type == static_info_type_t::BW) {
+                                std::cout << "BW = " << att_value << "; ";
+                            }
+                        }
+
+                        if (the_beacon->optimization_target != NULL) {
+                            for (auto const &[criteria_type, criteria_coef] :
+                                 the_beacon->optimization_target->criteria) {
+                                std::cout << "iface_group_id = " << the_beacon->optimization_target->target_if_group
+                                          << "; ";
+                                if (criteria_type == static_info_type_t::LATENCY) {
+                                    std::cout << "latency_coef = " << criteria_coef << "; ";
+                                }
+                                if (criteria_type == static_info_type_t::BW) {
+                                    std::cout << "BW_coef = " << criteria_coef << "; ";
+                                }
+                            }
+                        }
+                        std::cout << std::endl;
                     }
                 }
             }
-          std::cerr << "\t" << realToAliasAsNo.at (srcAs) << ":" << count << std::endl;
-        }
-      std::cerr << std::endl;
-    }
-}
-
-void
-PostSimulationEvaluations::InvestigateAffectedTimeServers ()
-{
-  std::cout << "########################### InvestigateAffectedTimeServers "
-               "#####################################"
-            << std::endl;
-  std::vector<std::pair<std::string, uint32_t>> pathSelections = {
-      std::make_pair ("random", 1), std::make_pair ("short", 1), std::make_pair ("random", 5),
-      std::make_pair ("short", 5), std::make_pair ("disjoint", 5)};
-
-  std::vector<std::map<uint32_t, std::unordered_set<Ia_t>>> preCalculatedInherentlyMaliciousAses;
-  std::unordered_set<Ia_t> inherentlyMaliciousAses;
-  std::set<Ia_t> benign_ases;
-  uint32_t numAllAses = asNodes.GetN ();
-
-  for (uint32_t i = 0; i < numAllAses; ++i)
-    {
-      Ia_t iaAddr = dynamic_cast<ScionAs *> (PeekPointer (asNodes.Get (i)))->iaAddr;
-      benign_ases.insert (iaAddr);
-    }
-
-  uint32_t maliciousIncrementalStep = std::ceil (numAllAses / 100);
-
-  for (uint32_t rpt = 0; rpt < 20; ++rpt)
-    {
-      std::map<uint32_t, std::unordered_set<Ia_t>> numInherentMaliciousToMalicious;
-      preCalculatedInherentlyMaliciousAses.push_back (numInherentMaliciousToMalicious);
-
-      benign_ases.insert (inherentlyMaliciousAses.begin (), inherentlyMaliciousAses.end ());
-      inherentlyMaliciousAses.clear ();
-
-      for (uint32_t numInherentMalicious = maliciousIncrementalStep;
-           numInherentMalicious <= std::ceil (numAllAses / 3) + maliciousIncrementalStep;
-           numInherentMalicious += maliciousIncrementalStep)
-        {
-          std::set<Ia_t> new_inherently_malicious;
-          std::set<Ia_t> new_benign;
-
-          std::sample (benign_ases.begin (), benign_ases.end (),
-                       std::inserter (new_inherently_malicious, new_inherently_malicious.begin ()),
-                       maliciousIncrementalStep, std::random_device{});
-
-          std::set_difference (std::make_move_iterator (benign_ases.begin ()),
-                               std::make_move_iterator (benign_ases.end ()),
-                               new_inherently_malicious.begin (), new_inherently_malicious.end (),
-                               std::inserter (new_benign, new_benign.end ()));
-
-          benign_ases.swap (new_benign);
-          inherentlyMaliciousAses.insert (new_inherently_malicious.begin (),
-                                            new_inherently_malicious.end ());
-
-          preCalculatedInherentlyMaliciousAses.at (rpt).insert (
-              std::make_pair (numInherentMalicious, inherentlyMaliciousAses));
         }
     }
 
-  for (auto const &pathSelection : pathSelections)
-    {
-      std::cout << "******************************** " << pathSelection.second << " "
-                << pathSelection.first << " ********************************" << std::endl;
+    void PostSimulationEvaluations::PrintNoBeaconsPerInterfacePerDstOrOpt() {
+        std::cout << "####################################### sent beacons on each interface in each period"
+                     "#######################################"
+                  << std::endl;
+        for (uint16_t time = 0; time <= last_beaconing_event_time.ToInteger(Time::MIN); time += beaconing_period.ToInteger(Time::MIN)) {
+            std::cout << time << "|";
+            for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+                SCION_AS *as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+                auto const & counters_per_period = as->GetBeaconServer()->GetBeaconsSentPerInterfacePerPeriod().at(time);
+                for (uint32_t if_index = 0; if_index < as->GetNDevices(); ++if_index) {
+                    uint64_t no_sent_beacons = counters_per_period.at(if_index);
+                    std::cout << alias_to_real_as_no.at(as->as_number) << ":" << if_index << "=" << no_sent_beacons
+                              << ",";
+                }
+            }
+            std::cout << std::endl;
+        }
+
+
+        std::cout << "####################################### cumulative sent beacons on each interface "
+                     "#######################################"
+                  << std::endl;
+
+        for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+            SCION_AS *as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+            for (uint32_t if_index = 0; if_index < as->GetNDevices(); ++if_index) {
+                uint64_t no_sent_beacons = as->GetBeaconServer()->GetBeaconsSentPerInterface().at(if_index);
+                std::cout << alias_to_real_as_no.at(as->as_number) << ":" << if_index << "=" << no_sent_beacons
+                          << ",";
+            }
+        }
+
+        std::cout << std::endl;
+
+        std::cout << "####################################### sent beacons per interface per destination "
+                     "#######################################"
+                  << std::endl;
+
+        std::unordered_map<uint16_t, std::vector<uint32_t>> beacons_sent_per_dst_per_interface;
+
+        for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+            SCION_AS *as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+            auto &counters = as->GetBeaconServer()->GetBeaconsSentPerDstPerInterfacePerPeriod();
+            for (uint32_t if_index = 0; if_index < as->GetNDevices(); ++if_index) {
+                auto &counters_per_interface = counters.at(if_index);
+                for (auto const &[dst_as, counter] : counters_per_interface) {
+                    if (beacons_sent_per_dst_per_interface.find(dst_as) == beacons_sent_per_dst_per_interface.end()) {
+                        beacons_sent_per_dst_per_interface.insert(std::make_pair(dst_as, std::vector<uint32_t>()));
+                    }
+                    beacons_sent_per_dst_per_interface.at(dst_as).push_back(counter);
+                }
+            }
+        }
+
+        for (auto const &[dst_as, counters] : beacons_sent_per_dst_per_interface) {
+            std::cout << alias_to_real_as_no.at(dst_as) << "|";
+            for (auto const counter : counters) {
+                std::cout << counter << ",";
+            }
+            std::cout << std::endl;
+        }
+
+        std::cout << "####################################### push sent beacons per interface per optimization target "
+                     "#######################################"
+                  << std::endl;
+
+        std::unordered_map<const optimization_target_t *, std::vector<uint32_t>> beacons_sent_per_opt_per_interface;
+
+        for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+            SCION_AS *as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+            auto &counters = as->GetBeaconServer()->GetPushBasedBeaconsSentPerOptPerInterfacePerPeriod();
+
+            for (uint32_t if_index = 0; if_index < as->GetNDevices(); ++if_index) {
+                auto &counters_per_interface = counters.at(if_index);
+                for (auto const &[opt_target, counter] : counters_per_interface) {
+                    if (beacons_sent_per_opt_per_interface.find(opt_target) ==
+                        beacons_sent_per_opt_per_interface.end()) {
+                        beacons_sent_per_opt_per_interface.insert(std::make_pair(opt_target, std::vector<uint32_t>()));
+                    }
+                    beacons_sent_per_opt_per_interface.at(opt_target).push_back(counter);
+                }
+            }
+        }
+
+        for (auto const &[opt_target, counters] : beacons_sent_per_opt_per_interface) {
+            std::cout << int64_t(opt_target) << "|" << alias_to_real_as_no.at(opt_target->target_as) << "|"
+                      << opt_target->target_id << "|" << opt_target->target_if_group << "|";
+            for (auto const counter : counters) {
+                std::cout << counter << ",";
+            }
+            std::cout << std::endl;
+        }
+
+        std::cout << "####################################### pull sent beacons per interface per optimization target "
+                     "#######################################"
+                  << std::endl;
+
+        beacons_sent_per_opt_per_interface.clear();
+
+        for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+            SCION_AS *as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+            auto &counters = as->GetBeaconServer()->GetPullBasedBeaconsSentPerOptPerInterfacePerPeriod();
+
+            for (uint32_t if_index = 0; if_index < as->GetNDevices(); ++if_index) {
+                auto &counters_per_interface = counters.at(if_index);
+                for (auto const &[opt_target, counter] : counters_per_interface) {
+                    if (beacons_sent_per_opt_per_interface.find(opt_target) ==
+                        beacons_sent_per_opt_per_interface.end()) {
+                        beacons_sent_per_opt_per_interface.insert(std::make_pair(opt_target, std::vector<uint32_t>()));
+                    }
+                    beacons_sent_per_opt_per_interface.at(opt_target).push_back(counter);
+                }
+            }
+        }
+
+        for (auto const &[opt_target, counters] : beacons_sent_per_opt_per_interface) {
+            std::cout << int64_t(opt_target) << "|" << alias_to_real_as_no.at(opt_target->target_as) << "|"
+                      << alias_to_real_as_no.at(0xFFFF - opt_target->target_id) << "|";
+            for (auto const counter : counters) {
+                std::cout << counter << ",";
+            }
+            std::cout << std::endl;
+        }
+    }
+
+    void PostSimulationEvaluations::PrintNoBeaconsPerInterface() {
+        std::cout << "####################################### cumulative sent beacons on each interface "
+                     "#######################################"
+                  << std::endl;
+        std::cout << "link"
+                  << "\t"
+                  << "sent beacons" << std::endl;
+        for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+            SCION_AS *as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+            for (uint32_t if_index = 0; if_index < as->GetNDevices(); ++if_index) {
+                uint64_t no_sent_beacons = as->GetBeaconServer()->GetBeaconsSentPerInterface().at(if_index);
+                std::cout << alias_to_real_as_no.at(as->as_number) << ":" << if_index << "\t" << no_sent_beacons
+                          << std::endl;
+            }
+        }
+
+        for (Time t = Seconds(0.0); t < last_beaconing_event_time; t += beaconing_period) {
+            std::cout << "####################################### frequencies of sent beacons at Time " << t
+                      << " #######################################" << std::endl;
+
+            std::map<uint32_t, uint32_t> frequencies_of_sent_beacon_numbers;
+            for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+                SCION_AS *as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+                for (uint32_t if_index = 0; if_index < as->GetNDevices(); ++if_index) {
+                    uint32_t no_sent_beacons = as->GetBeaconServer()
+                                                       ->GetBeaconsSentPerInterfacePerPeriod()
+                                                       .at(t.ToInteger(Time::MIN))
+                                                       .at(if_index);
+
+                    if (frequencies_of_sent_beacon_numbers.find(no_sent_beacons) !=
+                        frequencies_of_sent_beacon_numbers.end()) {
+                        frequencies_of_sent_beacon_numbers.at(no_sent_beacons)++;
+                    } else {
+                        frequencies_of_sent_beacon_numbers.insert(std::make_pair(no_sent_beacons, 1));
+                    }
+                }
+            }
+
+            std::cout << "sent beacons on a link"
+                      << "\t"
+                      << "frequency" << std::endl;
+            for (auto const &bwd_freq_pair : frequencies_of_sent_beacon_numbers) {
+                std::cout << bwd_freq_pair.first << "\t" << bwd_freq_pair.second << std::endl;
+            }
+        }
+    }
+
+    void PostSimulationEvaluations::PrintConsumedBWAtEachPeriod() {
+        for (Time t = Seconds(0.0); t < last_beaconing_event_time; t += beaconing_period) {
+            std::cout << "####################################### frequencies of consumed bandwidth at Time " << t
+                      << " #######################################" << std::endl;
+
+            std::map<uint32_t, uint32_t> frequencies_of_consumed_bwd;
+            for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+                SCION_AS *as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+                for (uint32_t if_index = 0; if_index < as->GetNDevices(); ++if_index) {
+                    uint32_t consumed_bwd = as->GetBeaconServer()
+                                                    ->GetBytesSentPerInterfacePerPeriod()
+                                                    .at(t.ToInteger(Time::MIN))
+                                                    .at(if_index);
+
+                    if (frequencies_of_consumed_bwd.find(consumed_bwd) != frequencies_of_consumed_bwd.end()) {
+                        frequencies_of_consumed_bwd.at(consumed_bwd)++;
+                    } else {
+                        frequencies_of_consumed_bwd.insert(std::make_pair(consumed_bwd, 1));
+                    }
+                }
+            }
+
+            std::cout << "consumed bandwidth on a link"
+                      << "\t"
+                      << "frequency" << std::endl;
+            for (auto const &bwd_freq_pair : frequencies_of_consumed_bwd) {
+                std::cout << bwd_freq_pair.first << "\t" << bwd_freq_pair.second << std::endl;
+            }
+        }
+    }
+
+    void PostSimulationEvaluations::PrintDistributionOfPathsWithSpecificHopCount() {
+        for (uint32_t path_length = 1; path_length <= 4; ++path_length) {
+            std::cout << "######################################### frequencies of path counts per destination AS with "
+                         "hop count: "
+                      << path_length << "#########################################" << std::endl;
+            std::map<uint64_t, uint64_t> frequencies_of_path_counts_per_dst_as_with_certain_length;
+            for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+                for (auto const &dst_as_beacons_pair :
+                     DynamicCast<SCION_AS>(AS_nodes.Get(i))->GetBeaconServer()->GetBeaconStore()) {
+                    uint64_t number_of_paths_with_certain_length = 0;
+                    if (dst_as_beacons_pair.second.find(path_length) == dst_as_beacons_pair.second.end()) {
+                        continue;
+                    } else {
+                        number_of_paths_with_certain_length = dst_as_beacons_pair.second.at(path_length).size();
+                    }
+
+                    if (frequencies_of_path_counts_per_dst_as_with_certain_length.find(
+                                number_of_paths_with_certain_length) !=
+                        frequencies_of_path_counts_per_dst_as_with_certain_length.end()) {
+                        frequencies_of_path_counts_per_dst_as_with_certain_length.at(
+                                number_of_paths_with_certain_length)++;
+                    } else {
+                        frequencies_of_path_counts_per_dst_as_with_certain_length.insert(
+                                std::make_pair(number_of_paths_with_certain_length, 1));
+                    }
+                }
+            }
+
+            std::cout << "path count per source AS"
+                      << "\t"
+                      << "frequency" << std::endl;
+            for (auto const &count_freq_pair : frequencies_of_path_counts_per_dst_as_with_certain_length) {
+                std::cout << count_freq_pair.first << "\t" << count_freq_pair.second << std::endl;
+            }
+        }
+    }
+
+    void PostSimulationEvaluations::PrintMinimumLatencyDist() {
+        std::cout << "###################################################### MINIMUM "
+                     "LATENCY####################################"
+                  << std::endl;
+
+        std::map<float, int> distribution;
+        for (uint32_t i = 0; i < AS_nodes.GetN(); i++) {
+            SCION_AS *as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+            for (uint32_t j = 0; j < AS_nodes.GetN(); ++j) {
+                if (i == j)
+                    continue;
+                float min_latency = std::numeric_limits<float>::max();
+                for (auto const &len_beacons_pair : as->GetBeaconServer()->GetBeaconStore().at(j)) {
+                    for (auto const &the_beacon : len_beacons_pair.second) {
+                        assert(the_beacon->the_path.size() != 1 ||
+                               the_beacon->static_info_extension.at(static_info_type_t::LATENCY) == (float) 0);
+                        if (the_beacon->static_info_extension.at(static_info_type_t::LATENCY) < min_latency) {
+                            min_latency = the_beacon->static_info_extension.at(static_info_type_t::LATENCY);
+                        }
+                    }
+                }
+
+                if (distribution.find(min_latency) == distribution.end()) {
+                    distribution.insert(std::make_pair(min_latency, 0));
+                }
+                distribution.at(min_latency)++;
+            }
+        }
+
+        int cumulative_counter = 0;
+        for (auto const &entry : distribution) {
+            float latency = entry.first;
+            distribution.at(latency) += cumulative_counter;
+            cumulative_counter = distribution.at(latency);
+        }
+
+        for (auto const &entry : distribution) {
+            std::cout << entry.first << "\t" << (double) entry.second / cumulative_counter << std::endl;
+        }
+    }
+
+    void PostSimulationEvaluations::PrintPathNoDistribution() {
+        std::cout << "############################################# Path No Distribution "
+                     "##################################"
+                  << std::endl;
+        std::map<uint32_t, uint32_t> distribution;
+        for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+            SCION_AS *node = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+            for (auto const &dst_count_pair : node->GetBeaconServer()->GetValidBeaconsCountPerDstAS()) {
+                if (distribution.find(dst_count_pair.second) == distribution.end()) {
+                    distribution.insert(std::make_pair(dst_count_pair.second, 0));
+                }
+
+                distribution.at(dst_count_pair.second) = distribution.at(dst_count_pair.second) + 1;
+            }
+        }
+
+        uint32_t cumulative_counter = 0;
+        for (auto const &path_cnt_cnt_pair : distribution) {
+            distribution.at(path_cnt_cnt_pair.first) = distribution.at(path_cnt_cnt_pair.first) + cumulative_counter;
+            cumulative_counter = distribution.at(path_cnt_cnt_pair.first);
+        }
+
+        for (auto const &entry : distribution) {
+            std::cout << entry.first << "\t" << (double) entry.second / cumulative_counter << std::endl;
+        }
+    }
+
+    void PostSimulationEvaluations::PrintPathPollutionIndex() {
+        int x = 5;
+        std::map<double, uint32_t> min_distribution;
+        std::map<double, uint32_t> mean_distribution;
+        std::map<double, uint32_t> top_x_mean_distribution;
+
+        std::cout << "############################################# Latencies of paths; Min pollution; Mean of " << x
+                  << "-least-polluting; Mean of all ##################################" << std::endl;
+
+        for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+            SCION_AS *as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+
+            for (uint32_t j = 0; j < AS_nodes.GetN(); ++j) {
+                if (i == j)
+                    continue;
+
+                float min = std::numeric_limits<float>::max();
+
+                float mean = (float) 0;
+                int cnt = 0;
+
+                float top_x_mean = (float) 0;
+                int top_x_cnt = 0;
+                std::multimap<float, float> pollution_indexes;
+
+                float latency_of_path_with_min_pollution = 0;
+                float avg_latency_of_x_least_polluting_paths = 0;
+                float avg_latency_of_all_paths = 0;
+
+                for (auto const &len_beacons_pair : as->GetBeaconServer()->GetBeaconStore().at(j)) {
+                    for (auto const &the_beacon : len_beacons_pair.second) {
+                        pollution_indexes.insert(
+                                std::make_pair(the_beacon->static_info_extension.at(static_info_type_t::CO2),
+                                               the_beacon->static_info_extension.at(static_info_type_t::LATENCY)));
+
+                        cnt++;
+                        mean += the_beacon->static_info_extension.at(static_info_type_t::CO2);
+                        avg_latency_of_all_paths += the_beacon->static_info_extension.at(static_info_type_t::LATENCY);
+
+                        if (the_beacon->static_info_extension.at(static_info_type_t::CO2) < min) {
+                            min = the_beacon->static_info_extension.at(static_info_type_t::CO2);
+                            latency_of_path_with_min_pollution =
+                                    the_beacon->static_info_extension.at(static_info_type_t::LATENCY);
+                        }
+                    }
+                }
+
+                for (auto const &pollution_index_latency_pair : pollution_indexes) {
+                    if (top_x_cnt >= x)
+                        break;
+                    top_x_mean += pollution_index_latency_pair.first;
+                    avg_latency_of_x_least_polluting_paths += pollution_index_latency_pair.second;
+                    top_x_cnt++;
+                }
+                pollution_indexes.clear();
+
+                top_x_mean /= top_x_cnt;
+                if (top_x_mean_distribution.find(top_x_mean) == top_x_mean_distribution.end()) {
+                    top_x_mean_distribution.insert(std::make_pair(top_x_mean, 0));
+                }
+
+                mean /= cnt;
+                if (mean_distribution.find(mean) == mean_distribution.end()) {
+                    mean_distribution.insert(std::make_pair(mean, 0));
+                }
+
+                if (min_distribution.find(min) == min_distribution.end()) {
+                    min_distribution.insert(std::make_pair(min, 0));
+                }
+
+                top_x_mean_distribution.at(top_x_mean)++;
+                mean_distribution.at(mean)++;
+                min_distribution.at(min)++;
+
+                avg_latency_of_all_paths /= cnt;
+                avg_latency_of_x_least_polluting_paths /= top_x_cnt;
+
+                std::cout << alias_to_real_as_no.at(i) << "\t" << alias_to_real_as_no.at(j) << "\t"
+                          << latency_of_path_with_min_pollution << "\t" << avg_latency_of_x_least_polluting_paths
+                          << "\t" << avg_latency_of_all_paths << std::endl;
+            }
+        }
+
+        uint32_t cumulative_counter = 0;
+        for (auto const &path_cnt_cnt_pair : min_distribution) {
+            min_distribution.at(path_cnt_cnt_pair.first) =
+                    min_distribution.at(path_cnt_cnt_pair.first) + cumulative_counter;
+            cumulative_counter = min_distribution.at(path_cnt_cnt_pair.first);
+        }
+
+        std::cout << "############################################# MIN Pollution Index Distribution "
+                     "##################################"
+                  << std::endl;
+        for (auto const &entry : min_distribution) {
+            std::cout << entry.first << "\t" << (double) entry.second / cumulative_counter << std::endl;
+        }
+
+        cumulative_counter = 0;
+        for (auto const &path_cnt_cnt_pair : top_x_mean_distribution) {
+            top_x_mean_distribution.at(path_cnt_cnt_pair.first) =
+                    top_x_mean_distribution.at(path_cnt_cnt_pair.first) + cumulative_counter;
+            cumulative_counter = top_x_mean_distribution.at(path_cnt_cnt_pair.first);
+        }
+
+        std::cout << "############################################# TOP" << x
+                  << " Paths MEAN Pollution Index Distribution ##################################" << std::endl;
+        for (auto const &entry : top_x_mean_distribution) {
+            std::cout << entry.first << "\t" << (double) entry.second / cumulative_counter << std::endl;
+        }
+
+        cumulative_counter = 0;
+        for (auto const &path_cnt_cnt_pair : mean_distribution) {
+            mean_distribution.at(path_cnt_cnt_pair.first) =
+                    mean_distribution.at(path_cnt_cnt_pair.first) + cumulative_counter;
+            cumulative_counter = mean_distribution.at(path_cnt_cnt_pair.first);
+        }
+
+        std::cout << "############################################# MEAN Pollution Index Distribution "
+                     "##################################"
+                  << std::endl;
+        for (auto const &entry : mean_distribution) {
+            std::cout << entry.first << "\t" << (double) entry.second / cumulative_counter << std::endl;
+        }
+    }
+
+    void PostSimulationEvaluations::PrintLeastPollutingPaths() {
+        std::ifstream bgp_paths_file("/cluster/scratch/tabaeias/BGP_path_and_pollution.txt");
+        std::string line;
+
+        std::map<std::tuple<int, int>, int> bgp_path_no = std::map<std::tuple<int, int>, int>();
+        while (getline(bgp_paths_file, line)) {
+            std::vector<std::string> fields;
+            fields = split(line, '|', fields);
+
+            int from = std::stoi(fields[0]);
+            int to = std::stoi(fields[1]);
+            int bgp_paths = std::stoi(fields[6]);
+
+            bgp_path_no.insert(std::make_pair(std::make_pair(from, to), bgp_paths));
+        }
+        bgp_paths_file.close();
+
+        std::cout.precision(10);
+        for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+            SCION_AS *AS1 = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+
+            for (uint32_t j = 0; j < AS_nodes.GetN(); ++j) {
+                if (i == j)
+                    continue;
+
+                SCION_AS *AS2 = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(j)));
+
+                if (bgp_path_no.find(std::make_pair(alias_to_real_as_no.at(AS1->as_number),
+                                                    alias_to_real_as_no.at(AS2->as_number))) == bgp_path_no.end()) {
+                    continue;
+                }
+
+                std::map<double, std::map<double, std::set<Beacon *>>> sorted_beacons_by_pollution_by_latency =
+                        std::map<double, std::map<double, std::set<Beacon *>>>();
+                sort_beacons_by_pollution_by_latency(AS_nodes, AS1, AS2, beaconing_policy_str,
+                                                     sorted_beacons_by_pollution_by_latency);
+
+                double min_pollution = sorted_beacons_by_pollution_by_latency.begin()->first;
+                double latency_of_min_pollution = sorted_beacons_by_pollution_by_latency.begin()->second.begin()->first;
+                Beacon *min_polluting_beacon =
+                        *sorted_beacons_by_pollution_by_latency.begin()->second.begin()->second.begin();
+
+                double avg_pollution_top_5 = 0;
+                double avg_pollution_top_n = 0;
+                double avg_pollution_all = 0;
+
+                double avg_latency_top_5 = 0;
+                double avg_latency_top_n = 0;
+                double avg_latency_all = 0;
+
+                int counter = 0;
+                int n = bgp_path_no.at(
+                        std::make_pair(alias_to_real_as_no.at(AS1->as_number), alias_to_real_as_no.at(AS2->as_number)));
+
+                for (auto const &[pollution, latency_2_set_of_beacons_map] : sorted_beacons_by_pollution_by_latency) {
+                    for (auto const &[latency, set_of_beacons] : latency_2_set_of_beacons_map) {
+                        for (uint32_t k = 0; k < set_of_beacons.size(); ++k) {
+                            avg_pollution_all += pollution;
+                            avg_latency_all += latency;
+
+                            if (counter < 5) {
+                                avg_pollution_top_5 += pollution;
+                                avg_latency_top_5 += latency;
+                            }
+
+                            if (counter < n) {
+                                avg_pollution_top_n += pollution;
+                                avg_latency_top_n += latency;
+                            }
+
+                            counter += 1;
+                        }
+                    }
+                }
+
+                avg_pollution_all /= counter;
+                avg_latency_all /= counter;
+
+                if (counter < 5) {
+                    avg_pollution_top_5 /= counter;
+                    avg_latency_top_5 /= counter;
+                } else {
+                    avg_pollution_top_5 /= 5;
+                    avg_latency_top_5 /= 5;
+                }
+
+                if (counter < n) {
+                    avg_pollution_top_n /= counter;
+                    avg_latency_top_n /= counter;
+                } else {
+                    avg_pollution_top_n /= n;
+                    avg_latency_top_n /= n;
+                }
+
+                std::cout << alias_to_real_as_no.at(AS1->as_number) << "|" << alias_to_real_as_no.at(AS2->as_number)
+                          << "|" << min_pollution << "|" << avg_pollution_top_5 << "|" << avg_pollution_top_n << "|"
+                          << avg_pollution_all << "|" << latency_of_min_pollution << "|" << avg_latency_top_5 << "|"
+                          << avg_latency_top_n << "|" << avg_latency_all << "|" << counter << "|";
+
+                int hop_cnt = 0;
+                std::vector<link_information>::reverse_iterator hop = min_polluting_beacon->the_path.rbegin();
+                for (; hop != min_polluting_beacon->the_path.rend(); ++hop) {
+                    if (hop_cnt != 0) {
+                        std::cout << ", ";
+                    }
+                    std::cout << alias_to_real_as_no.at(SECOND_LOWER_16_BITS(*hop)) << ":" << LOWER_16_BITS(*hop)
+                              << ", " << alias_to_real_as_no.at(UPPER_16_BITS(*hop)) << ":"
+                              << SECOND_UPPER_16_BITS(*hop);
+                    hop_cnt++;
+                }
+
+                std::cout << "|";
+
+                hop_cnt = 0;
+                hop = min_polluting_beacon->the_path.rbegin();
+                for (; hop != min_polluting_beacon->the_path.rend(); ++hop) {
+                    if (hop_cnt != 0) {
+                        std::cout << ", ";
+                    }
+                    SCION_AS *hop_AS = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(SECOND_LOWER_16_BITS(*hop))));
+                    std::cout << "(" << hop_AS->interfaces_coordinates.at(LOWER_16_BITS(*hop)).first << ","
+                              << hop_AS->interfaces_coordinates.at(LOWER_16_BITS(*hop)).second << ")";
+                    hop_cnt++;
+                }
+
+                std::cout << std::endl;
+            }
+        }
+    }
+
+    void PostSimulationEvaluations::PrintBestPerHopPollutionIndexes() {
+        std::cout << "############################################### BestPerHopLatencyAndPollutionIndexes "
+                     "########################################################################"
+                  << std::endl;
+        for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+            SCION_AS *as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+            for (auto const &the_ifaces_list1 : as->interfaces_per_neighbor_as) {
+                uint16_t the_neighbor1 = the_ifaces_list1.first;
+                for (auto const &the_ifaces_list2 : as->interfaces_per_neighbor_as) {
+                    uint16_t the_neighbor2 = the_ifaces_list2.first;
+                    if (the_neighbor1 == the_neighbor2)
+                        continue;
+                    double min_latency = std::numeric_limits<double>::max();
+                    for (uint16_t iface1 : the_ifaces_list1.second) {
+                        for (uint16_t iface2 : the_ifaces_list2.second) {
+                            if (as->latencies_between_interfaces.at(iface1).at(iface2) < min_latency) {
+                                min_latency = as->latencies_between_interfaces.at(iface1).at(iface2);
+                            }
+                        }
+                    }
+                    std::cout << alias_to_real_as_no.at(the_neighbor1) << " " << alias_to_real_as_no.at(as->as_number)
+                              << " " << alias_to_real_as_no.at(the_neighbor2) << "\t"
+                              << min_latency * ((GreenBeaconing *) as->GetBeaconServer())->GetDirtyEnergyRatio() << "\t"
+                              << min_latency << "\t" << std::endl;
+                }
+            }
+        }
+    }
+
+    void PostSimulationEvaluations::PrintConsumedBWForBeaconing() {
+        for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+            SCION_AS *AS_node = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+            for (auto const &el : AS_node->GetBeaconServer()->GetBytesSentPerInterfacePerPeriod()) {
+                auto const &vector = el.second;
+                std::cerr << "\nNode: " << real_to_alias_as_no.at(AS_node->as_number) << " at time 0." << std::endl;
+                for (auto const &element : vector) {
+                    std::cerr << element << " ";
+                }
+            }
+        }
+    }
+
+    void PostSimulationEvaluations::PrintBeaconStores() {
+        for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+            SCION_AS *AS_node = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+            std::cout << "From: " << real_to_alias_as_no.at(AS_node->as_number) << std::endl;
+
+            for (auto const &dst_as_beacons_pair : AS_node->GetBeaconServer()->GetBeaconStore()) {
+                uint16_t dst_as = dst_as_beacons_pair.first;
+                auto const &same_dst_as_beacons = dst_as_beacons_pair.second;
+
+                std::cout << "\t"
+                          << "To: " << real_to_alias_as_no.at(dst_as) << std::endl;
+
+                for (auto const &beacons_from_same_nbr : same_dst_as_beacons) {
+                    for (auto const &the_beacon : beacons_from_same_nbr.second) {
+                        if (!the_beacon->is_valid) {
+                            continue;
+                        }
+                        std::cout << "\t"
+                                  << "\t";
+                        uint32_t hop_cnt = 0;
+                        std::vector<link_information>::reverse_iterator hop = the_beacon->the_path.rbegin();
+                        for (; hop != the_beacon->the_path.rend(); ++hop) {
+                            if (hop_cnt != 0) {
+                                std::cout << ", ";
+                            }
+                            std::cout << real_to_alias_as_no.at(SECOND_LOWER_16_BITS(*hop)) << ":"
+                                      << LOWER_16_BITS(*hop) << ", " << real_to_alias_as_no.at(UPPER_16_BITS(*hop))
+                                      << ":" << SECOND_UPPER_16_BITS(*hop);
+                            hop_cnt++;
+                        }
+                        std::cout << "; ";
+                        std::cout << "latency = " << the_beacon->static_info_extension.at(static_info_type_t::LATENCY);
+                        std::cout << "; ";
+                        std::cout << "BWD = " << the_beacon->static_info_extension.at(static_info_type_t::BW);
+                        std::cout << std::endl;
+                    }
+                }
+            }
+        }
+    }
+
+    void PostSimulationEvaluations::PrintNumberOfValidBeaconEntriesInBeaconStore() {
+        for (uint32_t i = 0; i < AS_nodes.GetN(); ++i) {
+            SCION_AS *AS_node = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+            std::cerr << "Beacon Store on Node: " << real_to_alias_as_no.at(AS_node->as_number) << std::endl;
+            for (auto const &src_as_beacons_pair : AS_node->GetBeaconServer()->GetBeaconStore()) {
+                auto const &src_as = src_as_beacons_pair.first;
+                auto const &beacons = src_as_beacons_pair.second;
+
+                int count = 0;
+                for (auto const &len_beacon_set_pair : beacons) {
+                    auto const &length = len_beacon_set_pair.first;
+                    auto const &beacon_set = len_beacon_set_pair.second;
+                    std::cout << length;
+                    for (auto b : beacon_set) {
+                        if (b->is_valid) {
+                            count++;
+                        }
+                    }
+                }
+                std::cerr << "\t" << real_to_alias_as_no.at(src_as) << ":" << count << std::endl;
+            }
+            std::cerr << std::endl;
+        }
+    }
+
+    void PostSimulationEvaluations::InvestigateAffectedTimeServers() {
+        std::cout << "########################### InvestigateAffectedTimeServers #####################################"
+                  << std::endl;
+        std::vector<std::pair<std::string, uint32_t>> path_selections = {
+                std::make_pair("random", 1), std::make_pair("short", 1), std::make_pair("random", 5),
+                std::make_pair("short", 5), std::make_pair("disjoint", 5)};
+
+        std::vector<std::map<uint32_t, std::unordered_set<ia_t>>> pre_calculated_inherently_malicious_ases;
+        std::unordered_set<ia_t> inherently_malicious_ases;
+        std::set<ia_t> benign_ases;
+        uint32_t num_all_ases = AS_nodes.GetN();
+
+        for (uint32_t i = 0; i < num_all_ases; ++i) {
+            ia_t ia_addr = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)))->ia_addr;
+            benign_ases.insert(ia_addr);
+        }
+
+        uint32_t malicious_incremental_step = std::ceil(num_all_ases / 100);
+
+        for (uint32_t rpt = 0; rpt < 20; ++rpt) {
+            std::map<uint32_t, std::unordered_set<ia_t>> num_inherent_malicious_to_malicious;
+            pre_calculated_inherently_malicious_ases.push_back(num_inherent_malicious_to_malicious);
+
+            benign_ases.insert(inherently_malicious_ases.begin(), inherently_malicious_ases.end());
+            inherently_malicious_ases.clear();
+
+            for (uint32_t num_inherent_malicious = malicious_incremental_step;
+                 num_inherent_malicious <= std::ceil(num_all_ases / 3) + malicious_incremental_step;
+                 num_inherent_malicious += malicious_incremental_step) {
+                std::set<ia_t> new_inherently_malicious;
+                std::set<ia_t> new_benign;
+
+                std::sample(benign_ases.begin(), benign_ases.end(),
+                            std::inserter(new_inherently_malicious, new_inherently_malicious.begin()),
+                            malicious_incremental_step, std::random_device{});
+
+                std::set_difference(std::make_move_iterator(benign_ases.begin()),
+                                    std::make_move_iterator(benign_ases.end()), new_inherently_malicious.begin(),
+                                    new_inherently_malicious.end(), std::inserter(new_benign, new_benign.end()));
+
+                benign_ases.swap(new_benign);
+                inherently_malicious_ases.insert(new_inherently_malicious.begin(), new_inherently_malicious.end());
+
+                pre_calculated_inherently_malicious_ases.at(rpt).insert(
+                        std::make_pair(num_inherent_malicious, inherently_malicious_ases));
+            }
+        }
+
+        for (auto const &path_selection : path_selections) {
+            std::cout << "******************************** " << path_selection.second << " " << path_selection.first
+                      << " ********************************" << std::endl;
 
 #pragma omp parallel for
-      for (uint32_t i = 0; i < numAllAses; ++i)
-        {
-          ScionAs *scionAs = dynamic_cast<ScionAs *> (PeekPointer (asNodes.Get (i)));
-          TimeServer *timeServer = dynamic_cast<TimeServer *> (scionAs->GetHost (2));
+            for (uint32_t i = 0; i < num_all_ases; ++i) {
+                SCION_AS *scion_as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
+                TimeServer *time_server = dynamic_cast<TimeServer *>(scion_as->GetHost(2));
 
-          timeServer->pathSelection = pathSelection.first;
-          timeServer->numberOfPathsToUseForGlobalSync = pathSelection.second;
+                time_server->path_selection = path_selection.first;
+                time_server->number_of_paths_to_use_for_global_sync = path_selection.second;
 
-          timeServer->ConstructSetOfSelectedPaths ();
-        }
+                time_server->construct_set_of_selected_paths();
+            }
 
-      for (uint32_t rpt = 0; rpt < 20; ++rpt)
-        {
-          for (auto const &numInherentMaliciousToMalicious :
-               preCalculatedInherentlyMaliciousAses.at (rpt))
-            {
-              std::unordered_set<Ia_t> inherentlyAndTransitiveMalicious =
-                  numInherentMaliciousToMalicious.second;
-              uint32_t numInherentMalicious = numInherentMaliciousToMalicious.first;
-              bool c = false;
-              while (true)
-                {
-                  c = false;
+            for (uint32_t rpt = 0; rpt < 20; ++rpt) {
+                for (auto const &num_inherent_malicious_to_malicious :
+                     pre_calculated_inherently_malicious_ases.at(rpt)) {
+                    std::unordered_set<ia_t> inherently_and_transitive_malicious =
+                            num_inherent_malicious_to_malicious.second;
+                    uint32_t num_inherent_malicious = num_inherent_malicious_to_malicious.first;
+                    bool C = false;
+                    while (true) {
+                        C = false;
 #pragma omp parallel for
-                  for (uint32_t i = 0; i < numAllAses; ++i)
-                    {
-                      ScionAs *scionAs =
-                          dynamic_cast<ScionAs *> (PeekPointer (asNodes.Get (i)));
+                        for (uint32_t i = 0; i < num_all_ases; ++i) {
+                            SCION_AS *scion_as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
 
-                      if (inherentlyAndTransitiveMalicious.find (scionAs->iaAddr) !=
-                          inherentlyAndTransitiveMalicious.end ())
-                        {
-                          continue;
-                        }
+                            if (inherently_and_transitive_malicious.find(scion_as->ia_addr) !=
+                                inherently_and_transitive_malicious.end()) {
+                                continue;
+                            }
 
-                      uint32_t numberOfAffectedDst = 0;
-                      TimeServer *timeServer = dynamic_cast<TimeServer *> (scionAs->GetHost (2));
+                            uint32_t number_of_affected_dst = 0;
+                            TimeServer *time_server = dynamic_cast<TimeServer *>(scion_as->GetHost(2));
 
-                      assert (timeServer->setOfSelectedPaths.size () >= asNodes.GetN () - 1);
+                            assert(time_server->set_of_selected_paths.size() >= AS_nodes.GetN() - 1);
 
-                      for (auto const &[dstIa, selectedPathsToDst] :
-                           timeServer->setOfSelectedPaths)
-                        {
-                          assert (selectedPathsToDst.size () != 0);
+                            for (auto const &[dst_ia, selected_paths_to_dst] : time_server->set_of_selected_paths) {
+                                assert(selected_paths_to_dst.size() != 0);
 
-                          uint32_t numberOfAffectedPaths = 0;
-                          for (auto const &pathSeg : selectedPathsToDst)
-                            {
-                              uint32_t pathLen = pathSeg->hops.size ();
+                                uint32_t number_of_affected_paths = 0;
+                                for (auto const &path_seg : selected_paths_to_dst) {
+                                    uint32_t path_len = path_seg->hops.size();
 
-                              assert (GET_HOP_IA (pathSeg->hops.at (0)) == scionAs->iaAddr);
-                              assert (GET_HOP_IA (pathSeg->hops.at (pathLen - 1)) == dstIa);
-                              assert (pathLen >= 2);
-                              bool pathAffected = false;
+                                    assert(GET_HOP_IA(path_seg->hops.at(0)) == scion_as->ia_addr);
+                                    assert(GET_HOP_IA(path_seg->hops.at(path_len - 1)) == dst_ia);
+                                    assert(path_len >= 2);
+                                    bool path_affected = false;
 
-                              for (uint32_t j = 1; j < pathLen; ++j)
-                                {
-                                  uint64_t hop = pathSeg->hops.at (j);
-                                  Ia_t hopIa = GET_HOP_IA (hop);
-                                  if (inherentlyAndTransitiveMalicious.find (hopIa) !=
-                                      inherentlyAndTransitiveMalicious.end ())
-                                    {
-                                      pathAffected = true;
-                                      break;
+                                    for (uint32_t j = 1; j < path_len; ++j) {
+                                        uint64_t hop = path_seg->hops.at(j);
+                                        ia_t hop_ia = GET_HOP_IA(hop);
+                                        if (inherently_and_transitive_malicious.find(hop_ia) !=
+                                            inherently_and_transitive_malicious.end()) {
+                                            path_affected = true;
+                                            break;
+                                        }
+                                    }
+                                    assert(inherently_and_transitive_malicious.find(dst_ia) ==
+                                                   inherently_and_transitive_malicious.end() ||
+                                           path_affected);
+                                    if (path_affected) {
+                                        number_of_affected_paths++;
                                     }
                                 }
-                              assert (inherentlyAndTransitiveMalicious.find (dstIa) ==
-                                          inherentlyAndTransitiveMalicious.end () ||
-                                      pathAffected);
-                              if (pathAffected)
-                                {
-                                  numberOfAffectedPaths++;
+                                assert(inherently_and_transitive_malicious.find(dst_ia) ==
+                                               inherently_and_transitive_malicious.end() ||
+                                       number_of_affected_paths == selected_paths_to_dst.size());
+                                if (number_of_affected_paths * 2 >= selected_paths_to_dst.size()) {
+                                    number_of_affected_dst++;
                                 }
                             }
-                          assert (inherentlyAndTransitiveMalicious.find (dstIa) ==
-                                      inherentlyAndTransitiveMalicious.end () ||
-                                  numberOfAffectedPaths == selectedPathsToDst.size ());
-                          if (numberOfAffectedPaths * 2 >= selectedPathsToDst.size ())
-                            {
-                              numberOfAffectedDst++;
+
+                            assert(number_of_affected_dst >= num_inherent_malicious);
+
+                            if (3 * number_of_affected_dst + 1 > num_all_ases) {
+                                time_server->affected_by_malicious_ases = true;
                             }
                         }
 
-                      assert (numberOfAffectedDst >= numInherentMalicious);
+                        for (uint32_t i = 0; i < num_all_ases; ++i) {
+                            SCION_AS *scion_as = dynamic_cast<SCION_AS *>(PeekPointer(AS_nodes.Get(i)));
 
-                      if (3 * numberOfAffectedDst + 1 > numAllAses)
-                        {
-                          timeServer->affectedByMaliciousAses = true;
+                            if (inherently_and_transitive_malicious.find(scion_as->ia_addr) !=
+                                inherently_and_transitive_malicious.end()) {
+                                continue;
+                            }
+
+                            TimeServer *time_server = dynamic_cast<TimeServer *>(scion_as->GetHost(2));
+
+                            if (time_server->affected_by_malicious_ases) {
+                                inherently_and_transitive_malicious.insert(scion_as->ia_addr);
+                                time_server->affected_by_malicious_ases = false;
+                                C = true;
+                            }
+                        }
+                        if (!C) {
+                            break;
                         }
                     }
-
-                  for (uint32_t i = 0; i < numAllAses; ++i)
-                    {
-                      ScionAs *scionAs =
-                          dynamic_cast<ScionAs *> (PeekPointer (asNodes.Get (i)));
-
-                      if (inherentlyAndTransitiveMalicious.find (scionAs->iaAddr) !=
-                          inherentlyAndTransitiveMalicious.end ())
-                        {
-                          continue;
-                        }
-
-                      TimeServer *timeServer = dynamic_cast<TimeServer *> (scionAs->GetHost (2));
-
-                      if (timeServer->affectedByMaliciousAses)
-                        {
-                          inherentlyAndTransitiveMalicious.insert (scionAs->iaAddr);
-                          timeServer->affectedByMaliciousAses = false;
-                          c = true;
-                        }
-                    }
-                  if (!c)
-                    {
-                      break;
-                    }
+                    std::cout << num_inherent_malicious << "\t" << inherently_and_transitive_malicious.size()
+                              << std::endl;
                 }
-              std::cout << numInherentMalicious << "\t"
-                        << inherentlyAndTransitiveMalicious.size () << std::endl;
             }
         }
     }
-}
 
-void
-SortBeaconsByPollutionByLatency (
-    NodeContainer &asNodes, ScionAs *as1, ScionAs *as2, std::string beaconingPolicyStr,
-    std::map<double, std::map<double, std::set<Beacon *>>> &sortedBeaconsByPollutionByLatency)
-{
-  if (beaconingPolicyStr == "green_beaconing")
-    {
-      const std::vector<std::multimap<Ld_t, Beacon *>> &sortedBeaconsPerIngIf =
-          ((GreenBeaconing *) as1->GetBeaconServer ())
-              ->GetBeaconsSortedByPollution ()
-              .at (as2->asNumber);
+    void sort_beacons_by_pollution_by_latency(
+            NodeContainer &AS_nodes, SCION_AS *AS1, SCION_AS *AS2, std::string beaconing_policy_str,
+            std::map<double, std::map<double, std::set<Beacon *>>> &sorted_beacons_by_pollution_by_latency) {
+        if (beaconing_policy_str == "green_beaconing") {
+            const std::vector<std::multimap<ld, Beacon *>> &sorted_beacons_per_ing_if =
+                    ((GreenBeaconing *) AS1->GetBeaconServer())->GetBeaconsSortedByPollution().at(AS2->as_number);
 
-      for (auto const &sortedBeacons : sortedBeaconsPerIngIf)
-        {
-          for (auto const &[pollution, beacon] : sortedBeacons)
-            {
-              sortedBeaconsByPollutionByLatency.insert (
-                  std::make_pair (pollution, std::map<double, std::set<Beacon *>> ()));
+            for (auto const &sorted_beacons : sorted_beacons_per_ing_if) {
+                for (auto const &[pollution, beacon] : sorted_beacons) {
+                    sorted_beacons_by_pollution_by_latency.insert(
+                            std::make_pair(pollution, std::map<double, std::set<Beacon *>>()));
 
-              double latency = beacon->staticInfoExtension.at (StaticInfoType::latency);
-              if (sortedBeaconsByPollutionByLatency.at (pollution).find (latency) ==
-                  sortedBeaconsByPollutionByLatency.at (pollution).end ())
-                {
-                  sortedBeaconsByPollutionByLatency.at (pollution).insert (
-                      std::make_pair (latency, std::set<Beacon *> ()));
+                    double latency = beacon->static_info_extension.at(static_info_type_t::LATENCY);
+                    if (sorted_beacons_by_pollution_by_latency.at(pollution).find(latency) ==
+                        sorted_beacons_by_pollution_by_latency.at(pollution).end()) {
+                        sorted_beacons_by_pollution_by_latency.at(pollution).insert(
+                                std::make_pair(latency, std::set<Beacon *>()));
+                    }
+                    sorted_beacons_by_pollution_by_latency.at(pollution).at(latency).insert(beacon);
                 }
-              sortedBeaconsByPollutionByLatency.at (pollution).at (latency).insert (beacon);
             }
-        }
-    } /*else if (beaconing_policy_str == "baseline") {
+        } /*else if (beaconing_policy_str == "baseline") {
             auto const & beacons_from_AS1_to_AS2 = AS1->GetBeaconServer()->beacon_store.at(AS2->as_number);
             for (auto const & [length, beacons] : beacons_from_AS1_to_AS2) {
                 for (auto const & beacon : beacons) {
@@ -1561,7 +1267,7 @@ SortBeaconsByPollutionByLatency (
                         uint16_t egress_if = SECOND_UPPER_16_BITS(hop);
                         assert(SECOND_LOWER_16_BITS(previous_hop) == UPPER_16_BITS(hop));
                         uint16_t as_hop_nr = UPPER_16_BITS(hop);
-                        ScionAs* as_hop = dynamic_cast<ScionAs*>(PeekPointer(AS_nodes.Get(as_hop_nr)));
+                        SCION_AS* as_hop = dynamic_cast<SCION_AS*>(PeekPointer(AS_nodes.Get(as_hop_nr)));
 
 
                         pollution += (double) (as_hop->intra_as_energies.at(ingress_if).at(egress_if) * as_hop->dirty_energy_ratio * 700 / 3.6e6);
@@ -1582,6 +1288,6 @@ SortBeaconsByPollutionByLatency (
                 }
             }
         }*/
-}
+    }
 
 } // namespace ns3
