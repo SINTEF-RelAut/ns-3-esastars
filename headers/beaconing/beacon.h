@@ -19,85 +19,108 @@ namespace ns3 {
 
 #define BEACON_HEADER_SIZE 86
 #define BEACON_HOP_SIZE 132
-#define ORIGINATOR(beacon) (UPPER_16_BITS(beacon.the_path.front()))
-#define ORIGINATOR_PTR(beacon) (UPPER_16_BITS(beacon->the_path.front()))
-#define DST_AS(beacon) (beacon.beacon_direction == beacon_direction_t::PULL_BASED \
-    ? beacon.optimization_target->target_as : UPPER_16_BITS(beacon.the_path.front()))
+#define ORIGINATOR(beacon) (UPPER_16_BITS (beacon.path.front ()))
+#define ORIGINATOR_PTR(beacon) (UPPER_16_BITS (beacon->path.front ()))
+#define DST_AS(beacon)                                       \
+  (beacon.beaconDirection == BeaconDirection::pullBased ? beacon.optimizationTarget->targetAs                \
+       : UPPER_16_BITS (beacon.path.front ()))
 
-#define DST_AS_PTR(beacon) (beacon->beacon_direction == beacon_direction_t::PULL_BASED \
-                                    ? beacon->optimization_target->target_as : UPPER_16_BITS(beacon->the_path.front()))
+#define DST_AS_PTR(beacon)                                    \
+  (beacon->beaconDirection == BeaconDirection::pullBased ? beacon->optimizationTarget->targetAs                \
+       : UPPER_16_BITS (beacon->path.front ()))
 
-    typedef long double ld;
+typedef long double Ld_t;
 
-    typedef uint64_t link_information; // sender_as   eg_if   receiver_as   ing_if
-                                       // <-16bit-> <-16bit-> <--16bit-->  <-16bit->
+typedef uint64_t LinkInformation_t; // sender_as   eg_if   receiver_as   ing_if
+    // <-16bit-> <-16bit-> <--16bit-->  <-16bit->
 
-    typedef std::vector<link_information> path;
-    typedef std::vector<uint16_t> isd_path;
+typedef std::vector<LinkInformation_t> Path_t;
+typedef std::vector<uint16_t> IsdPath_t;
 
-    enum static_info_type_t { LATENCY = 0, BW = 1, CO2 = 2, FORBIDDEN_EDGES = 3 };
-    typedef std::map<static_info_type_t, float> static_info_extension_t;
+enum StaticInfoType { latency = 0, bw = 1, co2 = 2, forbiddenEdges = 3 };
+typedef std::map<StaticInfoType, float> StaticInfoExtension_t;
 
-    typedef std::map<static_info_type_t, float> optimization_criteria_t;
-    enum optimization_direction_t { FORWARD = 0, BACKWARD = 1, SYMMETRIC = 2 };
-    typedef uint16_t target_as_t;
-    typedef uint16_t target_id_t;
-    typedef uint16_t target_if_group_t;
+typedef std::map<StaticInfoType, float> OptimizationCriteria_t;
+enum OptimizationDirection { forward = 0, backward = 1, symmetric = 2 };
+typedef uint16_t TargetAs_t;
+typedef uint16_t TargetId_t;
+typedef uint16_t TargetIfGroup_t;
 
-    struct optimization_target_t {
-        const target_id_t target_id;
-        const optimization_criteria_t criteria;
-        const optimization_direction_t direction;
-        const target_as_t target_as;
-        const target_if_group_t target_if_group;
-        const uint16_t no_beacons_per_optimization_target;
-        const std::unordered_map<uint16_t, std::unordered_set<uint16_t>*> * const set_of_forbidden_edges;
+struct OptimizationTarget
+{
+  const TargetId_t targetId;
+  const OptimizationCriteria_t criteria;
+  const OptimizationDirection direction;
+  const TargetAs_t targetAs;
+  const TargetIfGroup_t targetIfGroup;
+  const uint16_t noBeaconsPerOptimizationTarget;
+  const std::unordered_map<uint16_t, std::unordered_set<uint16_t> *> *const setOfForbiddenEdges;
 
-        optimization_target_t (target_id_t target_id, optimization_criteria_t criteria, optimization_direction_t direction,
-                              target_as_t target_as, target_if_group_t target_if_group,
-                              uint16_t no_beacons_per_optimization_target,
-                              const std::unordered_map<uint16_t, std::unordered_set<uint16_t>*> *set_of_forbidden_edges) :
-              target_id (target_id), criteria(std::move(criteria)), direction (direction), target_as(target_as),
-              target_if_group(target_if_group), no_beacons_per_optimization_target(no_beacons_per_optimization_target),
-              set_of_forbidden_edges(set_of_forbidden_edges){}
-    };
+  OptimizationTarget (
+      TargetId_t targetId, OptimizationCriteria_t criteria, OptimizationDirection direction,
+      TargetAs_t targetAs, TargetIfGroup_t targetIfGroup,
+      uint16_t noBeaconsPerOptimizationTarget,
+      const std::unordered_map<uint16_t, std::unordered_set<uint16_t> *> *setOfForbiddenEdges)
+      : targetId (targetId),
+        criteria (std::move (criteria)),
+        direction (direction),
+        targetAs (targetAs),
+        targetIfGroup (targetIfGroup),
+        noBeaconsPerOptimizationTarget (noBeaconsPerOptimizationTarget),
+        setOfForbiddenEdges (setOfForbiddenEdges)
+  {
+  }
+};
 
-    enum beacon_direction_t { PUSH_BASED = 0, PULL_BASED = 1 };
+enum BeaconDirection { pushBased = 0, pullBased = 1 };
 
-    struct Beacon {
-        static_info_extension_t static_info_extension;
+struct Beacon
+{
+  StaticInfoExtension_t staticInfoExtension;
 
-        const optimization_target_t *optimization_target;
+  const OptimizationTarget *optimizationTarget;
 
-        beacon_direction_t beacon_direction;
+  BeaconDirection beaconDirection;
 
-        uint16_t initiation_time;
-        uint16_t expiration_time;
+  uint16_t initiationTime;
+  uint16_t expirationTime;
 
-        uint16_t next_initiation_time;
-        uint16_t next_expiration_time;
+  uint16_t nextInitiationTime;
+  uint16_t nextExpirationTime;
 
-        bool is_new;
-        bool is_valid;
+  bool isNew;
+  bool isValid;
 
-        path the_path;
+  Path_t path;
 
-        std::string key;
+  std::string key;
 
-        isd_path the_isd_path;
+  IsdPath_t isdPath;
 
-        Beacon(static_info_extension_t &static_info_extension, const optimization_target_t *optimization_target,
-               beacon_direction_t beacon_direction, uint16_t i, uint16_t e, uint16_t nxt_i, uint16_t nxt_e, bool n,
-               bool v, path &p, std::string &k, isd_path &isdp)
-            : static_info_extension(static_info_extension), optimization_target(optimization_target),
-              beacon_direction(beacon_direction), initiation_time(i), expiration_time(e), next_initiation_time(nxt_i),
-              next_expiration_time(nxt_e), is_new(n), is_valid(v), the_path(p), key(k), the_isd_path(isdp)
+  Beacon (StaticInfoExtension_t &staticInfoExtension,
+          const OptimizationTarget *optimizationTarget,
+          BeaconDirection beaconDirection,
+          uint16_t i, uint16_t e, uint16_t nxtI, uint16_t nxtE, bool n, bool v, Path_t &p,
+          std::string &k, IsdPath_t &isdp)
+      : staticInfoExtension (staticInfoExtension),
+        optimizationTarget (optimizationTarget),
+        beaconDirection (beaconDirection),
+        initiationTime (i),
+        expirationTime (e),
+        nextInitiationTime (nxtI),
+        nextExpirationTime (nxtE),
+        isNew (n),
+        isValid (v),
+        path (p),
+        key (k),
+        isdPath (isdp)
 
-        {}
+  {
+  }
 
-        void ExtractPathSegmentFromPushBasedBeacon(PathSegment &pathSegment) const;
+  void ExtractPathSegmentFromPushBasedBeacon (PathSegment &pathSegment) const;
 
-        void ExtractPathSegmentFromPullBasedBeacon(PathSegment &pathSegment) const;
-    };
+  void ExtractPathSegmentFromPullBasedBeacon (PathSegment &pathSegment) const;
+};
 } // namespace ns3
 #endif //SCION_SIMULATOR_BEACON_H

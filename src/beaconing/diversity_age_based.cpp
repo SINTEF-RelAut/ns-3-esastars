@@ -14,455 +14,578 @@
 
 namespace ns3 {
 
-    void DiversityAgeBased::DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
-                                              const YAML::Node &config) {
-        BeaconServer::DoInitializations(num_ASes, xml_node, config);
+void
+DiversityAgeBased::DoInitializations (uint32_t numASes, rapidxml::xml_node<> *xmlNode,
+                                      const YAML::Node &config)
+{
+  BeaconServer::DoInitializations (numASes, xmlNode, config);
 
-        sent_beacons.resize(AS->GetNDevices());
-        sent_beacons_cnt.resize(num_ASes);
+  sentBeacons.resize (as->GetNDevices ());
+  sentBeaconsCnt.resize (numASes);
 
-        for (uint32_t i = 0; i < AS->GetNDevices(); ++i) {
-            sent_beacons.at(i) = new std::unordered_map<Beacon *, std::pair<float, uint16_t>>();
-        }
+  for (uint32_t i = 0; i < as->GetNDevices (); ++i)
+    {
+      sentBeacons.at (i) = new std::unordered_map<Beacon *, std::pair<float, uint16_t>> ();
+    }
 
-        for (uint16_t i = 0; i < (uint16_t) num_ASes; ++i) {
-            sent_beacons_cnt.at(i) = new std::unordered_map<uint16_t, uint16_t>();
-            for (auto const &neighbor_ifaces_pair : AS->interfaces_per_neighbor_as) {
-                uint16_t neighbor = neighbor_ifaces_pair.first;
-                sent_beacons_cnt.at(i)->insert(std::make_pair(neighbor, 0));
-            }
-        }
-
-        for (uint32_t i = 0; i < AS->neighbors.size(); ++i) {
-            uint16_t neighbor_as_no = AS->neighbors.at(i).first;
-            links_jointnesses_on_sent_paths.insert(
-                    std::make_pair(neighbor_as_no, std::vector<std::unordered_map<uint32_t, uint32_t> *>()));
-            links_jointnesses_on_sent_paths.at(neighbor_as_no).resize(num_ASes);
-            links_jointnesses_on_received_paths.resize(num_ASes);
-            for (uint32_t j = 0; j < num_ASes; ++j) {
-                links_jointnesses_on_sent_paths.at(neighbor_as_no).at(j) = new std::unordered_map<uint32_t, uint32_t>();
-                links_jointnesses_on_received_paths.at(j) = new std::unordered_map<uint32_t, uint32_t>();
-            }
+  for (uint16_t i = 0; i < (uint16_t) numASes; ++i)
+    {
+      sentBeaconsCnt.at (i) = new std::unordered_map<uint16_t, uint16_t> ();
+      for (auto const &neighborIfacesPair : as->interfacesPerNeighborAs)
+        {
+          uint16_t neighbor = neighborIfacesPair.first;
+          sentBeaconsCnt.at (i)->insert (std::make_pair (neighbor, 0));
         }
     }
 
-    void DiversityAgeBased::create_initial_static_info_extension(static_info_extension_t &static_info_extension,
-                                                                 uint16_t self_egress_if_no,
-                                                                 const optimization_target_t *optimization_target) {
-        static_info_extension.insert(std::make_pair(static_info_type_t::LATENCY, 0));
+  for (uint32_t i = 0; i < as->neighbors.size (); ++i)
+    {
+      uint16_t neighborAsNo = as->neighbors.at (i).first;
+      linksJointnessesOnSentPaths.insert (std::make_pair (neighborAsNo, std::vector<std::unordered_map<uint32_t, uint32_t> *> ()));
+      linksJointnessesOnSentPaths.at (neighborAsNo).resize (numASes);
+      linksJointnessesOnReceivedPaths.resize (numASes);
+      for (uint32_t j = 0; j < numASes; ++j)
+        {
+          linksJointnessesOnSentPaths.at (neighborAsNo).at (j) =
+              new std::unordered_map<uint32_t, uint32_t> ();
+          linksJointnessesOnReceivedPaths.at (j) =
+              new std::unordered_map<uint32_t, uint32_t> ();
+        }
     }
+}
 
-    void DiversityAgeBased::disseminate_beacons(neighbour_relation relation) {
-        uint32_t neighbors_cnt = AS->neighbors.size();
-        omp_set_num_threads(NUM_CORE);
+void
+DiversityAgeBased::CreateInitialStaticInfoExtension (StaticInfoExtension_t &staticInfoExtension, uint16_t selfEgressIfNo,
+    const OptimizationTarget *optimizationTarget)
+{
+  staticInfoExtension.insert (std::make_pair (StaticInfoType::latency, 0));
+}
+
+void
+DiversityAgeBased::DisseminateBeacons (NeighbourRelation relation)
+{
+  uint32_t neighborsCnt = as->neighbors.size ();
+  omp_set_num_threads (g_numCore);
 #pragma omp parallel for
-        for (uint32_t i = 0; i < neighbors_cnt; ++i) { // Per neighbor AS
+  for (uint32_t i = 0; i < neighborsCnt; ++i)
+    { // Per neighbor AS
 
-            if (AS->neighbors.at(i).second != relation) {
-                continue;
+      if (as->neighbors.at (i).second != relation)
+        {
+          continue;
+        }
+
+      uint16_t remoteAsNo = as->neighbors.at (i).first;
+      for (auto const &dstAsBeaconsPair : beaconStore)
+        { // Per destination AS
+          uint16_t dstAsNo = dstAsBeaconsPair.first;
+          const BeaconsWithSameDstAs_t &beaconsToTheDstAs = dstAsBeaconsPair.second;
+
+          if (remoteAsNo == dstAsNo)
+            {
+              continue;
             }
 
-            uint16_t remote_as_no = AS->neighbors.at(i).first;
-            for (auto const &dst_as_beacons_pair : beacon_store) { // Per destination AS
-                uint16_t dst_as_no = dst_as_beacons_pair.first;
-                const beacons_with_same_dst_as &beacons_to_the_dst_as = dst_as_beacons_pair.second;
+          std::multimap<Ld_t, std::tuple<Beacon *, uint16_t, uint16_t, ScionAs *, StaticInfoExtension_t>>
+              selectedBeacons = SelectBeaconsToDisseminatePerDstPerNbr (remoteAsNo, dstAsNo, beaconsToTheDstAs);
 
-                if (remote_as_no == dst_as_no) {
-                    continue;
-                }
+          for (auto const &theTuplePair : selectedBeacons)
+            {
+              Beacon *theBeacon;
+              uint16_t remoteIngressIfNo;
+              uint16_t selfEgressIfNo;
+              ScionAs *remoteAs;
+              StaticInfoExtension_t staticInfoExtension;
 
-                std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>>
-                        selected_beacons = select_beacons_to_disseminate_per_dst_per_nbr(remote_as_no, dst_as_no,
-                                                                                         beacons_to_the_dst_as);
+              std::tie (theBeacon, selfEgressIfNo, remoteIngressIfNo, remoteAs,
+                        staticInfoExtension) = theTuplePair.second;
 
-                for (auto const &the_tuple_pair : selected_beacons) {
-                    Beacon *the_beacon;
-                    uint16_t remote_ingress_if_no;
-                    uint16_t self_egress_if_no;
-                    SCION_AS *remote_as;
-                    static_info_extension_t static_info_extension;
-
-                    std::tie(the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as, static_info_extension) =
-                            the_tuple_pair.second;
-
-                    generate_beacon_and_send(the_beacon, self_egress_if_no, remote_ingress_if_no, remote_as,
-                                             static_info_extension);
-                }
+              GenerateBeaconAndSend (theBeacon, selfEgressIfNo, remoteIngressIfNo, remoteAs,
+                                     staticInfoExtension);
             }
         }
     }
+}
 
-    std::tuple<bool, bool, bool, Beacon *, ld>
-    DiversityAgeBased::alg_specific_import_policy(Beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
-                                                  uint16_t self_ingress_if_no, uint16_t now) {
-        uint16_t dst_as = UPPER_16_BITS(the_beacon.the_path.at(0));
+std::tuple<bool, bool, bool, Beacon *, Ld_t>
+DiversityAgeBased::AlgSpecificImportPolicy (Beacon &theBeacon, uint16_t senderAs,
+                                               uint16_t remoteEgressIfNo,
+                                               uint16_t selfIngressIfNo, uint16_t now)
+{
+  uint16_t dstAs = UPPER_16_BITS (theBeacon.path.at (0));
 
-        if (next_round_valid_beacons_count_per_dst_as.find(dst_as) == next_round_valid_beacons_count_per_dst_as.end()) {
-            return std::tuple<bool, bool, bool, Beacon *, ld>(true, false, false, NULL, 0);
-        }
-
-        if (next_round_valid_beacons_count_per_dst_as.at(dst_as) < MAX_BEACONS_TO_STORE) {
-            return std::tuple<bool, bool, bool, Beacon *, ld>(true, false, false, NULL, 0);
-        }
-
-        ld raw_score = calculate_import_raw_score(the_beacon);
-        ld beacon_age = (ld) (now - the_beacon.next_initiation_time);
-        ld beacon_exp_period = (ld) (the_beacon.next_expiration_time - the_beacon.next_initiation_time);
-        ld score = std::pow(raw_score, ALPHA * (beacon_age / beacon_exp_period));
-
-        if (next_round_valid_beacons_count_per_dst_as.at(dst_as) < MAX_BEACONS_TO_STORE && score > 0.9) {
-            return std::tuple<bool, bool, bool, Beacon *, ld>(true, false, false, NULL, 0);
-        }
-
-        return std::tuple<bool, bool, bool, Beacon *, ld>(false, false, false, NULL, 0);
+  if (nextRoundValidBeaconsCountPerDstAs.find (dstAs) == nextRoundValidBeaconsCountPerDstAs.end ())
+    {
+      return std::tuple<bool, bool, bool, Beacon *, Ld_t> (true, false, false, NULL, 0);
     }
 
-    void DiversityAgeBased::delete_from_algorithm_data_structures(Beacon *the_beacon, ld replacement_key) {
-        dec_links_jointnesses_on_received_paths(the_beacon, UPPER_16_BITS(the_beacon->the_path.at(0)));
+  if (nextRoundValidBeaconsCountPerDstAs.at (dstAs) < MAX_BEACONS_TO_STORE)
+    {
+      return std::tuple<bool, bool, bool, Beacon *, Ld_t> (true, false, false, NULL, 0);
     }
 
-    void DiversityAgeBased::insert_to_algorithm_data_structures(Beacon *the_beacon, uint16_t sender_as,
-                                                                uint16_t remote_egress_if_no,
-                                                                uint16_t self_ingress_if_no) {
-        inc_links_jointness_on_received_paths(UPPER_16_BITS(the_beacon->the_path.at(0)), the_beacon);
+  Ld_t rawScore = CalculateImportRawScore (theBeacon);
+  Ld_t beaconAge = (Ld_t) (now - theBeacon.nextInitiationTime);
+  Ld_t beaconExpPeriod = (Ld_t) (theBeacon.nextExpirationTime - theBeacon.nextInitiationTime);
+  Ld_t score = std::pow (rawScore, ALPHA * (beaconAge / beaconExpPeriod));
+
+  if (nextRoundValidBeaconsCountPerDstAs.at (dstAs) < MAX_BEACONS_TO_STORE && score > 0.9)
+    {
+      return std::tuple<bool, bool, bool, Beacon *, Ld_t> (true, false, false, NULL, 0);
     }
 
-    void DiversityAgeBased::update_algorithm_data_structures_periodic(Beacon *the_beacon, bool invalidated) {
-        uint16_t dst_as = UPPER_16_BITS(the_beacon->the_path.at(0));
-        remove_invalid_sent_beacons(the_beacon, dst_as);
+  return std::tuple<bool, bool, bool, Beacon *, Ld_t> (false, false, false, NULL, 0);
+}
 
-        if (invalidated) {
-            dec_links_jointnesses_on_received_paths(the_beacon, dst_as);
-        }
+void
+DiversityAgeBased::DeleteFromAlgorithmDataStructures (Beacon *theBeacon, Ld_t replacementKey)
+{
+  DecLinksJointnessesOnReceivedPaths (theBeacon, UPPER_16_BITS (theBeacon->path.at (0)));
+}
+
+void
+DiversityAgeBased::InsertToAlgorithmDataStructures (Beacon *theBeacon, uint16_t senderAs,
+                                                        uint16_t remoteEgressIfNo,
+                                                        uint16_t selfIngressIfNo)
+{
+  IncLinksJointnessOnReceivedPaths (UPPER_16_BITS (theBeacon->path.at (0)), theBeacon);
+}
+
+void
+DiversityAgeBased::UpdateAlgorithmDataStructuresPeriodic (Beacon *theBeacon, bool invalidated)
+{
+  uint16_t dstAs = UPPER_16_BITS (theBeacon->path.at (0));
+  RemoveInvalidSentBeacons (theBeacon, dstAs);
+
+  if (invalidated)
+    {
+      DecLinksJointnessesOnReceivedPaths (theBeacon, dstAs);
     }
+}
 
-    std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>>
-    DiversityAgeBased::select_beacons_to_disseminate_per_dst_per_nbr(
-            uint16_t remote_as_no, uint16_t dst_as_no, const beacons_with_same_dst_as &beacons_to_the_dst_as) {
-        std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>>
-                score_map_to_beacon_and_metadata;
-        std::map<std::pair<Beacon *, uint16_t>, std::pair<ld, ld>> valid_candidates;
+std::multimap<Ld_t, std::tuple<Beacon *, uint16_t, uint16_t, ScionAs *, StaticInfoExtension_t>>
+DiversityAgeBased::SelectBeaconsToDisseminatePerDstPerNbr (
+    uint16_t remoteAsNo, uint16_t dstAsNo,
+    const BeaconsWithSameDstAs_t &beaconsToTheDstAs)
+{
+  std::multimap<Ld_t, std::tuple<Beacon *, uint16_t, uint16_t, ScionAs *, StaticInfoExtension_t>>
+      scoreMapToBeaconAndMetadata;
+  std::map<std::pair<Beacon *, uint16_t>, std::pair<Ld_t, Ld_t>> validCandidates;
 
-        ld max_score = 0.0;
-        ld max_score_raw_score = 0.0;
-        Beacon *max_score_beacon = NULL;
-        uint16_t max_score_iface = 0;
+  Ld_t maxScore = 0.0;
+  Ld_t maxScoreRawScore = 0.0;
+  Beacon *maxScoreBeacon = NULL;
+  uint16_t maxScoreIface = 0;
 
-        uint16_t remote_ingress_if_no;
-        SCION_AS *remote_as = AS->GetRemoteAsInfo(AS->interfaces_per_neighbor_as.at(remote_as_no).at(0)).second;
+  uint16_t remoteIngressIfNo;
+  ScionAs *remoteAs =
+      as->GetRemoteAsInfo (as->interfacesPerNeighborAs.at (remoteAsNo).at (0)).second;
 
-        uint32_t min_no_paths_to_send = (20 * AS->interfaces_per_neighbor_as.at(remote_as_no).size()) /
-                                        remote_as->interfaces_coordinates.size();
+  uint32_t minNoPathsToSend = (20 * as->interfacesPerNeighborAs.at (remoteAsNo).size ()) /
+                                  remoteAs->interfacesCoordinates.size ();
 
-        for (auto const &len_beacons_pair : beacons_to_the_dst_as) {
-            auto const &beacons = len_beacons_pair.second;
-            for (auto const &the_beacon : beacons) {
-                if (!the_beacon->is_valid) {
-                    continue;
+  for (auto const &lenBeaconsPair : beaconsToTheDstAs)
+    {
+      auto const &beacons = lenBeaconsPair.second;
+      for (auto const &theBeacon : beacons)
+        {
+          if (!theBeacon->isValid)
+            {
+              continue;
+            }
+
+          bool generatesLoop = false;
+          for (auto const &linkInfo : theBeacon->path)
+            { // remove loops
+              if (UPPER_16_BITS (linkInfo) == remoteAsNo)
+                {
+                  generatesLoop = true;
+                  break;
                 }
+            }
 
-                bool generates_loop = false;
-                for (auto const &link_info : the_beacon->the_path) { // remove loops
-                    if (UPPER_16_BITS(link_info) == remote_as_no) {
-                        generates_loop = true;
-                        break;
+          if (generatesLoop)
+            {
+              continue;
+            }
+
+          auto const &interfaces = as->interfacesPerNeighborAs.at (remoteAsNo);
+          for (auto const &selfEgressIfNo : interfaces)
+            {
+              Ld_t rawScore = 0.0;
+              Ld_t score = 0.0;
+              bool mustBeAdded = false;
+              if (PathNotSentBefore (remoteAsNo, selfEgressIfNo, theBeacon))
+                {
+                  rawScore = CalculateRawScore (theBeacon, dstAsNo, selfEgressIfNo, remoteAs);
+                  Ld_t beaconAge = (Ld_t) (now - theBeacon->initiationTime);
+                  Ld_t beaconExpPeriod =
+                      (Ld_t) (theBeacon->expirationTime - theBeacon->initiationTime);
+                  score = std::pow (rawScore, ALPHA * (beaconAge / beaconExpPeriod));
+
+                  if (sentBeaconsCnt.at (dstAsNo)->at (remoteAsNo) < minNoPathsToSend &&
+                      validCandidates.size () < minNoPathsToSend)
+                    {
+                      mustBeAdded = true;
                     }
                 }
-
-                if (generates_loop) {
-                    continue;
+              else
+                {
+                  rawScore = sentBeacons.at (selfEgressIfNo)->at (theBeacon).first;
+                  Ld_t sentBeaconTimeToExpiration =
+                      (Ld_t) (sentBeacons.at (selfEgressIfNo)->at (theBeacon).second - now);
+                  Ld_t currentBeaconTimeToExpiration = (Ld_t) (theBeacon->expirationTime - now);
+                  score = std::pow (rawScore, std::pow (BETA * (sentBeaconTimeToExpiration /
+                                                                currentBeaconTimeToExpiration),
+                                                         GAMMA));
                 }
 
-                auto const &interfaces = AS->interfaces_per_neighbor_as.at(remote_as_no);
-                for (auto const &self_egress_if_no : interfaces) {
-                    ld raw_score = 0.0;
-                    ld score = 0.0;
-                    bool must_be_added = false;
-                    if (path_not_sent_before(remote_as_no, self_egress_if_no, the_beacon)) {
-                        raw_score = calculate_raw_score(the_beacon, dst_as_no, self_egress_if_no, remote_as);
-                        ld beacon_age = (ld) (now - the_beacon->initiation_time);
-                        ld beacon_exp_period = (ld) (the_beacon->expiration_time - the_beacon->initiation_time);
-                        score = std::pow(raw_score, ALPHA * (beacon_age / beacon_exp_period));
-
-                        if (sent_beacons_cnt.at(dst_as_no)->at(remote_as_no) < min_no_paths_to_send &&
-                            valid_candidates.size() < min_no_paths_to_send) {
-                            must_be_added = true;
-                        }
-
-                    } else {
-                        raw_score = sent_beacons.at(self_egress_if_no)->at(the_beacon).first;
-                        ld sent_beacon_time_to_expiration =
-                                (ld) (sent_beacons.at(self_egress_if_no)->at(the_beacon).second - now);
-                        ld current_beacon_time_to_expiration = (ld) (the_beacon->expiration_time - now);
-                        score = std::pow(raw_score, std::pow(BETA * (sent_beacon_time_to_expiration /
-                                                                     current_beacon_time_to_expiration),
-                                                             GAMMA));
-                    }
-
-                    if (!must_be_added && score < SCORE_THRESHOLD) {
-                        continue;
-                    }
-
-                    if (score > max_score) {
-                        max_score = score;
-                        max_score_raw_score = raw_score;
-                        max_score_beacon = the_beacon;
-                        max_score_iface = self_egress_if_no;
-                    }
-
-                    valid_candidates.insert(std::make_pair(std::make_pair(the_beacon, self_egress_if_no),
-                                                           std::make_pair(raw_score, score)));
-                }
-            }
-        }
-
-        bool counters_changed = false;
-
-        for (uint32_t i = 0; i < MAX_BEACONS_TO_SEND; ++i) {
-            if (max_score_beacon == NULL) {
-                break;
-            } else {
-                valid_candidates.erase(std::make_pair(max_score_beacon, max_score_iface));
-
-                remote_ingress_if_no = AS->GetRemoteAsInfo(max_score_iface).first;
-
-                ld latency = max_score_beacon->static_info_extension.at(static_info_type_t::LATENCY) +
-                             AS->latencies_between_interfaces.at(LOWER_16_BITS(max_score_beacon->the_path.back()))
-                                     .at(max_score_iface);
-
-                static_info_extension_t static_info_extension;
-                static_info_extension.insert(std::make_pair(static_info_type_t::LATENCY, latency));
-
-                score_map_to_beacon_and_metadata.insert(std::make_pair(
-                        max_score, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>(
-                                           max_score_beacon, max_score_iface, remote_ingress_if_no, remote_as,
-                                           static_info_extension)));
-
-                if (path_not_sent_before(remote_as_no, max_score_iface, max_score_beacon)) {
-                    counters_changed = true;
-                    add_to_sent_beacons(dst_as_no, remote_as_no, max_score_iface, max_score_beacon,
-                                        (float) max_score_raw_score);
-                    inc_links_jointness_on_sent_paths(dst_as_no, remote_as_no, max_score_iface, max_score_beacon);
-                } else {
-                    counters_changed = false;
-                    update_sent_beacon_timer(remote_as_no, max_score_iface, max_score_beacon);
-                }
-            }
-
-            max_score = 0.0;
-            max_score_raw_score = 0.0;
-            max_score_beacon = NULL;
-            max_score_iface = 0;
-
-            for (auto const &candidate : valid_candidates) {
-                Beacon *the_beacon = candidate.first.first;
-                uint16_t self_egress_if_no = candidate.first.second;
-                ld score = 0.0;
-                ld raw_score = 0.0;
-
-                bool must_be_sent = path_not_sent_before(remote_as_no, self_egress_if_no, the_beacon) &&
-                                    sent_beacons_cnt.at(dst_as_no)->at(remote_as_no) < min_no_paths_to_send;
-
-                if (!counters_changed || !path_not_sent_before(remote_as_no, self_egress_if_no, the_beacon)) {
-                    raw_score = candidate.second.first;
-                    score = candidate.second.second;
-                } else {
-                    raw_score = calculate_raw_score(the_beacon, dst_as_no, self_egress_if_no, remote_as);
-                    ld beacon_age = (ld) (now - the_beacon->initiation_time);
-                    ld beacon_exp_period = (ld) (the_beacon->expiration_time - the_beacon->initiation_time);
-                    score = std::pow(raw_score, ALPHA * (beacon_age / beacon_exp_period));
-                    valid_candidates.at(std::make_pair(the_beacon, self_egress_if_no)) =
-                            std::make_pair(raw_score, score);
+              if (!mustBeAdded && score < SCORE_THRESHOLD)
+                {
+                  continue;
                 }
 
-                if (!must_be_sent && score < SCORE_THRESHOLD) {
-                    continue;
+              if (score > maxScore)
+                {
+                  maxScore = score;
+                  maxScoreRawScore = rawScore;
+                  maxScoreBeacon = theBeacon;
+                  maxScoreIface = selfEgressIfNo;
                 }
 
-                if (score > max_score) {
-                    max_score = score;
-                    max_score_raw_score = raw_score;
-                    max_score_beacon = the_beacon;
-                    max_score_iface = self_egress_if_no;
-                }
-            }
-        }
-        return score_map_to_beacon_and_metadata;
-    }
-
-    inline ld DiversityAgeBased::calculate_raw_score(Beacon *the_beacon, uint16_t dst_as_no, uint16_t self_egress_if_no,
-                                                     SCION_AS *remote_as) {
-        ld link_diversity_score = calculate_link_diversity_score_for_dissemination(remote_as->as_number, dst_as_no,
-                                                                                   self_egress_if_no, the_beacon);
-        ld raw_score = link_diversity_score * SCALING_FACTOR;
-        return raw_score;
-    }
-
-    inline ld DiversityAgeBased::calculate_import_raw_score(Beacon &the_beacon) {
-        uint16_t dst_as_no = UPPER_16_BITS(the_beacon.the_path.at(0));
-        ld link_diversity_score = calculate_link_diversity_score_for_import(dst_as_no, the_beacon);
-        ld raw_score = link_diversity_score * SCALING_FACTOR;
-        return raw_score;
-    }
-
-    void DiversityAgeBased::update_sent_beacon_timer(uint16_t remote_as, uint16_t self_egress_if_no,
-                                                     Beacon *the_beacon) {
-        uint16_t new_exp_time = the_beacon->expiration_time;
-        float raw_score = sent_beacons.at(self_egress_if_no)->at(the_beacon).first;
-        sent_beacons.at(self_egress_if_no)->at(the_beacon) = std::make_pair(raw_score, new_exp_time);
-    }
-
-    void DiversityAgeBased::inc_links_jointness_on_sent_paths(uint16_t dst_as_no, uint16_t remote_as_no,
-                                                              uint16_t self_egress_if_no, Beacon *the_beacon) {
-        if (the_beacon != NULL) {
-            auto const &the_path = the_beacon->the_path;
-            for (auto const &seg : the_path) {
-                uint32_t link = UPPER_32_BITS(seg);
-                if (links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as_no)->find(link) ==
-                    links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as_no)->end()) {
-                    links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as_no)->insert(std::make_pair(link, 0));
-                }
-                links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as_no)->at(link) =
-                        links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as_no)->at(link) + 1;
-            }
-        }
-
-        uint32_t link = (((uint32_t) AS->as_number) << 16) | ((uint32_t) self_egress_if_no);
-        if (links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as_no)->find(link) ==
-            links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as_no)->end()) {
-            links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as_no)->insert(std::make_pair(link, 0));
-        }
-        links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as_no)->at(link) =
-                links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as_no)->at(link) + 1;
-    }
-
-    void DiversityAgeBased::inc_links_jointness_on_received_paths(uint16_t dst_as_no, Beacon *the_beacon) {
-        auto const &the_path = the_beacon->the_path;
-        for (auto const &seg : the_path) {
-            uint32_t link = UPPER_32_BITS(seg);
-            if (links_jointnesses_on_received_paths.at(dst_as_no)->find(link) ==
-                links_jointnesses_on_received_paths.at(dst_as_no)->end()) {
-                links_jointnesses_on_received_paths.at(dst_as_no)->insert(std::make_pair(link, 0));
-            }
-            links_jointnesses_on_received_paths.at(dst_as_no)->at(link) =
-                    links_jointnesses_on_received_paths.at(dst_as_no)->at(link) + 1;
-        }
-    }
-
-    void DiversityAgeBased::add_to_sent_beacons(uint16_t dst_as_no, uint16_t remote_as, uint16_t self_egress_if_no,
-                                                Beacon *the_beacon, float raw_score) {
-        sent_beacons.at(self_egress_if_no)
-                ->insert(std::make_pair(the_beacon, std::make_pair(raw_score, the_beacon->expiration_time)));
-        sent_beacons_cnt.at(dst_as_no)->at(remote_as)++;
-    }
-
-    ld DiversityAgeBased::calculate_link_diversity_score_for_dissemination(uint16_t remote_as, uint16_t dst_as,
-                                                                           uint16_t egress_if_no, Beacon *the_beacon) {
-        if (links_jointnesses_on_sent_paths.at(remote_as).at(dst_as)->empty()) {
-            return 1.0;
-        }
-
-        ld add_one = path_not_sent_before(remote_as, egress_if_no, the_beacon) ? 1.0 : 0.0;
-
-        ld jointness = 1.0;
-        auto const &the_path = the_beacon->the_path;
-        for (auto const &seg : the_path) {
-            uint32_t link = UPPER_32_BITS(seg);
-            if (links_jointnesses_on_sent_paths.at(remote_as).at(dst_as)->find(link) !=
-                links_jointnesses_on_sent_paths.at(remote_as).at(dst_as)->end()) {
-                jointness *= (add_one + 1.0 * links_jointnesses_on_sent_paths.at(remote_as).at(dst_as)->at(link));
-            }
-        }
-
-        uint32_t link = (((uint32_t) AS->as_number) << 16) | ((uint32_t) egress_if_no);
-        if (links_jointnesses_on_sent_paths.at(remote_as).at(dst_as)->find(link) !=
-            links_jointnesses_on_sent_paths.at(remote_as).at(dst_as)->end()) {
-            jointness *= (add_one + 1.0 * links_jointnesses_on_sent_paths.at(remote_as).at(dst_as)->at(link));
-        }
-
-        jointness = std::pow(jointness, 1.0 / (the_beacon->the_path.size() + 1.0));
-
-        if (jointness >= MAX_ACCEPTABLE_JOINTNESS) {
-            return 0.0;
-        }
-        return (MAX_ACCEPTABLE_JOINTNESS - jointness) / (MAX_ACCEPTABLE_JOINTNESS - 1.0);
-    }
-
-    ld DiversityAgeBased::calculate_link_diversity_score_for_import(uint16_t dst_as, Beacon &the_beacon) {
-        if (links_jointnesses_on_received_paths.at(dst_as)->empty()) {
-            return 1.0;
-        }
-
-        ld jointness = 1.0;
-        auto const &the_path = the_beacon.the_path;
-        for (auto const &seg : the_path) {
-            uint32_t link = UPPER_32_BITS(seg);
-            if (links_jointnesses_on_received_paths.at(dst_as)->find(link) !=
-                links_jointnesses_on_received_paths.at(dst_as)->end()) {
-                jointness *= (1.0 + 1.0 * links_jointnesses_on_received_paths.at(dst_as)->at(link));
-            }
-        }
-
-        jointness = std::pow(jointness, 1.0 / (the_beacon.the_path.size() + 1.0));
-
-        if (jointness >= MAX_ACCEPTABLE_JOINTNESS) {
-            return 0.0;
-        }
-        return (MAX_ACCEPTABLE_JOINTNESS - jointness) / (MAX_ACCEPTABLE_JOINTNESS - 1.0);
-    }
-
-    bool DiversityAgeBased::path_not_sent_before(uint16_t remote_as, uint16_t self_egress_if_no, Beacon *the_beacon) {
-        if (sent_beacons.at(self_egress_if_no)->find(the_beacon) == sent_beacons.at(self_egress_if_no)->end()) {
-            return true;
-        }
-        return false;
-    }
-
-    void DiversityAgeBased::remove_invalid_sent_beacons(Beacon *the_beacon, uint16_t dst_as) {
-        for (uint32_t i = 0; i < AS->GetNDevices(); ++i) {
-            uint16_t remote_as_no = AS->interface_to_neighbor_map.at(i);
-            if (sent_beacons.at(i)->find(the_beacon) == sent_beacons.at(i)->end()) {
-                continue;
-            }
-
-            if (sent_beacons.at(i)->at(the_beacon).second <= next_period) {
-                sent_beacons.at(i)->erase(the_beacon);
-                sent_beacons_cnt.at(dst_as)->at(AS->interface_to_neighbor_map.at(i))--;
-                dec_links_jointnesses_on_sent_paths(the_beacon, dst_as, remote_as_no, i);
+              validCandidates.insert (
+                  std::make_pair (std::make_pair (theBeacon, selfEgressIfNo),
+                                  std::make_pair (rawScore, score)));
             }
         }
     }
 
-    void DiversityAgeBased::dec_links_jointnesses_on_sent_paths(Beacon *the_beacon, uint16_t dst_as,
-                                                                uint16_t remote_as_no, uint16_t self_egress_if) {
-        auto const &the_path = the_beacon->the_path;
-        for (auto const &seg : the_path) {
-            uint32_t link = UPPER_32_BITS(seg);
-            links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as)->at(link) =
-                    links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as)->at(link) - 1;
-            if (links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as)->at(link) == 0) {
-                links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as)->erase(link);
+  bool countersChanged = false;
+
+  for (uint32_t i = 0; i < MAX_BEACONS_TO_SEND; ++i)
+    {
+      if (maxScoreBeacon == NULL)
+        {
+          break;
+        }
+      else
+        {
+          validCandidates.erase (std::make_pair (maxScoreBeacon, maxScoreIface));
+
+          remoteIngressIfNo = as->GetRemoteAsInfo (maxScoreIface).first;
+
+          Ld_t latency =
+              maxScoreBeacon->staticInfoExtension.at (StaticInfoType::latency) +
+                       as->latenciesBetweenInterfaces.at (LOWER_16_BITS (maxScoreBeacon->path.back ()))
+                           .at (maxScoreIface);
+
+          StaticInfoExtension_t staticInfoExtension;
+          staticInfoExtension.insert (std::make_pair (StaticInfoType::latency, latency));
+
+          scoreMapToBeaconAndMetadata.insert (std::make_pair (
+              maxScore,
+              std::tuple<Beacon *, uint16_t, uint16_t, ScionAs *, StaticInfoExtension_t> (
+                            maxScoreBeacon, maxScoreIface, remoteIngressIfNo, remoteAs,
+                             staticInfoExtension)));
+
+          if (PathNotSentBefore (remoteAsNo, maxScoreIface, maxScoreBeacon))
+            {
+              countersChanged = true;
+              AddToSentBeacons (dstAsNo, remoteAsNo, maxScoreIface, maxScoreBeacon,
+                                (float) maxScoreRawScore);
+              IncLinksJointnessOnSentPaths (dstAsNo, remoteAsNo, maxScoreIface, maxScoreBeacon);
+            }
+          else
+            {
+              countersChanged = false;
+              UpdateSentBeaconTimer (remoteAsNo, maxScoreIface, maxScoreBeacon);
             }
         }
 
-        uint32_t link = (((uint32_t) AS->as_number) << 16) | ((uint32_t) self_egress_if);
+      maxScore = 0.0;
+      maxScoreRawScore = 0.0;
+      maxScoreBeacon = NULL;
+      maxScoreIface = 0;
 
-        links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as)->at(link) =
-                links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as)->at(link) - 1;
-        if (links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as)->at(link) == 0) {
-            links_jointnesses_on_sent_paths.at(remote_as_no).at(dst_as)->erase(link);
-        }
-    }
+      for (auto const &candidate : validCandidates)
+        {
+          Beacon *theBeacon = candidate.first.first;
+          uint16_t selfEgressIfNo = candidate.first.second;
+          Ld_t score = 0.0;
+          Ld_t rawScore = 0.0;
 
-    void DiversityAgeBased::dec_links_jointnesses_on_received_paths(Beacon *the_beacon, uint16_t dst_as) {
-        auto const &the_path = the_beacon->the_path;
-        for (auto const &seg : the_path) {
-            uint32_t link = UPPER_32_BITS(seg);
-            links_jointnesses_on_received_paths.at(dst_as)->at(link) =
-                    links_jointnesses_on_received_paths.at(dst_as)->at(link) - 1;
-            if (links_jointnesses_on_received_paths.at(dst_as)->at(link) == 0) {
-                links_jointnesses_on_received_paths.at(dst_as)->erase(link);
+          bool mustBeSent = PathNotSentBefore (remoteAsNo, selfEgressIfNo, theBeacon) &&
+                              sentBeaconsCnt.at (dstAsNo)->at (remoteAsNo) < minNoPathsToSend;
+
+          if (!countersChanged ||
+              !PathNotSentBefore (remoteAsNo, selfEgressIfNo, theBeacon))
+            {
+              rawScore = candidate.second.first;
+              score = candidate.second.second;
+            }
+          else
+            {
+              rawScore = CalculateRawScore (theBeacon, dstAsNo, selfEgressIfNo, remoteAs);
+              Ld_t beaconAge = (Ld_t) (now - theBeacon->initiationTime);
+              Ld_t beaconExpPeriod =
+                  (Ld_t) (theBeacon->expirationTime - theBeacon->initiationTime);
+              score = std::pow (rawScore, ALPHA * (beaconAge / beaconExpPeriod));
+              validCandidates.at (std::make_pair (theBeacon, selfEgressIfNo)) =
+                  std::make_pair (rawScore, score);
+            }
+
+          if (!mustBeSent && score < SCORE_THRESHOLD)
+            {
+              continue;
+            }
+
+          if (score > maxScore)
+            {
+              maxScore = score;
+              maxScoreRawScore = rawScore;
+              maxScoreBeacon = theBeacon;
+              maxScoreIface = selfEgressIfNo;
             }
         }
     }
+  return scoreMapToBeaconAndMetadata;
+}
+
+inline Ld_t
+DiversityAgeBased::CalculateRawScore (Beacon *theBeacon, uint16_t dstAsNo,
+                                        uint16_t selfEgressIfNo, ScionAs *remoteAs)
+{
+  Ld_t linkDiversityScore = CalculateLinkDiversityScoreForDissemination (
+      remoteAs->asNumber, dstAsNo, selfEgressIfNo, theBeacon);
+  Ld_t rawScore = linkDiversityScore * SCALING_FACTOR;
+  return rawScore;
+}
+
+inline Ld_t
+DiversityAgeBased::CalculateImportRawScore (Beacon &theBeacon)
+{
+  uint16_t dstAsNo = UPPER_16_BITS (theBeacon.path.at (0));
+  Ld_t linkDiversityScore = CalculateLinkDiversityScoreForImport (dstAsNo, theBeacon);
+  Ld_t rawScore = linkDiversityScore * SCALING_FACTOR;
+  return rawScore;
+}
+
+void
+DiversityAgeBased::UpdateSentBeaconTimer (uint16_t remoteAs, uint16_t selfEgressIfNo,
+                                             Beacon *theBeacon)
+{
+  uint16_t newExpTime = theBeacon->expirationTime;
+  float rawScore = sentBeacons.at (selfEgressIfNo)->at (theBeacon).first;
+  sentBeacons.at (selfEgressIfNo)->at (theBeacon) = std::make_pair (rawScore, newExpTime);
+}
+
+void
+DiversityAgeBased::IncLinksJointnessOnSentPaths (uint16_t dstAsNo, uint16_t remoteAsNo,
+                                                      uint16_t selfEgressIfNo,
+                                                      Beacon *theBeacon)
+{
+  if (theBeacon != NULL)
+    {
+      auto const &thePath = theBeacon->path;
+      for (auto const &seg : thePath)
+        {
+          uint32_t link = UPPER_32_BITS (seg);
+          if (linksJointnessesOnSentPaths.at (remoteAsNo).at (dstAsNo)->find (link) ==
+              linksJointnessesOnSentPaths.at (remoteAsNo).at (dstAsNo)->end ())
+            {
+              linksJointnessesOnSentPaths.at (remoteAsNo)
+                  .at (dstAsNo)
+                  ->insert (std::make_pair (link, 0));
+            }
+          linksJointnessesOnSentPaths.at (remoteAsNo).at (dstAsNo)->at (link) =
+              linksJointnessesOnSentPaths.at (remoteAsNo).at (dstAsNo)->at (link) + 1;
+        }
+    }
+
+  uint32_t link = (((uint32_t) as->asNumber) << 16) | ((uint32_t) selfEgressIfNo);
+  if (linksJointnessesOnSentPaths.at (remoteAsNo).at (dstAsNo)->find (link) ==
+      linksJointnessesOnSentPaths.at (remoteAsNo).at (dstAsNo)->end ())
+    {
+      linksJointnessesOnSentPaths.at (remoteAsNo)
+          .at (dstAsNo)
+          ->insert (std::make_pair (link, 0));
+    }
+  linksJointnessesOnSentPaths.at (remoteAsNo).at (dstAsNo)->at (link) =
+      linksJointnessesOnSentPaths.at (remoteAsNo).at (dstAsNo)->at (link) + 1;
+}
+
+void
+DiversityAgeBased::IncLinksJointnessOnReceivedPaths (uint16_t dstAsNo, Beacon *theBeacon)
+{
+  auto const &thePath = theBeacon->path;
+  for (auto const &seg : thePath)
+    {
+      uint32_t link = UPPER_32_BITS (seg);
+      if (linksJointnessesOnReceivedPaths.at (dstAsNo)->find (link) ==
+          linksJointnessesOnReceivedPaths.at (dstAsNo)->end ())
+        {
+          linksJointnessesOnReceivedPaths.at (dstAsNo)->insert (std::make_pair (link, 0));
+        }
+      linksJointnessesOnReceivedPaths.at (dstAsNo)->at (link) =
+          linksJointnessesOnReceivedPaths.at (dstAsNo)->at (link) + 1;
+    }
+}
+
+void
+DiversityAgeBased::AddToSentBeacons (uint16_t dstAsNo, uint16_t remoteAs,
+                                        uint16_t selfEgressIfNo, Beacon *theBeacon,
+                                        float rawScore)
+{
+  sentBeacons.at (selfEgressIfNo)
+      ->insert (
+          std::make_pair (theBeacon, std::make_pair (rawScore, theBeacon->expirationTime)));
+  sentBeaconsCnt.at (dstAsNo)->at (remoteAs)++;
+}
+
+Ld_t
+DiversityAgeBased::CalculateLinkDiversityScoreForDissemination (uint16_t remoteAs,
+                                                                     uint16_t dstAs,
+                                                                     uint16_t egressIfNo,
+                                                                     Beacon *theBeacon)
+{
+  if (linksJointnessesOnSentPaths.at (remoteAs).at (dstAs)->empty ())
+    {
+      return 1.0;
+    }
+
+  Ld_t addOne = PathNotSentBefore (remoteAs, egressIfNo, theBeacon) ? 1.0 : 0.0;
+
+  Ld_t jointness = 1.0;
+  auto const &thePath = theBeacon->path;
+  for (auto const &seg : thePath)
+    {
+      uint32_t link = UPPER_32_BITS (seg);
+      if (linksJointnessesOnSentPaths.at (remoteAs).at (dstAs)->find (link) !=
+          linksJointnessesOnSentPaths.at (remoteAs).at (dstAs)->end ())
+        {
+          jointness *=
+              (addOne +
+               1.0 * linksJointnessesOnSentPaths.at (remoteAs).at (dstAs)->at (link));
+        }
+    }
+
+  uint32_t link = (((uint32_t) as->asNumber) << 16) | ((uint32_t) egressIfNo);
+  if (linksJointnessesOnSentPaths.at (remoteAs).at (dstAs)->find (link) !=
+      linksJointnessesOnSentPaths.at (remoteAs).at (dstAs)->end ())
+    {
+      jointness *=
+          (addOne + 1.0 * linksJointnessesOnSentPaths.at (remoteAs).at (dstAs)->at (link));
+    }
+
+  jointness = std::pow (jointness, 1.0 / (theBeacon->path.size () + 1.0));
+
+  if (jointness >= MAX_ACCEPTABLE_JOINTNESS)
+    {
+      return 0.0;
+    }
+  return (MAX_ACCEPTABLE_JOINTNESS - jointness) / (MAX_ACCEPTABLE_JOINTNESS - 1.0);
+}
+
+Ld_t
+DiversityAgeBased::CalculateLinkDiversityScoreForImport (uint16_t dstAs, Beacon &theBeacon)
+{
+  if (linksJointnessesOnReceivedPaths.at (dstAs)->empty ())
+    {
+      return 1.0;
+    }
+
+  Ld_t jointness = 1.0;
+  auto const &thePath = theBeacon.path;
+  for (auto const &seg : thePath)
+    {
+      uint32_t link = UPPER_32_BITS (seg);
+      if (linksJointnessesOnReceivedPaths.at (dstAs)->find (link) !=
+          linksJointnessesOnReceivedPaths.at (dstAs)->end ())
+        {
+          jointness *= (1.0 + 1.0 * linksJointnessesOnReceivedPaths.at (dstAs)->at (link));
+        }
+    }
+
+  jointness = std::pow (jointness, 1.0 / (theBeacon.path.size () + 1.0));
+
+  if (jointness >= MAX_ACCEPTABLE_JOINTNESS)
+    {
+      return 0.0;
+    }
+  return (MAX_ACCEPTABLE_JOINTNESS - jointness) / (MAX_ACCEPTABLE_JOINTNESS - 1.0);
+}
+
+bool
+DiversityAgeBased::PathNotSentBefore (uint16_t remoteAs, uint16_t selfEgressIfNo,
+                                         Beacon *theBeacon)
+{
+  if (sentBeacons.at (selfEgressIfNo)->find (theBeacon) == sentBeacons.at (selfEgressIfNo)->end ())
+    {
+      return true;
+    }
+  return false;
+}
+
+void
+DiversityAgeBased::RemoveInvalidSentBeacons (Beacon *theBeacon, uint16_t dstAs)
+{
+  for (uint32_t i = 0; i < as->GetNDevices (); ++i)
+    {
+      uint16_t remoteAsNo = as->interfaceToNeighborMap.at (i);
+      if (sentBeacons.at (i)->find (theBeacon) == sentBeacons.at (i)->end ())
+        {
+          continue;
+        }
+
+      if (sentBeacons.at (i)->at (theBeacon).second <= nextPeriod)
+        {
+          sentBeacons.at (i)->erase (theBeacon);
+          sentBeaconsCnt.at (dstAs)->at (as->interfaceToNeighborMap.at (i))--;
+          DecLinksJointnessesOnSentPaths (theBeacon, dstAs, remoteAsNo, i);
+        }
+    }
+}
+
+void
+DiversityAgeBased::DecLinksJointnessesOnSentPaths (Beacon *theBeacon, uint16_t dstAs,
+                                                        uint16_t remoteAsNo,
+                                                        uint16_t selfEgressIf)
+{
+  auto const &thePath = theBeacon->path;
+  for (auto const &seg : thePath)
+    {
+      uint32_t link = UPPER_32_BITS (seg);
+      linksJointnessesOnSentPaths.at (remoteAsNo).at (dstAs)->at (link) =
+          linksJointnessesOnSentPaths.at (remoteAsNo).at (dstAs)->at (link) - 1;
+      if (linksJointnessesOnSentPaths.at (remoteAsNo).at (dstAs)->at (link) == 0)
+        {
+          linksJointnessesOnSentPaths.at (remoteAsNo).at (dstAs)->erase (link);
+        }
+    }
+
+  uint32_t link = (((uint32_t) as->asNumber) << 16) | ((uint32_t) selfEgressIf);
+
+  linksJointnessesOnSentPaths.at (remoteAsNo).at (dstAs)->at (link) =
+      linksJointnessesOnSentPaths.at (remoteAsNo).at (dstAs)->at (link) - 1;
+  if (linksJointnessesOnSentPaths.at (remoteAsNo).at (dstAs)->at (link) == 0)
+    {
+      linksJointnessesOnSentPaths.at (remoteAsNo).at (dstAs)->erase (link);
+    }
+}
+
+void
+DiversityAgeBased::DecLinksJointnessesOnReceivedPaths (Beacon *theBeacon, uint16_t dstAs)
+{
+  auto const &thePath = theBeacon->path;
+  for (auto const &seg : thePath)
+    {
+      uint32_t link = UPPER_32_BITS (seg);
+      linksJointnessesOnReceivedPaths.at (dstAs)->at (link) =
+          linksJointnessesOnReceivedPaths.at (dstAs)->at (link) - 1;
+      if (linksJointnessesOnReceivedPaths.at (dstAs)->at (link) == 0)
+        {
+          linksJointnessesOnReceivedPaths.at (dstAs)->erase (link);
+        }
+    }
+}
 } // namespace ns3

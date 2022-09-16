@@ -13,119 +13,157 @@
 
 namespace ns3 {
 
-    void Baseline::DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node, const YAML::Node &config) {
-        BeaconServer::DoInitializations(num_ASes, xml_node, config);
-    }
+void
+Baseline::DoInitializations (uint32_t numASes, rapidxml::xml_node<> *xmlNode,
+                             const YAML::Node &config)
+{
+  BeaconServer::DoInitializations (numASes, xmlNode, config);
+}
 
-    void Baseline::create_initial_static_info_extension(static_info_extension_t &static_info_extension,
-                                                        uint16_t self_egress_if_no,
-                                                        const optimization_target_t *optimization_target) {
-        static_info_extension.insert(std::make_pair(static_info_type_t::LATENCY, 0));
-        static_info_extension.insert(std::make_pair(static_info_type_t::BW, AS->inter_as_bwds.at(self_egress_if_no)));
-    }
+void
+Baseline::CreateInitialStaticInfoExtension (StaticInfoExtension_t &staticInfoExtension,
+                                                uint16_t selfEgressIfNo,
+                                                const OptimizationTarget *optimizationTarget)
+{
+  staticInfoExtension.insert (std::make_pair (StaticInfoType::latency, 0));
+  staticInfoExtension.insert (
+      std::make_pair (StaticInfoType::bw, as->interAsBwds.at (selfEgressIfNo)));
+}
 
-    void Baseline::disseminate_beacons(neighbour_relation relation) {
-        uint32_t neighbors_cnt = AS->neighbors.size();
-        omp_set_num_threads(NUM_CORE);
+void
+Baseline::DisseminateBeacons (NeighbourRelation relation)
+{
+  uint32_t neighborsCnt = as->neighbors.size ();
+  omp_set_num_threads (g_numCore);
 #pragma omp parallel for
-        for (uint32_t i = 0; i < neighbors_cnt; ++i) {
-            if (AS->neighbors.at(i).second != relation) {
-                continue;
+  for (uint32_t i = 0; i < neighborsCnt; ++i)
+    {
+      if (as->neighbors.at (i).second != relation)
+        {
+          continue;
+        }
+
+      uint16_t &remoteAsNo = as->neighbors.at (i).first;
+      const std::vector<uint16_t> &interfaces = as->interfacesPerNeighborAs.at (remoteAsNo);
+
+      for (auto const &dstAsBeaconsPair : beaconStore)
+        {
+          const uint16_t &dstAsNo = dstAsBeaconsPair.first;
+          auto const &equalDstAsBeacons = dstAsBeaconsPair.second;
+
+          uint32_t sentCount = 0;
+
+          if (remoteAsNo == dstAsNo)
+            {
+              continue;
             }
 
-            uint16_t &remote_as_no = AS->neighbors.at(i).first;
-            const std::vector<uint16_t> &interfaces = AS->interfaces_per_neighbor_as.at(remote_as_no);
-
-            for (auto const &dst_as_beacons_pair : beacon_store) {
-                const uint16_t &dst_as_no = dst_as_beacons_pair.first;
-                auto const &equal_dst_as_beacons = dst_as_beacons_pair.second;
-
-                uint32_t sent_count = 0;
-
-                if (remote_as_no == dst_as_no) {
-                    continue;
+          for (auto const &lenBeaconsPair : equalDstAsBeacons)
+            { // for each length
+              if (sentCount >= MAX_BEACONS_TO_SEND)
+                {
+                  break;
                 }
 
-                for (auto const &len_beacons_pair : equal_dst_as_beacons) { // for each length
-                    if (sent_count >= MAX_BEACONS_TO_SEND) {
-                        break;
+              auto const &beacons = lenBeaconsPair.second;
+
+              for (auto const &theBeacon : beacons)
+                {
+                  if (sentCount >= MAX_BEACONS_TO_SEND)
+                    {
+                      break;
                     }
 
-                    auto const &beacons = len_beacons_pair.second;
+                  if (!theBeacon->isValid)
+                    {
+                      continue;
+                    }
 
-                    for (auto const &the_beacon : beacons) {
-                        if (sent_count >= MAX_BEACONS_TO_SEND) {
-                            break;
+                  bool generatesLoop = false;
+                  for (auto const &linkInfo : theBeacon->path)
+                    { // remove loops
+                      if (UPPER_16_BITS (linkInfo) == remoteAsNo)
+                        {
+                          generatesLoop = true;
+                          break;
                         }
+                    }
 
-                        if (!the_beacon->is_valid) {
-                            continue;
-                        }
+                  if (generatesLoop)
+                    {
+                      continue;
+                    }
 
-                        bool generates_loop = false;
-                        for (auto const &link_info : the_beacon->the_path) { // remove loops
-                            if (UPPER_16_BITS(link_info) == remote_as_no) {
-                                generates_loop = true;
-                                break;
-                            }
-                        }
+                  sentCount++;
 
-                        if (generates_loop) {
-                            continue;
-                        }
+                  // Iterate over all the valid interfaces of this remote AS and send the beacons
+                  for (auto const &egressInterfaceNo : interfaces)
+                    {
+                      std::pair<uint16_t, ScionAs *> remoteAsIfPair =
+                          as->GetRemoteAsInfo (egressInterfaceNo);
 
-                        sent_count++;
+                      uint16_t remoteIngressIfNo = remoteAsIfPair.first;
+                      ScionAs *remoteAs = remoteAsIfPair.second;
 
-                        // Iterate over all the valid interfaces of this remote AS and send the beacons
-                        for (auto const &egress_interface_no : interfaces) {
-                            std::pair<uint16_t, SCION_AS *> remote_as_if_pair =
-                                    AS->GetRemoteAsInfo(egress_interface_no);
+                      Ld_t latency =
+                          theBeacon->staticInfoExtension.at (StaticInfoType::latency) +
+                                   as->latenciesBetweenInterfaces
+                                       .at (LOWER_16_BITS (theBeacon->path.back ()))
+                              .at (egressInterfaceNo);
+                      Ld_t bwd = theBeacon->staticInfoExtension.at (StaticInfoType::bw) >
+                                       (Ld_t) as->interAsBwds.at (egressInterfaceNo)
+                                   ? (Ld_t) as->interAsBwds.at (egressInterfaceNo)
+                                   : theBeacon->staticInfoExtension.at (StaticInfoType::bw);
 
-                            uint16_t remote_ingress_if_no = remote_as_if_pair.first;
-                            SCION_AS *remote_as = remote_as_if_pair.second;
+                      StaticInfoExtension_t staticInfoExtension;
+                      staticInfoExtension.insert (
+                          std::make_pair (StaticInfoType::latency, latency));
+                      staticInfoExtension.insert (std::make_pair (StaticInfoType::bw, bwd));
 
-                            ld latency = the_beacon->static_info_extension.at(static_info_type_t::LATENCY) +
-                                         AS->latencies_between_interfaces.at(LOWER_16_BITS(the_beacon->the_path.back()))
-                                                 .at(egress_interface_no);
-                            ld bwd = the_beacon->static_info_extension.at(static_info_type_t::BW) >
-                                                     (ld) AS->inter_as_bwds.at(egress_interface_no)
-                                             ? (ld) AS->inter_as_bwds.at(egress_interface_no)
-                                             : the_beacon->static_info_extension.at(static_info_type_t::BW);
-
-                            static_info_extension_t static_info_extension;
-                            static_info_extension.insert(std::make_pair(static_info_type_t::LATENCY, latency));
-                            static_info_extension.insert(std::make_pair(static_info_type_t::BW, bwd));
-
-                            generate_beacon_and_send(the_beacon, egress_interface_no, remote_ingress_if_no, remote_as,
-                                                     static_info_extension);
-                        }
+                      GenerateBeaconAndSend (theBeacon, egressInterfaceNo, remoteIngressIfNo,
+                                             remoteAs, staticInfoExtension);
                     }
                 }
             }
         }
     }
+}
 
-    std::tuple<bool, bool, bool, Beacon *, ld>
-    Baseline::alg_specific_import_policy(Beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
-                                         uint16_t self_ingress_if_no, uint16_t now) {
-        uint16_t dst_as = UPPER_16_BITS(the_beacon.the_path.at(0));
+std::tuple<bool, bool, bool, Beacon *, Ld_t>
+Baseline::AlgSpecificImportPolicy (Beacon &theBeacon, uint16_t senderAs,
+                                      uint16_t remoteEgressIfNo, uint16_t selfIngressIfNo,
+                                      uint16_t now)
+{
+  uint16_t dstAs = UPPER_16_BITS (theBeacon.path.at (0));
 
-        if (next_round_valid_beacons_count_per_dst_as.find(dst_as) == next_round_valid_beacons_count_per_dst_as.end()) {
-            return std::tuple<bool, bool, bool, Beacon *, ld>(true, false, false, NULL, 0);
-        }
-
-        if (this->next_round_valid_beacons_count_per_dst_as.at(dst_as) < MAX_BEACONS_TO_STORE) {
-            return std::tuple<bool, bool, bool, Beacon *, ld>(true, false, false, NULL, 0);
-        }
-
-        return std::tuple<bool, bool, bool, Beacon *, ld>(false, false, false, NULL, 0);
+  if (nextRoundValidBeaconsCountPerDstAs.find (dstAs) == nextRoundValidBeaconsCountPerDstAs.end ())
+    {
+      return std::tuple<bool, bool, bool, Beacon *, Ld_t> (true, false, false, NULL, 0);
     }
 
-    void Baseline::insert_to_algorithm_data_structures(Beacon *the_beacon, uint16_t sender_as,
-                                                       uint16_t remote_egress_if_no, uint16_t self_ingress_if_no) {}
+  if (this->nextRoundValidBeaconsCountPerDstAs.at (dstAs) < MAX_BEACONS_TO_STORE)
+    {
+      return std::tuple<bool, bool, bool, Beacon *, Ld_t> (true, false, false, NULL, 0);
+    }
 
-    void Baseline::delete_from_algorithm_data_structures(Beacon *the_beacon, ld replacement_key) {}
+  return std::tuple<bool, bool, bool, Beacon *, Ld_t> (false, false, false, NULL, 0);
+}
 
-    void Baseline::update_algorithm_data_structures_periodic(Beacon *the_beacon, bool invalidated) {}
+void
+Baseline::InsertToAlgorithmDataStructures (Beacon *theBeacon, uint16_t senderAs,
+                                               uint16_t remoteEgressIfNo,
+                                               uint16_t selfIngressIfNo)
+{
+}
+
+void
+Baseline::DeleteFromAlgorithmDataStructures (Beacon *theBeacon, Ld_t replacementKey)
+{
+}
+
+void
+Baseline::UpdateAlgorithmDataStructuresPeriodic (Beacon *theBeacon, bool invalidated)
+{
+}
 
 } // namespace ns3

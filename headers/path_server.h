@@ -16,39 +16,41 @@
 #include "src/SCION/headers/scion_packet.h"
 
 namespace ns3 {
-    class PathServer : public SCIONCapableNode {
-    public:
-        PathServer(uint32_t system_id, uint16_t isd_number, uint16_t as_number, host_addr_t local_address,
-                   double latitude, double longitude, SCION_AS *AS)
-            : SCIONCapableNode(system_id, isd_number, as_number, local_address, latitude, longitude, AS) {
-            set_of_all_core_ases.insert(ia_addr);
-        }
+class PathServer : public ScionCapableNode
+{
+public:
+  PathServer (uint32_t systemId, uint16_t isdNumber, uint16_t asNumber, HostAddr_t localAddress, double latitude, double longitude, ScionAs *as)
+      : ScionCapableNode (systemId, isdNumber, asNumber, localAddress, latitude, longitude, as)
+  {
+    setOfAllCoreAses.insert (iaAddr);
+  }
 
-        void RegisterCorePathSegment(PathSegment &pathSegment, std::string key);
-        void RegisterUpPathSegment(PathSegment &pathSegment, std::string key);
-        void RegisterDownPathSegment(PathSegment &pathSegment, std::string key);
+  void RegisterCorePathSegment (PathSegment &pathSegment, std::string key);
+  void RegisterUpPathSegment (PathSegment &pathSegment, std::string key);
+  void RegisterDownPathSegment (PathSegment &pathSegment, std::string key);
 
-    private:
-        std::set<ia_t> set_of_all_core_ases;
+private:
+  std::set<Ia_t> setOfAllCoreAses;
 
-        registered_path_segs_dataset_t registered_core_segments;
-        registered_path_segs_dataset_t registered_up_segments;
-        registered_path_segs_dataset_t registered_down_segments;
+  RegisteredPathSegsDataset_t registeredCoreSegments;
+  RegisteredPathSegsDataset_t registeredUpSegments;
+  RegisteredPathSegsDataset_t registeredDownSegments;
 
-        cached_path_segs_dataset_t cached_core_segments;
-        cached_path_segs_dataset_t cached_up_segments;
-        cached_path_segs_dataset_t cached_down_segments;
+  CachedPathSegsDataset_t cachedCoreSegments;
+  CachedPathSegsDataset_t cachedUpSegments;
+  CachedPathSegsDataset_t cachedDownSegments;
 
-        void process_received_packet(uint16_t local_if, SCIONPacket *packet, Time receive_time) override;
+  void ProcessReceivedPacket (uint16_t localIf, ScionPacket *packet, Time receiveTime) override;
 
-        void process_local_host_request_for_path(path_segment_type path_type, ia_t src_ia, ia_t dst_ia,
-                                                 host_addr_t host_addr);
+  void ProcessLocalHostRequestForPath (PathSegmentType pathType, Ia_t srcIa, Ia_t dstIa,
+                                       HostAddr_t hostAddr);
 
-        void send_registered_path_to_local_host(host_addr_t host_addr, path_segment_type path_type, ia_t src_ia,
-                                                ia_t dst_ia, const reg_path_segs_to_one_as_t *);
+  void SendRegisteredPathToLocalHost (HostAddr_t hostAddr, PathSegmentType pathType, Ia_t srcIa,
+                                      Ia_t dstIa,
+                                           const RegPathSegsToOneAs_t *);
 
-        void return_list_of_all_core_ases(host_addr_t host_addr);
-    };
+  void ReturnListOfAllCoreAses (HostAddr_t hostAddr);
+};
 } // namespace ns3
 
 #endif //SCION_SIMULATOR_PATH_SERVER_H

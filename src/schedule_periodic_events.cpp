@@ -19,44 +19,57 @@
 #include "src/SCION/headers/time_server.h"
 
 namespace ns3 {
-    NS_LOG_COMPONENT_DEFINE("GlobalScheduling");
+NS_LOG_COMPONENT_DEFINE ("GlobalScheduling");
 
-    void SchedulePeriodicEvents(YAML::Node &config) {
-        for (uint32_t i = 0; i < nodes.GetN(); ++i) {
-            Ptr<SCION_AS> node = DynamicCast<SCION_AS>(nodes.Get(i));
+void
+SchedulePeriodicEvents (YAML::Node &config)
+{
+  for (uint32_t i = 0; i < g_nodes.GetN (); ++i)
+    {
+      Ptr<ScionAs> node = DynamicCast<ScionAs> (g_nodes.Get (i));
 
-            if (config["beacon_service"]) {
-                node->GetBeaconServer()->ScheduleBeaconing(
-                        Time(config["beacon_service"]["last_beaconing"].as<std::string>()));
-            }
-
-            if (config["time_service"]) {
-                dynamic_cast<TimeServer *>(node->GetHost(2))->ScheduleListOfAllASesRequest();
-                dynamic_cast<TimeServer *>(node->GetHost(2))->ScheduleSnapShots();
-                dynamic_cast<TimeServer *>(node->GetHost(2))->ScheduleTimeSync();
-            }
+      if (config["beacon_service"])
+        {
+          node->GetBeaconServer ()->ScheduleBeaconing (
+              Time (config["beacon_service"]["last_beaconing"].as<std::string> ()));
         }
 
-        if (config["beacon_service"]) {
-            for (Time t = Seconds(0.0); t <= Time(config["beacon_service"]["last_beaconing"].as<std::string>());
-                 t += Time(config["beacon_service"]["period"].as<std::string>())) {
-                Simulator::Schedule(t + TimeStep(2), &PeriodicBeaconingCheckPoint);
-            }
+      if (config["time_service"])
+        {
+          dynamic_cast<TimeServer *> (node->GetHost (2))->ScheduleListOfAllASesRequest ();
+          dynamic_cast<TimeServer *> (node->GetHost (2))->ScheduleSnapShots ();
+          dynamic_cast<TimeServer *> (node->GetHost (2))->ScheduleTimeSync ();
         }
     }
 
-    void PeriodicBeaconingCheckPoint() {
-        std::cout << "################################## "
-                  << DynamicCast<SCION_AS>(nodes.Get(0))->GetBeaconServer()->GetCurrentTime()
-                  << " #########################################" << std::endl;
-        uint32_t node_number = nodes.GetN();
-
-        // print number of connected pairs after each beaconing round
-        uint32_t all_connected_pairs = 0;
-        for (uint32_t i = 0; i < node_number; ++i) {
-            all_connected_pairs +=
-                    DynamicCast<SCION_AS>(nodes.Get(i))->GetBeaconServer()->GetValidBeaconsCountPerDstAS().size();
+  if (config["beacon_service"])
+    {
+      for (Time t = Seconds (0.0);
+           t <= Time (config["beacon_service"]["last_beaconing"].as<std::string> ());
+           t += Time (config["beacon_service"]["period"].as<std::string> ()))
+        {
+          Simulator::Schedule (t + TimeStep (2), &PeriodicBeaconingCheckPoint);
         }
-        std::cout << all_connected_pairs << std::endl;
     }
+}
+
+void
+PeriodicBeaconingCheckPoint ()
+{
+  std::cout << "################################## "
+            << DynamicCast<ScionAs> (g_nodes.Get (0))->GetBeaconServer ()->GetCurrentTime ()
+            << " #########################################" << std::endl;
+  uint32_t nodeNumber = g_nodes.GetN ();
+
+  // print number of connected pairs after each beaconing round
+  uint32_t allConnectedPairs = 0;
+  for (uint32_t i = 0; i < nodeNumber; ++i)
+    {
+      allConnectedPairs += DynamicCast<ScionAs> (g_nodes.Get (i))
+                                 ->GetBeaconServer ()
+                                 ->GetValidBeaconsCountPerDstAs ()
+                                 .size ();
+    }
+  std::cout << allConnectedPairs << std::endl;
+}
 } // namespace ns3

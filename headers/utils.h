@@ -28,33 +28,33 @@ namespace ns3 {
 
 #define LOWER_32_BITS(input) ((uint32_t) ((input) &0x00000000ffffffff))
 
-    double GetMedian(std::multiset<int64_t> &data);
+double GetMedian (std::multiset<int64_t> &data);
 
-    std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems);
+std::vector<std::string> &Split (const std::string &s, char delim, std::vector<std::string> &elems);
 
-    ld link_level_jaccard_distance_between_two_paths(Beacon *beacon1, Beacon *beacon2);
+Ld_t LinkLevelJaccardDistanceBetweenTwoPaths (Beacon *beacon1, Beacon *beacon2);
 
-    ld AS_level_jaccard_distance_between_two_paths(Beacon *beacon1, Beacon *beacon2);
+Ld_t AsLevelJaccardDistanceBetweenTwoPaths (Beacon *beacon1, Beacon *beacon2);
 
-    ld calculate_great_circle_latency(ld lat1_deg, ld long1_deg, ld lat2_deg, ld long2_deg);
+Ld_t CalculateGreatCircleLatency (Ld_t lat1Deg, Ld_t long1Deg, Ld_t lat2Deg, Ld_t long2Deg);
 
-    ld calculate_great_circle_distance(ld lat1_deg, ld long1_deg, ld lat2_deg, ld long2_deg);
+Ld_t CalculateGreatCircleDistance (Ld_t lat1Deg, Ld_t long1Deg, Ld_t lat2Deg, Ld_t long2Deg);
 
-    std::string getAttribute(rapidxml::xml_node<> *node, const std::string &name);
+std::string GetAttribute (rapidxml::xml_node<> *node, const std::string &name);
 
-    class PropertyContainer {
-    public:
-        std::string getProperty(const std::string &name) const;
-        void setProperty(const std::string &name, const std::string &value);
-        bool hasProperty(const std::string &name) const;
+class PropertyContainer
+{
+public:
+  std::string GetProperty (const std::string &name) const;
+  void SetProperty (const std::string &name, const std::string &value);
+  bool HasProperty (const std::string &name) const;
 
-    private:
-        typedef std::map<std::string, std::string> propertiesType;
-        propertiesType properties;
-    };
+private:
+  typedef std::map<std::string, std::string> PropertiesType_t;
+  PropertiesType_t properties;
+};
 
-    PropertyContainer parseProperties(rapidxml::xml_node<> *node);
-
+PropertyContainer ParseProperties (rapidxml::xml_node<> *node);
 
 } // namespace ns3
 #endif //SCION_SIMULATOR_UTILS_H

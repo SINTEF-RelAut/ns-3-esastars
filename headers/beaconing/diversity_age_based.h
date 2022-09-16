@@ -4,8 +4,8 @@
  * @date 2020
  */
 
-#ifndef SCION_SIMULATOR_CRITERIA_MATCHING_H
-#define SCION_SIMULATOR_CRITERIA_MATCHING_H
+#ifndef SCION_SIMULATOR_DIVERSITY_AGE_BASED_H
+#define SCION_SIMULATOR_DIVERSITY_AGE_BASED_H
 
 #include "src/SCION/headers/beaconing/beacon_server.h"
 
@@ -19,73 +19,78 @@ namespace ns3 {
 #define SCALING_FACTOR 0.95
 #define SCORE_THRESHOLD 0.9
 
-    class DiversityAgeBased : public BeaconServer {
-    public:
-        DiversityAgeBased(SCION_AS *AS, bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
-                          const YAML::Node &config)
-            : BeaconServer(AS, parallel_scheduler, xml_node, config) {}
+class DiversityAgeBased : public BeaconServer
+{
+public:
+  DiversityAgeBased (ScionAs *as, bool parallelScheduler, rapidxml::xml_node<> *xmlNode,
+                     const YAML::Node &config)
+      : BeaconServer (as, parallelScheduler, xmlNode, config)
+  {
+  }
 
-        void DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node, const YAML::Node &config) override;
+  void DoInitializations (uint32_t numASes, rapidxml::xml_node<> *xmlNode,
+                          const YAML::Node &config) override;
 
-    private:
-        std::vector<std::unordered_map<Beacon *, std::pair<float, uint16_t>> *> sent_beacons;
-        std::vector<std::unordered_map<uint16_t, uint16_t> *> sent_beacons_cnt;
+private:
+  std::vector<std::unordered_map<Beacon *, std::pair<float, uint16_t>> *> sentBeacons;
+  std::vector<std::unordered_map<uint16_t, uint16_t> *> sentBeaconsCnt;
 
-        std::unordered_map<uint16_t, std::vector<std::unordered_map<uint32_t, uint32_t> *>>
-                links_jointnesses_on_sent_paths;
-        std::vector<std::unordered_map<uint32_t, uint32_t> *> links_jointnesses_on_received_paths;
+  std::unordered_map<uint16_t, std::vector<std::unordered_map<uint32_t, uint32_t> *>>
+      linksJointnessesOnSentPaths;
+  std::vector<std::unordered_map<uint32_t, uint32_t> *> linksJointnessesOnReceivedPaths;
 
-        void disseminate_beacons(neighbour_relation relation) override;
+  void DisseminateBeacons (NeighbourRelation relation) override;
 
-        std::tuple<bool, bool, bool, Beacon *, ld> alg_specific_import_policy(Beacon &the_beacon, uint16_t sender_as,
-                                                                              uint16_t remote_egress_if_no,
-                                                                              uint16_t self_ingress_if_no,
-                                                                              uint16_t now) override;
+  std::tuple<bool, bool, bool, Beacon *, Ld_t>
+  AlgSpecificImportPolicy (Beacon &theBeacon, uint16_t senderAs, uint16_t remoteEgressIfNo,
+                              uint16_t selfIngressIfNo, uint16_t now) override;
 
-        void insert_to_algorithm_data_structures(Beacon *the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
-                                                 uint16_t self_ingress_if_no) override;
+  void InsertToAlgorithmDataStructures (Beacon *theBeacon, uint16_t senderAs,
+                                            uint16_t remoteEgressIfNo,
+                                            uint16_t selfIngressIfNo) override;
 
-        void delete_from_algorithm_data_structures(Beacon *the_beacon, ld replacement_key) override;
+  void DeleteFromAlgorithmDataStructures (Beacon *theBeacon, Ld_t replacementKey) override;
 
-        void create_initial_static_info_extension(static_info_extension_t &static_info_extension,
-                                                  uint16_t self_egress_if_no,
-                                                  const optimization_target_t *optimization_target) override;
+  void CreateInitialStaticInfoExtension (StaticInfoExtension_t &staticInfoExtension,
+                                        uint16_t selfEgressIfNo,
+                                        const OptimizationTarget *optimizationTarget) override;
 
-        void update_algorithm_data_structures_periodic(Beacon *the_beacon, bool invalidated) override;
+  void UpdateAlgorithmDataStructuresPeriodic (Beacon *theBeacon, bool invalidated) override;
 
-        std::multimap<ld, std::tuple<Beacon *, uint16_t, uint16_t, SCION_AS *, static_info_extension_t>>
-        select_beacons_to_disseminate_per_dst_per_nbr(uint16_t remote_as_no, uint16_t dst_as_no,
-                                                      const beacons_with_same_dst_as &beacons_to_the_dst_as);
+  std::multimap<Ld_t, std::tuple<Beacon *, uint16_t, uint16_t, ScionAs *, StaticInfoExtension_t>>
+  SelectBeaconsToDisseminatePerDstPerNbr (
+      uint16_t remoteAsNo, uint16_t dstAsNo,
+      const BeaconsWithSameDstAs_t &beaconsToTheDstAs);
 
-        void update_sent_beacon_timer(uint16_t remote_as, uint16_t self_egress_if_no, Beacon *the_beacon);
+  void UpdateSentBeaconTimer (uint16_t remoteAs, uint16_t selfEgressIfNo,
+                                 Beacon *theBeacon);
 
-        void inc_links_jointness_on_sent_paths(uint16_t dst_as_no, uint16_t remote_as_no, uint16_t self_egress_if_no,
-                                               Beacon *the_beacon);
+  void IncLinksJointnessOnSentPaths (uint16_t dstAsNo, uint16_t remoteAsNo,
+                                          uint16_t selfEgressIfNo, Beacon *theBeacon);
 
-        void inc_links_jointness_on_received_paths(uint16_t dst_as_no, Beacon *the_beacon);
+  void IncLinksJointnessOnReceivedPaths (uint16_t dstAsNo, Beacon *theBeacon);
 
-        void add_to_sent_beacons(uint16_t dst_as_no, uint16_t remote_as, uint16_t self_egress_if_no, Beacon *the_beacon,
-                                 float raw_score);
+  void AddToSentBeacons (uint16_t dstAsNo, uint16_t remoteAs, uint16_t selfEgressIfNo,
+                            Beacon *theBeacon, float rawScore);
 
-        ld calculate_link_diversity_score_for_dissemination(uint16_t remote_as, uint16_t dst_as, uint16_t egress_if_no,
-                                                            Beacon *the_beacon);
+  Ld_t CalculateLinkDiversityScoreForDissemination (uint16_t remoteAs, uint16_t dstAs,
+                                                       uint16_t egressIfNo, Beacon *theBeacon);
 
-        ld calculate_link_diversity_score_for_import(uint16_t dst_as, Beacon &the_beacon);
+  Ld_t CalculateLinkDiversityScoreForImport (uint16_t dstAs, Beacon &theBeacon);
 
-        bool path_not_sent_before(uint16_t remote_as, uint16_t self_egress_if_no, Beacon *the_beacon);
+  bool PathNotSentBefore (uint16_t remoteAs, uint16_t selfEgressIfNo, Beacon *theBeacon);
 
-        void remove_invalid_sent_beacons(Beacon *the_beacon, uint16_t dst_as);
+  void RemoveInvalidSentBeacons (Beacon *theBeacon, uint16_t dstAs);
 
-        void dec_links_jointnesses_on_sent_paths(Beacon *the_beacon, uint16_t dst_as, uint16_t remote_as_no,
-                                                 uint16_t self_egress_if);
+  void DecLinksJointnessesOnSentPaths (Beacon *theBeacon, uint16_t dstAs,
+                                            uint16_t remoteAsNo, uint16_t selfEgressIf);
 
-        void dec_links_jointnesses_on_received_paths(Beacon *the_beacon, uint16_t dst_as);
+  void DecLinksJointnessesOnReceivedPaths (Beacon *theBeacon, uint16_t dstAs);
 
-        inline ld calculate_raw_score(Beacon *the_beacon, uint16_t dst_as_no, uint16_t self_egress_if_no,
-                                      SCION_AS *remote_as);
+  inline Ld_t CalculateRawScore (Beacon *theBeacon, uint16_t dstAsNo, uint16_t selfEgressIfNo,
+                                 ScionAs *remoteAs);
 
-        inline ld calculate_import_raw_score(Beacon &the_beacon);
-
-    };
+  inline Ld_t CalculateImportRawScore (Beacon &theBeacon);
+};
 } // namespace ns3
-#endif //SCION_SIMULATOR_CRITERIA_MATCHING_H
+#endif //SCION_SIMULATOR_DIVERSITY_AGE_BASED_H

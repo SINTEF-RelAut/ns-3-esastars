@@ -23,199 +23,220 @@ namespace ns3 {
 #define MAX_BEACONS_TO_STORE 20
 #define MAX_BEACONS_TO_SEND 5
 
-    class SCION_AS;
+class ScionAs;
+
+typedef std::unordered_set<Beacon *> BeaconsWithEqualLength_t;
+typedef std::map<uint16_t, BeaconsWithEqualLength_t> BeaconsWithSameDstAs_t;
+typedef std::pair<Time, uint16_t> BeaconingTimingParams_t;
+
+class BeaconServer
+{
+public:
+  BeaconServer (ScionAs *as, bool parallelScheduler, rapidxml::xml_node<> *xmlNode,
+                const YAML::Node &config)
+      : as (as),
+        parallelScheduler (parallelScheduler),
+        beaconingPeriod (Time (config["beacon_service"]["period"].as<std::string> ())),
+        expirationPeriod (Time (config["beacon_service"]["expiration_period"].as<std::string> ())
+                               .ToInteger (Time::MIN)),
+        lastBeaconingEventTime (
+            Time (config["beacon_service"]["last_beaconing"].as<std::string> ()))
+  {
+    nonRequestedPullBasedBeaconContainer.resize (2);
+    PropertyContainer p = ParseProperties (xmlNode);
+    if (p.HasProperty ("dirty_energy_ratio"))
+      {
+        dirtyEnergyRatio = std::stod (p.GetProperty ("dirty_energy_ratio"));
+      }
 
-    typedef std::unordered_set<Beacon *> beacons_with_equal_length;
-    typedef std::map<uint16_t, beacons_with_equal_length> beacons_with_same_dst_as;
-    typedef std::pair<Time, uint16_t> beaconing_timing_params;
+    if (p.HasProperty ("sun_energy_ratio"))
+      {
+        sunEnergyRatio = std::stod (p.GetProperty ("sun_energy_ratio"));
+      }
 
-    class BeaconServer {
-    public:
-        BeaconServer(SCION_AS *AS, bool parallel_scheduler, rapidxml::xml_node<> *xml_node, const YAML::Node &config)
-            : AS(AS), parallel_scheduler(parallel_scheduler),
-              beaconing_period(Time(config["beacon_service"]["period"].as<std::string>())),
-              expiration_period(
-                      Time(config["beacon_service"]["expiration_period"].as<std::string>()).ToInteger(Time::MIN)),
-              last_beaconing_event_time(Time(config["beacon_service"]["last_beaconing"].as<std::string>())) {
-            non_requested_pull_based_beacon_container.resize(2);
-            PropertyContainer p = parseProperties(xml_node);
-            if (p.hasProperty("dirty_energy_ratio")) {
-                dirty_energy_ratio = std::stod(p.getProperty("dirty_energy_ratio"));
-            }
+    if (config["beacon_service"]["read_beacons_directory"])
+      {
+        fileToReadBeacons =
+            config["beacon_service"]["read_beacons_directory"].as<std::string> () + "beacons_" +
+            std::to_string (as->asNumber) + ".json";
+      }
+    else
+      {
+        fileToReadBeacons = "none";
+      }
 
-            if (p.hasProperty("sun_energy_ratio")) {
-                sun_energy_ratio = std::stod(p.getProperty("sun_energy_ratio"));
-            }
+    if (config["beacon_service"]["write_beacons_directory"])
+      {
+        fileToWriteBeacons =
+            config["beacon_service"]["write_beacons_directory"].as<std::string> () + "beacons_" +
+            std::to_string (as->asNumber) + ".json";
+      }
+    else
+      {
+        fileToWriteBeacons = "none";
+      }
+  }
 
-            if (config["beacon_service"]["read_beacons_directory"]) {
-                file_to_read_beacons = config["beacon_service"]["read_beacons_directory"].as<std::string>() + "beacons_" + std::to_string(AS->as_number) + ".json";
-            } else {
-                file_to_read_beacons = "none";
-            }
+  virtual void DoInitializations (uint32_t numAses, rapidxml::xml_node<> *xmlNode,
+                                  const YAML::Node &config);
 
-            if (config["beacon_service"]["write_beacons_directory"]) {
-                file_to_write_beacons = config["beacon_service"]["write_beacons_directory"].as<std::string>() + "beacons_" + std::to_string(AS->as_number) + ".json";
-            } else {
-                file_to_write_beacons = "none";
-            }
+  virtual void PerLinkInitializations (rapidxml::xml_node<> *xmlNode, const YAML::Node &config);
 
-        }
+  void SetAs (ScionAs *as);
 
-        virtual void DoInitializations(uint32_t num_ASes, rapidxml::xml_node<> *xml_node, const YAML::Node &config);
+  void ReceiveBeacon (Beacon &receivedBeacon, uint16_t senderAs, uint16_t remoteIf,
+                      uint16_t localIf);
 
-        virtual void PerLinkInitializations(rapidxml::xml_node<> *xml_node, const YAML::Node &config);
+  void ScheduleBeaconing (Time lastBeaconingEventTime);
 
-        void SetAS(SCION_AS *AS);
+  void InsertPulledBeaconsToBeaconStore ();
 
-        void ReceiveBeacon(Beacon &received_beacon, uint16_t sender_as, uint16_t remote_if, uint16_t local_if);
+  const uint16_t GetCurrentTime () const;
 
-        void ScheduleBeaconing(Time last_beaconing_event_time);
+  const std::vector<std::vector<Ld_t>> &GetIntraAsEnergies () const;
 
-        void InsertPulledBeaconsToBeaconStore();
+  float GetDirtyEnergyRatio () const;
 
-        const uint16_t GetCurrentTime() const;
+  float GetSunEnergyRatio () const;
 
-        const std::vector<std::vector<ld>> &GetIntraASEnergies() const;
+  const std::unordered_map<uint16_t, BeaconsWithSameDstAs_t> &GetBeaconStore () const;
 
-        float GetDirtyEnergyRatio() const;
+  const std::unordered_map<std::string, Beacon> &GetPathMapToBeacon () const;
 
-        float GetSunEnergyRatio() const;
+  const std::unordered_map<uint16_t, uint32_t> &GetValidBeaconsCountPerDstAs () const;
 
-        const std::unordered_map<uint16_t, beacons_with_same_dst_as> &GetBeaconStore() const;
+  const std::unordered_map<uint16_t, uint32_t> &GetNextRoundValidBeaconsCountPerDstAs () const;
 
-        const std::unordered_map<std::string, Beacon> &GetPathMapToBeacon() const;
+  const std::unordered_map<uint16_t, std::vector<uint32_t>> &
+  GetBytesSentPerInterfacePerPeriod () const;
 
-        const std::unordered_map<uint16_t, uint32_t> &GetValidBeaconsCountPerDstAS() const;
+  const std::unordered_map<uint16_t, std::vector<uint32_t>> &
+  GetBeaconsSentPerInterfacePerPeriod () const;
 
-        const std::unordered_map<uint16_t, uint32_t> &GetNextRoundValidBeaconsCountPerDstAS() const;
+  const std::vector<std::unordered_map<uint16_t, uint32_t>> &
+  GetBeaconsSentPerDstPerInterfacePerPeriod () const;
+  const std::vector<std::unordered_map<const OptimizationTarget *, uint32_t>> &
+  GetPushBasedBeaconsSentPerOptPerInterfacePerPeriod () const;
+  const std::vector<std::unordered_map<const OptimizationTarget *, uint32_t>> &
+  GetPullBasedBeaconsSentPerOptPerInterfacePerPeriod () const;
 
-        const std::unordered_map<uint16_t, std::vector<uint32_t>> &GetBytesSentPerInterfacePerPeriod() const;
+  const std::vector<uint64_t> &GetBeaconsSentPerInterface () const;
 
-        const std::unordered_map<uint16_t, std::vector<uint32_t>> &GetBeaconsSentPerInterfacePerPeriod() const;
+protected:
+  ScionAs *as;
 
-        const std::vector<std::unordered_map<uint16_t, uint32_t>>&
-                GetBeaconsSentPerDstPerInterfacePerPeriod() const;
-        const std::vector<std::unordered_map<const optimization_target_t*, uint32_t>>&
-                GetPushBasedBeaconsSentPerOptPerInterfacePerPeriod() const;
-        const std::vector<std::unordered_map<const optimization_target_t*, uint32_t>>&
-                GetPullBasedBeaconsSentPerOptPerInterfacePerPeriod() const;
+  const bool parallelScheduler;
 
-        const std::vector<uint64_t> &GetBeaconsSentPerInterface() const;
-    protected:
-        SCION_AS *AS;
+  const Time beaconingPeriod;
+  const uint16_t expirationPeriod;
+  const Time lastBeaconingEventTime;
 
-        const bool parallel_scheduler;
+  float dirtyEnergyRatio;
+  float sunEnergyRatio;
 
-        const Time beaconing_period;
-        const uint16_t expiration_period;
-        const Time last_beaconing_event_time;
+  std::string fileToWriteBeacons;
+  std::string fileToReadBeacons;
 
-        float dirty_energy_ratio;
-        float sun_energy_ratio;
+  uint16_t now;
+  uint16_t nextPeriod;
 
-        std::string file_to_write_beacons;
-        std::string file_to_read_beacons;
+  std::vector<std::vector<Ld_t>> intraAsEnergies;
 
-        uint16_t now;
-        uint16_t next_period;
+  std::unordered_map<uint16_t, BeaconsWithSameDstAs_t> beaconStore;
 
-        std::vector<std::vector<ld>> intra_as_energies;
+  // All beacon instances are stored in either of the containers, with no overlap
+  uint16_t pullBasedWrite = 0;
+  uint16_t pullBasedRead = 1;
+  std::unordered_map<std::string, Beacon> pushBasedBeaconContainer;
+  std::vector<std::unordered_map<std::string, Beacon>> nonRequestedPullBasedBeaconContainer;
+  std::unordered_map<std::string, Beacon>
+      requestedPullBasedBeaconContainer; // the result of pull based beaconing returned to the source AS
 
-        std::unordered_map<uint16_t, beacons_with_same_dst_as> beacon_store;
+  std::unordered_map<uint16_t, uint32_t> validBeaconsCountPerDstAs;
+  std::unordered_map<uint16_t, uint32_t> nextRoundValidBeaconsCountPerDstAs;
 
-        // All beacon instances are stored in either of the containers, with no overlap
-        uint16_t pull_based_write = 0;
-        uint16_t pull_based_read = 1;
-        std::unordered_map<std::string, Beacon> push_based_beacon_container;
-        std::vector<std::unordered_map<std::string, Beacon>> non_requested_pull_based_beacon_container;
-        std::unordered_map<std::string, Beacon>
-                requested_pull_based_beacon_container; // the result of pull based beaconing returned to the source AS
+  std::unordered_map<uint16_t, std::vector<uint32_t>> bytesSentPerInterfacePerPeriod;
+  std::unordered_map<uint16_t, std::vector<uint32_t>> beaconsSentPerInterfacePerPeriod;
 
+  std::vector<std::unordered_map<uint16_t, uint32_t>> beaconsSentPerDstPerInterface;
+  std::vector<std::unordered_map<const OptimizationTarget *, uint32_t>>
+      pushBasedBeaconsSentPerOptPerInterface;
+  std::vector<std::unordered_map<const OptimizationTarget *, uint32_t>>
+      pullBasedBeaconsSentPerOptPerInterface;
 
-        std::unordered_map<uint16_t, uint32_t> valid_beacons_count_per_dst_as;
-        std::unordered_map<uint16_t, uint32_t> next_round_valid_beacons_count_per_dst_as;
+  std::vector<uint64_t> beaconsSentPerInterface;
 
-        std::unordered_map<uint16_t, std::vector<uint32_t>> bytes_sent_per_interface_per_period;
-        std::unordered_map<uint16_t, std::vector<uint32_t>> beacons_sent_per_interface_per_period;
+  void InitiateBeacons (NeighbourRelation relation);
 
-        std::vector<std::unordered_map<uint16_t, uint32_t>> beacons_sent_per_dst_per_interface;
-        std::vector<std::unordered_map<const optimization_target_t*, uint32_t>>
-                push_based_beacons_sent_per_opt_per_interface;
-        std::vector<std::unordered_map<const optimization_target_t*, uint32_t>>
-                pull_based_beacons_sent_per_opt_per_interface;
+  virtual void InitiateBeaconsPerInterface (uint16_t selfEgressIfNo, ScionAs *remoteAs,
+                                               uint16_t remoteIngressIfNo);
 
-        std::vector<uint64_t> beacons_sent_per_interface;
+  virtual void CreateInitialStaticInfoExtension (StaticInfoExtension_t &staticInfoExtension,
+                                        uint16_t selfEgressIfNo,
+                                        const OptimizationTarget *optimizationTarget);
 
-        void initiate_beacons(neighbour_relation relation);
+  virtual void DisseminateBeacons (NeighbourRelation relation) = 0;
 
-        virtual void initiate_beacons_per_interface(uint16_t self_egress_if_no, SCION_AS *remote_as,
-                                                    uint16_t remote_ingress_if_no);
+  void GenerateBeaconAndSend (Beacon *selectedBeacon, uint16_t selfEgressIfNo,
+                            uint16_t remoteIngressIfNo, ScionAs *remoteAs,
+                              StaticInfoExtension_t &staticInfoExtension,
+                            const OptimizationTarget *optimizationTarget = NULL,
+                              BeaconDirection beaconDirection = BeaconDirection::pushBased);
 
-        virtual void create_initial_static_info_extension(static_info_extension_t &static_info_extension,
-                                                          uint16_t self_egress_if_no,
-                                                          const optimization_target_t *optimization_target);
+  std::tuple<bool, bool, bool, Beacon *, Ld_t> ImportPolicy (Beacon &theBeacon, uint16_t senderAs,
+                                                            uint16_t remoteEgressIfNo,
+                                                            uint16_t selfIngressIfNo,
+                                                            uint16_t now);
 
-        virtual void disseminate_beacons(neighbour_relation relation) = 0;
+  void InsertBeacon (Beacon &theBeacon, uint16_t dstAs, uint16_t senderAs,
+                      uint16_t remoteEgressIf, uint16_t localIngressIf, bool pathExists,
+                      bool existingPathValid, Beacon *beaconToReplace);
 
-        void generate_beacon_and_send(Beacon *selected_beacon, uint16_t self_egress_if_no,
-                                      uint16_t remote_ingress_if_no, SCION_AS *remote_as,
-                                      static_info_extension_t &static_info_extension,
-                                      const optimization_target_t *optimization_target = NULL,
-                                      beacon_direction_t beacon_direction = beacon_direction_t::PUSH_BASED);
+  void IncrementValidBeaconsCount (uint16_t dstAs);
 
-        std::tuple<bool, bool, bool, Beacon *, ld> import_policy(Beacon &the_beacon, uint16_t sender_as,
-                                                                 uint16_t remote_egress_if_no,
-                                                                 uint16_t self_ingress_if_no, uint16_t now);
+  void IncrementNextRoundValidBeaconsCount (uint16_t dstAs);
 
-        void insert_beacon(Beacon &the_beacon, uint16_t dst_as, uint16_t sender_as, uint16_t remote_egress_if,
-                           uint16_t local_ingress_if, bool path_exists, bool existing_path_valid,
-                           Beacon *beacon_to_replace);
+  void DeleteBeacon (Beacon *toBeRemovedBeacon, Ld_t replacementKey, uint16_t dstAs);
 
-        void increment_valid_beacons_count(uint16_t dst_as);
+  void DecrementValidBeaconsCount (uint16_t dstAs);
 
-        void increment_next_round_valid_beacons_count(uint16_t dst_as);
+  void DecrementNextRoundValidBeaconsCount (uint16_t dstAs);
 
-        void delete_beacon(Beacon *to_be_removed_beacon, ld replacement_key, uint16_t dst_as);
+  virtual std::tuple<bool, bool, bool, Beacon *, Ld_t>
+  AlgSpecificImportPolicy (Beacon &theBeacon, uint16_t senderAs, uint16_t remoteEgressIfNo,
+                              uint16_t selfIngressIfNo, uint16_t now) = 0;
 
-        void decrement_valid_beacons_count(uint16_t dst_as);
+  virtual void InsertToAlgorithmDataStructures (Beacon *theBeacon, uint16_t senderAs,
+                                                    uint16_t remoteEgressIfNo,
+                                                    uint16_t selfIngressIfNo) = 0;
 
-        void decrement_next_round_valid_beacons_count(uint16_t dst_as);
+  virtual void DeleteFromAlgorithmDataStructures (Beacon *theBeacon, Ld_t replacementKey) = 0;
 
-        virtual std::tuple<bool, bool, bool, Beacon *, ld>
-        alg_specific_import_policy(Beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
-                                   uint16_t self_ingress_if_no, uint16_t now) = 0;
+  void UpdateStatePeriodic ();
 
-        virtual void insert_to_algorithm_data_structures(Beacon *the_beacon, uint16_t sender_as,
-                                                         uint16_t remote_egress_if_no, uint16_t self_ingress_if_no) = 0;
+  virtual void UpdateStateBeforeBeaconing ();
 
+  void UpdateBeaconState (Beacon *theBeacon);
 
+  virtual void UpdateAlgorithmDataStructuresPeriodic (Beacon *theBeacon, bool invalidated) = 0;
 
-        virtual void delete_from_algorithm_data_structures(Beacon *the_beacon, ld replacement_key) = 0;
+  void RegisterToLocalPathServer ();
 
-        void update_state_periodic();
+  void IncrementControlPlaneBytesSent (Beacon &theBeacon, uint16_t interface);
 
-        virtual void update_state_before_beaconing();
+  std::pair<Ld_t, Ld_t> CalculateFinalDiversityScores (Beacon *theBeacon);
 
-        void update_beacon_state(Beacon *the_beacon);
+  friend void ReadBr2BrEnergy (ns3::NodeContainer asNodes,
+                               std::map<int32_t, uint16_t> realToAliasAsNo,
+                               const YAML::Node &config);
 
-        virtual void update_algorithm_data_structures_periodic(Beacon *the_beacon, bool invalidated) = 0;
+  void ReadBeacons ();
 
-        void register_to_local_path_server();
+  void WriteBeacons ();
+};
 
-        void increment_control_plane_bytes_sent(Beacon &the_beacon, uint16_t interface);
-
-        std::pair<ld, ld> calculate_final_diversity_scores(Beacon *the_beacon);
-
-        friend void ReadBr2BrEnergy(ns3::NodeContainer AS_nodes, std::map<int32_t, uint16_t> real_to_alias_as_no,
-                                    const YAML::Node &config);
-
-        void read_beacons();
-
-        void write_beacons();
-    };
-
-    void ReadBr2BrEnergy(NodeContainer AS_nodes, std::map<int32_t, uint16_t> real_to_alias_as_no,
-                         const YAML::Node &config);
+void ReadBr2BrEnergy (NodeContainer asNodes, std::map<int32_t, uint16_t> realToAliasAsNo,
+                      const YAML::Node &config);
 
 } // namespace ns3
 #endif //SCION_SIMULATOR_BEACON_SERVER_H
