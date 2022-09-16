@@ -82,7 +82,7 @@ my_placeholder<N> my_placeholder<N>::ph;
 
 namespace std {
 template <int N>
-struct IsPlaceholder<::my_placeholder<N>> : std::integral_constant<int, N>
+struct is_placeholder<::my_placeholder<N>> : std::integral_constant<int, N>
 {
 };
 } // namespace std
