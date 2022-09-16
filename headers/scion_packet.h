@@ -55,8 +55,8 @@ struct NtpReqOrResp
 };
 
 union Payload {
-  pathReqFromHost pathReqFromHost;
-  regPathsFromLocalPs registeredPathsFromLocalPs;
+  PathReqFromHost pathReqFromHost;
+  RegPathsFromLocalPs registeredPathsFromLocalPs;
   ListOfAllASes listOfAllAses;
   NtpReqOrResp ntpReqOrResp;
 };
