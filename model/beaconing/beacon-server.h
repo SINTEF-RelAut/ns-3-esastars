@@ -49,7 +49,7 @@ class BeaconServer
 public:
   BeaconServer (ScionAs *AS, bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
                 const YAML::Node &config)
-      : AS (AS),
+      : as (AS),
         parallel_scheduler (parallel_scheduler),
         beaconing_period (Time (config["beacon_service"]["period"].as<std::string> ())),
         expiration_period (Time (config["beacon_service"]["expiration_period"].as<std::string> ())
@@ -138,7 +138,7 @@ public:
   const std::vector<uint64_t> &GetBeaconsSentPerInterface () const;
 
 protected:
-  ScionAs *AS;
+  ScionAs *as;
 
   const bool parallel_scheduler;
 

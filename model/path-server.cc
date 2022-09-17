@@ -131,7 +131,7 @@ PathServer::ProcessLocalHostRequestForPath (PathSegmentType path_type, ia_t src_
       return; // TODO
     }
 
-  if (path_type == PathSegmentType::CORE_SEG && dynamic_cast<ScionCoreAs *> (AS) == NULL)
+  if (path_type == PathSegmentType::CORE_SEG && dynamic_cast<ScionCoreAs *> (as) == NULL)
     {
       NS_LOG_FUNCTION ("non-core as received core path segment request from "
                        << isd_number << ":" << as_number << ":" << host_addr << " between "
@@ -147,7 +147,7 @@ PathServer::ProcessLocalHostRequestForPath (PathSegmentType path_type, ia_t src_
         }
     }
 
-  if (path_type == PathSegmentType::CORE_SEG && dynamic_cast<ScionCoreAs *> (AS) != NULL)
+  if (path_type == PathSegmentType::CORE_SEG && dynamic_cast<ScionCoreAs *> (as) != NULL)
     {
       NS_LOG_FUNCTION ("Core AS received core path segment request from "
                        << isd_number << ":" << as_number << ":" << host_addr << " between "

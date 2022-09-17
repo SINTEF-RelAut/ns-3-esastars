@@ -589,7 +589,7 @@ TimeServer::TriggerCoreTimeSyncAlgo ()
       //            Simulator::Schedule(Time(NTP_REQ_GLOBAL_SYNC_DIFF), &TimeServer::ContinueGlobalTimeSync, this);
       // *********************************************************************************************************************
     }
-  synchronization_round = (synchronization_round + 1) % G;
+  synchronization_round = (synchronization_round + 1) % g;
 }
 
 void
@@ -658,7 +658,7 @@ TimeServer::ContinueGlobalTimeSync ()
     }
 
   double coefficient = (alg_v == AlgV::V4) ? 2.5 : 1.0;
-  Time duration = (alg_v == AlgV::V1) ? time_sync_period : (G * time_sync_period);
+  Time duration = (alg_v == AlgV::V1) ? time_sync_period : (g * time_sync_period);
   CorrectLocalTime (corr, duration, coefficient);
 
   poff.clear ();
@@ -834,7 +834,7 @@ TimeServer::CaptureLocalSnapshot ()
   else
     {
       std::cout << "AS " << isd_number << "-" << as_number << ", degree "
-                << AS->interfaces_per_neighbor_as.size () << ": " << local_time << std::endl;
+                << as->interfaces_per_neighbor_as.size () << ": " << local_time << std::endl;
     }
 }
 
@@ -994,7 +994,7 @@ TimeServer::ScheduleSnapShots ()
       Time diff_with_first_event = t - first_event;
       if (diff_with_first_event.GetTimeStep () % time_sync_period.GetTimeStep () == 0)
         {
-          if ((diff_with_first_event.GetTimeStep () / time_sync_period.GetTimeStep ()) % G == 0)
+          if ((diff_with_first_event.GetTimeStep () / time_sync_period.GetTimeStep ()) % g == 0)
             {
               if (snapshot_type == SnapshotType::LOCAL_SNAPSHOT)
                 {

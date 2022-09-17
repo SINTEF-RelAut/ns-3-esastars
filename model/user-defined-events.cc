@@ -140,9 +140,9 @@ UserDefinedEvents::SendPacketBatch (std::string src_isd_number, std::string real
 void
 UserDefinedEvents::TimeReferencesDown ()
 {
-  for (uint32_t i = 0; i < AS_nodes.GetN (); ++i)
+  for (uint32_t i = 0; i < as_nodes.GetN (); ++i)
     {
-      ScionAs *scion_as = dynamic_cast<ScionAs *> (PeekPointer (AS_nodes.Get (i)));
+      ScionAs *scion_as = dynamic_cast<ScionAs *> (PeekPointer (as_nodes.Get (i)));
       TimeServer *time_server = dynamic_cast<TimeServer *> (scion_as->GetHost (2));
 
       time_server->reference_time_type = ReferenceTimeType::OFF;
@@ -152,9 +152,9 @@ UserDefinedEvents::TimeReferencesDown ()
 void
 UserDefinedEvents::TimeReferencesUp ()
 {
-  for (uint32_t i = 0; i < AS_nodes.GetN (); ++i)
+  for (uint32_t i = 0; i < as_nodes.GetN (); ++i)
     {
-      ScionAs *scion_as = dynamic_cast<ScionAs *> (PeekPointer (AS_nodes.Get (i)));
+      ScionAs *scion_as = dynamic_cast<ScionAs *> (PeekPointer (as_nodes.Get (i)));
       TimeServer *time_server = dynamic_cast<TimeServer *> (scion_as->GetHost (2));
 
       time_server->reference_time_type = ReferenceTimeType::ON;

@@ -131,7 +131,7 @@ BorderRouter::ProcessReceivedPacket (uint16_t if_rcv, ScionPacket *packet, Time 
   NS_ASSERT (packet->cur_hopf >= 0);
   NS_ASSERT (packet->cur_hopf < packet->path.at (packet->curr_inf)->hops.size ());
 
-  uint16_t local_if_to_send = forwarding_table_to_other_AS_ifaces.at (as_if_to_send);
+  uint16_t local_if_to_send = forwarding_table_to_other_as_ifaces.at (as_if_to_send);
   ScheduleForSend (local_if_to_send, packet);
 }
 

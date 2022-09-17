@@ -80,7 +80,7 @@ ScionCapableNode::Send (uint16_t local_if, ScionPacket *packet)
 void
 ScionCapableNode::AddToIfForwadingTable (uint16_t as_if, uint16_t local_if)
 {
-  forwarding_table_to_other_AS_ifaces.insert (std::make_pair (as_if, local_if));
+  forwarding_table_to_other_as_ifaces.insert (std::make_pair (as_if, local_if));
 }
 
 void
@@ -186,7 +186,7 @@ ScionCapableNode::SendScionPacket (ScionPacket *packet)
           << GET_HOP_EG_IF (packet->path.at (packet->curr_inf)->hops.at (packet->cur_hopf)));
       NS_LOG_FUNCTION ("as_if_to_send: " << as_if_to_send);
 
-      local_if_to_send = forwarding_table_to_other_AS_ifaces.at (as_if_to_send);
+      local_if_to_send = forwarding_table_to_other_as_ifaces.at (as_if_to_send);
     }
   else
     {

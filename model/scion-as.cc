@@ -42,12 +42,12 @@ ScionAs::DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
 {
   InitializeLatencies (true);
 
-  AS_max_bwd = 0;
+  as_max_bwd = 0;
   for (auto const curr_bwd : inter_as_bwds)
     {
-      if (curr_bwd > AS_max_bwd)
+      if (curr_bwd > as_max_bwd)
         {
-          AS_max_bwd = curr_bwd;
+          as_max_bwd = curr_bwd;
         }
     }
 
@@ -73,12 +73,12 @@ ScionAs::DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
 
   path_server->InitializeTransmissionQueues ();
 
-  AS_max_bwd = 0;
+  as_max_bwd = 0;
   for (auto const curr_bwd : inter_as_bwds)
     {
-      if (curr_bwd > AS_max_bwd)
+      if (curr_bwd > as_max_bwd)
         {
-          AS_max_bwd = curr_bwd;
+          as_max_bwd = curr_bwd;
         }
     }
 

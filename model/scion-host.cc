@@ -158,7 +158,7 @@ ScionHost::SearchInCachedSegments (ia_t dst_ia, std::vector<const PathSegment *>
       return;
     }
 
-  if (dst_in_which_cache == 0 && dynamic_cast<ScionCoreAs *> (AS) != NULL &&
+  if (dst_in_which_cache == 0 && dynamic_cast<ScionCoreAs *> (as) != NULL &&
       cached_core_path_segments.at (dst_ia)->find (ia_addr) !=
           cached_core_path_segments.at (dst_ia)->end ())
     {
@@ -166,7 +166,7 @@ ScionHost::SearchInCachedSegments (ia_t dst_ia, std::vector<const PathSegment *>
       return;
     }
 
-  if (dst_in_which_cache == 0 && dynamic_cast<ScionCoreAs *> (AS) == NULL)
+  if (dst_in_which_cache == 0 && dynamic_cast<ScionCoreAs *> (as) == NULL)
     {
       for (auto const &[core_seg_src_ia, core_path_segs] : *cached_core_path_segments.at (dst_ia))
         {
@@ -185,7 +185,7 @@ ScionHost::SearchInCachedSegments (ia_t dst_ia, std::vector<const PathSegment *>
       return;
     }
 
-  if (dst_in_which_cache == 1 && dynamic_cast<ScionCoreAs *> (AS) == NULL)
+  if (dst_in_which_cache == 1 && dynamic_cast<ScionCoreAs *> (as) == NULL)
     {
       NS_ASSERT (cached_up_path_segments.at (dst_ia)->find (ia_addr) !=
                  cached_up_path_segments.at (dst_ia)->end ());
@@ -193,7 +193,7 @@ ScionHost::SearchInCachedSegments (ia_t dst_ia, std::vector<const PathSegment *>
       return;
     }
 
-  if (dst_in_which_cache == 2 && dynamic_cast<ScionCoreAs *> (AS) != NULL)
+  if (dst_in_which_cache == 2 && dynamic_cast<ScionCoreAs *> (as) != NULL)
     {
       if (cached_down_path_segments.at (dst_ia)->find (ia_addr) !=
           cached_down_path_segments.at (dst_ia)->end ())
@@ -219,7 +219,7 @@ ScionHost::SearchInCachedSegments (ia_t dst_ia, std::vector<const PathSegment *>
       return;
     }
 
-  if (dst_in_which_cache == 2 && dynamic_cast<ScionCoreAs *> (AS) == NULL)
+  if (dst_in_which_cache == 2 && dynamic_cast<ScionCoreAs *> (as) == NULL)
     {
       for (auto const &[down_seg_src_ia, down_path_segs] : *cached_down_path_segments.at (dst_ia))
         {

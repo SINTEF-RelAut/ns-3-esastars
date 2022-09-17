@@ -38,7 +38,7 @@ public:
                              std::map<int32_t, uint16_t> &real_to_alias_as_no,
                              std::map<uint16_t, int32_t> &alias_to_real_as_no)
       : config (config),
-        AS_nodes (AS_nodes),
+        as_nodes (AS_nodes),
         real_to_alias_as_no (real_to_alias_as_no),
         alias_to_real_as_no (alias_to_real_as_no)
   {
@@ -123,7 +123,7 @@ public:
 
 private:
   YAML::Node &config;
-  NodeContainer &AS_nodes;
+  NodeContainer &as_nodes;
   std::map<int32_t, uint16_t> &real_to_alias_as_no;
   std::map<uint16_t, int32_t> &alias_to_real_as_no;
 

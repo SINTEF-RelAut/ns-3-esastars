@@ -42,24 +42,24 @@ Baseline::CreateInitialStaticInfoExtension (static_info_extension_t &static_info
 {
   static_info_extension.insert (std::make_pair (StaticInfoType::LATENCY, 0));
   static_info_extension.insert (
-      std::make_pair (StaticInfoType::BW, AS->inter_as_bwds.at (self_egress_if_no)));
+      std::make_pair (StaticInfoType::BW, as->inter_as_bwds.at (self_egress_if_no)));
 }
 
 void
 Baseline::DisseminateBeacons (NeighbourRelation relation)
 {
-  uint32_t neighbors_cnt = AS->neighbors.size ();
+  uint32_t neighbors_cnt = as->neighbors.size ();
   omp_set_num_threads (NUM_CORE);
 #pragma omp parallel for
   for (uint32_t i = 0; i < neighbors_cnt; ++i)
     {
-      if (AS->neighbors.at (i).second != relation)
+      if (as->neighbors.at (i).second != relation)
         {
           continue;
         }
 
-      uint16_t &remote_as_no = AS->neighbors.at (i).first;
-      const std::vector<uint16_t> &interfaces = AS->interfaces_per_neighbor_as.at (remote_as_no);
+      uint16_t &remote_as_no = as->neighbors.at (i).first;
+      const std::vector<uint16_t> &interfaces = as->interfaces_per_neighbor_as.at (remote_as_no);
 
       for (auto const &dst_as_beacons_pair : beacon_store)
         {
@@ -115,19 +115,19 @@ Baseline::DisseminateBeacons (NeighbourRelation relation)
                   for (auto const &egress_interface_no : interfaces)
                     {
                       std::pair<uint16_t, ScionAs *> remote_as_if_pair =
-                          AS->GetRemoteAsInfo (egress_interface_no);
+                          as->GetRemoteAsInfo (egress_interface_no);
 
                       uint16_t remote_ingress_if_no = remote_as_if_pair.first;
                       ScionAs *remote_as = remote_as_if_pair.second;
 
                       ld latency =
                           the_beacon->static_info_extension.at (StaticInfoType::LATENCY) +
-                          AS->latencies_between_interfaces
+                                   as->latencies_between_interfaces
                               .at (LOWER_16_BITS (the_beacon->the_path.back ()))
                               .at (egress_interface_no);
                       ld bwd = the_beacon->static_info_extension.at (StaticInfoType::BW) >
-                                       (ld) AS->inter_as_bwds.at (egress_interface_no)
-                                   ? (ld) AS->inter_as_bwds.at (egress_interface_no)
+                                       (ld) as->inter_as_bwds.at (egress_interface_no)
+                                   ? (ld) as->inter_as_bwds.at (egress_interface_no)
                                    : the_beacon->static_info_extension.at (StaticInfoType::BW);
 
                       static_info_extension_t static_info_extension;

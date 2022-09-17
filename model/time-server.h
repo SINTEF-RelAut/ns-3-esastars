@@ -71,13 +71,13 @@ public:
         snapshot_period (snapshot_period),
         list_of_ases_req_period (list_of_ases_req_period),
         time_sync_period (time_sync_period),
-        G (G),
+        g (G),
         number_of_paths_to_use_for_global_sync (number_of_paths_to_use_for_global_sync),
-        read_disjoint_paths (READ_OR_WRITE_DISJOINT_PATHS_MAP[read_disjoint_paths]),
-        reference_time_type (REFERENCE_TIME_TYPE_MAP[reference_time_type]),
-        server_type (TIME_SERVER_TYPE_MAP[server_type]),
-        snapshot_type (SNAPSHOT_TYPE_MAP[snapshot_type]),
-        alg_v (ALG_V_MAP[alg_v]),
+        read_disjoint_paths (read_or_write_disjoint_paths_map[read_disjoint_paths]),
+        reference_time_type (reference_time_type_map[reference_time_type]),
+        server_type (time_server_type_map[server_type]),
+        snapshot_type (snapshot_type_map[snapshot_type]),
+        alg_v (alg_v_map[alg_v]),
         minimum_malicious_offset (minimum_malicious_offset),
         path_selection (path_selection)
   {
@@ -95,8 +95,8 @@ public:
                                                  std::abs (max_drift_per_day.GetTimeStep ()));
     constant_drift_per_day = dist (rd);
 
-    if (REFERENCE_TIME_TYPE_MAP[reference_time_type] == ReferenceTimeType::MALICIOUS_REF ||
-        TIME_SERVER_TYPE_MAP[server_type] == TimeServerType::MALICIOUS_SERVER)
+    if (reference_time_type_map[reference_time_type] == ReferenceTimeType::MALICIOUS_REF ||
+        time_server_type_map[server_type] == TimeServerType::MALICIOUS_SERVER)
       {
         std::uniform_int_distribution<uint32_t> neg_or_pos_dist (0, 1);
         if (neg_or_pos_dist (rd) == 0)
@@ -129,26 +129,26 @@ public:
 private:
   bool affected_by_malicious_ases = false;
 
-  std::map<std::string, ReadOrWriteDisjointPaths> READ_OR_WRITE_DISJOINT_PATHS_MAP = {
+  std::map<std::string, ReadOrWriteDisjointPaths> read_or_write_disjoint_paths_map = {
       {"R", ReadOrWriteDisjointPaths::R},
       {"W", ReadOrWriteDisjointPaths::W},
       {"NO_R_NO_W", ReadOrWriteDisjointPaths::NO_R_NO_W}};
 
-  std::map<std::string, ReferenceTimeType> REFERENCE_TIME_TYPE_MAP = {
+  std::map<std::string, ReferenceTimeType> reference_time_type_map = {
       {"OFF", ReferenceTimeType::OFF},
       {"ON", ReferenceTimeType::ON},
       {"MALICIOUS", ReferenceTimeType::MALICIOUS_REF}};
 
-  std::map<std::string, TimeServerType> TIME_SERVER_TYPE_MAP = {
+  std::map<std::string, TimeServerType> time_server_type_map = {
       {"NORMAL", TimeServerType::NORMAL}, {"MALICIOUS", TimeServerType::MALICIOUS_SERVER}};
 
-  std::map<std::string, SnapshotType> SNAPSHOT_TYPE_MAP = {
+  std::map<std::string, SnapshotType> snapshot_type_map = {
       {"LOCAL_SNAPSHOT", SnapshotType::LOCAL_SNAPSHOT},
       {"ASSERT_OFFSET_DIFF", SnapshotType::ASSERT_OFFSET_DIFF},
       {"PRINT_OFFSET_DIFF", SnapshotType::PRINT_OFFSET_DIFF},
       {"OFF", SnapshotType::SNAPSHOT_OFF}};
 
-  std::map<std::string, AlgV> ALG_V_MAP = {{"V1", AlgV::V1},
+  std::map<std::string, AlgV> alg_v_map = {{"V1", AlgV::V1},
                                             {"V2", AlgV::V2},
                                             {"V3", AlgV::V3},
                                             {"V4", AlgV::V4},
@@ -164,7 +164,7 @@ private:
   Time list_of_ases_req_period;
   Time time_sync_period;
 
-  uint32_t G;
+  uint32_t g;
   uint32_t number_of_paths_to_use_for_global_sync;
   ReadOrWriteDisjointPaths read_disjoint_paths;
   uint32_t synchronization_round; // i in the Listing 2

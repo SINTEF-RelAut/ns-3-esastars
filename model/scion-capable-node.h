@@ -39,7 +39,7 @@ public:
         local_address (local_address),
         latitude (latitude),
         longitude (longitude),
-        AS (AS)
+        as (AS)
   {
     ia_addr = (((uint32_t) isd_number) << 16) | ((uint32_t) as_number);
     next_packet_id = 0;
@@ -79,7 +79,7 @@ protected:
   double latitude;
   double longitude;
 
-  ScionAs *AS;
+  ScionAs *as;
 
   // Queueing delay is modeled by the processing and send scheduling queues, but no drop function is implemented yet
   std::vector<Time> propagation_delays;
@@ -93,7 +93,7 @@ protected:
 
   Time local_time;
 
-  std::unordered_map<uint16_t, uint16_t> forwarding_table_to_other_AS_ifaces;
+  std::unordered_map<uint16_t, uint16_t> forwarding_table_to_other_as_ifaces;
   std::unordered_map<host_addr_t, uint16_t> forwarding_table_to_addresses_inside_as;
 
   std::unordered_map<packet_id_t, ScionPacket> on_the_flight_packets;

@@ -93,7 +93,7 @@ public:
   ia_t ia_addr;
 
   Time local_time;
-  int32_t AS_max_bwd;
+  int32_t as_max_bwd;
 
   std::vector<Time> latencies_between_hosts_and_path_server;
   std::vector<Time> latencies_between_interfaces_and_beacon_server;
