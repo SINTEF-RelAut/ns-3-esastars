@@ -66,12 +66,12 @@ struct PathSegment
   {
   }
 
-  PathSegment (PathSegment &pathSegment)
-      : originator (pathSegment.originator),
-        initiation_time (pathSegment.initiation_time),
-        expiration_time (pathSegment.expiration_time),
-        reverse (pathSegment.reverse),
-        hops (pathSegment.hops)
+  PathSegment (PathSegment &path_segment)
+      : originator (path_segment.originator),
+        initiation_time (path_segment.initiation_time),
+        expiration_time (path_segment.expiration_time),
+        reverse (path_segment.reverse),
+        hops (path_segment.hops)
   {
   }
 };

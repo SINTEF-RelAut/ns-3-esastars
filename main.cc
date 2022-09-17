@@ -95,7 +95,7 @@ main (int argc, char *argv[])
 
   Time simulation_end_time = Time (config["simulation_duration"].as<std::string> ());
 
-  NUM_CORE = config["NUM_CORE"].as<uint32_t> ();
+  num_core = config["NUM_CORE"].as<uint32_t> ();
 
   std::ifstream fin (topology_file.c_str ());
   std::ostringstream sstr;

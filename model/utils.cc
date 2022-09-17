@@ -194,16 +194,16 @@ PropertyContainer
 ParseProperties (rapidxml::xml_node<> *node)
 {
   PropertyContainer p;
-  rapidxml::xml_node<> *curNode = node->first_node ("property");
+  rapidxml::xml_node<> *cur_node = node->first_node ("property");
 
-  while (curNode)
+  while (cur_node)
     {
-      std::string name = GetAttribute (curNode, "name");
+      std::string name = GetAttribute (cur_node, "name");
       if (name != "")
         {
-          p.SetProperty (name, curNode->value ());
+          p.SetProperty (name, cur_node->value ());
         }
-      curNode = curNode->next_sibling ("property");
+      cur_node = cur_node->next_sibling ("property");
     }
 
   return p;

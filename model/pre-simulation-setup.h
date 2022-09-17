@@ -59,28 +59,28 @@ void SetTimeResolution (const std::string &time_res_str);
 void InstantiateASesFromTopo (rapidxml::xml_node<> *xml_root,
                               std::map<int32_t, uint16_t> &real_to_alias_as_no,
                               std::map<uint16_t, int32_t> &alias_to_real_as_no,
-                              ns3::NodeContainer &AS_nodes, const YAML::Node &config);
+                              ns3::NodeContainer &as_nodes, const YAML::Node &config);
 
-void InstantiatePathServers (const YAML::Node &config, const ns3::NodeContainer &AS_nodes);
+void InstantiatePathServers (const YAML::Node &config, const ns3::NodeContainer &as_nodes);
 
-void GetMaliciousTimeRefAndTimeServer (const ns3::NodeContainer &AS_nodes, const YAML::Node &config,
+void GetMaliciousTimeRefAndTimeServer (const ns3::NodeContainer &as_nodes, const YAML::Node &config,
                                        std::vector<std::string> &time_reference_types,
                                        std::vector<std::string> &time_server_types);
 
-void GetTimeServiceSnapShotTypes (const ns3::NodeContainer &AS_nodes, const YAML::Node &config,
+void GetTimeServiceSnapShotTypes (const ns3::NodeContainer &as_nodes, const YAML::Node &config,
                                   std::vector<std::string> &snapshot_types);
 
-void GetTimeServiceAlgVersions (const ns3::NodeContainer &AS_nodes, const YAML::Node &config,
+void GetTimeServiceAlgVersions (const ns3::NodeContainer &as_nodes, const YAML::Node &config,
                                 std::vector<std::string> &alg_versions,
                                 const std::vector<std::string> &snapshot_types);
 
-void InstantiateTimeServers (const YAML::Node &config, const ns3::NodeContainer &AS_nodes);
+void InstantiateTimeServers (const YAML::Node &config, const ns3::NodeContainer &as_nodes);
 
-void InstantiateLinksFromTopo (rapidxml::xml_node<> *xml_root, ns3::NodeContainer &AS_nodes,
+void InstantiateLinksFromTopo (rapidxml::xml_node<> *xml_root, ns3::NodeContainer &as_nodes,
                                const std::map<int32_t, uint16_t> &real_to_alias_as_no,
                                const YAML::Node &config);
 
-void InitializeASesAttributes (const NodeContainer &AS_nodes,
+void InitializeASesAttributes (const NodeContainer &as_nodes,
                                std::map<int32_t, uint16_t> &real_to_alias_as_no,
                                rapidxml::xml_node<> *xml_node, const YAML::Node &config);
 

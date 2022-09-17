@@ -29,10 +29,10 @@
 namespace ns3 {
 
 void
-Baseline::DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
+Baseline::DoInitializations (uint32_t num_ases, rapidxml::xml_node<> *xml_node,
                              const YAML::Node &config)
 {
-  BeaconServer::DoInitializations (num_ASes, xml_node, config);
+  BeaconServer::DoInitializations (num_ases, xml_node, config);
 }
 
 void
@@ -49,7 +49,7 @@ void
 Baseline::DisseminateBeacons (NeighbourRelation relation)
 {
   uint32_t neighbors_cnt = as->neighbors.size ();
-  omp_set_num_threads (NUM_CORE);
+  omp_set_num_threads (num_core);
 #pragma omp parallel for
   for (uint32_t i = 0; i < neighbors_cnt; ++i)
     {

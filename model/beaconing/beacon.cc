@@ -24,12 +24,12 @@
 #include "src/SCION/model/utils.h"
 namespace ns3 {
 void
-Beacon::ExtractPathSegmentFromPushBasedBeacon (PathSegment &pathSegment) const
+Beacon::ExtractPathSegmentFromPushBasedBeacon (PathSegment &path_segment) const
 {
-  pathSegment.initiation_time = next_initiation_time;
-  pathSegment.expiration_time = next_expiration_time;
+  path_segment.initiation_time = next_initiation_time;
+  path_segment.expiration_time = next_expiration_time;
 
-  pathSegment.originator =
+  path_segment.originator =
       (((uint32_t) the_isd_path.at (0)) << 16) | (((uint32_t) UPPER_16_BITS (the_path.at (0))));
 
   uint64_t previous_hop = 0;
@@ -58,7 +58,7 @@ Beacon::ExtractPathSegmentFromPushBasedBeacon (PathSegment &pathSegment) const
       previous_hop = *hop;
       uint64_t hop_field = (((uint64_t) isd) << 48) | (((uint64_t) as) << 32) |
                            (((uint64_t) ingress) << 16) | ((uint64_t) egress);
-      pathSegment.hops.push_back (hop_field);
+      path_segment.hops.push_back (hop_field);
     }
 
   uint16_t egress = SECOND_UPPER_16_BITS (previous_hop);
@@ -68,16 +68,16 @@ Beacon::ExtractPathSegmentFromPushBasedBeacon (PathSegment &pathSegment) const
 
   uint64_t hop_field = (((uint64_t) isd) << 48) | (((uint64_t) as) << 32) |
                        (((uint64_t) ingress) << 16) | ((uint64_t) egress);
-  pathSegment.hops.push_back (hop_field);
+  path_segment.hops.push_back (hop_field);
 }
 
 void
-Beacon::ExtractPathSegmentFromPullBasedBeacon (PathSegment &pathSegment) const
+Beacon::ExtractPathSegmentFromPullBasedBeacon (PathSegment &path_segment) const
 {
-  pathSegment.initiation_time = next_initiation_time;
-  pathSegment.expiration_time = next_expiration_time;
+  path_segment.initiation_time = next_initiation_time;
+  path_segment.expiration_time = next_expiration_time;
 
-  pathSegment.originator = (((uint32_t) the_isd_path.back ()) << 16) |
+  path_segment.originator = (((uint32_t) the_isd_path.back ()) << 16) |
                            (((uint32_t) SECOND_LOWER_16_BITS (the_path.back ())));
 
   uint64_t previous_hop = 0;
@@ -105,7 +105,7 @@ Beacon::ExtractPathSegmentFromPullBasedBeacon (PathSegment &pathSegment) const
       previous_hop = *hop;
       uint64_t hop_field = (((uint64_t) isd) << 48) | (((uint64_t) as) << 32) |
                            (((uint64_t) ingress) << 16) | ((uint64_t) egress);
-      pathSegment.hops.push_back (hop_field);
+      path_segment.hops.push_back (hop_field);
     }
 
   uint16_t egress = LOWER_16_BITS (previous_hop);
@@ -115,6 +115,6 @@ Beacon::ExtractPathSegmentFromPullBasedBeacon (PathSegment &pathSegment) const
 
   uint64_t hop_field = (((uint64_t) isd) << 48) | (((uint64_t) as) << 32) |
                        (((uint64_t) ingress) << 16) | ((uint64_t) egress);
-  pathSegment.hops.push_back (hop_field);
+  path_segment.hops.push_back (hop_field);
 }
 } // namespace ns3

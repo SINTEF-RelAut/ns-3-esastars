@@ -107,10 +107,10 @@ public:
   std::vector<std::vector<ld>> latencies_between_interfaces;
   std::vector<int32_t> inter_as_bwds;
 
-  void DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
+  void DoInitializations (uint32_t num_ases, rapidxml::xml_node<> *xml_node,
                           const YAML::Node &config, bool only_propagation_delay);
 
-  void DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
+  void DoInitializations (uint32_t num_ases, rapidxml::xml_node<> *xml_node,
                           const YAML::Node &config);
 
   std::pair<uint16_t, ScionAs *> GetRemoteAsInfo (uint16_t egress_interface_no);
@@ -118,9 +118,9 @@ public:
   void ReceiveBeacon (Beacon &the_beacon, uint16_t sender_as, uint16_t remote_if,
                       uint16_t local_if);
 
-  void SetBeaconServer (BeaconServer *beaconServer);
+  void SetBeaconServer (BeaconServer *beacon_server);
 
-  void SetPathServer (PathServer *pathServer);
+  void SetPathServer (PathServer *path_server);
 
   BeaconServer *GetBeaconServer ();
 

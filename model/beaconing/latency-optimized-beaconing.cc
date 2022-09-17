@@ -26,14 +26,14 @@
 namespace ns3 {
 
 void
-LatencyOptimized::DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
+LatencyOptimized::DoInitializations (uint32_t num_ases, rapidxml::xml_node<> *xml_node,
                                      const YAML::Node &config)
 {
-  BeaconServer::DoInitializations (num_ASes, xml_node, config);
+  BeaconServer::DoInitializations (num_ases, xml_node, config);
 
-  beacons_per_dst_per_ing_if_sorted_by_latency.resize (num_ASes);
+  beacons_per_dst_per_ing_if_sorted_by_latency.resize (num_ases);
 
-  for (uint32_t i = 0; i < num_ASes; ++i)
+  for (uint32_t i = 0; i < num_ases; ++i)
     {
       beacons_per_dst_per_ing_if_sorted_by_latency.at (i) =
           std::vector<std::multimap<ld, Beacon *>> ();
@@ -116,7 +116,7 @@ void
 LatencyOptimized::DisseminateBeacons (NeighbourRelation relation)
 {
   uint32_t neighbors_cnt = as->neighbors.size ();
-  omp_set_num_threads (NUM_CORE);
+  omp_set_num_threads (num_core);
 #pragma omp parallel for
   for (uint32_t i = 0; i < neighbors_cnt; ++i)
     { // Per neighbor AS

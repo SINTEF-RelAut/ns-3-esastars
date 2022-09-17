@@ -33,7 +33,7 @@ template <typename MEM, typename OBJ>
 void
 RunParallelEvents (host_addr_t host_addr, MEM mem_ptr)
 {
-  omp_set_num_threads (NUM_CORE);
+  omp_set_num_threads (num_core);
 #pragma omp parallel for schedule(dynamic)
   for (uint32_t i = 0; i < nodes.GetN (); ++i)
     {
@@ -46,7 +46,7 @@ template <typename MEM>
 void
 RunParallelEvents (MEM mem_ptr)
 {
-  omp_set_num_threads (NUM_CORE);
+  omp_set_num_threads (num_core);
 #pragma omp parallel for schedule(dynamic)
   for (uint32_t i = 0; i < nodes.GetN (); ++i)
     {

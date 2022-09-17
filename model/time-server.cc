@@ -597,8 +597,8 @@ TimeServer::ContinueGlobalTimeSync ()
 {
   AdvanceLocalTime ();
 
-  int32_t N = set_of_all_core_ases.size ();
-  int32_t F = std::floor ((N - 1) / 3);
+  int32_t n = set_of_all_core_ases.size ();
+  int32_t f = std::floor ((n - 1) / 3);
 
   int64_t loff;
   loff =
@@ -628,8 +628,8 @@ TimeServer::ContinueGlobalTimeSync ()
 
   auto iter1 = off.cbegin ();
   auto iter2 = off.cbegin ();
-  std::advance (iter1, F);
-  std::advance (iter2, N - 1 - F);
+  std::advance (iter1, f);
+  std::advance (iter2, n - 1 - f);
 
   int64_t goff = std::floor ((*iter1 + *iter2) / 2);
   int64_t doff = loff - goff;
@@ -848,8 +848,8 @@ TimeServer::CaptureOffsetDiff ()
             << std::endl;
   std::cout << "poff_size: " << poff.size () << std::endl;
 
-  int32_t N = nodes.GetN ();
-  int32_t F = std::floor ((N - 1) / 3);
+  int32_t n = nodes.GetN ();
+  int32_t f = std::floor ((n - 1) / 3);
 
   int64_t loff = GetReferenceTime ().GetTimeStep () - local_time.GetTimeStep ();
 
@@ -889,8 +889,8 @@ TimeServer::CaptureOffsetDiff ()
 
   auto iter1 = off.cbegin ();
   auto iter2 = off.cbegin ();
-  std::advance (iter1, F);
-  std::advance (iter2, N - 1 - F);
+  std::advance (iter1, f);
+  std::advance (iter2, n - 1 - f);
 
   int64_t goff = std::floor ((*iter1 + *iter2) / 2);
 

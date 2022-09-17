@@ -134,9 +134,9 @@ struct Beacon
   {
   }
 
-  void ExtractPathSegmentFromPushBasedBeacon (PathSegment &pathSegment) const;
+  void ExtractPathSegmentFromPushBasedBeacon (PathSegment &path_segment) const;
 
-  void ExtractPathSegmentFromPullBasedBeacon (PathSegment &pathSegment) const;
+  void ExtractPathSegmentFromPullBasedBeacon (PathSegment &path_segment) const;
 };
 } // namespace ns3
 #endif //SCION_SIMULATOR_BEACON_H

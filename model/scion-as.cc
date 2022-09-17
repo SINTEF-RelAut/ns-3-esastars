@@ -37,7 +37,7 @@
 namespace ns3 {
 
 void
-ScionAs::DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
+ScionAs::DoInitializations (uint32_t num_ases, rapidxml::xml_node<> *xml_node,
                              const YAML::Node &config)
 {
   InitializeLatencies (true);
@@ -51,11 +51,11 @@ ScionAs::DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
         }
     }
 
-  beacon_server->DoInitializations (num_ASes, xml_node, config);
+  beacon_server->DoInitializations (num_ases, xml_node, config);
 }
 
 void
-ScionAs::DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
+ScionAs::DoInitializations (uint32_t num_ases, rapidxml::xml_node<> *xml_node,
                              const YAML::Node &config, bool only_propagation_delay)
 {
   ConnectInternalNodes (only_propagation_delay);
@@ -82,7 +82,7 @@ ScionAs::DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
         }
     }
 
-  beacon_server->DoInitializations (num_ASes, xml_node, config);
+  beacon_server->DoInitializations (num_ases, xml_node, config);
 }
 
 std::pair<uint16_t, ScionAs *>
@@ -99,9 +99,9 @@ ScionAs::ReceiveBeacon (Beacon &received_beacon, uint16_t sender_as, uint16_t re
 }
 
 void
-ScionAs::SetBeaconServer (BeaconServer *the_beaconServer)
+ScionAs::SetBeaconServer (BeaconServer *beacon_server)
 {
-  this->beacon_server = the_beaconServer;
+  this->beacon_server = beacon_server;
 }
 
 void
@@ -123,9 +123,9 @@ ScionAs::GetPathServer ()
 }
 
 void
-ScionAs::SetPathServer (PathServer *the_pathServer)
+ScionAs::SetPathServer (PathServer *path_server)
 {
-  this->path_server = the_pathServer;
+  this->path_server = path_server;
 }
 
 ScionCapableNode *

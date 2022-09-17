@@ -35,8 +35,8 @@ class BorderRouter : public ScionCapableNode
 {
 public:
   BorderRouter (uint32_t system_id, uint16_t isd_number, uint16_t as_number, uint32_t local_address,
-                double latitude, double longitude, ScionAs *AS)
-      : ScionCapableNode (system_id, isd_number, as_number, local_address, latitude, longitude, AS)
+                double latitude, double longitude, ScionAs *as)
+      : ScionCapableNode (system_id, isd_number, as_number, local_address, latitude, longitude, as)
   {
   }
 

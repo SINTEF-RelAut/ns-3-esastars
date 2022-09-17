@@ -32,7 +32,7 @@
 namespace ns3 {
 
 void
-BeaconServer::DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
+BeaconServer::DoInitializations (uint32_t num_ases, rapidxml::xml_node<> *xml_node,
                                  const YAML::Node &config)
 {
   beacons_sent_per_interface.resize (as->GetNDevices ());
@@ -44,9 +44,9 @@ void BeaconServer::PerLinkInitializations (rapidxml::xml_node<> *xml_node,
                                            const YAML::Node &config){};
 
 void
-BeaconServer::SetAs (ScionAs *AS)
+BeaconServer::SetAs (ScionAs *as)
 {
-  this->as = AS;
+  this->as = as;
 }
 
 void
@@ -174,7 +174,7 @@ BeaconServer::InitiateBeacons (NeighbourRelation relation)
 {
   NS_ASSERT (now == (uint16_t) Simulator::Now ().ToInteger (Time::MIN));
   uint32_t neighbors_cnt = as->neighbors.size ();
-  omp_set_num_threads (NUM_CORE);
+  omp_set_num_threads (num_core);
 
 #pragma omp parallel for
   for (uint32_t i = 0; i < neighbors_cnt; ++i)
@@ -604,23 +604,23 @@ BeaconServer::RegisterToLocalPathServer ()
         {
           if (the_beacon.is_new)
             {
-              PathSegment pathSegment;
+              PathSegment path_segment;
               if (the_beacon.beacon_direction == BeaconDirectionT::PUSH_BASED)
                 {
-                  the_beacon.ExtractPathSegmentFromPushBasedBeacon (pathSegment);
+                  the_beacon.ExtractPathSegmentFromPushBasedBeacon (path_segment);
                 }
               else
                 {
-                  the_beacon.ExtractPathSegmentFromPullBasedBeacon (pathSegment);
+                  the_beacon.ExtractPathSegmentFromPullBasedBeacon (path_segment);
                 }
 
               if (dynamic_cast<ScionCoreAs *> (as) != NULL)
                 {
-                  as->GetPathServer ()->RegisterCorePathSegment (pathSegment, key);
+                  as->GetPathServer ()->RegisterCorePathSegment (path_segment, key);
                 }
               else
                 {
-                  as->GetPathServer ()->RegisterUpPathSegment (pathSegment, key);
+                  as->GetPathServer ()->RegisterUpPathSegment (path_segment, key);
                 }
             }
         }
@@ -630,7 +630,7 @@ BeaconServer::RegisterToLocalPathServer ()
 std::pair<ld, ld>
 BeaconServer::CalculateFinalDiversityScores (Beacon *the_beacon)
 {
-  ld AS_level_diversity_score = 0;
+  ld as_level_diversity_score = 0;
   ld link_level_diversity_score = 0;
   int32_t counter = 0;
 
@@ -643,7 +643,7 @@ BeaconServer::CalculateFinalDiversityScores (Beacon *the_beacon)
         {
           if (curr_beacon != the_beacon)
             {
-              AS_level_diversity_score +=
+              as_level_diversity_score +=
                   AsLevelJaccardDistanceBetweenTwoPaths (the_beacon, curr_beacon);
               link_level_diversity_score +=
                   LinkLevelJaccardDistanceBetweenTwoPaths (the_beacon, curr_beacon);
@@ -652,7 +652,7 @@ BeaconServer::CalculateFinalDiversityScores (Beacon *the_beacon)
         }
     }
   return (
-      std::make_pair (AS_level_diversity_score / counter, link_level_diversity_score / counter));
+      std::make_pair (as_level_diversity_score / counter, link_level_diversity_score / counter));
 }
 
 const std::vector<std::vector<ld>> &
@@ -746,13 +746,13 @@ BeaconServer::ReadBeacons ()
 
   for (auto const &beacon_json : beacons_json)
     {
-      static_info_extension_t staticInfoExtension;
+      static_info_extension_t static_info_extension;
       path the_path = beacon_json["path"].get<std::vector<uint64_t>> ();
       isd_path the_isd_path = beacon_json["isd_path"].get<std::vector<uint16_t>> ();
       std::vector<uint16_t> key_v = beacon_json["key"].get<std::vector<uint16_t>> ();
       std::string key = std::string (key_v.begin (), key_v.end ());
       push_based_beacon_container.insert (std::make_pair (
-          key, Beacon (staticInfoExtension, NULL, BeaconDirectionT::PUSH_BASED,
+          key, Beacon (static_info_extension, NULL, BeaconDirectionT::PUSH_BASED,
                        beacon_json["initiation_time"], beacon_json["expiration_time"],
                        beacon_json["initiation_time"], beacon_json["expiration_time"], false, true,
                        the_path, key, the_isd_path)));
@@ -813,7 +813,7 @@ BeaconServer::WriteBeacons ()
 }
 
 void
-ReadBr2BrEnergy (NodeContainer AS_nodes, std::map<int32_t, uint16_t> real_to_alias_as_no,
+ReadBr2BrEnergy (NodeContainer as_nodes, std::map<int32_t, uint16_t> real_to_alias_as_no,
                  const YAML::Node &config)
 {
   std::ifstream energy_file (config["beacon_service"]["br_br_energy_file"].as<std::string> ());
@@ -842,7 +842,7 @@ ReadBr2BrEnergy (NodeContainer AS_nodes, std::map<int32_t, uint16_t> real_to_ali
         }
 
       uint16_t index = real_to_alias_as_no.at (as_no);
-      ScionAs *as = dynamic_cast<ScionAs *> (PeekPointer (AS_nodes.Get (index)));
+      ScionAs *as = dynamic_cast<ScionAs *> (PeekPointer (as_nodes.Get (index)));
       NS_ASSERT (as->as_number == index);
 
       BeaconServer *beacon_server = as->GetBeaconServer ();
@@ -881,9 +881,9 @@ ReadBr2BrEnergy (NodeContainer AS_nodes, std::map<int32_t, uint16_t> real_to_ali
   energy_file.close ();
   std::cout << counter << std::endl;
 
-  for (uint32_t i = 0; i < AS_nodes.GetN (); ++i)
+  for (uint32_t i = 0; i < as_nodes.GetN (); ++i)
     {
-      ScionAs *as = dynamic_cast<ScionAs *> (PeekPointer (AS_nodes.Get (i)));
+      ScionAs *as = dynamic_cast<ScionAs *> (PeekPointer (as_nodes.Get (i)));
       for (uint32_t j = 0; j < as->GetBeaconServer ()->intra_as_energies.size (); ++j)
         {
           for (uint32_t k = 0; k < as->GetBeaconServer ()->intra_as_energies.at (j).size (); ++k)

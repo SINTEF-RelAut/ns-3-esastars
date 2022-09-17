@@ -34,11 +34,11 @@ namespace ns3 {
 class PostSimulationEvaluations
 {
 public:
-  PostSimulationEvaluations (YAML::Node &config, NodeContainer &AS_nodes,
+  PostSimulationEvaluations (YAML::Node &config, NodeContainer &as_nodes,
                              std::map<int32_t, uint16_t> &real_to_alias_as_no,
                              std::map<uint16_t, int32_t> &alias_to_real_as_no)
       : config (config),
-        as_nodes (AS_nodes),
+        as_nodes (as_nodes),
         real_to_alias_as_no (real_to_alias_as_no),
         alias_to_real_as_no (alias_to_real_as_no)
   {
@@ -116,7 +116,7 @@ public:
   void PrintNumberOfValidBeaconEntriesInBeaconStore ();
 
   friend void
-  SortBeaconsByPollutionByLatency (NodeContainer &AS_nodes, ScionAs *AS1, ScionAs *AS2,
+  SortBeaconsByPollutionByLatency (NodeContainer &as_nodes, ScionAs *as1, ScionAs *as2,
                                         std::string beaconing_policy_str,
                                         std::map<double, std::map<double, std::set<Beacon *>>>
                                             &sorted_beacons_by_pollution_by_latency);
@@ -138,7 +138,7 @@ private:
 };
 
 void SortBeaconsByPollutionByLatency (
-    NodeContainer &AS_nodes, ScionAs *AS1, ScionAs *AS2, std::string beaconing_policy_str,
+    NodeContainer &as_nodes, ScionAs *as1, ScionAs *as2, std::string beaconing_policy_str,
     std::map<double, std::map<double, std::set<Beacon *>>> &sorted_beacons_by_pollution_by_latency);
 
 } // namespace ns3

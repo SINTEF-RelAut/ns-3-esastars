@@ -51,15 +51,15 @@ class TimeServer : public ScionHost
 {
 public:
   TimeServer (uint32_t system_id, uint16_t isd_number, uint16_t as_number,
-              host_addr_t local_address, double latitude, double longitude, ScionAs *AS,
+              host_addr_t local_address, double latitude, double longitude, ScionAs *as,
               bool parallel_scheduler, Time max_initial_drift, Time max_drift_per_day,
               bool jitter_in_drift, uint32_t max_drift_coefficient, Time global_cut_off,
               Time first_event, Time last_event, Time snapshot_period, Time list_of_ases_req_period,
-              Time time_sync_period, uint32_t G, uint32_t number_of_paths_to_use_for_global_sync,
+              Time time_sync_period, uint32_t g, uint32_t number_of_paths_to_use_for_global_sync,
               std::string read_disjoint_paths, std::string time_service_output_path,
               std::string reference_time_type, std::string server_type, std::string snapshot_type,
               std::string alg_v, Time minimum_malicious_offset, std::string path_selection)
-      : ScionHost (system_id, isd_number, as_number, local_address, latitude, longitude, AS),
+      : ScionHost (system_id, isd_number, as_number, local_address, latitude, longitude, as),
         parallel_scheduler (parallel_scheduler),
         max_initial_drift (max_initial_drift),
         max_drift_per_day (max_drift_per_day),
@@ -71,7 +71,7 @@ public:
         snapshot_period (snapshot_period),
         list_of_ases_req_period (list_of_ases_req_period),
         time_sync_period (time_sync_period),
-        g (G),
+        g (g),
         number_of_paths_to_use_for_global_sync (number_of_paths_to_use_for_global_sync),
         read_disjoint_paths (read_or_write_disjoint_paths_map[read_disjoint_paths]),
         reference_time_type (reference_time_type_map[reference_time_type]),

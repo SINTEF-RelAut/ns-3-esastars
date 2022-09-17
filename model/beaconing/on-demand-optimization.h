@@ -34,9 +34,9 @@ typedef std::unordered_map<const OptimizationTarget *, beacons_with_the_same_opt
 class OnDemandOptimization : public BeaconServer
 {
 public:
-  OnDemandOptimization (ScionAs *AS, bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
+  OnDemandOptimization (ScionAs *as, bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
                         const YAML::Node &config)
-      : BeaconServer (AS, parallel_scheduler, xml_node, config)
+      : BeaconServer (as, parallel_scheduler, xml_node, config)
   {
     pull_based_beacons_grouped_by_optimization_targets_and_ingress_if_group.resize (2);
     first_pull_based_interval =
@@ -82,13 +82,14 @@ public:
 
         set_of_optimization_targets_originated_from_this_as.insert (
             std::make_pair (target_id, OptimizationTarget (target_id, optimization_criteria,
-                                                              optimization_direction, AS->as_number,
+                                                              optimization_direction,
+                                           as->as_number,
                                                               group_id, no_beacons, NULL)));
         cur_target = cur_target->next_sibling ("target");
       }
   }
 
-  void DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
+  void DoInitializations (uint32_t num_ases, rapidxml::xml_node<> *xml_node,
                           const YAML::Node &config) override;
 
   void PerLinkInitializations (rapidxml::xml_node<> *xml_node, const YAML::Node &config) override;

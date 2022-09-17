@@ -56,57 +56,57 @@ PathServer::ProcessReceivedPacket (uint16_t local_if, ScionPacket *packet, Time 
 }
 
 void
-PathServer::RegisterCorePathSegment (PathSegment &pathSegment, std::string key)
+PathServer::RegisterCorePathSegment (PathSegment &path_segment, std::string key)
 {
-  pathSegment.reverse = true;
-  if (registered_core_segments.find (pathSegment.originator) == registered_core_segments.end ())
+  path_segment.reverse = true;
+  if (registered_core_segments.find (path_segment.originator) == registered_core_segments.end ())
     {
       registered_core_segments.insert (
-          std::make_pair (pathSegment.originator, new reg_path_segs_to_one_as_t ()));
-      set_of_all_core_ases.insert (pathSegment.originator);
+          std::make_pair (path_segment.originator, new reg_path_segs_to_one_as_t ()));
+      set_of_all_core_ases.insert (path_segment.originator);
     }
 
-  if (registered_core_segments.at (pathSegment.originator)->find (key) ==
-      registered_core_segments.at (pathSegment.originator)->end ())
+  if (registered_core_segments.at (path_segment.originator)->find (key) ==
+      registered_core_segments.at (path_segment.originator)->end ())
     {
-      registered_core_segments.at (pathSegment.originator)
-          ->insert (std::make_pair (key, new PathSegment (pathSegment)));
+      registered_core_segments.at (path_segment.originator)
+          ->insert (std::make_pair (key, new PathSegment (path_segment)));
       return;
     }
 
-  registered_core_segments.at (pathSegment.originator)->at (key)->initiation_time =
-      pathSegment.initiation_time;
-  registered_core_segments.at (pathSegment.originator)->at (key)->expiration_time =
-      pathSegment.expiration_time;
+  registered_core_segments.at (path_segment.originator)->at (key)->initiation_time =
+      path_segment.initiation_time;
+  registered_core_segments.at (path_segment.originator)->at (key)->expiration_time =
+      path_segment.expiration_time;
 }
 
 void
-PathServer::RegisterUpPathSegment (PathSegment &pathSegment, std::string key)
+PathServer::RegisterUpPathSegment (PathSegment &path_segment, std::string key)
 {
-  pathSegment.reverse = true;
-  if (registered_up_segments.find (pathSegment.originator) == registered_up_segments.end ())
+  path_segment.reverse = true;
+  if (registered_up_segments.find (path_segment.originator) == registered_up_segments.end ())
     {
       registered_up_segments.insert (
-          std::make_pair (pathSegment.originator, new reg_path_segs_to_one_as_t ()));
+          std::make_pair (path_segment.originator, new reg_path_segs_to_one_as_t ()));
     }
 
-  if (registered_up_segments.at (pathSegment.originator)->find (key) ==
-      registered_up_segments.at (pathSegment.originator)->end ())
+  if (registered_up_segments.at (path_segment.originator)->find (key) ==
+      registered_up_segments.at (path_segment.originator)->end ())
     {
-      registered_up_segments.at (pathSegment.originator)
-          ->insert (std::make_pair (key, new PathSegment (pathSegment)));
+      registered_up_segments.at (path_segment.originator)
+          ->insert (std::make_pair (key, new PathSegment (path_segment)));
       return;
     }
 
-  registered_up_segments.at (pathSegment.originator)->at (key)->initiation_time =
-      pathSegment.initiation_time;
-  registered_up_segments.at (pathSegment.originator)->at (key)->expiration_time =
-      pathSegment.expiration_time;
+  registered_up_segments.at (path_segment.originator)->at (key)->initiation_time =
+      path_segment.initiation_time;
+  registered_up_segments.at (path_segment.originator)->at (key)->expiration_time =
+      path_segment.expiration_time;
 }
 void
-PathServer::RegisterDownPathSegment (PathSegment &pathSegment, std::string key)
+PathServer::RegisterDownPathSegment (PathSegment &path_segment, std::string key)
 {
-  pathSegment.reverse = false;
+  path_segment.reverse = false;
 }
 
 void

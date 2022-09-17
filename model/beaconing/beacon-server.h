@@ -47,9 +47,9 @@ typedef std::pair<Time, uint16_t> beaconing_timing_params;
 class BeaconServer
 {
 public:
-  BeaconServer (ScionAs *AS, bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
+  BeaconServer (ScionAs *as, bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
                 const YAML::Node &config)
-      : as (AS),
+      : as (as),
         parallel_scheduler (parallel_scheduler),
         beaconing_period (Time (config["beacon_service"]["period"].as<std::string> ())),
         expiration_period (Time (config["beacon_service"]["expiration_period"].as<std::string> ())
@@ -73,7 +73,7 @@ public:
       {
         file_to_read_beacons =
             config["beacon_service"]["read_beacons_directory"].as<std::string> () + "beacons_" +
-            std::to_string (AS->as_number) + ".json";
+            std::to_string (as->as_number) + ".json";
       }
     else
       {
@@ -84,7 +84,7 @@ public:
       {
         file_to_write_beacons =
             config["beacon_service"]["write_beacons_directory"].as<std::string> () + "beacons_" +
-            std::to_string (AS->as_number) + ".json";
+            std::to_string (as->as_number) + ".json";
       }
     else
       {
@@ -92,12 +92,12 @@ public:
       }
   }
 
-  virtual void DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
+  virtual void DoInitializations (uint32_t num_ases, rapidxml::xml_node<> *xml_node,
                                   const YAML::Node &config);
 
   virtual void PerLinkInitializations (rapidxml::xml_node<> *xml_node, const YAML::Node &config);
 
-  void SetAs (ScionAs *AS);
+  void SetAs (ScionAs *as);
 
   void ReceiveBeacon (Beacon &received_beacon, uint16_t sender_as, uint16_t remote_if,
                       uint16_t local_if);
@@ -241,7 +241,7 @@ protected:
 
   std::pair<ld, ld> CalculateFinalDiversityScores (Beacon *the_beacon);
 
-  friend void ReadBr2BrEnergy (ns3::NodeContainer AS_nodes,
+  friend void ReadBr2BrEnergy (ns3::NodeContainer as_nodes,
                                std::map<int32_t, uint16_t> real_to_alias_as_no,
                                const YAML::Node &config);
 
@@ -250,7 +250,7 @@ protected:
   void WriteBeacons ();
 };
 
-void ReadBr2BrEnergy (NodeContainer AS_nodes, std::map<int32_t, uint16_t> real_to_alias_as_no,
+void ReadBr2BrEnergy (NodeContainer as_nodes, std::map<int32_t, uint16_t> real_to_alias_as_no,
                       const YAML::Node &config);
 
 } // namespace ns3

@@ -35,13 +35,13 @@ namespace ns3 {
 class GreenBeaconing : public BeaconServer
 {
 public:
-  GreenBeaconing (ScionAs *AS, bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
+  GreenBeaconing (ScionAs *as, bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
                   const YAML::Node &config)
-      : BeaconServer (AS, parallel_scheduler, xml_node, config)
+      : BeaconServer (as, parallel_scheduler, xml_node, config)
   {
   }
 
-  void DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
+  void DoInitializations (uint32_t num_ases, rapidxml::xml_node<> *xml_node,
                           const YAML::Node &config) override;
 
   const std::vector<std::vector<std::multimap<ld, Beacon *>>> &GetBeaconsSortedByPollution () const;

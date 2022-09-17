@@ -30,20 +30,20 @@
 namespace ns3 {
 
 void
-DiversityAgeBased::DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *xml_node,
+DiversityAgeBased::DoInitializations (uint32_t num_ases, rapidxml::xml_node<> *xml_node,
                                       const YAML::Node &config)
 {
-  BeaconServer::DoInitializations (num_ASes, xml_node, config);
+  BeaconServer::DoInitializations (num_ases, xml_node, config);
 
   sent_beacons.resize (as->GetNDevices ());
-  sent_beacons_cnt.resize (num_ASes);
+  sent_beacons_cnt.resize (num_ases);
 
   for (uint32_t i = 0; i < as->GetNDevices (); ++i)
     {
       sent_beacons.at (i) = new std::unordered_map<Beacon *, std::pair<float, uint16_t>> ();
     }
 
-  for (uint16_t i = 0; i < (uint16_t) num_ASes; ++i)
+  for (uint16_t i = 0; i < (uint16_t) num_ases; ++i)
     {
       sent_beacons_cnt.at (i) = new std::unordered_map<uint16_t, uint16_t> ();
       for (auto const &neighbor_ifaces_pair : as->interfaces_per_neighbor_as)
@@ -58,9 +58,9 @@ DiversityAgeBased::DoInitializations (uint32_t num_ASes, rapidxml::xml_node<> *x
       uint16_t neighbor_as_no = as->neighbors.at (i).first;
       links_jointnesses_on_sent_paths.insert (std::make_pair (
           neighbor_as_no, std::vector<std::unordered_map<uint32_t, uint32_t> *> ()));
-      links_jointnesses_on_sent_paths.at (neighbor_as_no).resize (num_ASes);
-      links_jointnesses_on_received_paths.resize (num_ASes);
-      for (uint32_t j = 0; j < num_ASes; ++j)
+      links_jointnesses_on_sent_paths.at (neighbor_as_no).resize (num_ases);
+      links_jointnesses_on_received_paths.resize (num_ases);
+      for (uint32_t j = 0; j < num_ases; ++j)
         {
           links_jointnesses_on_sent_paths.at (neighbor_as_no).at (j) =
               new std::unordered_map<uint32_t, uint32_t> ();
@@ -82,7 +82,7 @@ void
 DiversityAgeBased::DisseminateBeacons (NeighbourRelation relation)
 {
   uint32_t neighbors_cnt = as->neighbors.size ();
-  omp_set_num_threads (NUM_CORE);
+  omp_set_num_threads (num_core);
 #pragma omp parallel for
   for (uint32_t i = 0; i < neighbors_cnt; ++i)
     { // Per neighbor AS

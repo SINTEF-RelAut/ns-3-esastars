@@ -57,7 +57,7 @@ SetTimeResolution (const std::string &time_res_str)
 void
 InstantiateASesFromTopo (rapidxml::xml_node<> *xml_root,
                          std::map<int32_t, uint16_t> &real_to_alias_as_no,
-                         std::map<uint16_t, int32_t> &alias_to_real_as_no, NodeContainer &AS_nodes,
+                         std::map<uint16_t, int32_t> &alias_to_real_as_no, NodeContainer &as_nodes,
                          const YAML::Node &config)
 {
   uint16_t alias_as_no = 0;
@@ -87,15 +87,15 @@ InstantiateASesFromTopo (rapidxml::xml_node<> *xml_root,
             }
         }
 
-      Ptr<ScionAs> AS_node;
+      Ptr<ScionAs> as_node;
       if (type == "core")
         {
-          AS_node = CreateObject<ScionCoreAs> (0, (alias_as_no == 0), alias_as_no, cur_xml_node,
+          as_node = CreateObject<ScionCoreAs> (0, (alias_as_no == 0), alias_as_no, cur_xml_node,
                                                  config, malicious_border_routers, Time (0));
         }
       else if (type == "non-core")
         {
-          AS_node = CreateObject<ScionAs> (0, (alias_as_no == 0), alias_as_no, cur_xml_node,
+          as_node = CreateObject<ScionAs> (0, (alias_as_no == 0), alias_as_no, cur_xml_node,
                                             config, malicious_border_routers, Time (0));
         }
       else
@@ -103,7 +103,7 @@ InstantiateASesFromTopo (rapidxml::xml_node<> *xml_root,
           std::cerr << "Incompatible AS_node type!" << std::endl;
           exit (1);
         }
-      AS_nodes.Add (AS_node);
+      as_nodes.Add (as_node);
 
       int32_t real_as_no = std::stoi (GetAttribute (cur_xml_node, "id"));
       uint16_t isd_number = 0;
@@ -124,16 +124,16 @@ InstantiateASesFromTopo (rapidxml::xml_node<> *xml_root,
 }
 
 void
-InstantiatePathServers (const YAML::Node &config, const NodeContainer &AS_nodes)
+InstantiatePathServers (const YAML::Node &config, const NodeContainer &as_nodes)
 {
   bool only_propagation_delay = OnlyPropagationDelay (config);
 
-  for (uint32_t i = 0; i < AS_nodes.GetN (); ++i)
+  for (uint32_t i = 0; i < as_nodes.GetN (); ++i)
     {
-      ScionAs *AS_node = dynamic_cast<ScionAs *> (PeekPointer (AS_nodes.Get (i)));
+      ScionAs *as_node = dynamic_cast<ScionAs *> (PeekPointer (as_nodes.Get (i)));
       PathServer *path_server =
-          new PathServer (0, AS_node->isd_number, AS_node->as_number, 1, 0.0, 0.0, AS_node);
-      AS_node->SetPathServer (path_server);
+          new PathServer (0, as_node->isd_number, as_node->as_number, 1, 0.0, 0.0, as_node);
+      as_node->SetPathServer (path_server);
 
       if (only_propagation_delay)
         {
@@ -147,23 +147,23 @@ InstantiatePathServers (const YAML::Node &config, const NodeContainer &AS_nodes)
 }
 
 void
-GetMaliciousTimeRefAndTimeServer (const NodeContainer &AS_nodes, const YAML::Node &config,
+GetMaliciousTimeRefAndTimeServer (const NodeContainer &as_nodes, const YAML::Node &config,
                                   std::vector<std::string> &time_reference_types,
                                   std::vector<std::string> &time_server_types)
 {
   std::vector<uint16_t> indices_time_references;
   std::vector<uint16_t> indices_time_servers;
 
-  uint16_t number_of_ASes = AS_nodes.GetN ();
+  uint16_t number_of_ases = as_nodes.GetN ();
 
-  for (uint32_t i = 0; i < number_of_ASes; ++i)
+  for (uint32_t i = 0; i < number_of_ases; ++i)
     {
       indices_time_references.push_back (i);
       indices_time_servers.push_back (i);
     }
 
-  time_reference_types.resize (number_of_ASes);
-  time_server_types.resize (number_of_ASes);
+  time_reference_types.resize (number_of_ases);
+  time_server_types.resize (number_of_ases);
 
   if (config["time_service"]["truly_random_malicious"].as<uint16_t> () == 1)
     {
@@ -181,17 +181,17 @@ GetMaliciousTimeRefAndTimeServer (const NodeContainer &AS_nodes, const YAML::Nod
 
   uint16_t number_of_malicious_time_references = (uint16_t) std::floor (
       ((double) config["time_service"]["percent_of_malicious_time_references"].as<uint16_t> () *
-       (double) number_of_ASes) /
+       (double) number_of_ases) /
       100.0);
 
   uint16_t number_of_malicious_time_servers = (uint16_t) std::floor (
       ((double) config["time_service"]["percent_of_malicious_time_servers"].as<uint16_t> () *
-       (double) number_of_ASes) /
+       (double) number_of_ases) /
       100.0);
 
   if (config["time_service"]["reference_clk"].as<std::string> () == "OFF")
     {
-      for (uint16_t i = 0; i < number_of_ASes; ++i)
+      for (uint16_t i = 0; i < number_of_ases; ++i)
         {
           time_reference_types.at (i) = "OFF";
         }
@@ -203,7 +203,7 @@ GetMaliciousTimeRefAndTimeServer (const NodeContainer &AS_nodes, const YAML::Nod
           time_reference_types.at (indices_time_references.at (i)) = "MALICIOUS";
         }
 
-      for (uint16_t i = number_of_malicious_time_references; i < number_of_ASes; ++i)
+      for (uint16_t i = number_of_malicious_time_references; i < number_of_ases; ++i)
         {
           time_reference_types.at (indices_time_references.at (i)) = "ON";
         }
@@ -214,14 +214,14 @@ GetMaliciousTimeRefAndTimeServer (const NodeContainer &AS_nodes, const YAML::Nod
       time_server_types.at (indices_time_servers.at (i)) = "MALICIOUS";
     }
 
-  for (uint16_t i = number_of_malicious_time_servers; i < number_of_ASes; ++i)
+  for (uint16_t i = number_of_malicious_time_servers; i < number_of_ases; ++i)
     {
       time_server_types.at (indices_time_servers.at (i)) = "NORMAL";
     }
 }
 
 void
-GetTimeServiceSnapShotTypes (const NodeContainer &AS_nodes, const YAML::Node &config,
+GetTimeServiceSnapShotTypes (const NodeContainer &as_nodes, const YAML::Node &config,
                              std::vector<std::string> &snapshot_types,
                              uint16_t &global_scheduler_and_printer)
 {
@@ -229,10 +229,10 @@ GetTimeServiceSnapShotTypes (const NodeContainer &AS_nodes, const YAML::Node &co
   if (config["time_service"]["snapshot_type"].as<std::string> () == "PRINT_OFFSET_DIFF")
     {
       std::random_device rd;
-      std::uniform_int_distribution<uint16_t> dist (0, AS_nodes.GetN () - 1);
+      std::uniform_int_distribution<uint16_t> dist (0, as_nodes.GetN () - 1);
       global_scheduler_and_printer = dist (rd);
     }
-  for (uint32_t i = 0; i < AS_nodes.GetN (); ++i)
+  for (uint32_t i = 0; i < as_nodes.GetN (); ++i)
     {
       if (config["time_service"]["snapshot_type"].as<std::string> () == "PRINT_OFFSET_DIFF")
         {
@@ -253,11 +253,11 @@ GetTimeServiceSnapShotTypes (const NodeContainer &AS_nodes, const YAML::Node &co
 }
 
 void
-GetTimeServiceAlgVersions (const NodeContainer &AS_nodes, const YAML::Node &config,
+GetTimeServiceAlgVersions (const NodeContainer &as_nodes, const YAML::Node &config,
                            std::vector<std::string> &alg_versions,
                            const std::vector<std::string> &snapshot_types)
 {
-  for (uint32_t i = 0; i < AS_nodes.GetN (); ++i)
+  for (uint32_t i = 0; i < as_nodes.GetN (); ++i)
     {
       if (snapshot_types.at (i) == "OFF")
         {
@@ -273,7 +273,7 @@ GetTimeServiceAlgVersions (const NodeContainer &AS_nodes, const YAML::Node &conf
 }
 
 void
-InstantiateTimeServers (const YAML::Node &config, const NodeContainer &AS_nodes)
+InstantiateTimeServers (const YAML::Node &config, const NodeContainer &as_nodes)
 {
   std::vector<std::string> time_reference_types;
   std::vector<std::string> time_server_types;
@@ -281,22 +281,22 @@ InstantiateTimeServers (const YAML::Node &config, const NodeContainer &AS_nodes)
   std::vector<std::string> alg_versions;
   uint16_t global_scheduler_and_printer;
 
-  GetMaliciousTimeRefAndTimeServer (AS_nodes, config, time_reference_types, time_server_types);
-  GetTimeServiceSnapShotTypes (AS_nodes, config, snapshot_types, global_scheduler_and_printer);
-  GetTimeServiceAlgVersions (AS_nodes, config, alg_versions, snapshot_types);
+  GetMaliciousTimeRefAndTimeServer (as_nodes, config, time_reference_types, time_server_types);
+  GetTimeServiceSnapShotTypes (as_nodes, config, snapshot_types, global_scheduler_and_printer);
+  GetTimeServiceAlgVersions (as_nodes, config, alg_versions, snapshot_types);
 
   bool only_propagation_delay = OnlyPropagationDelay (config);
 
-  for (uint32_t i = 0; i < AS_nodes.GetN (); ++i)
+  for (uint32_t i = 0; i < as_nodes.GetN (); ++i)
     {
-      ScionAs *AS_node = dynamic_cast<ScionAs *> (PeekPointer (AS_nodes.Get (i)));
-      uint16_t alias_as_no = AS_node->as_number;
+      ScionAs *as_node = dynamic_cast<ScionAs *> (PeekPointer (as_nodes.Get (i)));
+      uint16_t alias_as_no = as_node->as_number;
       assert (alias_as_no == i);
-      uint16_t isd_number = AS_node->isd_number;
+      uint16_t isd_number = as_node->isd_number;
       bool parallel_scheduler = (alias_as_no == global_scheduler_and_printer);
 
       ScionHost *time_server = new TimeServer (
-          0, isd_number, alias_as_no, 2, 0.0, 0.0, AS_node, parallel_scheduler,
+          0, isd_number, alias_as_no, 2, 0.0, 0.0, as_node, parallel_scheduler,
           Time (config["time_service"]["max_initial_drift"].as<std::string> ()),
           Time (config["time_service"]["max_drift_per_day"].as<std::string> ()),
           config["time_service"]["jitter_in_drift"].as<uint32_t> (),
@@ -316,7 +316,7 @@ InstantiateTimeServers (const YAML::Node &config, const NodeContainer &AS_nodes)
           Time (config["time_service"]["malcious_response_minimum_offset"].as<std::string> ()),
           config["time_service"]["path_selection"].as<std::string> ());
 
-      AS_node->AddHost (time_server);
+      as_node->AddHost (time_server);
 
       if (only_propagation_delay)
         {
@@ -330,7 +330,7 @@ InstantiateTimeServers (const YAML::Node &config, const NodeContainer &AS_nodes)
 }
 
 void
-InstantiateLinksFromTopo (rapidxml::xml_node<> *xml_root, NodeContainer &AS_nodes,
+InstantiateLinksFromTopo (rapidxml::xml_node<> *xml_root, NodeContainer &as_nodes,
                           const std::map<int32_t, uint16_t> &real_to_alias_as_no,
                           const YAML::Node &config)
 {
@@ -368,40 +368,40 @@ InstantiateLinksFromTopo (rapidxml::xml_node<> *xml_root, NodeContainer &AS_node
           relation = NeighbourRelation::CORE;
         }
 
-      Ptr<ScionAs> from_AS;
-      Ptr<ScionAs> to_AS;
+      Ptr<ScionAs> from_as;
+      Ptr<ScionAs> to_as;
 
       uint16_t to_alias_as_no = real_to_alias_as_no.at (to);
       uint16_t from_alias_as_no = real_to_alias_as_no.at (from);
 
-      to_AS = DynamicCast<ScionAs> (AS_nodes.Get (to_alias_as_no));
-      from_AS = DynamicCast<ScionAs> (AS_nodes.Get (from_alias_as_no));
+      to_as = DynamicCast<ScionAs> (as_nodes.Get (to_alias_as_no));
+      from_as = DynamicCast<ScionAs> (as_nodes.Get (from_alias_as_no));
 
-      assert (to_AS->as_number == to_alias_as_no);
-      assert (from_AS->as_number == from_alias_as_no);
+      assert (to_as->as_number == to_alias_as_no);
+      assert (from_as->as_number == from_alias_as_no);
 
       PointToPointHelper helper;
-      helper.Install (from_AS, to_AS);
+      helper.Install (from_as, to_as);
 
-      to_AS->AddToRemoteAsInfo (from_AS->GetNDevices () - 1, PeekPointer (from_AS));
-      to_AS->interfaces_coordinates.push_back (std::pair<ld, ld> (latitude, longitude));
-      to_AS->coordinates_to_interfaces.insert (std::make_pair (
-          std::pair<ld, ld> (latitude, longitude), to_AS->interfaces_coordinates.size () - 1));
+      to_as->AddToRemoteAsInfo (from_as->GetNDevices () - 1, PeekPointer (from_as));
+      to_as->interfaces_coordinates.push_back (std::pair<ld, ld> (latitude, longitude));
+      to_as->coordinates_to_interfaces.insert (std::make_pair (
+          std::pair<ld, ld> (latitude, longitude), to_as->interfaces_coordinates.size () - 1));
 
       if (p.HasProperty ("to_if_id"))
         {
-          assert ((uint32_t) std::stoi (p.GetProperty ("to_if_id")) == to_AS->GetNDevices () - 1);
+          assert ((uint32_t) std::stoi (p.GetProperty ("to_if_id")) == to_as->GetNDevices () - 1);
         }
 
-      from_AS->AddToRemoteAsInfo (to_AS->GetNDevices () - 1, PeekPointer (to_AS));
-      from_AS->interfaces_coordinates.push_back (std::pair<ld, ld> (latitude, longitude));
-      from_AS->coordinates_to_interfaces.insert (std::make_pair (
-          std::pair<ld, ld> (latitude, longitude), from_AS->interfaces_coordinates.size () - 1));
+      from_as->AddToRemoteAsInfo (to_as->GetNDevices () - 1, PeekPointer (to_as));
+      from_as->interfaces_coordinates.push_back (std::pair<ld, ld> (latitude, longitude));
+      from_as->coordinates_to_interfaces.insert (std::make_pair (
+          std::pair<ld, ld> (latitude, longitude), from_as->interfaces_coordinates.size () - 1));
 
       if (p.HasProperty ("from_if_id"))
         {
           assert ((uint32_t) std::stoi (p.GetProperty ("from_if_id")) ==
-                  from_AS->GetNDevices () - 1);
+                  from_as->GetNDevices () - 1);
         }
 
       if (config["border_router"])
@@ -439,9 +439,9 @@ InstantiateLinksFromTopo (rapidxml::xml_node<> *xml_root, NodeContainer &AS_node
               from_processing_throughput_delay = PicoSeconds (200);
             }
 
-          BorderRouter *to_br = to_AS->AddBr (latitude, longitude, to_processing_delay,
+          BorderRouter *to_br = to_as->AddBr (latitude, longitude, to_processing_delay,
                                               to_processing_throughput_delay);
-          BorderRouter *from_br = from_AS->AddBr (latitude, longitude, from_processing_delay,
+          BorderRouter *from_br = from_as->AddBr (latitude, longitude, from_processing_delay,
                                                   from_processing_throughput_delay);
 
           to_br->AddToPropagationDelays (to_propagation_delay);
@@ -450,17 +450,17 @@ InstantiateLinksFromTopo (rapidxml::xml_node<> *xml_root, NodeContainer &AS_node
           from_br->AddToPropagationDelays (from_propagation_delay);
           from_br->AddToTransmissionDelays (from_transmission_delay);
 
-          to_br->AddToIfForwadingTable (to_AS->GetNDevices () - 1, to_br->GetNDevices () - 1);
-          from_br->AddToIfForwadingTable (from_AS->GetNDevices () - 1, from_br->GetNDevices () - 1);
+          to_br->AddToIfForwadingTable (to_as->GetNDevices () - 1, to_br->GetNDevices () - 1);
+          from_br->AddToIfForwadingTable (from_as->GetNDevices () - 1, from_br->GetNDevices () - 1);
 
-          to_br->AddToRemoteNodesInfo (from_br, from_br->GetNDevices () - 1, from_AS->isd_number,
-                                       from_AS->as_number);
-          from_br->AddToRemoteNodesInfo (to_br, to_br->GetNDevices () - 1, to_AS->isd_number,
-                                         to_AS->as_number);
+          to_br->AddToRemoteNodesInfo (from_br, from_br->GetNDevices () - 1, from_as->isd_number,
+                                       from_as->as_number);
+          from_br->AddToRemoteNodesInfo (to_br, to_br->GetNDevices () - 1, to_as->isd_number,
+                                         to_as->as_number);
         }
 
-      to_AS->inter_as_bwds.push_back (bwd);
-      from_AS->inter_as_bwds.push_back (bwd);
+      to_as->inter_as_bwds.push_back (bwd);
+      from_as->inter_as_bwds.push_back (bwd);
 
       NeighbourRelation to_rel;
       NeighbourRelation from_rel;
@@ -486,47 +486,47 @@ InstantiateLinksFromTopo (rapidxml::xml_node<> *xml_root, NodeContainer &AS_node
           assert (false);
         }
 
-      to_AS->interface_to_neighbor_map.insert (
-          std::make_pair (to_AS->GetNDevices () - 1, from_AS->as_number));
-      if (to_AS->interfaces_per_neighbor_as.find (from_AS->as_number) !=
-          to_AS->interfaces_per_neighbor_as.end ())
+      to_as->interface_to_neighbor_map.insert (
+          std::make_pair (to_as->GetNDevices () - 1, from_as->as_number));
+      if (to_as->interfaces_per_neighbor_as.find (from_as->as_number) !=
+          to_as->interfaces_per_neighbor_as.end ())
         {
-          to_AS->interfaces_per_neighbor_as.at (from_AS->as_number)
-              .push_back ((uint16_t) to_AS->GetNDevices () - 1);
+          to_as->interfaces_per_neighbor_as.at (from_as->as_number)
+              .push_back ((uint16_t) to_as->GetNDevices () - 1);
         }
       else
         {
           std::vector<uint16_t> tmp;
-          tmp.push_back ((uint16_t) to_AS->GetNDevices () - 1);
-          to_AS->interfaces_per_neighbor_as.insert (std::make_pair (from_AS->as_number, tmp));
-          to_AS->neighbors.push_back (std::make_pair (from_AS->as_number, to_rel));
+          tmp.push_back ((uint16_t) to_as->GetNDevices () - 1);
+          to_as->interfaces_per_neighbor_as.insert (std::make_pair (from_as->as_number, tmp));
+          to_as->neighbors.push_back (std::make_pair (from_as->as_number, to_rel));
         }
 
-      from_AS->interface_to_neighbor_map.insert (
-          std::make_pair (from_AS->GetNDevices () - 1, to_AS->as_number));
-      if (from_AS->interfaces_per_neighbor_as.find (to_AS->as_number) !=
-          from_AS->interfaces_per_neighbor_as.end ())
+      from_as->interface_to_neighbor_map.insert (
+          std::make_pair (from_as->GetNDevices () - 1, to_as->as_number));
+      if (from_as->interfaces_per_neighbor_as.find (to_as->as_number) !=
+          from_as->interfaces_per_neighbor_as.end ())
         {
-          from_AS->interfaces_per_neighbor_as.at (to_AS->as_number)
-              .push_back (from_AS->GetNDevices () - 1);
+          from_as->interfaces_per_neighbor_as.at (to_as->as_number)
+              .push_back (from_as->GetNDevices () - 1);
         }
       else
         {
           std::vector<uint16_t> tmp;
-          tmp.push_back ((uint16_t) from_AS->GetNDevices () - 1);
-          from_AS->interfaces_per_neighbor_as.insert (std::make_pair (to_AS->as_number, tmp));
-          from_AS->neighbors.push_back (std::make_pair (to_AS->as_number, from_rel));
+          tmp.push_back ((uint16_t) from_as->GetNDevices () - 1);
+          from_as->interfaces_per_neighbor_as.insert (std::make_pair (to_as->as_number, tmp));
+          from_as->neighbors.push_back (std::make_pair (to_as->as_number, from_rel));
         }
 
-      to_AS->GetBeaconServer ()->PerLinkInitializations (curr_xml_node, config);
-      from_AS->GetBeaconServer ()->PerLinkInitializations (curr_xml_node, config);
+      to_as->GetBeaconServer ()->PerLinkInitializations (curr_xml_node, config);
+      from_as->GetBeaconServer ()->PerLinkInitializations (curr_xml_node, config);
 
       curr_xml_node = curr_xml_node->next_sibling ("link");
     }
 }
 
 void
-InitializeASesAttributes (const NodeContainer &AS_nodes,
+InitializeASesAttributes (const NodeContainer &as_nodes,
                           std::map<int32_t, uint16_t> &real_to_alias_as_no,
                           rapidxml::xml_node<> *xml_node, const YAML::Node &config)
 {
@@ -534,24 +534,24 @@ InitializeASesAttributes (const NodeContainer &AS_nodes,
 
   if (config["border_router"])
     {
-      for (uint64_t i = 0; i < AS_nodes.GetN (); ++i)
+      for (uint64_t i = 0; i < as_nodes.GetN (); ++i)
         {
-          ScionAs *AS_node = dynamic_cast<ScionAs *> (PeekPointer (AS_nodes.Get (i)));
-          AS_node->DoInitializations (AS_nodes.GetN (), xml_node, config, only_propagation_delay);
+          ScionAs *as_node = dynamic_cast<ScionAs *> (PeekPointer (as_nodes.Get (i)));
+          as_node->DoInitializations (as_nodes.GetN (), xml_node, config, only_propagation_delay);
         }
     }
   else
     {
-      for (uint64_t i = 0; i < AS_nodes.GetN (); ++i)
+      for (uint64_t i = 0; i < as_nodes.GetN (); ++i)
         {
-          ScionAs *AS_node = dynamic_cast<ScionAs *> (PeekPointer (AS_nodes.Get (i)));
-          AS_node->DoInitializations (AS_nodes.GetN (), xml_node, config);
+          ScionAs *as_node = dynamic_cast<ScionAs *> (PeekPointer (as_nodes.Get (i)));
+          as_node->DoInitializations (as_nodes.GetN (), xml_node, config);
         }
     }
 
   if (config["beacon_service"]["br_br_energy_file"])
     {
-      ReadBr2BrEnergy (AS_nodes, real_to_alias_as_no, config);
+      ReadBr2BrEnergy (as_nodes, real_to_alias_as_no, config);
     }
 }
 

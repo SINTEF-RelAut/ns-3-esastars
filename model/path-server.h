@@ -36,15 +36,15 @@ class PathServer : public ScionCapableNode
 {
 public:
   PathServer (uint32_t system_id, uint16_t isd_number, uint16_t as_number,
-              host_addr_t local_address, double latitude, double longitude, ScionAs *AS)
-      : ScionCapableNode (system_id, isd_number, as_number, local_address, latitude, longitude, AS)
+              host_addr_t local_address, double latitude, double longitude, ScionAs *as)
+      : ScionCapableNode (system_id, isd_number, as_number, local_address, latitude, longitude, as)
   {
     set_of_all_core_ases.insert (ia_addr);
   }
 
-  void RegisterCorePathSegment (PathSegment &pathSegment, std::string key);
-  void RegisterUpPathSegment (PathSegment &pathSegment, std::string key);
-  void RegisterDownPathSegment (PathSegment &pathSegment, std::string key);
+  void RegisterCorePathSegment (PathSegment &path_segment, std::string key);
+  void RegisterUpPathSegment (PathSegment &path_segment, std::string key);
+  void RegisterDownPathSegment (PathSegment &path_segment, std::string key);
 
 private:
   std::set<ia_t> set_of_all_core_ases;
