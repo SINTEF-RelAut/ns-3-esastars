@@ -54,29 +54,6 @@ SetTimeResolution (const std::string &time_res_str)
     }
 }
 
-//rapidxml::xml_node<>* SetupTopologyFile (std::string topology_name) {
-//    std::string file = "/home/tabaeias/ns-3_beaconing_simulator/topology/" + std::string(topology_name) + ".xml";
-//    std::ifstream* fin = new std::ifstream(file.c_str());
-//    std::ostringstream* sstr = new std::ostringstream();
-//    *sstr << fin->rdbuf();
-//
-//    sstr->flush();
-//    fin->close();
-//
-//    std::string xmlData = sstr->str();
-//    rapidxml::xml_document<>* doc = new rapidxml::xml_document<>();
-//    doc->parse<0>(&xmlData[0]);
-//
-//    rapidxml::xml_node<> *rootNode = doc->first_node("topology");
-//
-//    if (!rootNode) {
-//        std::cerr << "Empty topology!" << std::endl;
-//        exit(1);
-//    }
-//
-//    return rootNode;
-//}
-
 void
 InstantiateASesFromTopo (rapidxml::xml_node<> *xml_root,
                          std::map<int32_t, uint16_t> &real_to_alias_as_no,

@@ -6,29 +6,29 @@ def build(bld):
     env = bld.env
     sim = bld.create_ns3_module('SCION', ['core', 'network'])
 
-    sim.source = [ 'model/beaconing/baseline.cpp',
-                   'model/beaconing/beacon.cpp',
-                   'model/beaconing/beacon-server.cpp',
-                   'model/beaconing/diversity-age-based.cpp',
-                   'model/beaconing/latency-optimized-beaconing.cpp',
-                   'model/beaconing/green-beaconing.cpp',
-                   'model/beaconing/on-demand-optimization.cpp',
-                   'model/post-simulation-evaluations.cpp',
-                   'model/schedule-periodic-events.cpp',
-                   'model/user-defined-events.cpp',
-                   'model/pre-simulation-setup.cpp',
-                   'model/path-server.cpp',
-                   'model/path-segment.cpp',
-                   'model/scion-packet.cpp',
-                   'model/scion-host.cpp',
-                   'model/scion-as.cpp',
-                   'model/scion-core-as.cpp',
-                   'model/utils.cpp',
-                   'model/scion-capable-node.cpp',
-                   'model/border-router.cpp',
-                   'model/beaconing/scionlab-algo.cpp',
-                   'model/time-server.cpp',
-                   'model/externs.cpp']
+    sim.source = [ 'model/beaconing/baseline.cc',
+                   'model/beaconing/beacon.cc',
+                   'model/beaconing/beacon-server.cc',
+                   'model/beaconing/diversity-age-based.cc',
+                   'model/beaconing/latency-optimized-beaconing.cc',
+                   'model/beaconing/green-beaconing.cc',
+                   'model/beaconing/on-demand-optimization.cc',
+                   'model/post-simulation-evaluations.cc',
+                   'model/schedule-periodic-events.cc',
+                   'model/user-defined-events.cc',
+                   'model/pre-simulation-setup.cc',
+                   'model/path-server.cc',
+                   'model/path-segment.cc',
+                   'model/scion-packet.cc',
+                   'model/scion-host.cc',
+                   'model/scion-as.cc',
+                   'model/scion-core-as.cc',
+                   'model/utils.cc',
+                   'model/scion-capable-node.cc',
+                   'model/border-router.cc',
+                   'model/beaconing/scionlab-algo.cc',
+                   'model/time-server.cc',
+                   'model/externs.cc']
 
     headers = bld(features='ns3header')
     headers.module = 'SCION'
@@ -62,7 +62,7 @@ def build(bld):
     obj = bld.create_ns3_program('main',
                                 ['SCION', 'point-to-point'])
 
-    obj.source = 'main.cpp'
+    obj.source = 'main.cc'
 
 
 
