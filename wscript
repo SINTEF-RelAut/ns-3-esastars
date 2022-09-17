@@ -59,7 +59,7 @@ def build(bld):
                          'model/externs.h',
                          'model/json.hpp']
 
-    obj = bld.create_ns3_program('main',
+    obj = bld.create_ns3_program('scion',
                                 ['SCION', 'point-to-point'])
 
     obj.source = 'scion.cc'
