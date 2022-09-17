@@ -62,7 +62,7 @@ def build(bld):
     obj = bld.create_ns3_program('main',
                                 ['SCION', 'point-to-point'])
 
-    obj.source = 'main.cc'
+    obj.source = 'scion.cc'
 
 
 
