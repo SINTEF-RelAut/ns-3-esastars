@@ -28,7 +28,7 @@
 #include "scion-host.h"
 
 namespace ns3 {
-NS_LOG_COMPONENT_DEFINE ("SCIONHost");
+NS_LOG_COMPONENT_DEFINE ("ScionHost");
 
 void
 ScionHost::ReceiveRegisteredPathSegments (PathSegmentType seg_type, ia_t src_ia, ia_t dst_ia,

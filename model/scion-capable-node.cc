@@ -28,7 +28,7 @@
 #include "scion-capable-node.h"
 
 namespace ns3 {
-NS_LOG_COMPONENT_DEFINE ("SCIONCapableDevice");
+NS_LOG_COMPONENT_DEFINE ("ScionCapableNode");
 
 void
 ScionCapableNode::ScheduleReceive (uint16_t local_if, ScionPacket *packet, Time propagation_delay)
