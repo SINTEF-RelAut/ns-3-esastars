@@ -251,11 +251,19 @@ def options(opt):
     opt.add_option('--cxx-standard',
                    help=('Compile NS-3 with the given C++ standard'),
                    type='string', default='-std=c++11', dest='cxx_standard')
+    opt.add_option('--enable-asserts',
+                   help=('Enable the asserts regardless of the compile mode'),
+                   action="store_true", default=False,
+                   dest='enable_asserts')
+    opt.add_option('--enable-logs',
+                   help=('Enable the logs regardless of the compile mode'),
+                   action="store_true", default=False,
+                   dest='enable_logs')
+
 
     # options provided in subdirectories
     opt.recurse('src')
     opt.recurse('bindings/python')
-    opt.recurse('src/internet')
     opt.recurse('contrib')
 
 def _check_compilation_flag(conf, flag, mode='cxx', linkflags=None):
@@ -366,7 +374,13 @@ def configure(conf):
     conf.load('gnu_dirs')
     conf.load('clang_compilation_database', tooldir=['waf-tools'])
 
+
     env = conf.env
+    conf.env['lgomp'] = conf.check(mandatory=True, lib='gomp', uselib_store='GOMP')
+
+    conf.env.append_value('INCLUDES', ['/cluster/home/tabaeias/yaml-cpp/lib/include'])
+    conf.env.append_value('LIBPATH', ['/cluster/home/tabaeias/yaml-cpp/lib/lib64'])
+    conf.env['lyaml-cpp'] = conf.check(mandatory=True, lib='yaml-cpp', uselib_store='YAML-CPP')
 
     if Options.options.enable_gcov:
         env['GCOV_ENABLED'] = True
@@ -387,6 +401,11 @@ def configure(conf):
 
     if Options.options.build_profile == 'optimized':
         env.append_value('DEFINES', 'NS3_BUILD_PROFILE_OPTIMIZED')
+
+    if Options.options.enable_logs:
+        env.append_unique('DEFINES', 'NS3_LOG_ENABLE')
+    if Options.options.enable_asserts:
+        env.append_unique('DEFINES', 'NS3_ASSERT_ENABLE')
 
     env['PLATFORM'] = sys.platform
     env['BUILD_PROFILE'] = Options.options.build_profile
@@ -547,7 +566,6 @@ def configure(conf):
         elif not_built_name in conf.env['NS3_ENABLED_CONTRIBUTED_MODULES']:
             conf.env['NS3_ENABLED_CONTRIBUTED_MODULES'].remove(not_built_name)
 
-    conf.recurse('src/mpi')
 
     # for suid bits
     try:
@@ -909,6 +927,8 @@ def build(bld):
             changed = False
             for module in modules + contribModules:
                 module_obj = bld.get_tgen_by_name(module)
+                module_obj.use.append("GOMP")
+                module_obj.use.append("YAML-CPP")
                 if module_obj is None:
                     raise ValueError("module %s not found" % module)
                 # Each enabled module has its own library.

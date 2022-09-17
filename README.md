@@ -1,126 +1,63 @@
+This repository is a fork of the ns-3-dev (at version 3.30.1) that implements the SCION next generation Internet
+architecture. Using this simulator, one can simulate the control plane and the data plane of SCION internet architecture. This means that the simulator first constructs inter-domain paths between ASes, and then uses such paths to forward traffic between ASes.
 
-The Network Simulator, Version 3
-================================
+This simulator also provides a useful framework to study new services and algorithms in the SCION Internet architecture. 
+For example, one can develop new routing algorithms by extending the `BeaconServer` class (e.g., see `/src/SCION/model/beaconing/latency-optimized-beaconing.h`), 
+or simulate any type of application by extending `ScionHost` class (e.g., `/src/SCION/model/time-server.h`).
 
-## Table of Contents:
+# Structure:
+The SCION simulator models the Internet as a topology of ASes (Autonomous Systems). 
+Therefore, it declares the `ScionAS` class in `/src/SCION/model/scion-as.h` as the highest-level entity in the simulator.
+This class is derived from the ns-3's `Node` class. As the SCION architecture categorizes ASes in two category of core and 
+non-core ASes, the SCION simulator derives the `ScionCoreAS` class from `ScionAS` class.
 
-1) [An overview](#an-open-source-project)
-2) [Building ns-3](#building-ns-3)
-3) [Running ns-3](#running-ns3)
-4) [Getting access to the ns-3 documentation](#getting-access-to-the-ns-3-documentation)
-5) [Working with the development version of ns-3](#working-with-the-development-version-of-ns-3)
+Each `ScionAS` instance has an instance `BeaconServer`, and any number of `ScionCapableNode`s. 
 
-Note:  Much more substantial information about ns-3 can be found at
-http://www.nsnam.org
+The `BeaconServer` performs path discovery (routing)
+among ASes. The `BeaconServer` of each AS directly talks to the `BeaconServer`s of the neighboring ASes.
 
-## An Open Source project
+`ScionCapableNode` represents any device that is SCION-aware, i.e., can communicate over SCION. There are three classes 
+derived from `ScionCapableNode`: 
+1) `PathServer`, which registers paths discovered by the `BeaconServer` and serves 
+`ScionHost`s by resolving their query for path-segments,
+2) `BorderRouter`, which forwards SCION packets according to the paths specified by packets,
+3) `ScionHost`, any general purpose host capable of talking using SCION
 
-ns-3 is a free open source project aiming to build a discrete-event
-network simulator targeted for simulation research and education.   
-This is a collaborative project; we hope that
-the missing pieces of the models we have not yet implemented
-will be contributed by the community in an open collaboration
-process.
+# Requirements:
+The SCION simulator uses the following libraries. Make sure to have them installed before running the simulator,
+1) `yaml-cpp` to read configuration files
+2) `libgomp` as the simulator uses openmp to parallelize tasks.
 
-The process of contributing to the ns-3 project varies with
-the people involved, the amount of time they can invest
-and the type of model they want to work on, but the current
-process that the project tries to follow is described here:
-http://www.nsnam.org/developers/contributing-code/
+It also uses the follwoing libraries, however, they are included in the repository, 
+so there is no need to take any actions regarding them:
 
-This README excerpts some details from a more extensive
-tutorial that is maintained at:
-http://www.nsnam.org/documentation/latest/
+1) `json` available at `/src/SCION/model/json.hpp` required to 
+   1) save the state of simulator that can be used to run 
+   successive simulations from the saved state
+   2) specify user defined events
+2) `rapid_xml` available at `/src/fnss/model/` required to read CAIDA topologies
 
-## Building ns-3
+# Input:
+The minimal input to the simulator is the configuration file and the topology file.
 
-The code for the framework and the default models provided
-by ns-3 is built as a set of libraries. User simulations
-are expected to be written as simple programs that make
-use of these ns-3 libraries.
+1) The configuration file is a `.yaml` file that specifies the characteristics of the simulations. Examples available at 
+`/configs/`. New configuration files can be specified in `/configs/`.
+2) The topology file is a `.xml` file that specifies ASes and links between them. 
+This file is the result of running 
+[fnss](https://fnss.readthedocs.io/en/latest/apidoc/generated/fnss.topologies.parsers.parse_caida_as_relationships.html)' 
+`parse_caida_as_relationships` over the [CAIDA](https://www.caida.org)'s AS-geo-rel data set.
 
-To build the set of default libraries and the example
-programs included in this package, you need to use the
-tool 'waf'. Detailed information on how to use waf is
-included in the file doc/build.txt
+# Getting Started:
 
-However, the real quick and dirty way to get started is to
-type the command
-```shell
-./waf configure --enable-examples
-```
+You first need to configure the simulator before running it:
 
-followed by
+`./waf distclean`
 
-```shell
-./waf
-```
+`CCFLAGS_EXTRA="-O3 -fopenmp -std=c++17" CXXFLAGS_EXTRA="-O3 -fopenmp -std=c++17"  ./waf configure --build-profile=debug|default|release|optimized --enable-asserts --enable-logs`
 
-in the directory which contains this README file. The files
-built will be copied in the build/ directory.
+`./waf --run "scion /path/to/config.yaml"`
 
-The current codebase is expected to build and run on the
-set of platforms listed in the [release notes](RELEASE_NOTES)
-file.
 
-Other platforms may or may not work: we welcome patches to
-improve the portability of the code to these other platforms.
 
-## Running ns-3
-
-On recent Linux systems, once you have built ns-3 (with examples
-enabled), it should be easy to run the sample programs with the
-following command, such as:
-
-```shell
-./waf --run simple-global-routing
-```
-
-That program should generate a `simple-global-routing.tr` text
-trace file and a set of `simple-global-routing-xx-xx.pcap` binary
-pcap trace files, which can be read by `tcpdump -tt -r filename.pcap`
-The program source can be found in the examples/routing directory.
-
-## Getting access to the ns-3 documentation
-
-Once you have verified that your build of ns-3 works by running
-the simple-point-to-point example as outlined in 3) above, it is
-quite likely that you will want to get started on reading
-some ns-3 documentation.
-
-All of that documentation should always be available from
-the ns-3 website: http:://www.nsnam.org/documentation/.
-
-This documentation includes:
-
-  - a tutorial
-
-  - a reference manual
-
-  - models in the ns-3 model library
-
-  - a wiki for user-contributed tips: http://www.nsnam.org/wiki/
-
-  - API documentation generated using doxygen: this is
-    a reference manual, most likely not very well suited
-    as introductory text:
-    http://www.nsnam.org/doxygen/index.html
-
-## Working with the development version of ns-3
-
-If you want to download and use the development version of ns-3, you
-need to use the tool `git`. A quick and dirty cheat sheet is included
-in the manual, but reading through the git
-tutorials found in the Internet is usually a good idea if you are not
-familiar with it.
-
-If you have successfully installed git, you can get
-a copy of the development version with the following command:
-```shell
-git clone https://gitlab.com/nsnam/ns-3-dev.git
-```
-
-However, we recommend to follow the Gitlab guidelines for starters,
-that includes creating a Gitlab account, forking the ns-3-dev project
-under the new account's name, and then cloning the forked repository.
-You can find more information in the manual [link].
+Note that simulator has been tested and developed with GCC version 7 using cpp 17. Since NS3 is configured to treat all compilation warnings as
+errors, trying to compile with different GCC versions will likely fail.
