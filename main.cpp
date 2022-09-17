@@ -30,12 +30,12 @@
 #include "ns3/point-to-point-helper.h"
 #include "ns3/ptr.h"
 
-#include "src/SCION/model/pre_simulation_setup.h"
+#include "src/SCION/model/pre-simulation-setup.h"
 
 #include "src/SCION/model/externs.h"
-#include "src/SCION/model/post_simulation_evaluations.h"
-#include "src/SCION/model/schedule_periodic_events.h"
-#include "src/SCION/model/user_defined_events.h"
+#include "src/SCION/model/post-simulation-evaluations.h"
+#include "src/SCION/model/schedule-periodic-events.h"
+#include "src/SCION/model/user-defined-events.h"
 #include "src/SCION/model/utils.h"
 
 using namespace ns3;

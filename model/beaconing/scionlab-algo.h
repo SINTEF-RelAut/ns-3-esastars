@@ -15,21 +15,21 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Author: Seyedali Tabaeiaghdaei seyedali.tabaeiaghdaei@inf.ethz.ch,
- *         Christelle Gloor  christelle.gloor@inf.ethz.ch
+ * Author: Seyedali Tabaeiaghdaei seyedali.tabaeiaghdaei@inf.ethz.ch
  */
 
-#ifndef SCION_SIMULATOR_BASELINE_H
-#define SCION_SIMULATOR_BASELINE_H
+#ifndef SCION_SIMULATOR_SCIONLAB_ALGO_H
+#define SCION_SIMULATOR_SCIONLAB_ALGO_H
 
 #include "beacon-server.h"
 
 namespace ns3 {
+#define MAX_SET_SIZE 100
 
-class Baseline : public BeaconServer
+class Scionlab : public BeaconServer
 {
 public:
-  Baseline (ScionAs *AS, bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
+  Scionlab (ScionAs *AS, bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
             const YAML::Node &config)
       : BeaconServer (AS, parallel_scheduler, xml_node, config)
   {
@@ -56,6 +56,11 @@ private:
                                         const OptimizationTarget *optimization_target) override;
 
   void UpdateAlgorithmDataStructuresPeriodic (Beacon *the_beacon, bool invalidated) override;
+
+  std::pair<Beacon *, int32_t> SelectMostDiverse (std::vector<Beacon *> &beacons,
+                                                    Beacon *the_beacon);
+
+  static int32_t CalcDiversity (Beacon *beacon1, Beacon *beacon2);
 };
 } // namespace ns3
-#endif //SCION_SIMULATOR_BASELINE_H
+#endif //SCION_SIMULATOR_SCIONLAB_ALGO_H

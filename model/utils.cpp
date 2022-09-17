@@ -23,7 +23,7 @@
 #include <random>
 #include <set>
 
-#include "src/SCION/model/beaconing/beacon_server.h"
+#include "src/SCION/model/beaconing/beacon-server.h"
 #include "utils.h"
 
 namespace ns3 {

@@ -28,7 +28,7 @@
 #include <vector>
 #include <unordered_set>
 
-#include "src/SCION/model/path_segment.h"
+#include "src/SCION/model/path-segment.h"
 
 namespace ns3 {
 
