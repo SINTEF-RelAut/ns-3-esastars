@@ -61,7 +61,7 @@ LatencyOptimized::AlgSpecificImportPolicy (Beacon &the_beacon, uint16_t sender_a
 {
   uint16_t dst_as = UPPER_16_BITS (the_beacon.the_path.at (0));
 
-  if (beacons_per_dst_per_ing_if_sorted_by_latency.at (dst_as).at (self_ingress_if_no).size () <
+  if (beacons_per_dst_per_ing_if_sorted_by_latency.at (dst_as).at (self_ingress_if_no - 1).size () <
       MAX_BEACONS_TO_STORE_PER_IFACE)
     {
       return std::tuple<bool, bool, bool, Beacon *, ld> (true, false, false, NULL, 0);
@@ -70,7 +70,7 @@ LatencyOptimized::AlgSpecificImportPolicy (Beacon &the_beacon, uint16_t sender_a
   ld latency = the_beacon.static_info_extension.at (StaticInfoType::LATENCY);
 
   std::multimap<ld, Beacon *>::reverse_iterator highest_previous_latency_iterator =
-      beacons_per_dst_per_ing_if_sorted_by_latency.at (dst_as).at (self_ingress_if_no).rbegin ();
+      beacons_per_dst_per_ing_if_sorted_by_latency.at (dst_as).at (self_ingress_if_no - 1).rbegin ();
   ld highest_previous_latency = highest_previous_latency_iterator->first;
   if (highest_previous_latency > latency)
     {
@@ -87,7 +87,7 @@ LatencyOptimized::DeleteFromAlgorithmDataStructures (Beacon *the_beacon, ld repl
   uint16_t dst_as = UPPER_16_BITS (the_beacon->the_path.at (0));
   uint16_t self_ingress_if = LOWER_16_BITS (the_beacon->the_path.back ());
   auto &beacon_container =
-      beacons_per_dst_per_ing_if_sorted_by_latency.at (dst_as).at (self_ingress_if);
+      beacons_per_dst_per_ing_if_sorted_by_latency.at (dst_as).at (self_ingress_if - 1);
   for (auto it = beacon_container.lower_bound (replacement_key);
        it != beacon_container.upper_bound (replacement_key); ++it)
     {
@@ -108,7 +108,7 @@ LatencyOptimized::InsertToAlgorithmDataStructures (Beacon *the_beacon, uint16_t 
   uint16_t self_ingress_if = LOWER_16_BITS (the_beacon->the_path.back ());
   ld latency = the_beacon->static_info_extension.at (StaticInfoType::LATENCY);
   beacons_per_dst_per_ing_if_sorted_by_latency.at (dst_as)
-      .at (self_ingress_if)
+      .at (self_ingress_if - 1)
       .insert (std::make_pair (latency, the_beacon));
 }
 
@@ -200,8 +200,8 @@ LatencyOptimized::SelectBeaconsToDisseminatePerDstPerNbr (
             {
               ld latency =
                   the_beacon->static_info_extension.at (StaticInfoType::LATENCY) +
-                  as->latencies_between_interfaces.at (LOWER_16_BITS (the_beacon->the_path.back ()))
-                      .at (self_egress_if_no);
+                    as->latencies_between_interfaces.at (LOWER_16_BITS (the_beacon->the_path.back ()) - 1)
+                      .at (self_egress_if_no - 1);
 
               if (beacon_cnt == 0)
                 {

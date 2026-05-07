@@ -22,6 +22,8 @@
 #define SCION_SIMULATOR_PATH_SEGMENT_H
 
 #include <map>
+#include <cstdint>
+#include <string>
 #include <unordered_map>
 #include <vector>
 

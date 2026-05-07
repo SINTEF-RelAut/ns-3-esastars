@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">Visible Dual-IXP Topology</title>
+  <desc id="desc">Visible dual-IXP topology with backbone links 101-102, 107-103, 105-106, 108-106 and visible links from AS102-AS105 to both IXP satellites AS120 and AS121.</desc>
+  <defs>
+    <style>
+      .bg { fill: #f7f3ea; }
+      .panel { fill: #fffdf8; stroke: #d7cdb9; stroke-width: 2; }
+      .title { font: 700 30px 'DejaVu Sans', sans-serif; fill: #1f2a30; }
+      .subtitle { font: 400 17px 'DejaVu Sans', sans-serif; fill: #4f5e66; }
+      .legend { font: 600 15px 'DejaVu Sans', sans-serif; fill: #314047; }
+      .note { font: 400 15px 'DejaVu Sans', sans-serif; fill: #506068; }
+      .node { fill: #fffaf0; stroke: #29434e; stroke-width: 3; }
+      .nodeText { font: 700 24px 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #1f2a30; }
+      .nodeSub { font: 400 14px 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #506068; }
+      .ixpA { fill: #ffedd5; stroke: #c96b00; stroke-width: 4; }
+      .ixpB { fill: #e4f6ef; stroke: #1b7b62; stroke-width: 4; }
+      .backbone { stroke: #2f4858; stroke-width: 6; stroke-linecap: round; }
+      .ixpALink { stroke: #e6871f; stroke-width: 5; stroke-linecap: round; }
+      .ixpBLink { stroke: #1f9a79; stroke-width: 5; stroke-linecap: round; }
+      .dual { opacity: 0.9; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1200" height="760" />
+  <rect class="panel" x="28" y="24" width="1144" height="712" rx="24" />
+
+  <text class="title" x="56" y="72">Dual-IXP Topology: Visible Case</text>
+  <text class="subtitle" x="56" y="104">Link failures are directly visible on the physical interfaces to both IXP satellites.</text>
+
+  <line class="backbone" x1="180" y1="360" x2="325" y2="285" />
+  <line class="backbone" x1="180" y1="180" x2="395" y2="180" />
+  <line class="backbone" x1="785" y1="500" x2="940" y2="500" />
+  <line class="backbone" x1="1040" y1="500" x2="1100" y2="380" />
+
+  <line class="ixpALink dual" x1="325" y1="285" x2="610" y2="195" />
+  <line class="ixpALink dual" x1="395" y1="180" x2="610" y2="195" />
+  <line class="ixpALink dual" x1="720" y1="180" x2="610" y2="195" />
+  <line class="ixpALink dual" x1="785" y1="315" x2="610" y2="195" />
+
+  <line class="ixpALink dual" x1="325" y1="285" x2="610" y2="235" opacity="0.65" />
+  <line class="ixpALink dual" x1="395" y1="180" x2="610" y2="235" opacity="0.65" />
+  <line class="ixpALink dual" x1="720" y1="180" x2="610" y2="235" opacity="0.65" />
+  <line class="ixpALink dual" x1="785" y1="315" x2="610" y2="235" opacity="0.65" />
+
+  <line class="ixpBLink dual" x1="325" y1="285" x2="610" y2="360" />
+  <line class="ixpBLink dual" x1="395" y1="180" x2="610" y2="360" />
+  <line class="ixpBLink dual" x1="720" y1="180" x2="610" y2="360" />
+  <line class="ixpBLink dual" x1="785" y1="315" x2="610" y2="360" />
+
+  <line class="ixpBLink dual" x1="325" y1="285" x2="610" y2="400" opacity="0.65" />
+  <line class="ixpBLink dual" x1="395" y1="180" x2="610" y2="400" opacity="0.65" />
+  <line class="ixpBLink dual" x1="720" y1="180" x2="610" y2="400" opacity="0.65" />
+  <line class="ixpBLink dual" x1="785" y1="315" x2="610" y2="400" opacity="0.65" />
+
+  <circle class="node" cx="180" cy="360" r="44" />
+  <text class="nodeText" x="180" y="368">101</text>
+
+  <circle class="node" cx="325" cy="285" r="44" />
+  <text class="nodeText" x="325" y="293">102</text>
+
+  <circle class="node" cx="180" cy="180" r="44" />
+  <text class="nodeText" x="180" y="188">107</text>
+
+  <circle class="node" cx="395" cy="180" r="44" />
+  <text class="nodeText" x="395" y="188">103</text>
+
+  <circle class="node" cx="720" cy="180" r="44" />
+  <text class="nodeText" x="720" y="188">104</text>
+
+  <circle class="node" cx="785" cy="315" r="44" />
+  <text class="nodeText" x="785" y="323">105</text>
+
+  <circle class="node" cx="940" cy="500" r="44" />
+  <text class="nodeText" x="940" y="508">106</text>
+
+  <circle class="node" cx="1100" cy="380" r="44" />
+  <text class="nodeText" x="1100" y="388">108</text>
+
+  <rect class="ixpA" x="540" y="150" width="140" height="130" rx="18" />
+  <text class="nodeText" x="610" y="196">120</text>
+  <text class="nodeSub" x="610" y="222">VIXP A</text>
+  <text class="nodeSub" x="610" y="242">primary orbit</text>
+
+  <rect class="ixpB" x="540" y="315" width="140" height="130" rx="18" />
+  <text class="nodeText" x="610" y="361">121</text>
+  <text class="nodeSub" x="610" y="387">VIXP B</text>
+  <text class="nodeSub" x="610" y="407">backup orbit</text>
+
+  <rect class="panel" x="56" y="560" width="1088" height="136" rx="18" />
+  <text class="legend" x="88" y="600">Legend</text>
+  <line class="backbone" x1="88" y1="628" x2="168" y2="628" />
+  <text class="note" x="186" y="634">Backbone links: 101-102, 107-103, 105-106, 108-106</text>
+  <line class="ixpALink" x1="88" y1="658" x2="168" y2="658" />
+  <text class="note" x="186" y="664">Visible links to IXP satellite AS120 (two interfaces per AS102-AS105)</text>
+  <line class="ixpBLink" x1="88" y1="688" x2="168" y2="688" />
+  <text class="note" x="186" y="694">Visible links to IXP satellite AS121 (two interfaces per AS102-AS105)</text>
+</svg>

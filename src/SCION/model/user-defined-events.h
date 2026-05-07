@@ -21,84 +21,97 @@
 #ifndef SCION_SIMULATOR_USER_DEFINED_EVENTS_H
 #define SCION_SIMULATOR_USER_DEFINED_EVENTS_H
 
-#include <any>
+#include <cstdint>
 #include <fstream>
 #include <functional>
 #include <unordered_map>
+#include <vector>
 #include <yaml-cpp/yaml.h>
 
+#include "ns3/object.h"
+#include "ns3/ptr.h"
 #include "src/core/model/simulator.h"
 
 #include "json.hpp"
 #include "path-segment.h"
 #include "scion-as.h"
 #include "scion-packet.h"
+#include "virtual-ixp-fabric.h"
 
-template <typename Ret>
+namespace detail {
+
+template <std::size_t... indices>
+struct index_sequence
+{
+};
+
+template <std::size_t N, std::size_t... indices>
+struct make_index_sequence_impl : make_index_sequence_impl<N - 1, N - 1, indices...>
+{
+};
+
+template <std::size_t... indices>
+struct make_index_sequence_impl<0, indices...>
+{
+  typedef index_sequence<indices...> type;
+};
+
+template <std::size_t N>
+struct make_index_sequence
+{
+  typedef typename make_index_sequence_impl<N>::type type;
+};
+
+} // namespace detail
+
 struct AnyCallable
 {
   AnyCallable ()
   {
   }
 
-  template <typename... Args>
-  AnyCallable (std::function<Ret (Args...)> fun) : m_any (fun)
+  explicit AnyCallable (std::function<void (const std::vector<std::string> &)> fun) : m_fun (fun)
   {
   }
 
-  template <typename... Args>
-  Ret
-  operator() (Args... args)
+  AnyCallable &
+  operator= (std::function<void (const std::vector<std::string> &)> fun)
   {
-    return std::invoke (std::any_cast<std::function<Ret (Args...)>> (m_any),
-                        std::forward<Args> (args)...);
+    m_fun = fun;
+    return *this;
   }
 
-  template <std::size_t... S, typename T>
-  Ret
-  operator() (const std::vector<T> &vec, std::index_sequence<S...>)
+  void
+  operator() (const std::vector<std::string> &vec) const
   {
-    return operator() (vec[S]...);
+    if (m_fun)
+      {
+        m_fun (vec);
+      }
   }
 
-  template <std::size_t size, typename T>
-  Ret
-  operator() (const std::vector<T> &vec)
-  {
-    return operator() (vec, std::make_index_sequence<size> ());
-  }
-
-  std::any m_any;
+  std::function<void (const std::vector<std::string> &)> m_fun;
 };
 
-template <int N>
-struct my_placeholder
+template <class R, class U, class... Types, std::size_t... indices>
+std::function<void (const std::vector<std::string> &)>
+BindFactory (R (U::*f) (Types...), U *val, detail::index_sequence<indices...> /*seq*/)
 {
-  static my_placeholder ph;
-};
+  return [f, val] (const std::vector<std::string> &vec) {
+    if (vec.size () != sizeof...(Types))
+      {
+        return;
+      }
 
-template <int N>
-my_placeholder<N> my_placeholder<N>::ph;
-
-namespace std {
-template <int N>
-struct is_placeholder<::my_placeholder<N>> : std::integral_constant<int, N>
-{
-};
-} // namespace std
-
-template <class R, class... Types, class U, int... indices>
-std::function<R (Types...)>
-BindFactory (R (U::*f) (Types...), U *val, std::integer_sequence<int, indices...> /*seq*/)
-{
-  return std::bind (f, val, my_placeholder<indices + 1>::ph...);
+    (val->*f) (vec[indices]...);
+  };
 }
 
-template <class R, class... Types, class U>
-std::function<R (Types...)>
+template <class R, class U, class... Types>
+std::function<void (const std::vector<std::string> &)>
 FunctionFactory (R (U::*f) (Types...), U *val)
 {
-  return BindFactory (f, val, std::make_integer_sequence<int, sizeof...(Types)> ());
+  return BindFactory (f, val, typename detail::make_index_sequence<sizeof...(Types)>::type ());
 }
 
 namespace ns3 {
@@ -130,9 +143,37 @@ private:
   std::map<int32_t, uint16_t> &real_to_alias_as_no;
   std::map<uint16_t, int32_t> &alias_to_real_as_no;
 
-  std::unordered_map<std::string, AnyCallable<void>> function_name_to_function;
+  std::unordered_map<std::string, AnyCallable> function_name_to_function;
+
+  // Per-AS snapshots of initial link state to support reversible LinkDown/LinkUp events.
+  std::unordered_map<uint16_t, std::unordered_map<uint16_t, uint16_t>>
+      original_interface_to_neighbor_map;
+  std::unordered_map<uint16_t, std::unordered_map<uint16_t, std::vector<uint16_t>>>
+      original_interfaces_per_neighbor_as;
+  std::unordered_map<uint16_t, std::vector<std::pair<uint16_t, int32_t>>> original_neighbors;
+
+  // Mapping from configured topology IFIDs (e.g., 1020001) to runtime SCION IFIDs (1..N).
+  std::unordered_map<int32_t, std::unordered_map<uint32_t, uint16_t>> configured_if_to_scion_if;
+
+  bool virtual_ixp_enabled = false;
+  Ptr<VirtualIxpFabric> virtual_ixp_fabric;
+  uint32_t virtual_ixp_next_link_index = 1;
+  std::unordered_map<uint64_t, IxpLinkId> virtual_ixp_link_by_as_if;
+  std::unordered_map<uint64_t, double> virtual_ixp_quality_by_as_if;
 
   void ConstructFuncMap ();
+
+  void SnapshotInitialLinkState ();
+  void BuildConfiguredIfIdMap ();
+  void InitializeVirtualIxpIfConfigured ();
+  uint64_t MakeAsIfKey (uint16_t alias_as_no, uint16_t scion_if_id) const;
+  bool HandleVirtualIxpLinkEvent (uint16_t alias_as_no, uint16_t scion_if_id, bool up);
+
+  ScionAs *GetAsByRealAsNo (int32_t real_as_no) const;
+  uint16_t ResolveScionIfId (ScionAs *scion_as, int32_t real_as_no, uint32_t event_if_id) const;
+
+  static bool HasNeighbor (const std::vector<std::pair<uint16_t, int32_t>> &neighbors,
+                           uint16_t neighbor_as);
 
   void ReadAndScheduleUserDefinedEvents (const std::string &events_file_str);
 
@@ -144,14 +185,14 @@ private:
   void LinkUp (std::string isd_number, std::string real_as_no, std::string if_id);
 
   void SendAPacket (std::string src_isd_number, std::string real_src_as_no,
-                      std::string src_local_address, std::string dst_isd_number,
-                      std::string real_dst_as_no, std::string dst_local_address,
-                      std::string pyload_size);
+                    std::string src_local_address, std::string dst_isd_number,
+                    std::string real_dst_as_no, std::string dst_local_address,
+                    std::string pyload_size);
 
   void SendPacketBatch (std::string src_isd_number, std::string real_src_as_no,
-                          std::string src_local_address, std::string dst_isd_number,
-                          std::string real_dst_as_no, std::string dst_local_address,
-                          std::string pyload_size, std::string no_pkts);
+                        std::string src_local_address, std::string dst_isd_number,
+                        std::string real_dst_as_no, std::string dst_local_address,
+                        std::string pyload_size, std::string no_pkts);
 
   void TimeReferencesDown ();
   void TimeReferencesUp ();

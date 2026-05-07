@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<topology>
+  <ases>
+    <as id="101">
+      <property name="isd" value="1"/>
+      <property name="type" value="core"/>
+      <hosts>
+        <host id="2"/>
+      </hosts>
+    </as>
+    <as id="102">
+      <property name="isd" value="1"/>
+      <property name="type" value="core"/>
+      <hosts>
+        <host id="2"/>
+      </hosts>
+    </as>
+    <as id="103">
+      <property name="isd" value="1"/>
+      <property name="type" value="core"/>
+      <hosts>
+        <host id="2"/>
+      </hosts>
+    </as>
+    <as id="104">
+      <property name="isd" value="1"/>
+      <property name="type" value="core"/>
+      <hosts>
+        <host id="2"/>
+      </hosts>
+    </as>
+    <as id="105">
+      <property name="isd" value="1"/>
+      <property name="type" value="core"/>
+      <hosts>
+        <host id="2"/>
+      </hosts>
+    </as>
+    <as id="106">
+      <property name="isd" value="1"/>
+      <property name="type" value="core"/>
+      <hosts>
+        <host id="2"/>
+      </hosts>
+    </as>
+    <as id="107">
+      <property name="isd" value="1"/>
+      <property name="type" value="core"/>
+      <hosts>
+        <host id="2"/>
+      </hosts>
+    </as>
+    <as id="108">
+      <property name="isd" value="1"/>
+      <property name="type" value="core"/>
+      <hosts>
+        <host id="2"/>
+      </hosts>
+    </as>
+  </ases>
+
+  <!-- Primary branch: 101-102-104-106 -->
+  <link>
+    <from>101</from>
+    <to>102</to>
+    <property name="capacity" type="int">300</property>
+    <property name="rel" type="string">core</property>
+    <property name="latitude" type="float">0.0</property>
+    <property name="longitude" type="float">0.0</property>
+    <property name="latency" type="float">0.0020</property>
+    <property name="from_if_id" type="int">1010000</property>
+    <property name="to_if_id" type="int">1020000</property>
+  </link>
+  <link>
+    <from>102</from>
+    <to>104</to>
+    <property name="capacity" type="int">300</property>
+    <property name="rel" type="string">core</property>
+    <property name="latitude" type="float">0.0</property>
+    <property name="longitude" type="float">0.0</property>
+    <property name="latency" type="float">0.0020</property>
+    <property name="from_if_id" type="int">1020001</property>
+    <property name="to_if_id" type="int">1040000</property>
+  </link>
+  <link>
+    <from>104</from>
+    <to>106</to>
+    <property name="capacity" type="int">300</property>
+    <property name="rel" type="string">core</property>
+    <property name="latitude" type="float">0.0</property>
+    <property name="longitude" type="float">0.0</property>
+    <property name="latency" type="float">0.0020</property>
+    <property name="from_if_id" type="int">1040001</property>
+    <property name="to_if_id" type="int">1060000</property>
+  </link>
+
+  <!-- Alternate branch: 101-103-105-106 -->
+  <link>
+    <from>101</from>
+    <to>103</to>
+    <property name="capacity" type="int">300</property>
+    <property name="rel" type="string">core</property>
+    <property name="latitude" type="float">0.0</property>
+    <property name="longitude" type="float">0.0</property>
+    <property name="latency" type="float">0.0022</property>
+    <property name="from_if_id" type="int">1010001</property>
+    <property name="to_if_id" type="int">1030000</property>
+  </link>
+  <link>
+    <from>103</from>
+    <to>105</to>
+    <property name="capacity" type="int">300</property>
+    <property name="rel" type="string">core</property>
+    <property name="latitude" type="float">0.0</property>
+    <property name="longitude" type="float">0.0</property>
+    <property name="latency" type="float">0.0022</property>
+    <property name="from_if_id" type="int">1030001</property>
+    <property name="to_if_id" type="int">1050000</property>
+  </link>
+  <link>
+    <from>105</from>
+    <to>106</to>
+    <property name="capacity" type="int">300</property>
+    <property name="rel" type="string">core</property>
+    <property name="latitude" type="float">0.0</property>
+    <property name="longitude" type="float">0.0</property>
+    <property name="latency" type="float">0.0022</property>
+    <property name="from_if_id" type="int">1050001</property>
+    <property name="to_if_id" type="int">1060001</property>
+  </link>
+
+  <!-- Cross-links to create additional alternatives -->
+  <link>
+    <from>102</from>
+    <to>103</to>
+    <property name="capacity" type="int">200</property>
+    <property name="rel" type="string">peer</property>
+    <property name="latitude" type="float">0.0</property>
+    <property name="longitude" type="float">0.0</property>
+    <property name="latency" type="float">0.0012</property>
+    <property name="from_if_id" type="int">1020002</property>
+    <property name="to_if_id" type="int">1030002</property>
+  </link>
+  <link>
+    <from>104</from>
+    <to>105</to>
+    <property name="capacity" type="int">200</property>
+    <property name="rel" type="string">peer</property>
+    <property name="latitude" type="float">0.0</property>
+    <property name="longitude" type="float">0.0</property>
+    <property name="latency" type="float">0.0012</property>
+    <property name="from_if_id" type="int">1040002</property>
+    <property name="to_if_id" type="int">1050002</property>
+  </link>
+
+  <!-- Edge links to AS107/AS108 -->
+  <link>
+    <from>101</from>
+    <to>107</to>
+    <property name="capacity" type="int">150</property>
+    <property name="rel" type="string">core</property>
+    <property name="latitude" type="float">0.0</property>
+    <property name="longitude" type="float">0.0</property>
+    <property name="latency" type="float">0.0015</property>
+    <property name="from_if_id" type="int">1010002</property>
+    <property name="to_if_id" type="int">1070000</property>
+  </link>
+  <link>
+    <from>106</from>
+    <to>108</to>
+    <property name="capacity" type="int">150</property>
+    <property name="rel" type="string">core</property>
+    <property name="latitude" type="float">0.0</property>
+    <property name="longitude" type="float">0.0</property>
+    <property name="latency" type="float">0.0015</property>
+    <property name="from_if_id" type="int">1060002</property>
+    <property name="to_if_id" type="int">1080000</property>
+  </link>
+</topology>

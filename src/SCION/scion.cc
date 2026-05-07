@@ -37,6 +37,8 @@
 #include "src/SCION/model/schedule-periodic-events.h"
 #include "src/SCION/model/user-defined-events.h"
 #include "src/SCION/model/utils.h"
+#include "src/SCION/model/scion-as.h"
+#include <fstream>
 
 using namespace ns3;
 
@@ -131,6 +133,8 @@ main (int argc, char *argv[])
       InstantiateTimeServers (config, nodes);
     }
 
+  InstantiateProbeHostsIfNeeded (config, nodes, xml_root);
+
   InstantiateLinksFromTopo (xml_root, nodes, real_to_alias_as_no, config);
   InitializeASesAttributes (nodes, real_to_alias_as_no, xml_root, config);
 
@@ -144,6 +148,24 @@ main (int argc, char *argv[])
       new PostSimulationEvaluations (config, nodes, real_to_alias_as_no, alias_to_real_as_no);
 
   eval->DoFinalEvaluations ();
+
+  // Write SCION control-plane (beacon) summary CSV if requested
+  if (config["cp_summary_output"])
+    {
+      std::string cp_out_path = config["cp_summary_output"].as<std::string> ();
+      std::ofstream cp_out (cp_out_path);
+      cp_out << "total_beacons_sent,propagation,exploration\n";
+      uint64_t total = 0;
+      for (uint32_t i = 0; i < nodes.GetN (); ++i)
+        {
+          ScionAs *as_node = dynamic_cast<ScionAs *> (PeekPointer (nodes.Get (i)));
+          if (as_node == nullptr || as_node->GetBeaconServer () == nullptr)
+            continue;
+          for (auto const &cnt : as_node->GetBeaconServer ()->GetBeaconsSentPerInterface ())
+            total += cnt;
+        }
+      cp_out << total << "," << total << ",0\n";
+    }
 
   Simulator::Destroy ();
 

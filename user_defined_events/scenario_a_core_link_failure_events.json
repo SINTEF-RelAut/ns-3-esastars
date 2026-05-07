@@ -1,0 +1,25 @@
+{
+  "description": "Scenario A: Single core link failure (AS101-AS102) at t=50s for 200 seconds",
+  "events": [
+    {
+      "time": "50s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "101",
+        "1010000"
+      ],
+      "description": "Link AS101-AS102 down"
+    },
+    {
+      "time": "250s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "101",
+        "1010000"
+      ],
+      "description": "Link AS101-AS102 recovered"
+    }
+  ]
+}

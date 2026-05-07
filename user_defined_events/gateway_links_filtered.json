@@ -1,0 +1,354 @@
+{
+  "metadata": {
+    "description": "Filtered Inter-AS gateway link events",
+    "selected_links": [
+      {
+        "AS_ID": "1",
+        "Gateway_AS_ID": "1",
+        "Interface_ID": "10020"
+      },
+      {
+        "AS_ID": "1",
+        "Gateway_AS_ID": "2",
+        "Interface_ID": "20012"
+      },
+      {
+        "AS_ID": "1",
+        "Gateway_AS_ID": "3",
+        "Interface_ID": "30013"
+      },
+      {
+        "AS_ID": "1",
+        "Gateway_AS_ID": "4",
+        "Interface_ID": "40006"
+      }
+    ],
+    "total_events": 36
+  },
+  "events": [
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10020"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40006"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20012"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30013"
+      ]
+    },
+    {
+      "time": "80s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20012"
+      ]
+    },
+    {
+      "time": "80s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30013"
+      ]
+    },
+    {
+      "time": "580s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10020"
+      ]
+    },
+    {
+      "time": "580s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40006"
+      ]
+    },
+    {
+      "time": "1370s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20012"
+      ]
+    },
+    {
+      "time": "1370s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30013"
+      ]
+    },
+    {
+      "time": "1790s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10020"
+      ]
+    },
+    {
+      "time": "1790s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40006"
+      ]
+    },
+    {
+      "time": "2080s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10020"
+      ]
+    },
+    {
+      "time": "2080s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40006"
+      ]
+    },
+    {
+      "time": "2970s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20012"
+      ]
+    },
+    {
+      "time": "2970s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30013"
+      ]
+    },
+    {
+      "time": "3000s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20012"
+      ]
+    },
+    {
+      "time": "3000s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30013"
+      ]
+    },
+    {
+      "time": "3340s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20012"
+      ]
+    },
+    {
+      "time": "3340s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30013"
+      ]
+    },
+    {
+      "time": "4270s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20012"
+      ]
+    },
+    {
+      "time": "4270s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30013"
+      ]
+    },
+    {
+      "time": "4810s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10020"
+      ]
+    },
+    {
+      "time": "4810s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40006"
+      ]
+    },
+    {
+      "time": "4920s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10020"
+      ]
+    },
+    {
+      "time": "4920s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40006"
+      ]
+    },
+    {
+      "time": "6230s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20012"
+      ]
+    },
+    {
+      "time": "6230s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30013"
+      ]
+    },
+    {
+      "time": "7160s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20012"
+      ]
+    },
+    {
+      "time": "7160s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30013"
+      ]
+    },
+    {
+      "time": "7650s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10020"
+      ]
+    },
+    {
+      "time": "7650s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40006"
+      ]
+    },
+    {
+      "time": "7760s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10020"
+      ]
+    },
+    {
+      "time": "7760s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40006"
+      ]
+    },
+    {
+      "time": "9130s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20012"
+      ]
+    },
+    {
+      "time": "9130s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30013"
+      ]
+    }
+  ]
+}

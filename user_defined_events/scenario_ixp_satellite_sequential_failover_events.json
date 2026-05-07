@@ -1,0 +1,45 @@
+{
+    "description": "Sequential virtual-IXP failovers on AS102-AS105 every 27s",
+    "events": [
+        {
+            "time": "50s",
+            "type": "link_down",
+            "args": [
+                "1",
+                "102",
+                "1020000"
+            ],
+            "description": "AS102 primary IXP-facing interface down; fail over to alternate"
+        },
+        {
+            "time": "77s",
+            "type": "link_down",
+            "args": [
+                "1",
+                "103",
+                "1030000"
+            ],
+            "description": "AS103 primary IXP-facing interface down; fail over to alternate"
+        },
+        {
+            "time": "104s",
+            "type": "link_down",
+            "args": [
+                "1",
+                "104",
+                "1040000"
+            ],
+            "description": "AS104 primary IXP-facing interface down; fail over to alternate"
+        },
+        {
+            "time": "131s",
+            "type": "link_down",
+            "args": [
+                "1",
+                "105",
+                "1050000"
+            ],
+            "description": "AS105 primary IXP-facing interface down; fail over to alternate"
+        }
+    ]
+}

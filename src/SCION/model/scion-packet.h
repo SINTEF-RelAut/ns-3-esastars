@@ -44,7 +44,9 @@ enum PayloadType {
   LIST_OF_ALL_CORE_ASES = 5,
   BROADCAST_LIST_OF_ALL_CORE_ASES = 6,
   NTP_REQ = 7,
-  NTP_RESP = 8
+  NTP_RESP = 8,
+  SCION_PROBE_REQ = 9,
+  SCION_PROBE_REPLY = 10
 };
 
 struct PathReqFromHost
@@ -70,11 +72,18 @@ struct NtpReqOrResp
   int64_t t0, t1, t2, t3;
 };
 
+struct ScionProbePayload
+{
+  uint32_t seq;
+  int64_t send_time_ns;
+};
+
 union Payload {
   PathReqFromHost path_req_from_host;
   RegPathsFromLocalPs registered_paths_from_local_ps;
   ListOfAllASes list_of_all_ases;
   NtpReqOrResp ntp_req_or_resp;
+  ScionProbePayload scion_probe_payload;
 };
 
 struct ScionPacket

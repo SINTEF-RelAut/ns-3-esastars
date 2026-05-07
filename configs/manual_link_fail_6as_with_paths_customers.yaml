@@ -1,0 +1,46 @@
+time_resolution: NS
+topology: topology/manual_link_fail_6as_topology.xml
+output: build/manual_link_fail_6as_with_paths_customers.txt
+simulation_duration: 700s
+NUM_CORE: 1
+events_file: user_defined_events/manual_link_fail_6as_events.json
+beacon_service:
+  policy: baseline
+  period: 10s
+  expiration_period: 120s
+  first_beaconing: 0s
+  last_beaconing: 700s
+path_service: {}
+border_router: {}
+path_snapshot_logger:
+  period: 10s
+  output: build/manual_link_fail_6as_with_paths_customers.csv
+  max_paths_per_dst: 3
+  discover_all_pairs: true
+  request_lead_time: 500ms
+data_plane_probing:
+  start: 20s
+  period: 1s
+  timeout: 2s
+  count: 600
+  pairs:
+    - src_as: 101
+      dst_as: 106
+      src_host: 2
+      dst_host: 2
+      output: build/scion_probe_101_106.csv
+    - src_as: 102
+      dst_as: 105
+      src_host: 2
+      dst_host: 2
+      output: build/scion_probe_102_105.csv
+    - src_as: 103
+      dst_as: 106
+      src_host: 2
+      dst_host: 2
+      output: build/scion_probe_103_106.csv
+    - src_as: 107
+      dst_as: 108
+      src_host: 2
+      dst_host: 2
+      output: build/scion_probe_107_108.csv

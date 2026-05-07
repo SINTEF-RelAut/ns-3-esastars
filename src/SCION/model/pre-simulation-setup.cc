@@ -62,6 +62,18 @@ InstantiateASesFromTopo (rapidxml::xml_node<> *xml_root,
 {
   uint16_t alias_as_no = 0;
   rapidxml::xml_node<> *cur_xml_node = xml_root->first_node ("node");
+  const char *sibling_name = "node";
+
+  // Support both legacy <node> and manual <ases><as> topology formats.
+  if (!cur_xml_node)
+    {
+      rapidxml::xml_node<> *ases_xml_node = xml_root->first_node ("ases");
+      if (ases_xml_node)
+        {
+          cur_xml_node = ases_xml_node->first_node ("as");
+          sibling_name = "as";
+        }
+    }
 
   while (cur_xml_node)
     {
@@ -91,12 +103,12 @@ InstantiateASesFromTopo (rapidxml::xml_node<> *xml_root,
       if (type == "core")
         {
           as_node = CreateObject<ScionCoreAs> (0, (alias_as_no == 0), alias_as_no, cur_xml_node,
-                                                 config, malicious_border_routers, Time (0));
+                                               config, malicious_border_routers, Time (0));
         }
       else if (type == "non-core")
         {
-          as_node = CreateObject<ScionAs> (0, (alias_as_no == 0), alias_as_no, cur_xml_node,
-                                            config, malicious_border_routers, Time (0));
+          as_node = CreateObject<ScionAs> (0, (alias_as_no == 0), alias_as_no, cur_xml_node, config,
+                                           malicious_border_routers, Time (0));
         }
       else
         {
@@ -119,7 +131,7 @@ InstantiateASesFromTopo (rapidxml::xml_node<> *xml_root,
 
       alias_as_no++;
 
-      cur_xml_node = cur_xml_node->next_sibling ("node");
+      cur_xml_node = cur_xml_node->next_sibling (sibling_name);
     }
 }
 
@@ -330,6 +342,83 @@ InstantiateTimeServers (const YAML::Node &config, const NodeContainer &as_nodes)
 }
 
 void
+InstantiateProbeHostsIfNeeded (const YAML::Node &config, const NodeContainer &as_nodes,
+                               rapidxml::xml_node<> *xml_root)
+{
+  if (!config["data_plane_probing"])
+    {
+      return;
+    }
+
+  bool only_propagation_delay = OnlyPropagationDelay (config);
+  std::map<uint16_t, uint32_t> max_probe_host_per_as;
+
+  if (xml_root)
+    {
+      rapidxml::xml_node<> *ases_xml = xml_root->first_node ("ases");
+      for (rapidxml::xml_node<> *as_xml = ases_xml ? ases_xml->first_node ("as") : NULL; as_xml;
+           as_xml = as_xml->next_sibling ("as"))
+        {
+          rapidxml::xml_attribute<> *id_attr = as_xml->first_attribute ("id");
+          if (!id_attr)
+            {
+              continue;
+            }
+
+          uint16_t as_id = static_cast<uint16_t> (std::stoi (id_attr->value ()));
+          uint32_t max_host_id = 2;
+          rapidxml::xml_node<> *hosts_xml = as_xml->first_node ("hosts");
+          for (rapidxml::xml_node<> *host_xml = hosts_xml ? hosts_xml->first_node ("host") : NULL;
+               host_xml; host_xml = host_xml->next_sibling ("host"))
+            {
+              rapidxml::xml_attribute<> *host_id_attr = host_xml->first_attribute ("id");
+              if (!host_id_attr)
+                {
+                  continue;
+                }
+              max_host_id = std::max (max_host_id,
+                                      static_cast<uint32_t> (std::stoi (host_id_attr->value ())));
+            }
+          max_probe_host_per_as[as_id] = max_host_id;
+        }
+    }
+
+  for (uint32_t i = 0; i < as_nodes.GetN (); ++i)
+    {
+      ScionAs *as_node = dynamic_cast<ScionAs *> (PeekPointer (as_nodes.Get (i)));
+      if (as_node == NULL)
+        {
+          continue;
+        }
+
+      uint32_t target_max_host = 2;
+      std::map<uint16_t, uint32_t>::const_iterator max_it =
+          max_probe_host_per_as.find (as_node->as_number);
+      if (max_it != max_probe_host_per_as.end ())
+        {
+          target_max_host = max_it->second;
+        }
+
+      for (uint32_t host_addr = as_node->GetNHosts () + 2; host_addr <= target_max_host;
+           ++host_addr)
+        {
+          ScionHost *probe_host = new ScionHost (0, as_node->isd_number, as_node->as_number,
+                                                 host_addr, 0.0, 0.0, as_node);
+          as_node->AddHost (probe_host);
+
+          if (only_propagation_delay)
+            {
+              probe_host->SetProcessingDelay (Time (0), Time (0));
+            }
+          else
+            {
+              probe_host->SetProcessingDelay (NanoSeconds (10), PicoSeconds (200));
+            }
+        }
+    }
+}
+
+void
 InstantiateLinksFromTopo (rapidxml::xml_node<> *xml_root, NodeContainer &as_nodes,
                           const std::map<int32_t, uint16_t> &real_to_alias_as_no,
                           const YAML::Node &config)
@@ -347,7 +436,11 @@ InstantiateLinksFromTopo (rapidxml::xml_node<> *xml_root, NodeContainer &as_node
       ld latitude = std::stod (p.GetProperty ("latitude"));
       ld longitude = std::stod (p.GetProperty ("longitude"));
       int32_t bwd = std::stoi (p.GetProperty ("capacity"));
-      std::string rel = "core"; //p.GetProperty("rel");
+      std::string rel = "core";
+      if (p.HasProperty ("rel") && !p.GetProperty ("rel").empty ())
+        {
+          rel = p.GetProperty ("rel");
+        }
       NeighbourRelation relation;
 
       // Check for the 3 possibilities in CAIDA topology
@@ -359,7 +452,7 @@ InstantiateLinksFromTopo (rapidxml::xml_node<> *xml_root, NodeContainer &as_node
         {
           relation = NeighbourRelation::CORE;
         }
-      else if (rel == "customer")
+      else if (rel == "customer" || rel == "provider_to_customer" || rel == "p2c")
         {
           relation = NeighbourRelation::CUSTOMER;
         }
@@ -383,25 +476,43 @@ InstantiateLinksFromTopo (rapidxml::xml_node<> *xml_root, NodeContainer &as_node
       PointToPointHelper helper;
       helper.Install (from_as, to_as);
 
-      to_as->AddToRemoteAsInfo (from_as->GetNDevices () - 1, PeekPointer (from_as));
+      const uint16_t to_dev_idx = (uint16_t) (to_as->GetNDevices () - 1);
+      const uint16_t to_scion_if = to_dev_idx + 1; // SCION IF IDs are 1-based; 0 is reserved
+      const uint16_t from_dev_idx = (uint16_t) (from_as->GetNDevices () - 1);
+      const uint16_t from_scion_if = from_dev_idx + 1;
+
+      to_as->AddToRemoteAsInfo (from_scion_if, PeekPointer (from_as));
       to_as->interfaces_coordinates.push_back (std::pair<ld, ld> (latitude, longitude));
-      to_as->coordinates_to_interfaces.insert (std::make_pair (
-          std::pair<ld, ld> (latitude, longitude), to_as->interfaces_coordinates.size () - 1));
+      to_as->coordinates_to_interfaces.insert (
+          std::make_pair (std::pair<ld, ld> (latitude, longitude), to_scion_if));
 
       if (p.HasProperty ("to_if_id"))
         {
-          assert ((uint32_t) std::stoi (p.GetProperty ("to_if_id")) == to_as->GetNDevices () - 1);
+          uint32_t expected = to_scion_if;
+          uint32_t configured = std::stoi (p.GetProperty ("to_if_id"));
+          if (configured != expected)
+            {
+              std::cerr << "Warning: to_if_id=" << configured
+                        << " does not match inferred SCION IF ID=" << expected
+                        << ". Continuing with inferred index." << std::endl;
+            }
         }
 
-      from_as->AddToRemoteAsInfo (to_as->GetNDevices () - 1, PeekPointer (to_as));
+      from_as->AddToRemoteAsInfo (to_scion_if, PeekPointer (to_as));
       from_as->interfaces_coordinates.push_back (std::pair<ld, ld> (latitude, longitude));
-      from_as->coordinates_to_interfaces.insert (std::make_pair (
-          std::pair<ld, ld> (latitude, longitude), from_as->interfaces_coordinates.size () - 1));
+      from_as->coordinates_to_interfaces.insert (
+          std::make_pair (std::pair<ld, ld> (latitude, longitude), from_scion_if));
 
       if (p.HasProperty ("from_if_id"))
         {
-          assert ((uint32_t) std::stoi (p.GetProperty ("from_if_id")) ==
-                  from_as->GetNDevices () - 1);
+          uint32_t expected = from_scion_if;
+          uint32_t configured = std::stoi (p.GetProperty ("from_if_id"));
+          if (configured != expected)
+            {
+              std::cerr << "Warning: from_if_id=" << configured
+                        << " does not match inferred SCION IF ID=" << expected
+                        << ". Continuing with inferred index." << std::endl;
+            }
         }
 
       if (config["border_router"])
@@ -450,8 +561,8 @@ InstantiateLinksFromTopo (rapidxml::xml_node<> *xml_root, NodeContainer &as_node
           from_br->AddToPropagationDelays (from_propagation_delay);
           from_br->AddToTransmissionDelays (from_transmission_delay);
 
-          to_br->AddToIfForwadingTable (to_as->GetNDevices () - 1, to_br->GetNDevices () - 1);
-          from_br->AddToIfForwadingTable (from_as->GetNDevices () - 1, from_br->GetNDevices () - 1);
+          to_br->AddToIfForwadingTable (to_scion_if, to_br->GetNDevices () - 1);
+          from_br->AddToIfForwadingTable (from_scion_if, from_br->GetNDevices () - 1);
 
           to_br->AddToRemoteNodesInfo (from_br, from_br->GetNDevices () - 1, from_as->isd_number,
                                        from_as->as_number);
@@ -486,34 +597,30 @@ InstantiateLinksFromTopo (rapidxml::xml_node<> *xml_root, NodeContainer &as_node
           assert (false);
         }
 
-      to_as->interface_to_neighbor_map.insert (
-          std::make_pair (to_as->GetNDevices () - 1, from_as->as_number));
+      to_as->interface_to_neighbor_map.insert (std::make_pair (to_scion_if, from_as->as_number));
       if (to_as->interfaces_per_neighbor_as.find (from_as->as_number) !=
           to_as->interfaces_per_neighbor_as.end ())
         {
-          to_as->interfaces_per_neighbor_as.at (from_as->as_number)
-              .push_back ((uint16_t) to_as->GetNDevices () - 1);
+          to_as->interfaces_per_neighbor_as.at (from_as->as_number).push_back (to_scion_if);
         }
       else
         {
           std::vector<uint16_t> tmp;
-          tmp.push_back ((uint16_t) to_as->GetNDevices () - 1);
+          tmp.push_back (to_scion_if);
           to_as->interfaces_per_neighbor_as.insert (std::make_pair (from_as->as_number, tmp));
           to_as->neighbors.push_back (std::make_pair (from_as->as_number, to_rel));
         }
 
-      from_as->interface_to_neighbor_map.insert (
-          std::make_pair (from_as->GetNDevices () - 1, to_as->as_number));
+      from_as->interface_to_neighbor_map.insert (std::make_pair (from_scion_if, to_as->as_number));
       if (from_as->interfaces_per_neighbor_as.find (to_as->as_number) !=
           from_as->interfaces_per_neighbor_as.end ())
         {
-          from_as->interfaces_per_neighbor_as.at (to_as->as_number)
-              .push_back (from_as->GetNDevices () - 1);
+          from_as->interfaces_per_neighbor_as.at (to_as->as_number).push_back (from_scion_if);
         }
       else
         {
           std::vector<uint16_t> tmp;
-          tmp.push_back ((uint16_t) from_as->GetNDevices () - 1);
+          tmp.push_back (from_scion_if);
           from_as->interfaces_per_neighbor_as.insert (std::make_pair (to_as->as_number, tmp));
           from_as->neighbors.push_back (std::make_pair (to_as->as_number, from_rel));
         }

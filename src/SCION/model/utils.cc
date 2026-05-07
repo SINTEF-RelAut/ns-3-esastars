@@ -201,7 +201,12 @@ ParseProperties (rapidxml::xml_node<> *node)
       std::string name = GetAttribute (cur_node, "name");
       if (name != "")
         {
-          p.SetProperty (name, cur_node->value ());
+          std::string value = cur_node->value ();
+          if (value.empty ())
+            {
+              value = GetAttribute (cur_node, "value");
+            }
+          p.SetProperty (name, value);
         }
       cur_node = cur_node->next_sibling ("property");
     }

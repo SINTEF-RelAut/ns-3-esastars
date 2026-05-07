@@ -1,0 +1,41 @@
+time_resolution: NS
+topology: topology/manual_link_fail_6as_topology.xml
+output: build/test_no_failures.txt
+simulation_duration: 800s
+NUM_CORE: 1
+
+events_file: user_defined_events/test_no_failures.json
+
+beacon_service:
+  policy: baseline
+  period: 10s
+  expiration_period: 120s
+  first_beaconing: 0s
+  last_beaconing: 800s
+
+path_service: {}
+border_router: {}
+
+control_plane_logging:
+  beacon_events: true
+  path_server_updates: true
+  host_cache_updates: true
+  log_file: build/test_no_failures_control_plane.log
+
+path_snapshot_logger:
+  period: 2s
+  output: build/test_no_failures_path_snapshots.csv
+  max_paths_per_dst: 5
+  discover_all_pairs: true
+  request_lead_time: 500ms
+
+data_plane_probing:
+  start: 10s
+  period: 1s
+  timeout: 2s
+  count: 790
+  pairs:
+    - src_as: 107
+      dst_as: 108
+      src_host: 2
+      dst_host: 2

@@ -46,6 +46,8 @@ public:
   void RegisterUpPathSegment (PathSegment &path_segment, std::string key);
   void RegisterDownPathSegment (PathSegment &path_segment, std::string key);
 
+  void RevokeSegmentsContainingLink (uint16_t as_alias, uint16_t scion_if);
+
 private:
   std::set<ia_t> set_of_all_core_ases;
 
@@ -60,11 +62,10 @@ private:
   void ProcessReceivedPacket (uint16_t local_if, ScionPacket *packet, Time receive_time) override;
 
   void ProcessLocalHostRequestForPath (PathSegmentType path_type, ia_t src_ia, ia_t dst_ia,
-                                            host_addr_t host_addr);
+                                       host_addr_t host_addr);
 
-  void SendRegisteredPathToLocalHost (host_addr_t host_addr, PathSegmentType path_type,
-                                           ia_t src_ia, ia_t dst_ia,
-                                           const reg_path_segs_to_one_as_t *);
+  void SendRegisteredPathToLocalHost (host_addr_t host_addr, PathSegmentType path_type, ia_t src_ia,
+                                      ia_t dst_ia, const reg_path_segs_to_one_as_t *);
 
   void ReturnListOfAllCoreAses (host_addr_t host_addr);
 };

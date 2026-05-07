@@ -252,9 +252,9 @@ DiversityAgeBased::SelectBeaconsToDisseminatePerDstPerNbr (
                 }
               else
                 {
-                  raw_score = sent_beacons.at (self_egress_if_no)->at (the_beacon).first;
+                    raw_score = sent_beacons.at (self_egress_if_no - 1)->at (the_beacon).first;
                   ld sent_beacon_time_to_expiration =
-                      (ld) (sent_beacons.at (self_egress_if_no)->at (the_beacon).second - now);
+                      (ld) (sent_beacons.at (self_egress_if_no - 1)->at (the_beacon).second - now);
                   ld current_beacon_time_to_expiration = (ld) (the_beacon->expiration_time - now);
                   score = std::pow (raw_score, std::pow (BETA * (sent_beacon_time_to_expiration /
                                                                  current_beacon_time_to_expiration),
@@ -297,8 +297,8 @@ DiversityAgeBased::SelectBeaconsToDisseminatePerDstPerNbr (
 
           ld latency = max_score_beacon->static_info_extension.at (StaticInfoType::LATENCY) +
                        as->latencies_between_interfaces
-                           .at (LOWER_16_BITS (max_score_beacon->the_path.back ()))
-                           .at (max_score_iface);
+                           .at (LOWER_16_BITS (max_score_beacon->the_path.back ()) - 1)
+                           .at (max_score_iface - 1);
 
           static_info_extension_t static_info_extension;
           static_info_extension.insert (std::make_pair (StaticInfoType::LATENCY, latency));
@@ -398,8 +398,8 @@ DiversityAgeBased::UpdateSentBeaconTimer (uint16_t remote_as, uint16_t self_egre
                                              Beacon *the_beacon)
 {
   uint16_t new_exp_time = the_beacon->expiration_time;
-  float raw_score = sent_beacons.at (self_egress_if_no)->at (the_beacon).first;
-  sent_beacons.at (self_egress_if_no)->at (the_beacon) = std::make_pair (raw_score, new_exp_time);
+  float raw_score = sent_beacons.at (self_egress_if_no - 1)->at (the_beacon).first;
+  sent_beacons.at (self_egress_if_no - 1)->at (the_beacon) = std::make_pair (raw_score, new_exp_time);
 }
 
 void
@@ -459,7 +459,7 @@ DiversityAgeBased::AddToSentBeacons (uint16_t dst_as_no, uint16_t remote_as,
                                         uint16_t self_egress_if_no, Beacon *the_beacon,
                                         float raw_score)
 {
-  sent_beacons.at (self_egress_if_no)
+  sent_beacons.at (self_egress_if_no - 1)
       ->insert (
           std::make_pair (the_beacon, std::make_pair (raw_score, the_beacon->expiration_time)));
   sent_beacons_cnt.at (dst_as_no)->at (remote_as)++;
@@ -542,8 +542,8 @@ bool
 DiversityAgeBased::PathNotSentBefore (uint16_t remote_as, uint16_t self_egress_if_no,
                                          Beacon *the_beacon)
 {
-  if (sent_beacons.at (self_egress_if_no)->find (the_beacon) ==
-      sent_beacons.at (self_egress_if_no)->end ())
+  if (sent_beacons.at (self_egress_if_no - 1)->find (the_beacon) ==
+      sent_beacons.at (self_egress_if_no - 1)->end ())
     {
       return true;
     }
@@ -555,7 +555,8 @@ DiversityAgeBased::RemoveInvalidSentBeacons (Beacon *the_beacon, uint16_t dst_as
 {
   for (uint32_t i = 0; i < as->GetNDevices (); ++i)
     {
-      uint16_t remote_as_no = as->interface_to_neighbor_map.at (i);
+      uint16_t self_egress_if = i + 1;
+      uint16_t remote_as_no = as->interface_to_neighbor_map.at (self_egress_if);
       if (sent_beacons.at (i)->find (the_beacon) == sent_beacons.at (i)->end ())
         {
           continue;
@@ -564,8 +565,8 @@ DiversityAgeBased::RemoveInvalidSentBeacons (Beacon *the_beacon, uint16_t dst_as
       if (sent_beacons.at (i)->at (the_beacon).second <= next_period)
         {
           sent_beacons.at (i)->erase (the_beacon);
-          sent_beacons_cnt.at (dst_as)->at (as->interface_to_neighbor_map.at (i))--;
-          DecLinksJointnessesOnSentPaths (the_beacon, dst_as, remote_as_no, i);
+          sent_beacons_cnt.at (dst_as)->at (as->interface_to_neighbor_map.at (self_egress_if))--;
+          DecLinksJointnessesOnSentPaths (the_beacon, dst_as, remote_as_no, self_egress_if);
         }
     }
 }

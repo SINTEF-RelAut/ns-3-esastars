@@ -1,0 +1,695 @@
+{
+  "description": "Generated IXP switch events (single mode) from gateway link up/down trace; each source event toggles active satellite<->IXP link",
+  "source_file": "user_defined_events/gateway_links_filtered_uncorrelated.json",
+  "gateway_to_satellite_map": {
+    "1": 102,
+    "2": 103,
+    "3": 104,
+    "4": 105
+  },
+  "ixp_mode": "single",
+  "event_count_source": 34,
+  "event_count_generated": 68,
+  "events": [
+    {
+      "time": "0.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "102",
+        "1020001"
+      ],
+      "description": "Switch trigger from gateway=1 link_up (src_if=10017): down current IXP link 1020001"
+    },
+    {
+      "time": "0.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "102",
+        "1020002"
+      ],
+      "description": "Switch trigger from gateway=1 link_up (src_if=10017): up alternate IXP link 1020002"
+    },
+    {
+      "time": "0.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "104",
+        "1040001"
+      ],
+      "description": "Switch trigger from gateway=3 link_up (src_if=30013): down current IXP link 1040001"
+    },
+    {
+      "time": "0.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "104",
+        "1040002"
+      ],
+      "description": "Switch trigger from gateway=3 link_up (src_if=30013): up alternate IXP link 1040002"
+    },
+    {
+      "time": "0.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "105",
+        "1050001"
+      ],
+      "description": "Switch trigger from gateway=4 link_up (src_if=40007): down current IXP link 1050001"
+    },
+    {
+      "time": "0.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "105",
+        "1050002"
+      ],
+      "description": "Switch trigger from gateway=4 link_up (src_if=40007): up alternate IXP link 1050002"
+    },
+    {
+      "time": "0.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "103",
+        "1030001"
+      ],
+      "description": "Switch trigger from gateway=2 link_up (src_if=20005): down current IXP link 1030001"
+    },
+    {
+      "time": "0.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "103",
+        "1030002"
+      ],
+      "description": "Switch trigger from gateway=2 link_up (src_if=20005): up alternate IXP link 1030002"
+    },
+    {
+      "time": "80.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "104",
+        "1040002"
+      ],
+      "description": "Switch trigger from gateway=3 link_down (src_if=30013): down current IXP link 1040002"
+    },
+    {
+      "time": "80.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "104",
+        "1040001"
+      ],
+      "description": "Switch trigger from gateway=3 link_down (src_if=30013): up alternate IXP link 1040001"
+    },
+    {
+      "time": "170.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "102",
+        "1020002"
+      ],
+      "description": "Switch trigger from gateway=1 link_down (src_if=10017): down current IXP link 1020002"
+    },
+    {
+      "time": "170.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "102",
+        "1020001"
+      ],
+      "description": "Switch trigger from gateway=1 link_down (src_if=10017): up alternate IXP link 1020001"
+    },
+    {
+      "time": "580.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "103",
+        "1030002"
+      ],
+      "description": "Switch trigger from gateway=2 link_down (src_if=20005): down current IXP link 1030002"
+    },
+    {
+      "time": "580.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "103",
+        "1030001"
+      ],
+      "description": "Switch trigger from gateway=2 link_down (src_if=20005): up alternate IXP link 1030001"
+    },
+    {
+      "time": "860.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "105",
+        "1050002"
+      ],
+      "description": "Switch trigger from gateway=4 link_down (src_if=40007): down current IXP link 1050002"
+    },
+    {
+      "time": "860.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "105",
+        "1050001"
+      ],
+      "description": "Switch trigger from gateway=4 link_down (src_if=40007): up alternate IXP link 1050001"
+    },
+    {
+      "time": "1370.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "104",
+        "1040001"
+      ],
+      "description": "Switch trigger from gateway=3 link_up (src_if=30013): down current IXP link 1040001"
+    },
+    {
+      "time": "1370.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "104",
+        "1040002"
+      ],
+      "description": "Switch trigger from gateway=3 link_up (src_if=30013): up alternate IXP link 1040002"
+    },
+    {
+      "time": "1620.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "103",
+        "1030001"
+      ],
+      "description": "Switch trigger from gateway=2 link_up (src_if=20005): down current IXP link 1030001"
+    },
+    {
+      "time": "1620.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "103",
+        "1030002"
+      ],
+      "description": "Switch trigger from gateway=2 link_up (src_if=20005): up alternate IXP link 1030002"
+    },
+    {
+      "time": "1990.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "105",
+        "1050001"
+      ],
+      "description": "Switch trigger from gateway=4 link_up (src_if=40007): down current IXP link 1050001"
+    },
+    {
+      "time": "1990.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "105",
+        "1050002"
+      ],
+      "description": "Switch trigger from gateway=4 link_up (src_if=40007): up alternate IXP link 1050002"
+    },
+    {
+      "time": "2970.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "104",
+        "1040002"
+      ],
+      "description": "Switch trigger from gateway=3 link_down (src_if=30013): down current IXP link 1040002"
+    },
+    {
+      "time": "2970.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "104",
+        "1040001"
+      ],
+      "description": "Switch trigger from gateway=3 link_down (src_if=30013): up alternate IXP link 1040001"
+    },
+    {
+      "time": "3000.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "104",
+        "1040001"
+      ],
+      "description": "Switch trigger from gateway=3 link_up (src_if=30013): down current IXP link 1040001"
+    },
+    {
+      "time": "3000.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "104",
+        "1040002"
+      ],
+      "description": "Switch trigger from gateway=3 link_up (src_if=30013): up alternate IXP link 1040002"
+    },
+    {
+      "time": "3340.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "104",
+        "1040002"
+      ],
+      "description": "Switch trigger from gateway=3 link_down (src_if=30013): down current IXP link 1040002"
+    },
+    {
+      "time": "3340.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "104",
+        "1040001"
+      ],
+      "description": "Switch trigger from gateway=3 link_down (src_if=30013): up alternate IXP link 1040001"
+    },
+    {
+      "time": "3440.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "103",
+        "1030002"
+      ],
+      "description": "Switch trigger from gateway=2 link_down (src_if=20005): down current IXP link 1030002"
+    },
+    {
+      "time": "3440.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "103",
+        "1030001"
+      ],
+      "description": "Switch trigger from gateway=2 link_down (src_if=20005): up alternate IXP link 1030001"
+    },
+    {
+      "time": "3970.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "105",
+        "1050002"
+      ],
+      "description": "Switch trigger from gateway=4 link_down (src_if=40007): down current IXP link 1050002"
+    },
+    {
+      "time": "3970.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "105",
+        "1050001"
+      ],
+      "description": "Switch trigger from gateway=4 link_down (src_if=40007): up alternate IXP link 1050001"
+    },
+    {
+      "time": "4270.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "104",
+        "1040001"
+      ],
+      "description": "Switch trigger from gateway=3 link_up (src_if=30013): down current IXP link 1040001"
+    },
+    {
+      "time": "4270.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "104",
+        "1040002"
+      ],
+      "description": "Switch trigger from gateway=3 link_up (src_if=30013): up alternate IXP link 1040002"
+    },
+    {
+      "time": "4380.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "103",
+        "1030001"
+      ],
+      "description": "Switch trigger from gateway=2 link_up (src_if=20005): down current IXP link 1030001"
+    },
+    {
+      "time": "4380.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "103",
+        "1030002"
+      ],
+      "description": "Switch trigger from gateway=2 link_up (src_if=20005): up alternate IXP link 1030002"
+    },
+    {
+      "time": "4710.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "102",
+        "1020001"
+      ],
+      "description": "Switch trigger from gateway=1 link_up (src_if=10017): down current IXP link 1020001"
+    },
+    {
+      "time": "4710.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "102",
+        "1020002"
+      ],
+      "description": "Switch trigger from gateway=1 link_up (src_if=10017): up alternate IXP link 1020002"
+    },
+    {
+      "time": "4770.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "105",
+        "1050001"
+      ],
+      "description": "Switch trigger from gateway=4 link_up (src_if=40007): down current IXP link 1050001"
+    },
+    {
+      "time": "4770.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "105",
+        "1050002"
+      ],
+      "description": "Switch trigger from gateway=4 link_up (src_if=40007): up alternate IXP link 1050002"
+    },
+    {
+      "time": "4780.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "102",
+        "1020002"
+      ],
+      "description": "Switch trigger from gateway=1 link_down (src_if=10017): down current IXP link 1020002"
+    },
+    {
+      "time": "4780.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "102",
+        "1020001"
+      ],
+      "description": "Switch trigger from gateway=1 link_down (src_if=10017): up alternate IXP link 1020001"
+    },
+    {
+      "time": "6230.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "104",
+        "1040002"
+      ],
+      "description": "Switch trigger from gateway=3 link_down (src_if=30013): down current IXP link 1040002"
+    },
+    {
+      "time": "6230.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "104",
+        "1040001"
+      ],
+      "description": "Switch trigger from gateway=3 link_down (src_if=30013): up alternate IXP link 1040001"
+    },
+    {
+      "time": "6290.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "103",
+        "1030002"
+      ],
+      "description": "Switch trigger from gateway=2 link_down (src_if=20005): down current IXP link 1030002"
+    },
+    {
+      "time": "6290.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "103",
+        "1030001"
+      ],
+      "description": "Switch trigger from gateway=2 link_down (src_if=20005): up alternate IXP link 1030001"
+    },
+    {
+      "time": "6950.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "105",
+        "1050002"
+      ],
+      "description": "Switch trigger from gateway=4 link_down (src_if=40007): down current IXP link 1050002"
+    },
+    {
+      "time": "6950.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "105",
+        "1050001"
+      ],
+      "description": "Switch trigger from gateway=4 link_down (src_if=40007): up alternate IXP link 1050001"
+    },
+    {
+      "time": "7110.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "102",
+        "1020001"
+      ],
+      "description": "Switch trigger from gateway=1 link_up (src_if=10017): down current IXP link 1020001"
+    },
+    {
+      "time": "7110.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "102",
+        "1020002"
+      ],
+      "description": "Switch trigger from gateway=1 link_up (src_if=10017): up alternate IXP link 1020002"
+    },
+    {
+      "time": "7160.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "104",
+        "1040001"
+      ],
+      "description": "Switch trigger from gateway=3 link_up (src_if=30013): down current IXP link 1040001"
+    },
+    {
+      "time": "7160.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "104",
+        "1040002"
+      ],
+      "description": "Switch trigger from gateway=3 link_up (src_if=30013): up alternate IXP link 1040002"
+    },
+    {
+      "time": "7280.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "103",
+        "1030001"
+      ],
+      "description": "Switch trigger from gateway=2 link_up (src_if=20005): down current IXP link 1030001"
+    },
+    {
+      "time": "7280.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "103",
+        "1030002"
+      ],
+      "description": "Switch trigger from gateway=2 link_up (src_if=20005): up alternate IXP link 1030002"
+    },
+    {
+      "time": "7620.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "102",
+        "1020002"
+      ],
+      "description": "Switch trigger from gateway=1 link_down (src_if=10017): down current IXP link 1020002"
+    },
+    {
+      "time": "7620.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "102",
+        "1020001"
+      ],
+      "description": "Switch trigger from gateway=1 link_down (src_if=10017): up alternate IXP link 1020001"
+    },
+    {
+      "time": "7630.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "105",
+        "1050001"
+      ],
+      "description": "Switch trigger from gateway=4 link_up (src_if=40007): down current IXP link 1050001"
+    },
+    {
+      "time": "7630.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "105",
+        "1050002"
+      ],
+      "description": "Switch trigger from gateway=4 link_up (src_if=40007): up alternate IXP link 1050002"
+    },
+    {
+      "time": "8300.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "102",
+        "1020001"
+      ],
+      "description": "Switch trigger from gateway=1 link_up (src_if=10017): down current IXP link 1020001"
+    },
+    {
+      "time": "8300.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "102",
+        "1020002"
+      ],
+      "description": "Switch trigger from gateway=1 link_up (src_if=10017): up alternate IXP link 1020002"
+    },
+    {
+      "time": "8730.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "102",
+        "1020002"
+      ],
+      "description": "Switch trigger from gateway=1 link_down (src_if=10017): down current IXP link 1020002"
+    },
+    {
+      "time": "8730.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "102",
+        "1020001"
+      ],
+      "description": "Switch trigger from gateway=1 link_down (src_if=10017): up alternate IXP link 1020001"
+    },
+    {
+      "time": "9130.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "104",
+        "1040002"
+      ],
+      "description": "Switch trigger from gateway=3 link_down (src_if=30013): down current IXP link 1040002"
+    },
+    {
+      "time": "9130.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "104",
+        "1040001"
+      ],
+      "description": "Switch trigger from gateway=3 link_down (src_if=30013): up alternate IXP link 1040001"
+    },
+    {
+      "time": "9150.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "103",
+        "1030002"
+      ],
+      "description": "Switch trigger from gateway=2 link_down (src_if=20005): down current IXP link 1030002"
+    },
+    {
+      "time": "9150.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "103",
+        "1030001"
+      ],
+      "description": "Switch trigger from gateway=2 link_down (src_if=20005): up alternate IXP link 1030001"
+    },
+    {
+      "time": "9980.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "105",
+        "1050002"
+      ],
+      "description": "Switch trigger from gateway=4 link_down (src_if=40007): down current IXP link 1050002"
+    },
+    {
+      "time": "9980.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "105",
+        "1050001"
+      ],
+      "description": "Switch trigger from gateway=4 link_down (src_if=40007): up alternate IXP link 1050001"
+    }
+  ]
+}

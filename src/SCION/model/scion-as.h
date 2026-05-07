@@ -48,9 +48,24 @@ class BeaconServer;
 class ScionAs : public Node
 {
 public:
+  // Lightweight constructor for unit/smoke scenarios that only need AS state containers.
+  ScionAs (uint32_t system_id, uint16_t asn)
+      : Node (system_id),
+        isd_number (1),
+        as_number (asn),
+        ia_addr ((((uint32_t) isd_number) << 16) | ((uint32_t) as_number)),
+        local_time (Seconds (0.0)),
+        as_max_bwd (0),
+        malicious_border_routers (false),
+        border_routers_malicious_action ("no"),
+        beacon_server (NULL),
+        path_server (NULL)
+  {
+  }
+
   ScionAs (uint32_t system_id, bool parallel_scheduler, uint16_t as_number,
-            rapidxml::xml_node<> *xml_node, const YAML::Node &config, bool malicious_border_routers,
-            Time local_time)
+           rapidxml::xml_node<> *xml_node, const YAML::Node &config, bool malicious_border_routers,
+           Time local_time)
       : Node (system_id)
   {
     PropertyContainer p = ParseProperties (xml_node);
@@ -115,6 +130,8 @@ public:
 
   std::pair<uint16_t, ScionAs *> GetRemoteAsInfo (uint16_t egress_interface_no);
 
+  bool IsInterfaceUp (uint16_t interface_no) const;
+
   void ReceiveBeacon (Beacon &the_beacon, uint16_t sender_as, uint16_t remote_if,
                       uint16_t local_if);
 
@@ -156,7 +173,7 @@ protected:
   void InitializeLatencies (bool only_propagation_delay);
 
   void InstantiateBeaconServer (bool parallel_scheduler, rapidxml::xml_node<> *xml_node,
-                                  const YAML::Node &config);
+                                const YAML::Node &config);
 };
 } // namespace ns3
 #endif //SCION_SIMULATOR_SCION_AS_H

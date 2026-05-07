@@ -39,7 +39,7 @@ Scionlab::CreateInitialStaticInfoExtension (static_info_extension_t &static_info
 {
   static_info_extension.insert (std::make_pair (StaticInfoType::LATENCY, 0));
   static_info_extension.insert (
-      std::make_pair (StaticInfoType::BW, as->inter_as_bwds.at (self_egress_if_no)));
+      std::make_pair (StaticInfoType::BW, as->inter_as_bwds.at (self_egress_if_no - 1)));
 }
 
 void
@@ -180,11 +180,11 @@ Scionlab::DisseminateBeacons (NeighbourRelation relation)
 
               ld latency =
                   the_beacon->static_info_extension.at (StaticInfoType::LATENCY) +
-                  as->latencies_between_interfaces.at (LOWER_16_BITS (the_beacon->the_path.back ()))
-                      .at (egress_interface_no);
-              ld bwd = the_beacon->static_info_extension.at (StaticInfoType::BW) >
-                               (ld) as->inter_as_bwds.at (egress_interface_no)
-                           ? (ld) as->inter_as_bwds.at (egress_interface_no)
+                    as->latencies_between_interfaces.at (LOWER_16_BITS (the_beacon->the_path.back ()) - 1)
+                      .at (egress_interface_no - 1);
+                  ld bwd = the_beacon->static_info_extension.at (StaticInfoType::BW) >
+                           (ld) as->inter_as_bwds.at (egress_interface_no - 1)
+                         ? (ld) as->inter_as_bwds.at (egress_interface_no - 1)
                            : the_beacon->static_info_extension.at (StaticInfoType::BW);
 
               static_info_extension_t static_info_extension;

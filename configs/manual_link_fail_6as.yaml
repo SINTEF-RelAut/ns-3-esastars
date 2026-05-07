@@ -1,0 +1,20 @@
+time_resolution: NS
+topology: topology/manual_link_fail_6as_topology.xml
+output: results/manual_link_fail_6as.txt
+simulation_duration: 300s
+NUM_CORE: 1
+events_file: user_defined_events/manual_link_fail_6as_events.json
+beacon_service:
+  policy: baseline
+  period: 10s
+  expiration_period: 1350s
+  first_beaconing: 0s
+  last_beaconing: 300s
+path_service: {}
+border_router: {}
+post_eval:
+- func: PrintAllDiscoveredPaths
+- func: PrintAllPathsAttributes
+- func: PrintBeaconStores
+- func: PrintNoBeaconsPerInterfacePerDstOrOpt
+- func: PrintNumberOfValidBeaconEntriesInBeaconStore

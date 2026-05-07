@@ -105,7 +105,7 @@ OnDemandOptimization::PerLinkInitializations (rapidxml::xml_node<> *cur_xml_link
       cur_xml_target = cur_xml_target->next_sibling (target_element_str.c_str ());
     }
 #if NS3_ASSERT_ENABLE
-  for (uint32_t i = 0; i < AS->interfaces_coordinates.size (); ++i)
+  for (uint32_t i = 0; i < as->interfaces_coordinates.size (); ++i)
     {
       NS_ASSERT (if_to_if_group.find (i) != if_to_if_group.end ());
       NS_ASSERT (if_to_push_based_optimization_targets_map.find (i) !=
@@ -169,7 +169,7 @@ OnDemandOptimization::CreateInitialStaticInfoExtension (
       else if (criteria.first == BW)
         {
           static_info_extension.insert (
-              std::make_pair (StaticInfoType::BW, as->inter_as_bwds.at (self_egress_if_no)));
+              std::make_pair (StaticInfoType::BW, as->inter_as_bwds.at (self_egress_if_no - 1)));
         }
       else if (criteria.first == CO2)
         {
@@ -188,15 +188,15 @@ OnDemandOptimization::ExtendStaticInfoExtension (
       if (criteria.first == LATENCY)
         {
           ld latency = the_beacon->static_info_extension.at (StaticInfoType::LATENCY) +
-                       as->latencies_between_interfaces.at (beacon_ingress_if_no)
-                           .at (candidate_egress_if_no);
+                         as->latencies_between_interfaces.at (beacon_ingress_if_no - 1)
+                             .at (candidate_egress_if_no - 1);
           propagation_static_info.insert (std::make_pair (StaticInfoType::LATENCY, latency));
         }
       else if (criteria.first == BW)
         {
           ld bw = the_beacon->static_info_extension.at (StaticInfoType::BW) >
-                          (ld) as->inter_as_bwds.at (candidate_egress_if_no)
-                      ? (ld) as->inter_as_bwds.at (candidate_egress_if_no)
+                            (ld) as->inter_as_bwds.at (candidate_egress_if_no - 1)
+                        ? (ld) as->inter_as_bwds.at (candidate_egress_if_no - 1)
                       : the_beacon->static_info_extension.at (StaticInfoType::BW);
           propagation_static_info.insert (std::make_pair (StaticInfoType::BW, bw));
         }

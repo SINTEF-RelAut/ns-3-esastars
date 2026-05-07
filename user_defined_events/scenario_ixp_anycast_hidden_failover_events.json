@@ -1,0 +1,45 @@
+{
+    "description": "Scenario 1 (anycast-like hidden VIXP): sequential primary IXP link failures on AS102-AS105.",
+    "events": [
+        {
+            "time": "50s",
+            "type": "link_down",
+            "args": [
+                "1",
+                "102",
+                "1020001"
+            ],
+            "description": "AS102 primary IXP link down; VIXP should activate backup after rebalance"
+        },
+        {
+            "time": "77s",
+            "type": "link_down",
+            "args": [
+                "1",
+                "103",
+                "1030001"
+            ],
+            "description": "AS103 primary IXP link down; VIXP should activate backup after rebalance"
+        },
+        {
+            "time": "104s",
+            "type": "link_down",
+            "args": [
+                "1",
+                "104",
+                "1040001"
+            ],
+            "description": "AS104 primary IXP link down; VIXP should activate backup after rebalance"
+        },
+        {
+            "time": "131s",
+            "type": "link_down",
+            "args": [
+                "1",
+                "105",
+                "1050001"
+            ],
+            "description": "AS105 primary IXP link down; VIXP should activate backup after rebalance"
+        }
+    ]
+}

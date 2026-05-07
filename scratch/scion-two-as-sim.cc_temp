@@ -1,0 +1,1725 @@
+#include "ns3/core-module.h"
+#include "ns3/network-module.h"
+#include "ns3/point-to-point-module.h"
+#include "ns3/error-model.h"
+#include "ns3/application.h"
+
+#include "yaml-cpp/yaml.h"
+#include <filesystem>
+#include <fstream>
+#include <iomanip>
+#include <algorithm>
+#include <map>
+#include <memory>
+#include <limits>
+#include <set>
+#include <sstream>
+#include <unordered_map>
+#include <vector>
+
+// SCION engine API
+#include "src/SCION/model/pre-simulation-setup.h"
+#include "src/SCION/model/schedule-periodic-events.h"
+#include "src/SCION/model/scion-as.h"
+#include "src/SCION/model/scion-host.h"
+#include "src/SCION/model/scion-capable-node.h"
+#include "src/SCION/model/beaconing/beacon.h"
+#include "src/SCION/model/path-segment.h"
+#include "src/SCION/model/post-simulation-evaluations.h"
+
+using namespace ns3;
+
+namespace {
+
+class ProbeHost;
+
+bool g_linkDown = false;
+std::vector<Ptr<ProbeHost>> g_probeHostsForFailureCallbacks;
+std::map<uint16_t, int32_t> g_aliasToRealAs;
+
+uint16_t
+GetOutputAsLabel (uint16_t internal_as)
+{
+  auto it = g_aliasToRealAs.find (internal_as);
+  if (it == g_aliasToRealAs.end ())
+    {
+      return internal_as;
+    }
+
+  int32_t real = it->second;
+  if (real <= 0 || real > std::numeric_limits<uint16_t>::max ())
+    {
+      return internal_as;
+    }
+  return static_cast<uint16_t> (real);
+}
+
+void
+DumpAsInterfaceMaps (const Ptr<ScionAs> &asPtr)
+{
+  if (!asPtr)
+    {
+      return;
+    }
+
+  std::cerr << "AS " << asPtr->isd_number << ":" << asPtr->as_number
+            << " interface_to_neighbor_map=" << asPtr->interface_to_neighbor_map.size ()
+            << std::endl;
+
+  for (const auto &kv : asPtr->interface_to_neighbor_map)
+    {
+      std::cerr << "  if " << kv.first << " -> neighbor_as " << kv.second << std::endl;
+    }
+
+  for (const auto &kv : asPtr->interfaces_per_neighbor_as)
+    {
+      std::cerr << "  neighbor_as " << kv.first << " ifaces=[";
+      for (size_t i = 0; i < kv.second.size (); ++i)
+        {
+          std::cerr << kv.second[i];
+          if (i + 1 < kv.second.size ())
+            {
+              std::cerr << ",";
+            }
+        }
+      std::cerr << "]" << std::endl;
+    }
+}
+
+std::string
+BuildPathSignature (const ScionPacket *packet)
+{
+  if (!packet || packet->path.empty ())
+    {
+      return "";
+    }
+
+  std::ostringstream ss;
+  bool first = true;
+  ss << (packet->path_reversed ? "R" : "F") << ":";
+
+  for (const auto *seg : packet->path)
+    {
+      if (!seg)
+        {
+          continue;
+        }
+      for (auto hopf : seg->hops)
+        {
+          if (!first)
+            {
+              ss << ";";
+            }
+          first = false;
+          ss << GET_HOP_ING_IF (hopf) << ">" << GET_HOP_EG_IF (hopf);
+        }
+    }
+
+  return ss.str ();
+}
+
+std::string
+BuildPathDetail (const ScionPacket *packet)
+{
+  if (!packet || packet->path.empty ())
+    {
+      return "";
+    }
+
+  std::ostringstream ss;
+  ss << (packet->path_reversed ? "R" : "F") << ":";
+
+  bool first_seg = true;
+  for (size_t seg_idx = 0; seg_idx < packet->path.size (); ++seg_idx)
+    {
+      const auto *seg = packet->path[seg_idx];
+      if (!seg)
+        {
+          continue;
+        }
+      if (!first_seg)
+        {
+          ss << "|";
+        }
+      first_seg = false;
+      ss << "seg" << seg_idx << (seg->reverse ? "R" : "F") << "[";
+      bool first_hop = true;
+      for (auto hopf : seg->hops)
+        {
+          if (!first_hop)
+            {
+              ss << ";";
+            }
+          first_hop = false;
+          ss << GET_HOP_ING_IF (hopf) << ">" << GET_HOP_EG_IF (hopf);
+        }
+      ss << "]";
+    }
+
+  return ss.str ();
+}
+
+std::string
+BuildPathAsTrace (const ScionPacket *packet)
+{
+  if (!packet || packet->path.empty ())
+    {
+      return "";
+    }
+
+  std::ostringstream ss;
+  ss << (packet->path_reversed ? "R" : "F") << ":";
+
+  bool first_seg = true;
+  for (size_t seg_idx = 0; seg_idx < packet->path.size (); ++seg_idx)
+    {
+      const auto *seg = packet->path[seg_idx];
+      if (!seg)
+        {
+          continue;
+        }
+      if (!first_seg)
+        {
+          ss << "|";
+        }
+      first_seg = false;
+      ss << "seg" << seg_idx << (seg->reverse ? "R" : "F") << "[";
+      bool first_hop = true;
+      for (auto hopf : seg->hops)
+        {
+          if (!first_hop)
+            {
+              ss << ";";
+            }
+          first_hop = false;
+          ss << GET_HOP_ISD (hopf) << ":" << GetOutputAsLabel (GET_HOP_AS (hopf));
+        }
+      ss << "]";
+    }
+
+  return ss.str ();
+}
+
+class ScionProbeApp;
+
+// Reactive failure notification structure
+struct PathFailureNotification
+{
+  uint32_t packetId = 0;
+  uint16_t failedInterface = std::numeric_limits<uint16_t>::max ();
+  uint16_t failedAsFrom = 0;
+  uint16_t failedAsTo = 0;
+  std::string pathSignature;
+  uint32_t hopNumber = 0;
+  Time failureTime;
+  std::string failureReason; // "interface_down", "no_path", "timeout"
+};
+
+class ProbeHost : public ScionHost
+{
+public:
+  ProbeHost (uint32_t system_id, uint16_t isd_number, uint16_t as_number, host_addr_t local_address,
+             double latitude, double longitude, ScionAs *as)
+      : ScionHost (system_id, isd_number, as_number, local_address, latitude, longitude, as)
+  {
+  }
+
+  void
+  SetReplyLogPath (const std::string &path)
+  {
+    m_replyLogCsv = path;
+  }
+
+  void
+  ForgetProbe (uint32_t packetId)
+  {
+    auto it = m_pendingApps.find (packetId);
+    if (it != m_pendingApps.end ())
+      {
+        m_pendingApps.erase (it);
+      }
+    // Also remove from in-flight tracking
+    auto flyIt = m_inFlightPackets.find (packetId);
+    if (flyIt != m_inFlightPackets.end ())
+      {
+        m_inFlightPackets.erase (flyIt);
+      }
+  }
+
+  void
+  OnInterfaceDown (uint16_t failed_interface, int64_t failed_packet_id = -1) override
+  {
+    ScionHost::OnInterfaceDown (failed_interface, failed_packet_id);
+
+    // Interface 0 is a segment-boundary marker, not a real failing link interface.
+    if (failed_interface == 0)
+      {
+        return;
+      }
+
+    if (failed_packet_id < 0)
+      {
+        return;
+      }
+
+    auto inflight_it = m_inFlightPackets.find (static_cast<uint32_t> (failed_packet_id));
+    if (inflight_it == m_inFlightPackets.end ())
+      {
+        return;
+      }
+
+    const InFlightPacket inflight = inflight_it->second;
+    m_inFlightPackets.erase (inflight_it);
+
+    m_activeFailedInterfaces.insert (failed_interface);
+
+    if (!inflight.pathSignature.empty ())
+      {
+        // Block this exact path immediately so the next probe attempt chooses an alternative.
+        m_failedPathsPerInterface[failed_interface].insert (inflight.pathSignature);
+
+        if (inflight.egressInterface != std::numeric_limits<uint16_t>::max ())
+          {
+            m_failedPathsPerInterface[inflight.egressInterface].insert (inflight.pathSignature);
+          }
+      }
+
+    std::cerr << std::fixed << std::setprecision (9)
+              << "[PROBE_CALLBACK_PATH_FAILED] src=" << GET_ISDN (ia_addr) << ":"
+              << GET_ASN (ia_addr) << " pkt=" << failed_packet_id
+              << " failed_if=" << failed_interface << " src_eg_if=" << inflight.egressInterface
+              << " path=" << inflight.pathSignature << " time=" << Simulator::Now ().GetSeconds ()
+              << "s" << std::endl;
+  }
+
+  struct SendResult
+  {
+    bool sent = false;
+    uint32_t packetId = 0;
+    uint16_t asIf = std::numeric_limits<uint16_t>::max ();
+    uint32_t pathLen = 0;
+    bool egressUp = true;
+    int32_t hopIng = -1;
+    int32_t hopEg = -1;
+    bool fwdHit = false;
+    int32_t localIf = -1;
+    std::string pathSig;
+    std::string pathDetail;
+    std::string pathAs;
+    std::string noPathReason;
+    enum class Method { LOCAL, CACHED_PATH, BEACON_PATH, NO_PATH } method = Method::NO_PATH;
+  };
+
+  // Track in-flight packets for failure detection
+  struct InFlightPacket
+  {
+    uint32_t packetId = 0;
+    ia_t srcIa;
+    ia_t dstIa;
+    uint16_t egressInterface = std::numeric_limits<uint16_t>::max ();
+    std::string pathSignature;
+    Time sendTime;
+    double pathLatencySeconds = 0.0; // Total path latency from beacon
+    double firstHopLatencySeconds = 0.0; // Estimated latency to first hop
+  };
+
+  bool
+  IsPathValid (ScionPacket *packet, const std::vector<const PathSegment *> &path_segs,
+               SendResult::Method method, uint16_t &out_as_if, int32_t &out_hop_ing,
+               int32_t &out_hop_eg, bool &out_fwd_hit, int32_t &out_local_if)
+  {
+    // Initialize output variables
+    out_as_if = std::numeric_limits<uint16_t>::max ();
+    out_fwd_hit = false;
+    out_local_if = -1;
+    out_hop_ing = -1;
+    out_hop_eg = -1;
+
+    if (!packet || packet->path.empty ())
+      {
+        return false;
+      }
+
+    if (packet->curr_inf >= packet->path.size () || !packet->path.at (packet->curr_inf) ||
+        packet->cur_hopf >= packet->path.at (packet->curr_inf)->hops.size ())
+      {
+        return false;
+      }
+
+    // Extract interface information from the first hop
+    uint64_t hopf = packet->path.at (packet->curr_inf)->hops.at (packet->cur_hopf);
+    bool reverse = packet->path_reversed ^ packet->path.at (packet->curr_inf)->reverse;
+    out_hop_ing = GET_HOP_ING_IF (hopf);
+    out_hop_eg = GET_HOP_EG_IF (hopf);
+    out_as_if = reverse ? GET_HOP_ING_IF (hopf) : GET_HOP_EG_IF (hopf);
+
+    if (out_as_if == std::numeric_limits<uint16_t>::max ())
+      {
+        return false;
+      }
+
+    // Check forwarding table
+    auto it = forwarding_table_to_other_as_ifaces.find (out_as_if);
+    if (it != forwarding_table_to_other_as_ifaces.end ())
+      {
+        out_fwd_hit = true;
+        out_local_if = static_cast<int32_t> (it->second);
+      }
+
+    if (!out_fwd_hit)
+      {
+        return false;
+      }
+
+    if (!as)
+      {
+        return false;
+      }
+
+    // Interface 0 is a segment-boundary marker, not a usable egress interface for sending probes.
+    if (out_as_if == 0)
+      {
+        return false;
+      }
+
+    if (!as->IsInterfaceUp (out_as_if))
+      {
+        return false;
+      }
+
+    return true;
+  }
+
+  std::string
+  MethodToString (SendResult::Method method) const
+  {
+    switch (method)
+      {
+      case SendResult::Method::LOCAL:
+        return "LOCAL";
+      case SendResult::Method::CACHED_PATH:
+        return "CACHED";
+      case SendResult::Method::BEACON_PATH:
+        return "BEACON";
+      case SendResult::Method::NO_PATH:
+        return "NO_PATH";
+      default:
+        return "UNKNOWN";
+      }
+  }
+
+  SendResult
+  SendProbe (ia_t dst_ia, host_addr_t dst_host, ScionProbeApp *app)
+  {
+    Payload payload;
+    PayloadType payload_type = PayloadType::EMPTY;
+
+    if (dst_ia == ia_addr)
+      {
+        ScionPacket *packet = CreateScionPacket (payload, payload_type, dst_ia, dst_host, 0);
+        SendScionPacket (packet);
+        std::cerr << "ProbeHost SendProbe: local packetId=" << packet->id
+                  << " dst=" << GET_ISDN (dst_ia) << ":" << GET_ASN (dst_ia) << ":" << dst_host
+                  << std::endl;
+        SendResult res;
+        res.sent = true;
+        res.packetId = packet->id;
+        res.method = SendResult::Method::LOCAL;
+        res.pathSig = BuildPathSignature (packet);
+        res.pathDetail = BuildPathDetail (packet);
+        res.pathAs = BuildPathAsTrace (packet);
+        if (app)
+          {
+            m_pendingApps[packet->id] = app;
+          }
+        // Track in-flight packet (local delivery doesn't need remote failure detection)
+        InFlightPacket inflight;
+        inflight.packetId = packet->id;
+        inflight.srcIa = packet->src_ia;
+        inflight.dstIa = dst_ia;
+        inflight.egressInterface = std::numeric_limits<uint16_t>::max ();
+        inflight.pathSignature = res.pathSig;
+        inflight.sendTime = Simulator::Now ();
+        inflight.pathLatencySeconds = 0.0; // Local: no path latency
+        inflight.firstHopLatencySeconds = 0.0; // Local: no hops
+        m_inFlightPackets[packet->id] = inflight;
+        return res;
+      }
+
+    std::vector<const PathSegment *> beacon_path;
+    std::vector<uint8_t> shortcuts;
+    std::vector<const PathSegment *> the_path;
+    double beacon_latency = 0.0;
+    bool skipped_failed_path = false;
+
+    // Prefer lowest-latency beacon path when available.
+    std::vector<std::pair<const Beacon *, double>> beacon_candidates;
+    if (BuildBeaconCandidatesFromStore (dst_ia, beacon_candidates))
+      {
+        for (const auto &candidate : beacon_candidates)
+          {
+            beacon_path.clear ();
+            beacon_latency = candidate.second;
+
+            PathSegment seg;
+            candidate.first->ExtractPathSegmentFromPushBasedBeacon (seg);
+            seg.reverse = true;
+            m_probeSegments.push_back (std::make_unique<PathSegment> (seg));
+            beacon_path.push_back (m_probeSegments.back ().get ());
+
+            ScionPacket *packet = CreateScionPacket (payload, payload_type, dst_ia, dst_host, 0,
+                                                     beacon_path, shortcuts);
+            uint16_t as_if;
+            int32_t hop_ing, hop_eg, local_if;
+            bool fwd_hit;
+
+            if (!IsPathValid (packet, beacon_path, SendResult::Method::BEACON_PATH, as_if, hop_ing,
+                              hop_eg, fwd_hit, local_if))
+              {
+                DestroyScionPacket (packet);
+                continue;
+              }
+
+            SendResult res;
+            res.sent = true;
+            res.packetId = packet->id;
+            res.method = SendResult::Method::BEACON_PATH;
+            res.asIf = as_if;
+            res.pathLen = static_cast<uint32_t> (beacon_path.size ());
+            res.egressUp = true;
+            res.hopIng = hop_ing;
+            res.hopEg = hop_eg;
+            res.fwdHit = fwd_hit;
+            res.localIf = local_if;
+            res.pathSig = BuildPathSignature (packet);
+            res.pathDetail = BuildPathDetail (packet);
+            res.pathAs = BuildPathAsTrace (packet);
+
+            // Check if this path failed on this specific egress interface.
+            bool path_failed_on_interface = false;
+            auto it = m_failedPathsPerInterface.find (as_if);
+            if (it != m_failedPathsPerInterface.end () && !res.pathSig.empty () &&
+                it->second.find (res.pathSig) != it->second.end ())
+              {
+                path_failed_on_interface = true;
+              }
+
+            if (path_failed_on_interface)
+              {
+                std::cerr << std::fixed << std::setprecision (9)
+                          << "[PATH_SKIPPED_FAILED] src=" << GET_ISDN (ia_addr) << ":"
+                          << GET_ASN (ia_addr) << " dst=" << GET_ISDN (dst_ia) << ":"
+                          << GET_ASN (dst_ia) << " pkt=" << packet->id << " path=" << res.pathSig
+                          << " if=" << as_if << " reason=KNOWN_FAILED_PATH_ON_INTERFACE"
+                          << " time=" << Simulator::Now ().GetSeconds () << "s" << std::endl;
+                DestroyScionPacket (packet);
+                skipped_failed_path = true;
+                continue;
+              }
+
+            SendScionPacket (packet);
+            std::cerr << std::fixed << std::setprecision (9)
+                      << "[PATH_SELECTED_BEACON] src=" << GET_ISDN (ia_addr) << ":"
+                      << GET_ASN (ia_addr) << " dst=" << GET_ISDN (dst_ia) << ":"
+                      << GET_ASN (dst_ia) << " pkt=" << packet->id << " path=" << res.pathSig
+                      << " path_as=" << res.pathAs << " path_len=" << beacon_path.size ()
+                      << " time=" << Simulator::Now ().GetSeconds () << "s" << std::endl;
+            if (app)
+              {
+                m_pendingApps[packet->id] = app;
+              }
+            InFlightPacket inflight;
+            inflight.packetId = packet->id;
+            inflight.srcIa = packet->src_ia;
+            inflight.dstIa = dst_ia;
+            inflight.egressInterface = as_if;
+            inflight.pathSignature = res.pathSig;
+            inflight.sendTime = Simulator::Now ();
+            inflight.pathLatencySeconds = beacon_latency;
+            // Estimate first-hop latency (failure at egress happens at first hop).
+            uint32_t num_hops = 0;
+            for (const auto *segment : beacon_path)
+              {
+                if (segment)
+                  {
+                    num_hops += segment->hops.size ();
+                  }
+              }
+
+            // When beacon latency is available, use per-hop estimate.
+            // Otherwise, use hop-based delay model: 1ms base + 0.5ms per hop.
+            if (beacon_latency > 0.0 && num_hops > 0)
+              {
+                inflight.firstHopLatencySeconds = beacon_latency / num_hops;
+              }
+            else if (num_hops > 0)
+              {
+                inflight.firstHopLatencySeconds = 0.001 + (0.0005 * num_hops); // 1ms + 0.5ms/hop
+              }
+            else
+              {
+                inflight.firstHopLatencySeconds = 0.001; // 1ms default
+              }
+            m_inFlightPackets[packet->id] = inflight;
+
+            std::cerr << std::fixed << std::setprecision (9)
+                      << "ProbeHost SendProbe: beacon packet=" << packet->id
+                      << " path_latency=" << beacon_latency << "s"
+                      << " num_hops=" << num_hops
+                      << " first_hop_latency=" << inflight.firstHopLatencySeconds << "s"
+                      << " send_time=" << Simulator::Now ().GetSeconds () << "s" << std::endl;
+
+            return res;
+          }
+        // All beacon candidates were unusable; try cached path instead.
+      }
+
+    // Try cached path as fallback
+    SearchInCachedSegments (dst_ia, the_path, shortcuts);
+
+    if (!the_path.empty ())
+      {
+        ScionPacket *packet =
+            CreateScionPacket (payload, payload_type, dst_ia, dst_host, 0, the_path, shortcuts);
+        uint16_t as_if;
+        int32_t hop_ing, hop_eg, local_if;
+        bool fwd_hit;
+
+        if (IsPathValid (packet, the_path, SendResult::Method::CACHED_PATH, as_if, hop_ing, hop_eg,
+                         fwd_hit, local_if))
+          {
+            SendResult res;
+            res.sent = true;
+            res.packetId = packet->id;
+            res.method = SendResult::Method::CACHED_PATH;
+            res.asIf = as_if;
+            res.pathLen = static_cast<uint32_t> (the_path.size ());
+            res.egressUp = true;
+            res.hopIng = hop_ing;
+            res.hopEg = hop_eg;
+            res.fwdHit = fwd_hit;
+            res.localIf = local_if;
+            res.pathSig = BuildPathSignature (packet);
+            res.pathDetail = BuildPathDetail (packet);
+            res.pathAs = BuildPathAsTrace (packet);
+
+            // Check if this cached path failed on this specific egress interface
+            bool cached_path_failed_on_interface = false;
+            auto it = m_failedPathsPerInterface.find (as_if);
+            if (it != m_failedPathsPerInterface.end () && !res.pathSig.empty () &&
+                it->second.find (res.pathSig) != it->second.end ())
+              {
+                cached_path_failed_on_interface = true;
+              }
+
+            if (cached_path_failed_on_interface)
+              {
+                std::cerr << std::fixed << std::setprecision (9)
+                          << "ProbeHost SendProbe: skipping known failed cached path packetId="
+                          << packet->id << " pathSig=" << res.pathSig << " if=" << as_if
+                          << std::endl;
+                DestroyScionPacket (packet);
+                skipped_failed_path = true;
+                // Fall through to path request
+              }
+            else
+              {
+                SendScionPacket (packet);
+                std::cerr << std::fixed << std::setprecision (9)
+                          << "[PATH_SELECTED_CACHED] src=" << GET_ISDN (ia_addr) << ":"
+                          << GET_ASN (ia_addr) << " dst=" << GET_ISDN (dst_ia) << ":"
+                          << GET_ASN (dst_ia) << " pkt=" << packet->id << " path=" << res.pathSig
+                          << " path_as=" << res.pathAs << " path_len=" << the_path.size ()
+                          << " time=" << Simulator::Now ().GetSeconds () << "s" << std::endl;
+                if (app)
+                  {
+                    m_pendingApps[packet->id] = app;
+                  }
+                InFlightPacket inflight;
+                inflight.packetId = packet->id;
+                inflight.srcIa = packet->src_ia;
+                inflight.dstIa = dst_ia;
+                inflight.egressInterface = as_if;
+                inflight.pathSignature = res.pathSig;
+                inflight.sendTime = Simulator::Now ();
+                inflight.pathLatencySeconds = 0.0; // Cached path: no beacon latency available
+                inflight.firstHopLatencySeconds = 0.001; // Use default 1ms for cached paths
+                m_inFlightPackets[packet->id] = inflight;
+
+                return res;
+              }
+          }
+        // Cached path was broken, fall through to request new path
+      }
+
+    // All available paths were broken or no paths available - request new path
+    std::cerr << "ProbeHost SendProbe: no valid path yet, requesting segments for dst="
+              << GET_ISDN (dst_ia) << ":" << GET_ASN (dst_ia)
+              << " time=" << Simulator::Now ().GetSeconds () << "s" << std::endl;
+    RequestForPathSegments (dst_ia);
+    SendResult res;
+    res.sent = false;
+    res.packetId = 0;
+    res.method = SendResult::Method::NO_PATH;
+    res.noPathReason =
+        skipped_failed_path ? "all_candidate_paths_marked_failed" : "no_path_segments_available";
+    std::cerr << std::fixed << std::setprecision (9)
+              << "[NO_PATH_AVAILABLE] src=" << GET_ISDN (ia_addr) << ":" << GET_ASN (ia_addr)
+              << " dst=" << GET_ISDN (dst_ia) << ":" << GET_ASN (dst_ia)
+              << " reason=" << res.noPathReason << " time=" << Simulator::Now ().GetSeconds ()
+              << "s" << std::endl;
+    return res;
+  }
+
+  /**
+   * Handle reactive path failure notification.
+   * Called when packet delivery fails at an AS forwarding boundary.
+   * Source-only notification: only the originating host receives this.
+   */
+  void
+  OnPathFailure (const PathFailureNotification &notification)
+  {
+    std::cerr << std::fixed << std::setprecision (9)
+              << "ProbeHost OnPathFailure: packetId=" << notification.packetId
+              << " failedInterface=" << notification.failedInterface
+              << " pathSig=" << notification.pathSignature
+              << " reason=" << notification.failureReason
+              << " time=" << Simulator::Now ().GetSeconds () << "s" << std::endl;
+
+    // Remove from in-flight tracking
+    m_inFlightPackets.erase (notification.packetId);
+
+    // Get the destination from our pending app tracking
+    auto appIt = m_pendingApps.find (notification.packetId);
+    if (appIt == m_pendingApps.end ())
+      {
+        // Packet not tracked by any app, abort
+        return;
+      }
+
+    // TODO: In a future implementation, notify the app via callback
+    // For now, the timeout handler will detect the missing response
+    // and retry with a different path (handled via TrySendProbe retry logic)
+
+    // Invalidate the failed path for this specific interface
+    if (!notification.pathSignature.empty ())
+      {
+        uint16_t failed_if = notification.failedInterface;
+        m_failedPathsPerInterface[failed_if].insert (notification.pathSignature);
+        std::cerr << std::fixed << std::setprecision (9)
+                  << "ProbeHost OnPathFailure: cached failed path signature for interface "
+                  << failed_if << " for future exclusion (time=" << Simulator::Now ().GetSeconds ()
+                  << "s)" << std::endl;
+      }
+  }
+
+  void
+  SetFailedInterfaceState (uint16_t failedInterface, bool is_down)
+  {
+    if (is_down)
+      {
+        m_activeFailedInterfaces.insert (failedInterface);
+      }
+    else
+      {
+        m_activeFailedInterfaces.erase (failedInterface);
+        // When interface comes back up, clear all failed paths for that interface
+        // This allows beaconing-discovered paths to be tried again
+        ClearFailedPathsForInterface (failedInterface);
+      }
+  }
+
+  void
+  ClearFailedPathsForInterface (uint16_t interface)
+  {
+    auto it = m_failedPathsPerInterface.find (interface);
+    if (it != m_failedPathsPerInterface.end ())
+      {
+        std::cerr << std::fixed << std::setprecision (9)
+                  << "ProbeHost ClearFailedPathsForInterface: cleared " << it->second.size ()
+                  << " failed paths for interface "
+                  << interface << " (time=" << Simulator::Now ().GetSeconds () << "s)" << std::endl;
+        m_failedPathsPerInterface.erase (it);
+      }
+  }
+
+  void
+  ScheduleInterfaceDownNotification (uint32_t packetId, uint16_t failedInterface,
+                                     const std::string &pathSignature)
+  {
+    // Compute path-aware notification delay
+    Time notificationDelay = MilliSeconds (0.1); // Default fallback
+    auto pkt_it = m_inFlightPackets.find (packetId);
+    if (pkt_it != m_inFlightPackets.end ())
+      {
+        double latency_s = pkt_it->second.firstHopLatencySeconds;
+        if (latency_s > 0.0)
+          {
+            notificationDelay = Seconds (latency_s);
+          }
+      }
+
+    std::cerr << std::fixed << std::setprecision (9)
+              << "ProbeHost ScheduleInterfaceDownNotification: packetId=" << packetId
+              << " failedInterface=" << failedInterface
+              << " delay=" << notificationDelay.GetSeconds () << "s"
+              << " schedule_time=" << Simulator::Now ().GetSeconds () << "s"
+              << " notify_at=" << (Simulator::Now () + notificationDelay).GetSeconds () << "s"
+              << std::endl;
+
+    PathFailureNotification notification;
+    notification.packetId = packetId;
+    notification.failedInterface = failedInterface;
+    notification.failedAsFrom = as_number;
+    notification.failedAsTo = 0;
+    notification.pathSignature = pathSignature;
+    notification.hopNumber = 0;
+    notification.failureTime = Simulator::Now () + notificationDelay;
+    notification.failureReason = "interface_down_event";
+    Simulator::Schedule (notificationDelay, &ProbeHost::OnPathFailure, this, notification);
+  }
+
+protected:
+  void ProcessReceivedPacket (uint16_t local_if, ScionPacket *packet, Time receive_time) override;
+
+private:
+  bool
+  BuildBeaconCandidatesFromStore (ia_t dst_ia,
+                                  std::vector<std::pair<const Beacon *, double>> &out_candidates)
+  {
+    out_candidates.clear ();
+    if (!as || !as->GetBeaconServer ())
+      {
+        return false;
+      }
+
+    uint16_t dst_as = GET_ASN (dst_ia);
+    const auto &store = as->GetBeaconServer ()->GetBeaconStore ();
+    auto it = store.find (dst_as);
+    if (it == store.end ())
+      {
+        return false;
+      }
+
+    for (const auto &len_beacons_pair : it->second)
+      {
+        for (const auto &beacon : len_beacons_pair.second)
+          {
+            if (!beacon || !beacon->is_valid)
+              {
+                continue;
+              }
+            auto it_lat = beacon->static_info_extension.find (StaticInfoType::LATENCY);
+            if (it_lat == beacon->static_info_extension.end ())
+              {
+                continue;
+              }
+            double lat = it_lat->second;
+            out_candidates.push_back ({beacon, lat});
+          }
+      }
+
+    if (out_candidates.empty ())
+      {
+        return false;
+      }
+
+    std::sort (out_candidates.begin (), out_candidates.end (),
+               [] (const auto &a, const auto &b) { return a.second < b.second; });
+    return true;
+  }
+
+  ScionProbeApp *m_probeApp = nullptr;
+  std::vector<std::unique_ptr<PathSegment>> m_probeSegments;
+  std::string m_replyLogCsv;
+  std::ofstream m_replyLogOut;
+  std::unordered_map<uint32_t, ScionProbeApp *> m_pendingApps;
+
+  // Reactive failure notification tracking
+  std::unordered_map<uint32_t, InFlightPacket> m_inFlightPackets;
+  // Map interface -> set of path signatures that failed on that interface
+  std::map<uint16_t, std::set<std::string>> m_failedPathsPerInterface;
+  std::set<uint16_t> m_activeFailedInterfaces;
+
+  void
+  LogReplyAttempt (ScionPacket *packet, Time now)
+  {
+    if (m_replyLogCsv.empty ())
+      {
+        return;
+      }
+
+    if (!m_replyLogOut.is_open ())
+      {
+        std::filesystem::path outPath (m_replyLogCsv);
+        if (outPath.has_parent_path ())
+          {
+            std::error_code ec;
+            std::filesystem::create_directories (outPath.parent_path (), ec);
+          }
+        m_replyLogOut.open (m_replyLogCsv);
+        if (!m_replyLogOut.good ())
+          {
+            std::cerr << "Probe reply log write failed: " << m_replyLogCsv << std::endl;
+            return;
+          }
+        m_replyLogOut << "time_s,as,host,packet_id,dst_as,dst_host,method,path_len,as_if,as_if_"
+                         "global,egress_up,hop_ing,hop_eg,fwd_hit,local_if,path_sig,path_detail,"
+                         "path_as\n";
+      }
+
+    uint16_t as_if = std::numeric_limits<uint16_t>::max ();
+    bool egress_up = true;
+    int32_t hop_ing = -1;
+    int32_t hop_eg = -1;
+    bool fwd_hit = false;
+    int32_t local_if = -1;
+    uint32_t path_len = static_cast<uint32_t> (packet->path.size ());
+
+    if (!packet->path.empty ())
+      {
+        uint64_t hopf = packet->path.at (packet->curr_inf)->hops.at (packet->cur_hopf);
+        bool reverse = (!packet->path_reversed) ^ packet->path.at (packet->curr_inf)->reverse;
+        hop_ing = GET_HOP_ING_IF (hopf);
+        hop_eg = GET_HOP_EG_IF (hopf);
+        as_if = reverse ? GET_HOP_ING_IF (hopf) : GET_HOP_EG_IF (hopf);
+        if (as)
+          {
+            egress_up = as->IsInterfaceUp (as_if);
+          }
+        auto it = forwarding_table_to_other_as_ifaces.find (as_if);
+        if (it != forwarding_table_to_other_as_ifaces.end ())
+          {
+            fwd_hit = true;
+            local_if = static_cast<int32_t> (it->second);
+          }
+      }
+
+    int32_t as_if_local =
+        (as_if == std::numeric_limits<uint16_t>::max ()) ? -1 : static_cast<int32_t> (as_if);
+    uint16_t as_label = GetOutputAsLabel (as_number);
+    uint16_t dst_as_label = GetOutputAsLabel (GET_ASN (packet->dst_ia));
+    int64_t as_if_global =
+        (as_if_local < 0) ? -1 : (static_cast<int64_t> (as_label) * 10000 + as_if_local);
+
+    std::string path_sig = BuildPathSignature (packet);
+    std::string path_detail = BuildPathDetail (packet);
+    std::string path_as = BuildPathAsTrace (packet);
+
+    m_replyLogOut << std::fixed << std::setprecision (9) << now.GetSeconds () << "," << as_label
+                  << "," << local_address << "," << packet->id << "," << dst_as_label << ","
+                  << packet->dst_host << ","
+                  << "reply" << "," << path_len << "," << as_if_local << "," << as_if_global << ","
+                  << (egress_up ? 1 : 0) << "," << hop_ing << "," << hop_eg << ","
+                  << (fwd_hit ? 1 : 0) << "," << local_if << "," << path_sig << "," << path_detail
+                  << "," << path_as << "\n";
+  }
+};
+
+class ScionProbeApp : public Application
+{
+public:
+  ScionProbeApp () = default;
+
+  void
+  Configure (Ptr<ProbeHost> src, ia_t dstIa, host_addr_t dstHost, Time interval, Time timeout,
+             Time retryDelay, uint32_t count, const std::string &csvPath,
+             const std::string &logCsvPath = "")
+  {
+    m_src = src;
+    m_dstIa = dstIa;
+    m_dstHost = dstHost;
+    m_interval = interval;
+    m_timeout = timeout;
+    m_retryDelay = retryDelay;
+    m_count = count;
+    m_csvPath = csvPath;
+    m_logCsvPath = logCsvPath;
+  }
+
+  void
+  OnProbeReply (uint32_t packetId, Time recvTime)
+  {
+    std::cerr << "ProbeApp OnProbeReply packetId=" << packetId
+              << " recvTime=" << recvTime.GetSeconds () << "s" << std::endl;
+    auto it = m_sendTimes.find (packetId);
+    if (it == m_sendTimes.end ())
+      {
+        std::cerr << "ProbeApp OnProbeReply: unknown packetId=" << packetId << std::endl;
+        return;
+      }
+
+    Time sendTime = it->second;
+    m_sendTimes.erase (it);
+
+    auto timeoutIt = m_timeouts.find (packetId);
+    if (timeoutIt != m_timeouts.end ())
+      {
+        timeoutIt->second.Cancel ();
+        m_timeouts.erase (timeoutIt);
+      }
+
+    m_received++;
+    m_samples.push_back ({packetId, sendTime, recvTime});
+  }
+
+  struct Sample
+  {
+    uint32_t packetId;
+    Time sendTime;
+    Time recvTime;
+  };
+
+protected:
+  void
+  StartApplication () override
+  {
+    m_running = true;
+    m_sent = 0;
+    m_received = 0;
+    m_lost = 0;
+    m_sendTimes.clear ();
+    m_timeouts.clear ();
+    m_samples.clear ();
+
+    std::cerr << "ProbeApp StartApplication at " << Simulator::Now ().GetSeconds () << "s"
+              << " interval=" << m_interval.GetSeconds () << "s"
+              << " timeout=" << m_timeout.GetSeconds () << "s"
+              << " retry=" << m_retryDelay.GetSeconds () << "s"
+              << " count=" << m_count << std::endl;
+
+    ScheduleNextProbe (Seconds (0));
+  }
+
+  void
+  StopApplication () override
+  {
+    m_running = false;
+    m_nextEvent.Cancel ();
+
+    std::cerr << "ProbeApp StopApplication at " << Simulator::Now ().GetSeconds () << "s"
+              << " sent=" << m_sent << " received=" << m_received << std::endl;
+
+    for (auto &kv : m_timeouts)
+      {
+        kv.second.Cancel ();
+      }
+    m_timeouts.clear ();
+
+    WriteCsv ();
+    PrintSummary ();
+  }
+
+private:
+  void
+  ScheduleNextProbe (Time delay)
+  {
+    if (!m_running || m_sent >= m_count)
+      {
+        return;
+      }
+    m_nextEvent = Simulator::Schedule (delay, &ScionProbeApp::TrySendProbe, this);
+  }
+
+  void
+  TrySendProbe ()
+  {
+    if (!m_running || m_sent >= m_count)
+      {
+        return;
+      }
+
+    std::cerr << "ProbeApp TrySendProbe: attempt=" << (m_sent + 1)
+              << " time=" << Simulator::Now ().GetSeconds () << "s" << std::endl;
+    auto result = m_src->SendProbe (m_dstIa, m_dstHost, this);
+    LogAttempt (result, Simulator::Now ());
+    if (!result.sent)
+      {
+        std::cerr << "ProbeApp TrySendProbe: no path, retrying after " << m_retryDelay.GetSeconds ()
+                  << "s" << std::endl;
+        m_nextEvent = Simulator::Schedule (m_retryDelay, &ScionProbeApp::TrySendProbe, this);
+        return;
+      }
+
+    m_sent++;
+    Time now = Simulator::Now ();
+    std::cerr << "ProbeApp TrySendProbe: sent packetId=" << result.packetId
+              << " time=" << now.GetSeconds () << "s" << std::endl;
+    m_sendTimes[result.packetId] = now;
+    m_timeouts[result.packetId] =
+        Simulator::Schedule (m_timeout, &ScionProbeApp::OnTimeout, this, result.packetId);
+
+    ScheduleNextProbe (m_interval);
+  }
+
+  void
+  LogAttempt (const ProbeHost::SendResult &res, Time now)
+  {
+    if (m_logCsvPath.empty ())
+      {
+        return;
+      }
+
+    if (!m_logOut.is_open ())
+      {
+        std::filesystem::path outPath (m_logCsvPath);
+        if (outPath.has_parent_path ())
+          {
+            std::error_code ec;
+            std::filesystem::create_directories (outPath.parent_path (), ec);
+          }
+        m_logOut.open (m_logCsvPath);
+        if (!m_logOut.good ())
+          {
+            std::cerr << "Probe log write failed: " << m_logCsvPath << std::endl;
+            return;
+          }
+        m_logOut << "time_s,src_as,src_host,dst_as,dst_host,attempt,sent,method,path_len,as_if,as_"
+                    "if_global,egress_up,hop_ing,hop_eg,fwd_hit,local_if,path_sig,path_detail,path_"
+                    "as,path_changed,no_path_reason,has_path\n";
+      }
+
+    std::string method;
+    switch (res.method)
+      {
+      case ProbeHost::SendResult::Method::LOCAL:
+        method = "local";
+        break;
+      case ProbeHost::SendResult::Method::CACHED_PATH:
+        method = "cached";
+        break;
+      case ProbeHost::SendResult::Method::BEACON_PATH:
+        method = "beacon";
+        break;
+      case ProbeHost::SendResult::Method::NO_PATH:
+      default:
+        method = "no_path";
+        break;
+      }
+
+    int32_t as_if =
+        (res.asIf == std::numeric_limits<uint16_t>::max ()) ? -1 : static_cast<int32_t> (res.asIf);
+    uint16_t src_as_label = GetOutputAsLabel (m_src->GetAsNumber ());
+    uint16_t dst_as_label = GetOutputAsLabel (GET_ASN (m_dstIa));
+    int64_t as_if_global = (as_if < 0) ? -1 : (static_cast<int64_t> (src_as_label) * 10000 + as_if);
+
+    bool path_changed = false;
+    if (res.sent && !res.pathSig.empty ())
+      {
+        path_changed = (m_lastPathSig != res.pathSig);
+        if (path_changed)
+          {
+            std::cerr << std::fixed << std::setprecision (9)
+                      << "[PATH_CHANGED] src_as=" << src_as_label << " dst=" << GET_ISDN (m_dstIa)
+                      << ":" << dst_as_label
+                      << " old_path=" << (m_lastPathSig.empty () ? "NONE" : m_lastPathSig)
+                      << " new_path=" << res.pathSig << " method=" << method
+                      << " time=" << Simulator::Now ().GetSeconds () << "s" << std::endl;
+          }
+        m_lastPathSig = res.pathSig;
+      }
+
+    m_logOut << std::fixed << std::setprecision (9) << now.GetSeconds () << "," << src_as_label
+             << "," << m_src->GetLocalAddress () << "," << dst_as_label << "," << m_dstHost << ","
+             << (m_sent + 1) << "," << (res.sent ? 1 : 0) << "," << method << "," << res.pathLen
+             << "," << as_if << "," << as_if_global << "," << (res.egressUp ? 1 : 0) << ","
+             << res.hopIng << "," << res.hopEg << "," << (res.fwdHit ? 1 : 0) << "," << res.localIf
+             << "," << res.pathSig << "," << res.pathDetail << "," << res.pathAs << ","
+             << (path_changed ? 1 : 0) << "," << res.noPathReason << ","
+             << (!res.pathSig.empty () ? 1 : 0) << "\n";
+  }
+
+  void
+  OnTimeout (uint32_t packetId)
+  {
+    if (m_sendTimes.find (packetId) == m_sendTimes.end ())
+      {
+        return;
+      }
+    std::cerr << "ProbeApp timeout packetId=" << packetId
+              << " time=" << Simulator::Now ().GetSeconds () << "s" << std::endl;
+    m_sendTimes.erase (packetId);
+    if (m_src)
+      {
+        m_src->ForgetProbe (packetId);
+      }
+    m_timeouts.erase (packetId);
+    m_lost++;
+  }
+
+  void
+  WriteCsv ()
+  {
+    if (m_csvPath.empty ())
+      {
+        return;
+      }
+
+    std::filesystem::path outPath (m_csvPath);
+    std::cerr << "Probe CSV cwd: " << std::filesystem::current_path () << std::endl;
+    std::cerr << "Probe CSV absolute path: " << std::filesystem::absolute (outPath) << std::endl;
+    if (outPath.has_parent_path ())
+      {
+        std::error_code ec;
+        std::filesystem::create_directories (outPath.parent_path (), ec);
+      }
+
+    std::ofstream out (m_csvPath);
+    if (!out.good ())
+      {
+        std::cerr << "Probe CSV write failed: " << m_csvPath << std::endl;
+        return;
+      }
+
+    std::cerr << "Probe CSV writing to: " << m_csvPath << std::endl;
+
+    out << "packet_id,send_time_s,recv_time_s,rtt_us\n";
+    for (const auto &s : m_samples)
+      {
+        double send_s = s.sendTime.GetSeconds ();
+        double recv_s = s.recvTime.GetSeconds ();
+        double rtt_us = (s.recvTime - s.sendTime).GetNanoSeconds () / 1000.0;
+        out << s.packetId << "," << std::fixed << std::setprecision (9) << send_s << ","
+            << std::fixed << std::setprecision (9) << recv_s << "," << std::fixed
+            << std::setprecision (3) << rtt_us << "\n";
+      }
+  }
+
+  void
+  PrintSummary () const
+  {
+    uint32_t total = m_sent;
+    uint32_t received = m_received;
+    uint32_t lost = m_lost + static_cast<uint32_t> (m_sendTimes.size ());
+    double loss_rate = total ? (100.0 * lost / total) : 0.0;
+    uint16_t src_as_label = m_src ? GetOutputAsLabel (m_src->GetAsNumber ()) : 0;
+    uint16_t dst_as_label = GetOutputAsLabel (GET_ASN (m_dstIa));
+    std::cout << "Probe summary: src_as=" << src_as_label << " dst_as=" << dst_as_label
+              << " sent=" << total << " received=" << received << " lost=" << lost
+              << " loss_rate=" << loss_rate << "%" << std::endl;
+  }
+
+  Ptr<ProbeHost> m_src;
+  ia_t m_dstIa;
+  host_addr_t m_dstHost;
+  Time m_interval;
+  Time m_timeout;
+  Time m_retryDelay;
+  uint32_t m_count;
+  std::string m_csvPath;
+  std::string m_logCsvPath;
+  std::ofstream m_logOut;
+
+  bool m_running = false;
+  uint32_t m_sent = 0;
+  uint32_t m_received = 0;
+  uint32_t m_lost = 0;
+
+  EventId m_nextEvent;
+  std::unordered_map<uint32_t, Time> m_sendTimes;
+  std::unordered_map<uint32_t, EventId> m_timeouts;
+  std::vector<Sample> m_samples;
+  std::string m_lastPathSig;
+};
+
+void
+ProbeHost::ProcessReceivedPacket (uint16_t local_if, ScionPacket *packet, Time receive_time)
+{
+  ScionHost::ProcessReceivedPacket (local_if, packet, receive_time);
+
+  // Handle failure notifications from downstream nodes
+  if (packet->payload_type == PayloadType::PATH_FAILURE_NOTIFY)
+    {
+      // Check if this notification is destined to us (for packets we originated)
+      if (packet->dst_ia == ia_addr && packet->dst_host == local_address)
+        {
+          // This is a failure notification destined to us (the source)
+          FailureNotifyPayload &notify = packet->payload.failure_notify_payload;
+
+          std::cerr << std::fixed << std::setprecision (9)
+                    << "ProbeHost received failure notification for pkt="
+                    << notify.original_packet_id << " failed_if=" << notify.failed_interface
+                    << " failed_as="
+                    << GET_ISDN (((uint32_t) notify.failed_as_isd << 16) | notify.failed_as_number)
+                    << ":" << notify.failed_as_number << " time=" << receive_time.GetSeconds ()
+                    << "s" << std::endl;
+
+          // Treat as path failure for the original packet
+          PathFailureNotification failure_notif;
+          failure_notif.packetId = notify.original_packet_id;
+          failure_notif.failedInterface = notify.failed_interface;
+          failure_notif.failedAsFrom = notify.failed_as_isd;
+          failure_notif.failedAsTo = notify.failed_as_number;
+          failure_notif.failureTime = receive_time;
+          failure_notif.failureReason = "downstream_interface_down";
+
+          // Call the path failure handler
+          OnPathFailure (failure_notif);
+
+          DestroyScionPacket (packet);
+          return;
+        }
+      else
+        {
+          // Forward the notification towards its destination
+          std::cerr << std::fixed << std::setprecision (9)
+                    << "ProbeHost forwarding failure notification pkt=" << packet->id
+                    << " dst=" << GET_ISDN (packet->dst_ia) << ":" << GET_ASN (packet->dst_ia)
+                    << " time=" << receive_time.GetSeconds () << "s" << std::endl;
+          SendScionPacket (packet);
+          return;
+        }
+    }
+
+  if (packet->payload_type != PayloadType::EMPTY)
+    {
+      return;
+    }
+
+  if (packet->packet_originator == this)
+    {
+      auto it = m_pendingApps.find (packet->id);
+      if (it != m_pendingApps.end ())
+        {
+          std::cerr << "ProbeHost recv reply packetId=" << packet->id
+                    << " time=" << receive_time.GetSeconds () << "s" << std::endl;
+          it->second->OnProbeReply (packet->id, receive_time);
+          m_pendingApps.erase (it);
+          m_inFlightPackets.erase (packet->id);
+        }
+      else
+        {
+          std::cerr << "ProbeHost recv reply packetId=" << packet->id
+                    << " time=" << receive_time.GetSeconds () << "s" << std::endl;
+          m_inFlightPackets.erase (packet->id);
+        }
+      DestroyScionPacket (packet);
+    }
+  else
+    {
+      LogReplyAttempt (packet, receive_time);
+      if (g_linkDown)
+        {
+          std::cerr << "ProbeHost drop (link down) packetId=" << packet->id << std::endl;
+          packet->packet_originator->DestroyScionPacket (packet);
+          return;
+        }
+
+      std::cerr << "ProbeHost echoing packetId=" << packet->id << std::endl;
+      ReturnScionPacket (packet);
+    }
+}
+
+} // namespace
+
+// ---------------------------------------------------------------------------
+// Helper: SCION XML loader (uses RapidXML included indirectly by SCION modules)
+// ---------------------------------------------------------------------------
+void
+LoadXml (const std::string &file, rapidxml::xml_document<> &doc, std::vector<char> &buf)
+{
+  std::ifstream f (file.c_str ());
+  if (!f.good ())
+    NS_FATAL_ERROR ("Cannot open XML file " << file);
+
+  buf.assign (std::istreambuf_iterator<char> (f), std::istreambuf_iterator<char> ());
+  buf.push_back ('\0');
+  doc.parse<0> (&buf[0]);
+}
+
+// ---------------------------------------------------------------------------
+// Dynamic link control
+// ---------------------------------------------------------------------------
+void
+SetLinkUp (Ptr<PointToPointChannel> ch, double delay, double rate)
+{
+  g_linkDown = false;
+  ch->SetAttribute ("Delay", TimeValue (Seconds (delay)));
+
+  for (uint32_t i = 0; i < ch->GetNDevices (); i++)
+    {
+      auto dev = DynamicCast<PointToPointNetDevice> (ch->GetDevice (i));
+      std::ostringstream ss;
+      ss << rate << "Mbps";
+      dev->SetAttribute ("DataRate", StringValue (ss.str ()));
+
+      Ptr<RateErrorModel> none;
+      dev->SetReceiveErrorModel (none);
+    }
+}
+
+void
+SetLinkDown (Ptr<PointToPointChannel> ch)
+{
+  g_linkDown = true;
+  for (uint32_t i = 0; i < ch->GetNDevices (); i++)
+    {
+      auto dev = DynamicCast<PointToPointNetDevice> (ch->GetDevice (i));
+      Ptr<RateErrorModel> em = CreateObject<RateErrorModel> ();
+      em->SetAttribute ("ErrorRate", DoubleValue (1.0));
+      dev->SetReceiveErrorModel (em);
+    }
+}
+
+void
+HandleUserEventLinkState (uint16_t real_as, uint16_t local_if, bool is_down, uint32_t raw_if_id)
+{
+  std::cerr << "ReactiveFailure: " << (is_down ? "link_down" : "link_up")
+            << " event real_as=" << real_as << " local_if=" << local_if
+            << " raw_if_id=" << raw_if_id
+            << " probe_hosts=" << g_probeHostsForFailureCallbacks.size () << std::endl;
+
+  for (const auto &host : g_probeHostsForFailureCallbacks)
+    {
+      if (!host)
+        {
+          continue;
+        }
+      host->SetFailedInterfaceState (local_if, is_down);
+    }
+}
+
+void
+LogBeaconStats (uint32_t remaining)
+{
+  std::cerr << "Beacon stats at t=" << Simulator::Now ().GetSeconds () << "s" << std::endl;
+  for (uint32_t i = 0; i < nodes.GetN (); ++i)
+    {
+      Ptr<ScionAs> asPtr = DynamicCast<ScionAs> (nodes.Get (i));
+      const auto &sent = asPtr->GetBeaconServer ()->GetBeaconsSentPerInterface ();
+      uint64_t total_sent = 0;
+      for (auto v : sent)
+        {
+          total_sent += v;
+        }
+      std::cerr << "  AS " << asPtr->isd_number << ":" << asPtr->as_number << " sent=" << total_sent
+                << " store_dst=" << asPtr->GetBeaconServer ()->GetBeaconStore ().size ()
+                << " valid_dst="
+                << asPtr->GetBeaconServer ()->GetValidBeaconsCountPerDstAs ().size () << std::endl;
+    }
+
+  if (remaining > 0)
+    {
+      Simulator::Schedule (Seconds (1.0), &LogBeaconStats, remaining - 1);
+    }
+}
+
+int
+main (int argc, char *argv[])
+{
+  Time::SetResolution (Time::NS);
+
+  std::string yamlFile = "configs/small_two_as_satellite.yaml";
+  for (int i = 1; i < argc; ++i)
+    {
+      std::string arg = argv[i];
+      if (arg == "--configs" && i + 1 < argc)
+        {
+          yamlFile = argv[i + 1];
+          ++i;
+          continue;
+        }
+      if (arg.rfind ("--configs/", 0) == 0)
+        {
+          yamlFile = arg.substr (std::string ("--").size ());
+          continue;
+        }
+      if (arg.rfind ("--configs=", 0) == 0)
+        {
+          yamlFile = arg.substr (std::string ("--configs=").size ());
+          continue;
+        }
+    }
+  YAML::Node config = YAML::LoadFile (yamlFile);
+
+  std::unique_ptr<std::ofstream> outFile;
+  std::streambuf *coutBuf = std::cout.rdbuf ();
+  if (config["output"])
+    {
+      std::string out_path = config["output"].as<std::string> ();
+      std::filesystem::path outPath (out_path);
+      if (outPath.has_parent_path ())
+        {
+          std::error_code ec;
+          std::filesystem::create_directories (outPath.parent_path (), ec);
+        }
+      outFile = std::make_unique<std::ofstream> (out_path);
+      if (outFile->good ())
+        {
+          std::cout.rdbuf (outFile->rdbuf ());
+        }
+    }
+
+  // Load XML topology
+  std::vector<char> xmlBuf;
+  rapidxml::xml_document<> xmlDoc;
+  std::string xmlFile = config["topology"].as<std::string> ();
+  LoadXml (xmlFile, xmlDoc, xmlBuf);
+  auto xmlRoot = xmlDoc.first_node ("topology");
+  if (!xmlRoot)
+    NS_FATAL_ERROR ("Missing <topology>");
+
+  // Instantiate ASes (use global 'nodes' container expected by periodic events)
+  NodeContainer &asNodes = nodes;
+  std::map<int32_t, uint16_t> real2alias;
+  std::map<uint16_t, int32_t> alias2real;
+
+  InstantiateASesFromTopo (xmlRoot, real2alias, alias2real, asNodes, config);
+  g_aliasToRealAs = alias2real;
+
+  struct ProbeCfg
+  {
+    uint16_t src_as;
+    uint16_t src_host;
+    uint16_t dst_as;
+    uint16_t dst_host;
+    Time interval;
+    Time timeout;
+    Time retry_delay;
+    uint32_t count;
+    std::string csv;
+    std::string log_csv;
+    Time start;
+    Time stop;
+  };
+
+  auto get_as = [&real2alias, &asNodes] (uint16_t real_as) -> Ptr<ScionAs> {
+    auto it = real2alias.find (real_as);
+    if (it == real2alias.end ())
+      {
+        NS_FATAL_ERROR ("Unknown AS id in probe config: " << real_as);
+      }
+    return DynamicCast<ScionAs> (asNodes.Get (it->second));
+  };
+
+  Time simDuration = Seconds (60.0);
+  if (config["simulation_duration"])
+    {
+      simDuration = Time (config["simulation_duration"].as<std::string> ());
+    }
+
+  std::vector<ProbeCfg> probe_cfgs;
+  if (config["probes"] && config["probes"].IsSequence ())
+    {
+      for (const auto &p : config["probes"])
+        {
+          ProbeCfg cfg;
+          cfg.src_as = p["src_as"].as<uint16_t> ();
+          cfg.src_host = p["src_host"].as<uint16_t> ();
+          cfg.dst_as = p["dst_as"].as<uint16_t> ();
+          cfg.dst_host = p["dst_host"].as<uint16_t> ();
+          cfg.interval = p["interval"] ? Time (p["interval"].as<std::string> ()) : Seconds (1.0);
+          cfg.timeout = p["timeout"] ? Time (p["timeout"].as<std::string> ()) : Seconds (2.0);
+          cfg.retry_delay =
+              p["retry_delay"] ? Time (p["retry_delay"].as<std::string> ()) : MilliSeconds (300);
+          cfg.count = p["count"] ? p["count"].as<uint32_t> () : 100;
+          cfg.csv = p["csv"] ? p["csv"].as<std::string> () : "output/probe_stats.csv";
+          cfg.log_csv = p["log_csv"] ? p["log_csv"].as<std::string> () : "";
+          cfg.start = p["start"] ? Time (p["start"].as<std::string> ()) : Seconds (5.0);
+          cfg.stop =
+              p["stop"] ? Time (p["stop"].as<std::string> ()) : (simDuration - Seconds (1.0));
+          probe_cfgs.push_back (cfg);
+        }
+    }
+  else
+    {
+      uint16_t srcHostId = 11;
+      uint16_t dstHostId = 22;
+      if (config["probe"] && config["probe"]["src_host"])
+        {
+          srcHostId = config["probe"]["src_host"].as<uint16_t> ();
+        }
+      if (config["probe"] && config["probe"]["dst_host"])
+        {
+          dstHostId = config["probe"]["dst_host"].as<uint16_t> ();
+        }
+
+      ProbeCfg cfg;
+      cfg.src_as = 1;
+      cfg.src_host = srcHostId;
+      cfg.dst_as = 2;
+      cfg.dst_host = dstHostId;
+      cfg.interval = (config["probe"] && config["probe"]["interval"])
+                         ? Time (config["probe"]["interval"].as<std::string> ())
+                         : Seconds (1.0);
+      cfg.timeout = (config["probe"] && config["probe"]["timeout"])
+                        ? Time (config["probe"]["timeout"].as<std::string> ())
+                        : Seconds (2.0);
+      cfg.retry_delay = (config["probe"] && config["probe"]["retry_delay"])
+                            ? Time (config["probe"]["retry_delay"].as<std::string> ())
+                            : MilliSeconds (300);
+      cfg.count = (config["probe"] && config["probe"]["count"])
+                      ? config["probe"]["count"].as<uint32_t> ()
+                      : 20;
+      cfg.csv = (config["probe"] && config["probe"]["csv"])
+                    ? config["probe"]["csv"].as<std::string> ()
+                    : "output/probe_stats.csv";
+      cfg.log_csv = (config["probe"] && config["probe"]["log_csv"])
+                        ? config["probe"]["log_csv"].as<std::string> ()
+                        : "";
+      cfg.start = Seconds (5.0);
+      cfg.stop = simDuration - Seconds (1.0);
+      probe_cfgs.push_back (cfg);
+    }
+
+  std::map<std::pair<uint16_t, uint16_t>, Ptr<ProbeHost>> probe_hosts;
+  for (const auto &cfg : probe_cfgs)
+    {
+      auto src_key = std::make_pair (cfg.src_as, cfg.src_host);
+      if (probe_hosts.find (src_key) == probe_hosts.end ())
+        {
+          Ptr<ScionAs> asPtr = get_as (cfg.src_as);
+          Ptr<ProbeHost> h = CreateObject<ProbeHost> (0, asPtr->isd_number, asPtr->as_number,
+                                                      cfg.src_host, 0.0, 0.0, PeekPointer (asPtr));
+          std::ostringstream replyPath;
+          replyPath << "results/probe_reply_as" << cfg.src_as << "_h" << cfg.src_host << ".csv";
+          h->SetReplyLogPath (replyPath.str ());
+          asPtr->AddHost (PeekPointer (h));
+          probe_hosts[src_key] = h;
+        }
+      auto dst_key = std::make_pair (cfg.dst_as, cfg.dst_host);
+      if (probe_hosts.find (dst_key) == probe_hosts.end ())
+        {
+          Ptr<ScionAs> asPtr = get_as (cfg.dst_as);
+          Ptr<ProbeHost> h = CreateObject<ProbeHost> (0, asPtr->isd_number, asPtr->as_number,
+                                                      cfg.dst_host, 0.0, 0.0, PeekPointer (asPtr));
+          std::ostringstream replyPath;
+          replyPath << "results/probe_reply_as" << cfg.dst_as << "_h" << cfg.dst_host << ".csv";
+          h->SetReplyLogPath (replyPath.str ());
+          asPtr->AddHost (PeekPointer (h));
+          probe_hosts[dst_key] = h;
+        }
+    }
+
+  std::set<Ptr<ProbeHost>> unique_probe_hosts;
+  for (const auto &kv : probe_hosts)
+    {
+      unique_probe_hosts.insert (kv.second);
+    }
+  g_probeHostsForFailureCallbacks.assign (unique_probe_hosts.begin (), unique_probe_hosts.end ());
+
+  UserDefinedEvents::SetLinkStateCallback (&HandleUserEventLinkState);
+
+  // Create PathServers + TimeServers
+  if (config["path_service"])
+    {
+      InstantiatePathServers (config, nodes);
+    }
+
+  if (config["time_service"])
+    {
+      InstantiateTimeServers (config, nodes);
+    }
+
+  // Create SCION links
+  InstantiateLinksFromTopo (xmlRoot, asNodes, real2alias, config);
+  InitializeASesAttributes (asNodes, real2alias, xmlRoot, config);
+
+  // Debug: verify neighbors and interfaces after link creation
+  std::cerr << "AS count: " << asNodes.GetN () << std::endl;
+  for (uint32_t i = 0; i < asNodes.GetN (); ++i)
+    {
+      Ptr<ScionAs> asPtr = DynamicCast<ScionAs> (asNodes.Get (i));
+      std::cerr << "AS " << asPtr->isd_number << ":" << asPtr->as_number
+                << " devices=" << asPtr->GetNDevices () << " neighbors=" << asPtr->neighbors.size ()
+                << " interfaces_per_neighbor_as=" << asPtr->interfaces_per_neighbor_as.size ()
+                << std::endl;
+      for (const auto &nbr : asPtr->neighbors)
+        {
+          std::cerr << "  neighbor AS=" << nbr.first << " rel=" << nbr.second;
+          auto it = asPtr->interfaces_per_neighbor_as.find (nbr.first);
+          if (it != asPtr->interfaces_per_neighbor_as.end ())
+            {
+              std::cerr << " ifaces=" << it->second.size ();
+            }
+          std::cerr << std::endl;
+        }
+      DumpAsInterfaceMaps (asPtr);
+    }
+
+  // Find the AS1<->AS2 link only if legacy link toggling is enabled
+  Ptr<PointToPointChannel> isl;
+  if (config["legacy_link_toggle"] && config["legacy_link_toggle"].as<int> () != 0)
+    {
+      Ptr<ScionAs> as1Ptr = get_as (1);
+      Ptr<ScionAs> as2Ptr = get_as (2);
+      uint16_t as2Alias = as2Ptr->as_number;
+
+      for (const auto &kv : as1Ptr->interface_to_neighbor_map)
+        {
+          if (kv.second != as2Alias)
+            {
+              continue;
+            }
+          uint16_t ifIndex = kv.first;
+          auto dev = DynamicCast<PointToPointNetDevice> (as1Ptr->GetDevice (ifIndex));
+          if (dev && dev->GetChannel ())
+            {
+              isl = dev->GetChannel ()->GetObject<PointToPointChannel> ();
+              break;
+            }
+        }
+
+      if (!isl)
+        NS_FATAL_ERROR ("Could not find AS1-AS2 channel!");
+    }
+
+  // Start SCION control-plane beaconing
+  SchedulePeriodicEvents (config);
+
+  std::unique_ptr<UserDefinedEvents> userDefinedEvents;
+  if (config["events_file"])
+    {
+      userDefinedEvents =
+          std::make_unique<UserDefinedEvents> (config, asNodes, real2alias, alias2real);
+      std::cerr << "Loaded user-defined events from " << config["events_file"].as<std::string> ()
+                << std::endl;
+    }
+
+  // Debug: log beacon stats for first 10 seconds
+  Simulator::Schedule (Seconds (1.0), &LogBeaconStats, 10);
+
+  // Probe applications
+  if ((!config["probe"] && !config["probes"]) ||
+      (config["probe"] && config["probe"]["enabled"].as<int> () != 0) ||
+      (config["probes"] && config["probes"].IsSequence ()))
+    {
+      for (const auto &cfg : probe_cfgs)
+        {
+          Ptr<ProbeHost> src = probe_hosts.at (std::make_pair (cfg.src_as, cfg.src_host));
+          Ptr<ScionAs> dstAs = get_as (cfg.dst_as);
+          Ptr<ScionProbeApp> probeApp = CreateObject<ScionProbeApp> ();
+          probeApp->Configure (src, dstAs->ia_addr, cfg.dst_host, cfg.interval, cfg.timeout,
+                               cfg.retry_delay, cfg.count, cfg.csv, cfg.log_csv);
+          src->AddApplication (probeApp);
+          probeApp->SetStartTime (cfg.start);
+          probeApp->SetStopTime (cfg.stop);
+        }
+    }
+
+  // Dynamic link schedule (legacy single-link toggle)
+  if (isl)
+    {
+      Simulator::Schedule (Seconds (10.0), &SetLinkDown, isl);
+      Simulator::Schedule (Seconds (20.0), &SetLinkUp, isl, 0.015, 300.0);
+    }
+
+  // End
+  Simulator::Stop (simDuration);
+  Simulator::Run ();
+
+  PostSimulationEvaluations *eval =
+      new PostSimulationEvaluations (config, nodes, real2alias, alias2real);
+  eval->DoFinalEvaluations ();
+
+  if (outFile && outFile->good ())
+    {
+      std::cout.flush ();
+      std::cout.rdbuf (coutBuf);
+    }
+
+  Simulator::Destroy ();
+  UserDefinedEvents::SetLinkStateCallback (nullptr);
+  g_probeHostsForFailureCallbacks.clear ();
+  return 0;
+}

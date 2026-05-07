@@ -1,0 +1,102 @@
+time_resolution: NS
+topology: topology/ixp_as110_dual_links_topology.xml
+output: build/scenario_ixp_hidden_gateway_switch_generated.txt
+simulation_duration: 10010.001s
+NUM_CORE: 1
+
+events_file: user_defined_events/scenario_ixp_gateway_switch_generated_events.json
+
+beacon_service:
+  policy: baseline
+  period: 10s
+  expiration_period: 1350s
+  first_beaconing: 0s
+  last_beaconing: 10010.001s
+
+path_service: {}
+border_router: {}
+
+control_plane_logging:
+  beacon_events: true
+  path_server_updates: true
+  host_cache_updates: true
+  log_file: build/scenario_ixp_hidden_gateway_switch_generated_control_plane.log
+
+path_snapshot_logger:
+  period: 1s
+  output: build/scenario_ixp_hidden_gateway_switch_generated_path_snapshots.csv
+  max_paths_per_dst: 5
+  discover_all_pairs: true
+  request_lead_time: 500ms
+
+data_plane_probing:
+  start: 10s
+  period: 1s
+  timeout: 2s
+  count: 10000
+  pairs:
+    - src_as: 101
+      dst_as: 102
+      src_host: 2
+      dst_host: 2
+    - src_as: 102
+      dst_as: 103
+      src_host: 2
+      dst_host: 2
+    - src_as: 102
+      dst_as: 104
+      src_host: 2
+      dst_host: 2
+    - src_as: 102
+      dst_as: 105
+      src_host: 2
+      dst_host: 2
+    - src_as: 103
+      dst_as: 104
+      src_host: 2
+      dst_host: 2
+    - src_as: 103
+      dst_as: 105
+      src_host: 2
+      dst_host: 2
+    - src_as: 104
+      dst_as: 105
+      src_host: 2
+      dst_host: 2
+
+# Scenario 1 (anycast-like VIXP): one active IXP attachment per AS; fast 1s rebalance.
+virtual_ixp:
+  enabled: true
+  port_count: 4
+  rebalance_period: 1s
+  hold_down: 0s
+  max_active_links_per_as:
+    102: 1
+    103: 1
+    104: 1
+    105: 1
+  links:
+    - real_as: 102
+      if_id: 1020001
+      quality: 1.0
+    - real_as: 102
+      if_id: 1020002
+      quality: 0.9
+    - real_as: 103
+      if_id: 1030001
+      quality: 1.0
+    - real_as: 103
+      if_id: 1030002
+      quality: 0.9
+    - real_as: 104
+      if_id: 1040001
+      quality: 1.0
+    - real_as: 104
+      if_id: 1040002
+      quality: 0.9
+    - real_as: 105
+      if_id: 1050001
+      quality: 1.0
+    - real_as: 105
+      if_id: 1050002
+      quality: 0.9

@@ -1,0 +1,106 @@
+time_resolution: NS
+topology: topology/manual_link_fail_6as_topology.xml
+output: build/scenario_a_core_link_failure.txt
+simulation_duration: 540s
+NUM_CORE: 1
+
+# Scenario A: Single core link failure (AS101-AS102)
+events_file: user_defined_events/scenario_a_core_link_failure_events.json
+
+beacon_service:
+  policy: baseline
+  period: 10s
+  expiration_period: 1350s
+  first_beaconing: 0s
+  last_beaconing: 540s
+
+path_service: {}
+border_router: {}
+
+# Enhanced logging for control plane analysis
+control_plane_logging:
+  beacon_events: true
+  path_server_updates: true
+  host_cache_updates: true
+  log_file: build/scenario_a_control_plane.log
+
+# Path snapshot to track AS-level forwarding state
+path_snapshot_logger:
+  period: 2s  # Increased frequency for detailed convergence analysis
+  output: build/scenario_a_path_snapshots.csv
+  max_paths_per_dst: 5
+  discover_all_pairs: true
+  request_lead_time: 500ms
+
+# Data plane probing between all pairs
+data_plane_probing:
+  start: 10s
+  period: 1s
+  timeout: 2s
+  count: 535
+  pairs:
+    # All 6-AS pair combinations for comprehensive coverage
+    - src_as: 101
+      dst_as: 102
+      src_host: 2
+      dst_host: 2
+    - src_as: 101
+      dst_as: 103
+      src_host: 2
+      dst_host: 2
+    - src_as: 101
+      dst_as: 104
+      src_host: 2
+      dst_host: 2
+    - src_as: 101
+      dst_as: 105
+      src_host: 2
+      dst_host: 2
+    - src_as: 101
+      dst_as: 106
+      src_host: 2
+      dst_host: 2
+    - src_as: 102
+      dst_as: 103
+      src_host: 2
+      dst_host: 2
+    - src_as: 102
+      dst_as: 104
+      src_host: 2
+      dst_host: 2
+    - src_as: 102
+      dst_as: 105
+      src_host: 2
+      dst_host: 2
+    - src_as: 102
+      dst_as: 106
+      src_host: 2
+      dst_host: 2
+    - src_as: 103
+      dst_as: 104
+      src_host: 2
+      dst_host: 2
+    - src_as: 103
+      dst_as: 105
+      src_host: 2
+      dst_host: 2
+    - src_as: 103
+      dst_as: 106
+      src_host: 2
+      dst_host: 2
+    - src_as: 104
+      dst_as: 105
+      src_host: 2
+      dst_host: 2
+    - src_as: 104
+      dst_as: 106
+      src_host: 2
+      dst_host: 2
+    - src_as: 105
+      dst_as: 106
+      src_host: 2
+      dst_host: 2
+    - src_as: 107
+      dst_as: 108
+      src_host: 2
+      dst_host: 2

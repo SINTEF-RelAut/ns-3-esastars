@@ -24,12 +24,48 @@
 #include "ns3/point-to-point-net-device.h"
 
 #include "beacon-server.h"
+#include "src/SCION/model/externs.h"
 #include "src/SCION/model/path-server.h"
 #include "src/SCION/model/run-parallel-events.h"
 #include "src/SCION/model/scion-core-as.h"
 #include "src/SCION/model/utils.h"
 
 namespace ns3 {
+
+namespace {
+
+bool
+IsBeaconPathUsableNow (const Beacon *the_beacon)
+{
+  for (auto const &hop : the_beacon->the_path)
+    {
+      const uint16_t sender_as = UPPER_16_BITS (hop);
+      const uint16_t sender_eg_if = SECOND_UPPER_16_BITS (hop);
+      const uint16_t receiver_as = SECOND_LOWER_16_BITS (hop);
+      const uint16_t receiver_ing_if = LOWER_16_BITS (hop);
+
+      if (sender_as >= nodes.GetN () || receiver_as >= nodes.GetN ())
+        {
+          return false;
+        }
+
+      ScionAs *sender = dynamic_cast<ScionAs *> (PeekPointer (nodes.Get (sender_as)));
+      ScionAs *receiver = dynamic_cast<ScionAs *> (PeekPointer (nodes.Get (receiver_as)));
+      if (sender == NULL || receiver == NULL)
+        {
+          return false;
+        }
+
+      if (!sender->IsInterfaceUp (sender_eg_if) || !receiver->IsInterfaceUp (receiver_ing_if))
+        {
+          return false;
+        }
+    }
+
+  return true;
+}
+
+} // namespace
 
 void
 BeaconServer::DoInitializations (uint32_t num_ases, rapidxml::xml_node<> *xml_node,
@@ -41,7 +77,7 @@ BeaconServer::DoInitializations (uint32_t num_ases, rapidxml::xml_node<> *xml_no
   beacons_sent_per_dst_per_interface.resize (as->GetNDevices ());
 }
 void BeaconServer::PerLinkInitializations (rapidxml::xml_node<> *xml_node,
-                                           const YAML::Node &config){};
+                                           const YAML::Node &config) {};
 
 void
 BeaconServer::SetAs (ScionAs *as)
@@ -62,19 +98,35 @@ BeaconServer::ScheduleBeaconing (Time last_beaconing_event_time)
     }
   for (Time t = Seconds (0); t <= last_beaconing_event_time; t += beaconing_period)
     {
-      if (parallel_scheduler)
+      if (as->GetPathServer () != NULL)
         {
-          if (as->GetPathServer () != NULL)
+          if (parallel_scheduler)
             {
               Simulator::Schedule (t + as->latency_between_path_server_and_beacon_server,
                                    &RunParallelEvents<void (BeaconServer::*) ()>,
                                    &BeaconServer::RegisterToLocalPathServer);
             }
+          else
+            {
+              Simulator::Schedule (t + as->latency_between_path_server_and_beacon_server,
+                                   &BeaconServer::RegisterToLocalPathServer, this);
+            }
+        }
+
+      if (parallel_scheduler)
+        {
           Simulator::Schedule (t, &RunParallelEvents<void (BeaconServer::*) ()>,
                                &BeaconServer::UpdateStateBeforeBeaconing);
 
-          Simulator::Schedule (t + TimeStep (1), &RunParallelEvents<void (BeaconServer::*) ()>,
+          Simulator::Schedule (t + as->latency_between_path_server_and_beacon_server + TimeStep (1),
+                               &RunParallelEvents<void (BeaconServer::*) ()>,
                                &BeaconServer::UpdateStatePeriodic);
+        }
+      else
+        {
+          Simulator::Schedule (t, &BeaconServer::UpdateStateBeforeBeaconing, this);
+          Simulator::Schedule (t + as->latency_between_path_server_and_beacon_server + TimeStep (1),
+                               &BeaconServer::UpdateStatePeriodic, this);
         }
 
       if (dynamic_cast<ScionCoreAs *> (as) != NULL)
@@ -160,12 +212,20 @@ BeaconServer::UpdateBeaconState (Beacon *the_beacon)
       DecrementValidBeaconsCount (dst_as);
       DecrementNextRoundValidBeaconsCount (dst_as);
     }
+
+  // Also invalidate beacons immediately when any hop's ingress/egress interface is down.
+  if (the_beacon->is_valid && !IsBeaconPathUsableNow (the_beacon))
+    {
+      the_beacon->is_valid = false;
+      DecrementValidBeaconsCount (dst_as);
+      DecrementNextRoundValidBeaconsCount (dst_as);
+    }
 }
 
 void
-BeaconServer::CreateInitialStaticInfoExtension (
-    static_info_extension_t &static_info_extension, uint16_t self_egress_if_no,
-    const OptimizationTarget *optimization_target)
+BeaconServer::CreateInitialStaticInfoExtension (static_info_extension_t &static_info_extension,
+                                                uint16_t self_egress_if_no,
+                                                const OptimizationTarget *optimization_target)
 {
 }
 
@@ -188,6 +248,11 @@ BeaconServer::InitiateBeacons (NeighbourRelation relation)
       const auto &interfaces = as->interfaces_per_neighbor_as.at (remote_as_no);
       for (auto const &self_egress_if_no : interfaces)
         {
+          if (!as->IsInterfaceUp (self_egress_if_no))
+            {
+              continue;
+            }
+
           std::pair<uint16_t, ScionAs *> remote_as_if_pair =
               as->GetRemoteAsInfo (self_egress_if_no);
 
@@ -201,7 +266,7 @@ BeaconServer::InitiateBeacons (NeighbourRelation relation)
 
 void
 BeaconServer::InitiateBeaconsPerInterface (uint16_t self_egress_if_no, ScionAs *remote_as,
-                                              uint16_t remote_ingress_if_no)
+                                           uint16_t remote_ingress_if_no)
 {
   static_info_extension_t static_info_extension;
   CreateInitialStaticInfoExtension (static_info_extension, self_egress_if_no, NULL);
@@ -212,11 +277,16 @@ BeaconServer::InitiateBeaconsPerInterface (uint16_t self_egress_if_no, ScionAs *
 
 void
 BeaconServer::GenerateBeaconAndSend (Beacon *selected_beacon, uint16_t self_egress_if_no,
-                                        uint16_t remote_ingress_if_no, ScionAs *remote_as,
-                                        static_info_extension_t &static_info_extension,
-                                        const OptimizationTarget *optimization_target,
+                                     uint16_t remote_ingress_if_no, ScionAs *remote_as,
+                                     static_info_extension_t &static_info_extension,
+                                     const OptimizationTarget *optimization_target,
                                      BeaconDirectionT beacon_direction)
 {
+  if (!as->IsInterfaceUp (self_egress_if_no))
+    {
+      return;
+    }
+
   std::string key;
   uint16_t remote_as_no = remote_as->as_number;
 
@@ -301,8 +371,8 @@ BeaconServer::UpdateStatePeriodic ()
 
 void
 BeaconServer::InsertBeacon (Beacon &the_beacon, uint16_t dst_as, uint16_t sender_as,
-                             uint16_t remote_egress_if, uint16_t local_ingress_if, bool path_exists,
-                             bool existing_path_valid, Beacon *beacon_to_replace)
+                            uint16_t remote_egress_if, uint16_t local_ingress_if, bool path_exists,
+                            bool existing_path_valid, Beacon *beacon_to_replace)
 {
   if (the_beacon.beacon_direction == BeaconDirectionT::PULL_BASED)
     {
@@ -481,14 +551,15 @@ BeaconServer::DecrementNextRoundValidBeaconsCount (uint16_t dst_as)
 void
 BeaconServer::IncrementControlPlaneBytesSent (Beacon &the_beacon, uint16_t interface)
 {
-  beacons_sent_per_interface.at (interface)++;
-  beacons_sent_per_interface_per_period.at (now).at (interface)++;
-  bytes_sent_per_interface_per_period.at (now).at (interface) +=
+  uint16_t interface_index = interface - 1;
+  beacons_sent_per_interface.at (interface_index)++;
+  beacons_sent_per_interface_per_period.at (now).at (interface_index)++;
+  bytes_sent_per_interface_per_period.at (now).at (interface_index) +=
       (BEACON_HEADER_SIZE + BEACON_HOP_SIZE * the_beacon.the_path.size ());
 
   auto dst_as = DST_AS (the_beacon);
 
-  auto &counters_per_dst = beacons_sent_per_dst_per_interface.at (interface);
+  auto &counters_per_dst = beacons_sent_per_dst_per_interface.at (interface_index);
   if (counters_per_dst.find (dst_as) == counters_per_dst.end ())
     {
       counters_per_dst.insert (std::make_pair (dst_as, 0));
@@ -497,9 +568,10 @@ BeaconServer::IncrementControlPlaneBytesSent (Beacon &the_beacon, uint16_t inter
 
   if (the_beacon.optimization_target != NULL)
     {
-      auto &counters_per_opt = the_beacon.beacon_direction == BeaconDirectionT::PUSH_BASED
-                                   ? push_based_beacons_sent_per_opt_per_interface.at (interface)
-                                   : pull_based_beacons_sent_per_opt_per_interface.at (interface);
+      auto &counters_per_opt =
+          the_beacon.beacon_direction == BeaconDirectionT::PUSH_BASED
+              ? push_based_beacons_sent_per_opt_per_interface.at (interface_index)
+              : pull_based_beacons_sent_per_opt_per_interface.at (interface_index);
       if (counters_per_opt.find (the_beacon.optimization_target) == counters_per_opt.end ())
         {
           counters_per_opt.insert (std::make_pair (the_beacon.optimization_target, 0));
@@ -512,6 +584,11 @@ void
 BeaconServer::ReceiveBeacon (Beacon &received_beacon, uint16_t sender_as, uint16_t remote_if,
                              uint16_t local_if)
 {
+  if (!as->IsInterfaceUp (local_if))
+    {
+      return;
+    }
+
   uint16_t dst_as = DST_AS (received_beacon);
 
   NS_ASSERT (received_beacon.beacon_direction == BeaconDirectionT::PULL_BASED ||
@@ -548,7 +625,7 @@ BeaconServer::ReceiveBeacon (Beacon &received_beacon, uint16_t sender_as, uint16
 
 std::tuple<bool, bool, bool, Beacon *, ld>
 BeaconServer::ImportPolicy (Beacon &the_beacon, uint16_t sender_as, uint16_t remote_egress_if_no,
-                             uint16_t self_ingress_if_no, uint16_t now)
+                            uint16_t self_ingress_if_no, uint16_t now)
 {
   if (the_beacon.beacon_direction == BeaconDirectionT::PUSH_BASED)
     {
@@ -614,13 +691,17 @@ BeaconServer::RegisterToLocalPathServer ()
                   the_beacon.ExtractPathSegmentFromPullBasedBeacon (path_segment);
                 }
 
-              if (dynamic_cast<ScionCoreAs *> (as) != NULL)
+              // All ASes can register CORE segments for path composition, not just core ASes
+              // This allows non-core hosts to compose paths through the core network
+              as->GetPathServer ()->RegisterCorePathSegment (path_segment, key);
+
+              if (dynamic_cast<ScionCoreAs *> (as) == NULL)
                 {
-                  as->GetPathServer ()->RegisterCorePathSegment (path_segment, key);
-                }
-              else
-                {
+                  // Non-core ASes also register UP and DOWN segments
                   as->GetPathServer ()->RegisterUpPathSegment (path_segment, key);
+
+                  PathSegment down_path_segment (path_segment);
+                  as->GetPathServer ()->RegisterDownPathSegment (down_path_segment, key);
                 }
             }
         }

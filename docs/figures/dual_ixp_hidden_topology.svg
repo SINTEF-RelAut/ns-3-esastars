@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="820" viewBox="0 0 1200 820" role="img" aria-labelledby="title desc">
+  <title id="title">Hidden Dual-IXP Topology</title>
+  <desc id="desc">Hidden dual-IXP topology where a virtual IXP controller manages one active attachment per AS among the physical links to IXP satellites AS120 and AS121.</desc>
+  <defs>
+    <style>
+      .bg { fill: #eef4f0; }
+      .panel { fill: #fbfefc; stroke: #c7d7cf; stroke-width: 2; }
+      .title { font: 700 30px 'DejaVu Sans', sans-serif; fill: #1f2a30; }
+      .subtitle { font: 400 17px 'DejaVu Sans', sans-serif; fill: #51636b; }
+      .legend { font: 600 15px 'DejaVu Sans', sans-serif; fill: #314047; }
+      .note { font: 400 15px 'DejaVu Sans', sans-serif; fill: #51636b; }
+      .node { fill: #fffdf7; stroke: #28424d; stroke-width: 3; }
+      .nodeText { font: 700 24px 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #1f2a30; }
+      .nodeSub { font: 400 14px 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #506068; }
+      .ixpA { fill: #ffefd8; stroke: #ca7418; stroke-width: 4; }
+      .ixpB { fill: #e1f3ee; stroke: #1f8168; stroke-width: 4; }
+      .vixp { fill: #f0f5ff; stroke: #4770b3; stroke-width: 4; }
+      .backbone { stroke: #2f4858; stroke-width: 6; stroke-linecap: round; }
+      .physicalA { stroke: #d9b48a; stroke-width: 4; stroke-linecap: round; opacity: 0.75; }
+      .physicalB { stroke: #94cabb; stroke-width: 4; stroke-linecap: round; opacity: 0.75; }
+      .control { stroke: #4770b3; stroke-width: 4; stroke-dasharray: 10 10; stroke-linecap: round; }
+      .selection { stroke: #245d4b; stroke-width: 6; stroke-linecap: round; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1200" height="820" />
+  <rect class="panel" x="28" y="24" width="1144" height="772" rx="24" />
+
+  <text class="title" x="56" y="72">Dual-IXP Topology: Hidden Case</text>
+  <text class="subtitle" x="56" y="104">Physical links exist to both IXP satellites, but a virtual IXP layer exposes only one active attachment per AS.</text>
+
+  <rect class="vixp" x="420" y="126" width="360" height="90" rx="20" />
+  <text class="nodeText" x="600" y="168">Virtual IXP Controller</text>
+  <text class="nodeSub" x="600" y="192">one active IXP link per AS102-AS105, rebalance + hold-down policy</text>
+
+  <line class="backbone" x1="180" y1="410" x2="325" y2="325" />
+  <line class="backbone" x1="180" y1="220" x2="395" y2="220" />
+  <line class="backbone" x1="785" y1="555" x2="940" y2="555" />
+  <line class="backbone" x1="1040" y1="555" x2="1100" y2="430" />
+
+  <line class="physicalA" x1="325" y1="325" x2="610" y2="265" />
+  <line class="physicalA" x1="395" y1="220" x2="610" y2="265" />
+  <line class="physicalA" x1="720" y1="220" x2="610" y2="265" />
+  <line class="physicalA" x1="785" y1="360" x2="610" y2="265" />
+  <line class="physicalA" x1="325" y1="325" x2="610" y2="305" opacity="0.55" />
+  <line class="physicalA" x1="395" y1="220" x2="610" y2="305" opacity="0.55" />
+  <line class="physicalA" x1="720" y1="220" x2="610" y2="305" opacity="0.55" />
+  <line class="physicalA" x1="785" y1="360" x2="610" y2="305" opacity="0.55" />
+
+  <line class="physicalB" x1="325" y1="325" x2="610" y2="430" />
+  <line class="physicalB" x1="395" y1="220" x2="610" y2="430" />
+  <line class="physicalB" x1="720" y1="220" x2="610" y2="430" />
+  <line class="physicalB" x1="785" y1="360" x2="610" y2="430" />
+  <line class="physicalB" x1="325" y1="325" x2="610" y2="470" opacity="0.55" />
+  <line class="physicalB" x1="395" y1="220" x2="610" y2="470" opacity="0.55" />
+  <line class="physicalB" x1="720" y1="220" x2="610" y2="470" opacity="0.55" />
+  <line class="physicalB" x1="785" y1="360" x2="610" y2="470" opacity="0.55" />
+
+  <line class="selection" x1="325" y1="325" x2="610" y2="265" />
+  <line class="selection" x1="395" y1="220" x2="610" y2="265" />
+  <line class="selection" x1="720" y1="220" x2="610" y2="430" />
+  <line class="selection" x1="785" y1="360" x2="610" y2="430" />
+
+  <line class="control" x1="510" y1="216" x2="325" y2="325" />
+  <line class="control" x1="560" y1="216" x2="395" y2="220" />
+  <line class="control" x1="640" y1="216" x2="720" y2="220" />
+  <line class="control" x1="690" y1="216" x2="785" y2="360" />
+
+  <circle class="node" cx="180" cy="410" r="44" />
+  <text class="nodeText" x="180" y="418">101</text>
+
+  <circle class="node" cx="325" cy="325" r="44" />
+  <text class="nodeText" x="325" y="333">102</text>
+
+  <circle class="node" cx="180" cy="220" r="44" />
+  <text class="nodeText" x="180" y="228">107</text>
+
+  <circle class="node" cx="395" cy="220" r="44" />
+  <text class="nodeText" x="395" y="228">103</text>
+
+  <circle class="node" cx="720" cy="220" r="44" />
+  <text class="nodeText" x="720" y="228">104</text>
+
+  <circle class="node" cx="785" cy="360" r="44" />
+  <text class="nodeText" x="785" y="368">105</text>
+
+  <circle class="node" cx="940" cy="555" r="44" />
+  <text class="nodeText" x="940" y="563">106</text>
+
+  <circle class="node" cx="1100" cy="430" r="44" />
+  <text class="nodeText" x="1100" y="438">108</text>
+
+  <rect class="ixpA" x="540" y="230" width="140" height="110" rx="18" />
+  <text class="nodeText" x="610" y="273">120</text>
+  <text class="nodeSub" x="610" y="298">physical VIXP A</text>
+
+  <rect class="ixpB" x="540" y="395" width="140" height="110" rx="18" />
+  <text class="nodeText" x="610" y="438">121</text>
+  <text class="nodeSub" x="610" y="463">physical VIXP B</text>
+
+  <rect class="panel" x="56" y="640" width="1088" height="124" rx="18" />
+  <text class="legend" x="88" y="678">Legend</text>
+  <line class="backbone" x1="88" y1="706" x2="168" y2="706" />
+  <text class="note" x="186" y="712">Backbone links: 101-102, 107-103, 105-106, 108-106</text>
+  <line class="physicalA" x1="88" y1="734" x2="168" y2="734" />
+  <text class="note" x="186" y="740">All physical links exist to both IXP satellites (two interfaces each)</text>
+  <line class="selection" x1="720" y1="734" x2="800" y2="734" />
+  <text class="note" x="818" y="740">Only one active attachment per AS is exposed by the virtual IXP</text>
+</svg>

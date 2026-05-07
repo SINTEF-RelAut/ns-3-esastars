@@ -1,0 +1,85 @@
+{
+  "description": "Dual-IXP-satellite visible failover events: AS120 (primary orbit) links fail sequentially per gateway AS; SCION reconverges via AS121 (backup orbit) links which are always visible.",
+  "events": [
+    {
+      "time": "50s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "102",
+        "1020001"
+      ],
+      "description": "AS102: first AS120 link down"
+    },
+    {
+      "time": "50s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "102",
+        "1020002"
+      ],
+      "description": "AS102: second AS120 link down — AS102->AS120 fully failed"
+    },
+    {
+      "time": "77s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "103",
+        "1030001"
+      ],
+      "description": "AS103: first AS120 link down"
+    },
+    {
+      "time": "77s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "103",
+        "1030002"
+      ],
+      "description": "AS103: second AS120 link down — AS103->AS120 fully failed"
+    },
+    {
+      "time": "104s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "104",
+        "1040001"
+      ],
+      "description": "AS104: first AS120 link down"
+    },
+    {
+      "time": "104s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "104",
+        "1040002"
+      ],
+      "description": "AS104: second AS120 link down — AS104->AS120 fully failed"
+    },
+    {
+      "time": "131s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "105",
+        "1050001"
+      ],
+      "description": "AS105: first AS120 link down"
+    },
+    {
+      "time": "131s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "105",
+        "1050002"
+      ],
+      "description": "AS105: second AS120 link down — AS105->AS120 fully failed"
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+time_resolution: NS
+topology: topology/ixp_relay_single_link_topology.xml
+output: build/scenario_ixp_relay_sequential_failover.txt
+simulation_duration: 260s
+NUM_CORE: 1
+
+events_file: user_defined_events/scenario_ixp_relay_sequential_failover_events.json
+
+beacon_service:
+  policy: baseline
+  period: 10s
+  expiration_period: 1350s
+  first_beaconing: 0s
+  last_beaconing: 260s
+
+path_service: {}
+border_router: {}
+
+control_plane_logging:
+  beacon_events: true
+  path_server_updates: true
+  host_cache_updates: true
+  log_file: build/scenario_ixp_relay_sequential_failover_control_plane.log
+
+path_snapshot_logger:
+  period: 1s
+  output: build/scenario_ixp_relay_sequential_failover_path_snapshots.csv
+  max_paths_per_dst: 5
+  discover_all_pairs: true
+  request_lead_time: 500ms
+
+data_plane_probing:
+  start: 10s
+  period: 1s
+  timeout: 2s
+  count: 240
+  pairs:
+    - src_as: 102
+      dst_as: 103
+      src_host: 2
+      dst_host: 2
+    - src_as: 102
+      dst_as: 104
+      src_host: 2
+      dst_host: 2
+    - src_as: 102
+      dst_as: 105
+      src_host: 2
+      dst_host: 2
+    - src_as: 103
+      dst_as: 104
+      src_host: 2
+      dst_host: 2
+    - src_as: 103
+      dst_as: 105
+      src_host: 2
+      dst_host: 2
+    - src_as: 104
+      dst_as: 105
+      src_host: 2
+      dst_host: 2
+
+# Virtual IXP: models the IXP relay satellite (AS110).
+# Each satellite AS (102-105) has exactly ONE ISL to AS110 (interface suffix 2).
+# port_count=4 keeps all 4 ISLs active simultaneously at startup.
+# When a link_down event fires on a satellite's IXP ISL, the VIXP removes that
+# interface from SCION routing. SCION then reconverges over backbone paths
+# (via AS101 or AS106). No backup IXP link exists per satellite AS.
+virtual_ixp:
+  enabled: true
+  port_count: 4
+  rebalance_period: 1000s
+  hold_down: 0s
+  links:
+    - real_as: 102
+      if_id: 1020002
+      quality: 1.0
+    - real_as: 103
+      if_id: 1030002
+      quality: 1.0
+    - real_as: 104
+      if_id: 1040002
+      quality: 1.0
+    - real_as: 105
+      if_id: 1050002
+      quality: 1.0

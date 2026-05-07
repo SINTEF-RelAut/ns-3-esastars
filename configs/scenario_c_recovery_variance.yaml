@@ -1,0 +1,82 @@
+time_resolution: NS
+topology: topology/manual_link_fail_6as_topology.xml
+output: build/scenario_c_recovery_variance.txt
+simulation_duration: 1080s
+NUM_CORE: 1
+
+# Scenario C: Recovery latency variance test - same link failure at 3 different times
+events_file: user_defined_events/scenario_c_recovery_variance_events.json
+
+beacon_service:
+  policy: baseline
+  period: 10s
+  expiration_period: 1350s
+  first_beaconing: 0s
+  last_beaconing: 1080s
+
+path_service: {}
+border_router: {}
+
+# Enhanced logging for control plane analysis
+control_plane_logging:
+  beacon_events: true
+  path_server_updates: true
+  host_cache_updates: true
+  log_file: build/scenario_d_control_plane.log
+
+# Path snapshot to track AS-level forwarding state
+path_snapshot_logger:
+  period: 2s
+  output: build/scenario_d_path_snapshots.csv
+  max_paths_per_dst: 5
+  discover_all_pairs: true
+  request_lead_time: 500ms
+
+# Data plane probing between all pairs
+data_plane_probing:
+  start: 10s
+  period: 1s
+  timeout: 2s
+  count: 1075
+  pairs:
+    # Focus on source-destination pairs affected by AS101-AS102 link
+    - src_as: 101
+      dst_as: 102
+      src_host: 2
+      dst_host: 2
+    - src_as: 101
+      dst_as: 103
+      src_host: 2
+      dst_host: 2
+    - src_as: 101
+      dst_as: 104
+      src_host: 2
+      dst_host: 2
+    - src_as: 101
+      dst_as: 105
+      src_host: 2
+      dst_host: 2
+    - src_as: 101
+      dst_as: 106
+      src_host: 2
+      dst_host: 2
+    - src_as: 102
+      dst_as: 103
+      src_host: 2
+      dst_host: 2
+    - src_as: 102
+      dst_as: 104
+      src_host: 2
+      dst_host: 2
+    - src_as: 102
+      dst_as: 105
+      src_host: 2
+      dst_host: 2
+    - src_as: 102
+      dst_as: 106
+      src_host: 2
+      dst_host: 2
+    - src_as: 107
+      dst_as: 108
+      src_host: 2
+      dst_host: 2

@@ -4,7 +4,7 @@ def build(bld):
 
 
     env = bld.env
-    sim = bld.create_ns3_module('SCION', ['core', 'network'])
+    sim = bld.create_ns3_module('SCION', ['core', 'network', 'internet'])
 
     sim.source = [ 'model/beaconing/baseline.cc',
                    'model/beaconing/beacon.cc',
@@ -26,6 +26,7 @@ def build(bld):
                    'model/utils.cc',
                    'model/scion-capable-node.cc',
                    'model/border-router.cc',
+                   'model/virtual-ixp-fabric.cc',
                    'model/beaconing/scionlab-algo.cc',
                    'model/time-server.cc',
                    'model/externs.cc']
@@ -53,6 +54,7 @@ def build(bld):
                          'model/scion-core-as.h',
                          'model/scion-capable-node.h',
                          'model/border-router.h',
+                         'model/virtual-ixp-fabric.h',
                          'model/utils.h',
                          'model/beaconing/scionlab-algo.h',
                          'model/time-server.h',
@@ -60,7 +62,7 @@ def build(bld):
                          'model/json.hpp']
 
     obj = bld.create_ns3_program('scion',
-                                ['SCION', 'point-to-point'])
+                                ['SCION', 'point-to-point', 'internet'])
 
     obj.source = 'scion.cc'
 

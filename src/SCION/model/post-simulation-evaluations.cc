@@ -18,9 +18,12 @@
  * Author: Seyedali Tabaeiaghdaei seyedali.tabaeiaghdaei@inf.ethz.ch
  */
 
+#include <algorithm>
 #include <istream>
+#include <fstream>
 #include <omp.h>
 #include <random>
+#include <sstream>
 #include <set>
 
 #include "ns3/core-module.h"
@@ -44,6 +47,522 @@
 #include "utils.h"
 
 namespace ns3 {
+
+namespace {
+
+int32_t
+ResolveRealAsForCsv (uint16_t alias_as, const std::map<uint16_t, int32_t> &alias_to_real)
+{
+  auto it = alias_to_real.find (alias_as);
+  if (it == alias_to_real.end ())
+    {
+      return static_cast<int32_t> (alias_as);
+    }
+
+  return it->second;
+}
+
+std::string
+FormatBeaconPathForCsv (const Beacon *the_beacon, const std::map<uint16_t, int32_t> &alias_to_real)
+{
+  std::ostringstream oss;
+  uint32_t hop_cnt = 0;
+  for (auto hop = the_beacon->the_path.rbegin (); hop != the_beacon->the_path.rend (); ++hop)
+    {
+      if (hop_cnt != 0)
+        {
+          oss << ";";
+        }
+
+      const uint16_t left_as = SECOND_LOWER_16_BITS (*hop);
+      const uint16_t left_if = LOWER_16_BITS (*hop);
+      const uint16_t right_as = UPPER_16_BITS (*hop);
+      const uint16_t right_if = SECOND_UPPER_16_BITS (*hop);
+
+      oss << ResolveRealAsForCsv (left_as, alias_to_real) << ":" << left_if << "->"
+          << ResolveRealAsForCsv (right_as, alias_to_real) << ":" << right_if;
+      hop_cnt++;
+    }
+
+  return oss.str ();
+}
+
+template <typename Iterator>
+void
+AppendHopRangeForCsv (Iterator begin, Iterator end,
+                      const std::map<uint16_t, int32_t> &alias_to_real, std::ostringstream &oss,
+                      bool &first_hop)
+{
+  for (auto hop = begin; hop != end; ++hop)
+    {
+      if (!first_hop)
+        {
+          oss << ";";
+        }
+
+      const uint16_t left_as = SECOND_LOWER_16_BITS (*hop);
+      const uint16_t left_if = LOWER_16_BITS (*hop);
+      const uint16_t right_as = UPPER_16_BITS (*hop);
+      const uint16_t right_if = SECOND_UPPER_16_BITS (*hop);
+
+      oss << ResolveRealAsForCsv (left_as, alias_to_real) << ":" << left_if << "->"
+          << ResolveRealAsForCsv (right_as, alias_to_real) << ":" << right_if;
+      first_hop = false;
+    }
+}
+
+std::string
+FormatComposedPathForCsv (const std::vector<const PathSegment *> &path_segments,
+                          const std::map<uint16_t, int32_t> &alias_to_real)
+{
+  std::ostringstream oss;
+  bool first_hop = true;
+
+  for (auto const *path_segment : path_segments)
+    {
+      if (path_segment->reverse)
+        {
+          AppendHopRangeForCsv (path_segment->hops.rbegin (), path_segment->hops.rend (),
+                                alias_to_real, oss, first_hop);
+        }
+      else
+        {
+          AppendHopRangeForCsv (path_segment->hops.begin (), path_segment->hops.end (),
+                                alias_to_real, oss, first_hop);
+        }
+    }
+
+  return oss.str ();
+}
+
+struct SnapshotPathCandidate
+{
+  uint16_t dst_alias;
+  float latency;
+  float bw;
+  std::string formatted_path;
+};
+
+ScionAs *
+FindAsByAliasForSnapshot (uint16_t as_alias)
+{
+  for (uint32_t i = 0; i < nodes.GetN (); ++i)
+    {
+      ScionAs *candidate = dynamic_cast<ScionAs *> (PeekPointer (nodes.Get (i)));
+      if (candidate->as_number == as_alias)
+        {
+          return candidate;
+        }
+    }
+
+  return NULL;
+}
+
+bool
+TryGetBestBeaconPathForSnapshot (ScionAs *src_as, uint16_t dst_alias,
+                                 SnapshotPathCandidate &candidate)
+{
+  auto const &beacon_store = src_as->GetBeaconServer ()->GetBeaconStore ();
+  auto store_it = beacon_store.find (dst_alias);
+  if (store_it == beacon_store.end ())
+    {
+      return false;
+    }
+
+  float best_latency = std::numeric_limits<float>::max ();
+  float best_bw = 0.0f;
+  std::string best_path;
+
+  for (auto const &[length, beacon_set] : store_it->second)
+    {
+      (void) length;
+      for (auto const &the_beacon : beacon_set)
+        {
+          if (!the_beacon->is_valid)
+            {
+              continue;
+            }
+
+          float latency = the_beacon->static_info_extension.at (StaticInfoType::LATENCY);
+          if (latency < best_latency)
+            {
+              best_latency = latency;
+              best_bw = the_beacon->static_info_extension.at (StaticInfoType::BW);
+              best_path = FormatBeaconPathForCsv (the_beacon, alias_to_real_as_no);
+            }
+        }
+    }
+
+  if (best_path.empty ())
+    {
+      return false;
+    }
+
+  candidate = {dst_alias, best_latency, best_bw, best_path};
+  return true;
+}
+
+std::vector<SnapshotPathCandidate>
+CollectCoreReachabilityCandidatesForSnapshot (ScionAs *src_as)
+{
+  std::vector<SnapshotPathCandidate> candidates;
+
+  if (dynamic_cast<ScionCoreAs *> (src_as) != NULL)
+    {
+      candidates.push_back ({src_as->as_number, 0.0f, std::numeric_limits<float>::max (), ""});
+      return candidates;
+    }
+
+  auto const &beacon_store = src_as->GetBeaconServer ()->GetBeaconStore ();
+  for (auto const &[dst_alias, beacons_by_len] : beacon_store)
+    {
+      (void) beacons_by_len;
+      ScionAs *dst_as = FindAsByAliasForSnapshot (dst_alias);
+      if (dst_as == NULL || dynamic_cast<ScionCoreAs *> (dst_as) == NULL)
+        {
+          continue;
+        }
+
+      SnapshotPathCandidate candidate;
+      if (TryGetBestBeaconPathForSnapshot (src_as, dst_alias, candidate))
+        {
+          candidates.push_back (candidate);
+        }
+    }
+
+  return candidates;
+}
+
+std::string
+ReverseFormattedPathForCsv (const std::string &formatted_path)
+{
+  if (formatted_path.empty ())
+    {
+      return formatted_path;
+    }
+
+  std::vector<std::string> hops;
+  std::stringstream ss (formatted_path);
+  std::string hop;
+  while (std::getline (ss, hop, ';'))
+    {
+      hops.push_back (hop);
+    }
+
+  std::ostringstream reversed;
+  bool first_hop = true;
+  for (auto it = hops.rbegin (); it != hops.rend (); ++it)
+    {
+      std::size_t arrow_pos = it->find ("->");
+      if (arrow_pos == std::string::npos)
+        {
+          continue;
+        }
+
+      if (!first_hop)
+        {
+          reversed << ";";
+        }
+
+      reversed << it->substr (arrow_pos + 2) << "->" << it->substr (0, arrow_pos);
+      first_hop = false;
+    }
+
+  return reversed.str ();
+}
+
+bool
+TryComposeMissingPathFromBeaconStore (ScionAs *src_as, ScionAs *dst_as, std::string &best_path,
+                                      float &best_latency, float &best_bw)
+{
+  std::vector<SnapshotPathCandidate> src_candidates =
+      CollectCoreReachabilityCandidatesForSnapshot (src_as);
+  std::vector<SnapshotPathCandidate> dst_candidates =
+      CollectCoreReachabilityCandidatesForSnapshot (dst_as);
+
+  if (src_candidates.empty () || dst_candidates.empty ())
+    {
+      return false;
+    }
+
+  best_latency = std::numeric_limits<float>::max ();
+  best_bw = 0.0f;
+  best_path.clear ();
+
+  for (auto const &src_candidate : src_candidates)
+    {
+      for (auto const &dst_candidate : dst_candidates)
+        {
+          float total_latency = src_candidate.latency + dst_candidate.latency;
+          float total_bw = std::min (src_candidate.bw, dst_candidate.bw);
+          std::string core_path;
+
+          if (src_candidate.dst_alias != dst_candidate.dst_alias)
+            {
+              ScionAs *src_core_as = FindAsByAliasForSnapshot (src_candidate.dst_alias);
+              if (src_core_as == NULL)
+                {
+                  continue;
+                }
+
+              SnapshotPathCandidate core_candidate;
+              if (!TryGetBestBeaconPathForSnapshot (src_core_as, dst_candidate.dst_alias,
+                                                    core_candidate))
+                {
+                  continue;
+                }
+
+              total_latency += core_candidate.latency;
+              total_bw = std::min (total_bw, core_candidate.bw);
+              core_path = core_candidate.formatted_path;
+            }
+
+          std::ostringstream composed;
+          bool has_previous = false;
+          if (!src_candidate.formatted_path.empty ())
+            {
+              composed << src_candidate.formatted_path;
+              has_previous = true;
+            }
+
+          if (!core_path.empty ())
+            {
+              if (has_previous)
+                {
+                  composed << ";";
+                }
+              composed << core_path;
+              has_previous = true;
+            }
+
+          std::string dst_suffix = ReverseFormattedPathForCsv (dst_candidate.formatted_path);
+          if (!dst_suffix.empty ())
+            {
+              if (has_previous)
+                {
+                  composed << ";";
+                }
+              composed << dst_suffix;
+            }
+
+          if (composed.str ().empty ())
+            {
+              continue;
+            }
+
+          if (total_latency < best_latency)
+            {
+              best_latency = total_latency;
+              best_bw = total_bw;
+              best_path = composed.str ();
+            }
+        }
+    }
+
+  return !best_path.empty ();
+}
+
+void
+WritePathSnapshotRow (std::ofstream &out, double now_s, int32_t src_as, int32_t dst_as,
+                      uint32_t valid_paths, const std::string &best_latency,
+                      const std::string &best_bw, const std::string &best_path,
+                      const std::string &sampled_paths)
+{
+  out << now_s << "," << src_as << "," << dst_as << "," << valid_paths << "," << best_latency << ","
+      << best_bw << "," << best_path << "," << sampled_paths << std::endl;
+}
+
+} // namespace
+
+void
+WarmPathRequestsForSnapshot ()
+{
+  for (uint32_t i = 0; i < nodes.GetN (); ++i)
+    {
+      ScionAs *src_as = dynamic_cast<ScionAs *> (PeekPointer (nodes.Get (i)));
+      if (src_as->GetNHosts () == 0)
+        {
+          continue;
+        }
+
+      ScionHost *src_host = dynamic_cast<ScionHost *> (src_as->GetHost (2));
+      if (src_host == NULL)
+        {
+          continue;
+        }
+
+      for (uint32_t j = 0; j < nodes.GetN (); ++j)
+        {
+          if (i == j)
+            {
+              continue;
+            }
+
+          ScionAs *dst_as = dynamic_cast<ScionAs *> (PeekPointer (nodes.Get (j)));
+          src_host->RequestPathsToDestination (dst_as->ia_addr);
+        }
+    }
+}
+
+void
+LogPathSnapshotCsv (const std::string &output_path, uint32_t max_paths_per_dst,
+                    double snapshot_time_s, bool discover_all_pairs)
+{
+  static bool header_written = false;
+  (void) discover_all_pairs;
+
+  std::ofstream out;
+  if (!header_written)
+    {
+      out.open (output_path, std::ios::out | std::ios::trunc);
+      out << "time_s,src_as,dst_as,valid_paths,best_latency,best_bw,best_path,sampled_paths"
+          << std::endl;
+      header_written = true;
+    }
+  else
+    {
+      out.open (output_path, std::ios::out | std::ios::app);
+    }
+
+  if (!out.is_open ())
+    {
+      return;
+    }
+
+  const double now_s = snapshot_time_s;
+
+  for (uint32_t i = 0; i < nodes.GetN (); ++i)
+    {
+      ScionAs *src_as = dynamic_cast<ScionAs *> (PeekPointer (nodes.Get (i)));
+      auto const &beacon_store = src_as->GetBeaconServer ()->GetBeaconStore ();
+      std::set<uint16_t> logged_dst_aliases;
+
+      for (auto const &[dst_alias, beacons_by_len] : beacon_store)
+        {
+          logged_dst_aliases.insert (dst_alias);
+          uint32_t valid_paths = 0;
+          float best_latency = std::numeric_limits<float>::max ();
+          float best_bw = 0.0f;
+          std::string best_path;
+          std::vector<std::string> sampled_paths;
+
+          for (auto const &[length, beacon_set] : beacons_by_len)
+            {
+              (void) length;
+              for (auto const &the_beacon : beacon_set)
+                {
+                  if (!the_beacon->is_valid)
+                    {
+                      continue;
+                    }
+
+                  valid_paths++;
+                  const auto &metrics = the_beacon->static_info_extension;
+                  const float latency = metrics.at (StaticInfoType::LATENCY);
+                  const float bw = metrics.at (StaticInfoType::BW);
+
+                  const std::string formatted_path =
+                      FormatBeaconPathForCsv (the_beacon, alias_to_real_as_no);
+
+                  if (latency < best_latency)
+                    {
+                      best_latency = latency;
+                      best_bw = bw;
+                      best_path = formatted_path;
+                    }
+
+                  if (sampled_paths.size () < max_paths_per_dst)
+                    {
+                      sampled_paths.push_back (formatted_path);
+                    }
+                }
+            }
+
+          std::ostringstream sampled_paths_joined;
+          for (uint32_t idx = 0; idx < sampled_paths.size (); ++idx)
+            {
+              if (idx != 0)
+                {
+                  sampled_paths_joined << "||";
+                }
+              sampled_paths_joined << sampled_paths.at (idx);
+            }
+
+          if (valid_paths == 0)
+            {
+              WritePathSnapshotRow (out, now_s,
+                                    ResolveRealAsForCsv (src_as->as_number, alias_to_real_as_no),
+                                    ResolveRealAsForCsv (dst_alias, alias_to_real_as_no), 0, "NA",
+                                    "NA", "", sampled_paths_joined.str ());
+            }
+          else
+            {
+              WritePathSnapshotRow (
+                  out, now_s, ResolveRealAsForCsv (src_as->as_number, alias_to_real_as_no),
+                  ResolveRealAsForCsv (dst_alias, alias_to_real_as_no), valid_paths,
+                  std::to_string (best_latency), std::to_string (best_bw), best_path,
+                  sampled_paths_joined.str ());
+            }
+        }
+
+      ScionHost *src_host = NULL;
+      if (src_as->GetNHosts () != 0)
+        {
+          src_host = dynamic_cast<ScionHost *> (src_as->GetHost (2));
+        }
+
+      bool src_is_core = dynamic_cast<ScionCoreAs *> (src_as) != NULL;
+
+      for (uint32_t j = 0; j < nodes.GetN (); ++j)
+        {
+          if (i == j)
+            {
+              continue;
+            }
+
+          ScionAs *dst_as = dynamic_cast<ScionAs *> (PeekPointer (nodes.Get (j)));
+          bool dst_is_core = dynamic_cast<ScionCoreAs *> (dst_as) != NULL;
+          if (src_is_core && dst_is_core)
+            {
+              continue;
+            }
+
+          if (logged_dst_aliases.find (dst_as->as_number) != logged_dst_aliases.end ())
+            {
+              continue;
+            }
+
+          std::vector<const PathSegment *> composed_path;
+          std::vector<uint8_t> shortcuts;
+          if (src_host == NULL ||
+              !src_host->TryGetCachedPath (dst_as->ia_addr, composed_path, shortcuts))
+            {
+              std::string fallback_path;
+              float fallback_latency = 0.0f;
+              float fallback_bw = 0.0f;
+              if (!TryComposeMissingPathFromBeaconStore (src_as, dst_as, fallback_path,
+                                                         fallback_latency, fallback_bw))
+                {
+                  continue;
+                }
+
+              WritePathSnapshotRow (out, now_s,
+                                    ResolveRealAsForCsv (src_as->as_number, alias_to_real_as_no),
+                                    ResolveRealAsForCsv (dst_as->as_number, alias_to_real_as_no), 1,
+                                    std::to_string (fallback_latency), std::to_string (fallback_bw),
+                                    fallback_path, fallback_path);
+              continue;
+            }
+
+          std::string formatted_path =
+              FormatComposedPathForCsv (composed_path, alias_to_real_as_no);
+          WritePathSnapshotRow (out, now_s,
+                                ResolveRealAsForCsv (src_as->as_number, alias_to_real_as_no),
+                                ResolveRealAsForCsv (dst_as->as_number, alias_to_real_as_no), 1,
+                                "NA", "NA", formatted_path, formatted_path);
+        }
+    }
+}
 
 void
 PostSimulationEvaluations::DoFinalEvaluations ()
@@ -192,7 +711,7 @@ PostSimulationEvaluations::FindMinLatencyToDnsRootServers ()
 
                       uint16_t first_br = LOWER_16_BITS (the_beacon->the_path.back ());
                       std::pair<double, double> first_br_coordinates =
-                          src_alias_as_no->interfaces_coordinates.at (first_br);
+                          src_alias_as_no->interfaces_coordinates.at (first_br - 1);
                       double latency_from_probe_to_first_hop = CalculateGreatCircleLatency (
                           probe_lat, probe_long, first_br_coordinates.first,
                           first_br_coordinates.second);
@@ -220,8 +739,9 @@ PostSimulationEvaluations::FindMinLatencyToDnsRootServers ()
               double instance_lat = std::stod (curr_site->first_node ("Latitude")->value ());
               double instance_long = std::stod (curr_site->first_node ("Longitude")->value ());
               std::pair<double, double> last_br_coordinates =
-                  dst_as->interfaces_coordinates.at (last_br);
-              double overall_latency = min_latency_to_dst_as + CalculateGreatCircleLatency (instance_lat, instance_long,
+                  dst_as->interfaces_coordinates.at (last_br - 1);
+              double overall_latency =
+                  min_latency_to_dst_as + CalculateGreatCircleLatency (instance_lat, instance_long,
                                                                        last_br_coordinates.first,
                                                                        last_br_coordinates.second);
               if (overall_latency < min_overall_latency)
@@ -257,7 +777,7 @@ PostSimulationEvaluations::FindMinLatencyToDnsRootServers ()
               ScionAs *as =
                   dynamic_cast<ScionAs *> (PeekPointer (as_nodes.Get (UPPER_16_BITS (*hop))));
               std::pair<double, double> br_coordinates =
-                  as->interfaces_coordinates.at (SECOND_UPPER_16_BITS (*hop));
+                  as->interfaces_coordinates.at (SECOND_UPPER_16_BITS (*hop) - 1);
               std::cout << "(" << br_coordinates.first << ", " << br_coordinates.second << ")";
               hop_cnt++;
             }
@@ -317,7 +837,7 @@ PostSimulationEvaluations::FindMinLatencyToDnsRootServers ()
                       ScionAs *as = dynamic_cast<ScionAs *> (
                           PeekPointer (as_nodes.Get (UPPER_16_BITS (*hop))));
                       std::pair<double, double> br_coordinates =
-                          as->interfaces_coordinates.at (SECOND_UPPER_16_BITS (*hop));
+                          as->interfaces_coordinates.at (SECOND_UPPER_16_BITS (*hop) - 1);
                       std::cout << "(" << br_coordinates.first << ", " << br_coordinates.second
                                 << ")";
                       hop_cnt++;
@@ -501,15 +1021,29 @@ PostSimulationEvaluations::PrintNoBeaconsPerInterfacePerDstOrOpt ()
       << "####################################### sent beacons on each interface in each period"
          "#######################################"
       << std::endl;
-  for (uint16_t time = 0; time <= last_beaconing_event_time.ToInteger (Time::MIN);
-       time += beaconing_period.ToInteger (Time::MIN))
+  int64_t step = beaconing_period.ToInteger (Time::MIN);
+  if (step <= 0)
+    {
+      // Avoid an infinite loop for sub-minute beacon periods (e.g., 10s).
+      step = 1;
+    }
+
+  for (uint16_t time = 0; time <= last_beaconing_event_time.ToInteger (Time::MIN); time += step)
     {
       std::cout << time << "|";
       for (uint32_t i = 0; i < as_nodes.GetN (); ++i)
         {
           ScionAs *as = dynamic_cast<ScionAs *> (PeekPointer (as_nodes.Get (i)));
-          auto const &counters_per_period =
-              as->GetBeaconServer ()->GetBeaconsSentPerInterfacePerPeriod ().at (time);
+          auto const &all_counters_per_period =
+              as->GetBeaconServer ()->GetBeaconsSentPerInterfacePerPeriod ();
+          auto counters_it = all_counters_per_period.find (time);
+
+          if (counters_it == all_counters_per_period.end ())
+            {
+              continue;
+            }
+
+          auto const &counters_per_period = counters_it->second;
           for (uint32_t if_index = 0; if_index < as->GetNDevices (); ++if_index)
             {
               uint64_t no_sent_beacons = counters_per_period.at (if_index);
@@ -832,11 +1366,9 @@ PostSimulationEvaluations::PrintMinimumLatencyDist ()
                   assert (the_beacon->the_path.size () != 1 ||
                           the_beacon->static_info_extension.at (StaticInfoType::LATENCY) ==
                               (float) 0);
-                  if (the_beacon->static_info_extension.at (StaticInfoType::LATENCY) <
-                      min_latency)
+                  if (the_beacon->static_info_extension.at (StaticInfoType::LATENCY) < min_latency)
                     {
-                      min_latency =
-                          the_beacon->static_info_extension.at (StaticInfoType::LATENCY);
+                      min_latency = the_beacon->static_info_extension.at (StaticInfoType::LATENCY);
                     }
                 }
             }
@@ -1193,8 +1725,9 @@ PostSimulationEvaluations::PrintLeastPollutingPaths ()
                 }
               ScionAs *hop_as = dynamic_cast<ScionAs *> (
                   PeekPointer (as_nodes.Get (SECOND_LOWER_16_BITS (*hop))));
-              std::cout << "(" << hop_as->interfaces_coordinates.at (LOWER_16_BITS (*hop)).first
-                        << "," << hop_as->interfaces_coordinates.at (LOWER_16_BITS (*hop)).second
+              std::cout << "(" << hop_as->interfaces_coordinates.at (LOWER_16_BITS (*hop) - 1).first
+                        << ","
+                        << hop_as->interfaces_coordinates.at (LOWER_16_BITS (*hop) - 1).second
                         << ")";
               hop_cnt++;
             }
@@ -1227,9 +1760,11 @@ PostSimulationEvaluations::PrintBestPerHopPollutionIndexes ()
                 {
                   for (uint16_t iface2 : the_ifaces_list2.second)
                     {
-                      if (as->latencies_between_interfaces.at (iface1).at (iface2) < min_latency)
+                      if (as->latencies_between_interfaces.at (iface1 - 1).at (iface2 - 1) <
+                          min_latency)
                         {
-                          min_latency = as->latencies_between_interfaces.at (iface1).at (iface2);
+                          min_latency =
+                              as->latencies_between_interfaces.at (iface1 - 1).at (iface2 - 1);
                         }
                     }
                 }
@@ -1253,7 +1788,7 @@ PostSimulationEvaluations::PrintConsumedBwForBeaconing ()
       for (auto const &el : as_node->GetBeaconServer ()->GetBytesSentPerInterfacePerPeriod ())
         {
           auto const &vector = el.second;
-          std::cerr << "\nNode: " << real_to_alias_as_no.at (as_node->as_number) << " at time 0."
+          std::cerr << "\nNode: " << alias_to_real_as_no.at (as_node->as_number) << " at time 0."
                     << std::endl;
           for (auto const &element : vector)
             {
@@ -1269,7 +1804,7 @@ PostSimulationEvaluations::PrintBeaconStores ()
   for (uint32_t i = 0; i < as_nodes.GetN (); ++i)
     {
       ScionAs *as_node = dynamic_cast<ScionAs *> (PeekPointer (as_nodes.Get (i)));
-      std::cout << "From: " << real_to_alias_as_no.at (as_node->as_number) << std::endl;
+      std::cout << "From: " << alias_to_real_as_no.at (as_node->as_number) << std::endl;
 
       for (auto const &dst_as_beacons_pair : as_node->GetBeaconServer ()->GetBeaconStore ())
         {
@@ -1277,7 +1812,7 @@ PostSimulationEvaluations::PrintBeaconStores ()
           auto const &same_dst_as_beacons = dst_as_beacons_pair.second;
 
           std::cout << "\t"
-                    << "To: " << real_to_alias_as_no.at (dst_as) << std::endl;
+                    << "To: " << alias_to_real_as_no.at (dst_as) << std::endl;
 
           for (auto const &beacons_from_same_nbr : same_dst_as_beacons)
             {
@@ -1298,9 +1833,9 @@ PostSimulationEvaluations::PrintBeaconStores ()
                         {
                           std::cout << ", ";
                         }
-                      std::cout << real_to_alias_as_no.at (SECOND_LOWER_16_BITS (*hop)) << ":"
+                      std::cout << alias_to_real_as_no.at (SECOND_LOWER_16_BITS (*hop)) << ":"
                                 << LOWER_16_BITS (*hop) << ", "
-                                << real_to_alias_as_no.at (UPPER_16_BITS (*hop)) << ":"
+                                << alias_to_real_as_no.at (UPPER_16_BITS (*hop)) << ":"
                                 << SECOND_UPPER_16_BITS (*hop);
                       hop_cnt++;
                     }
@@ -1323,7 +1858,7 @@ PostSimulationEvaluations::PrintNumberOfValidBeaconEntriesInBeaconStore ()
   for (uint32_t i = 0; i < as_nodes.GetN (); ++i)
     {
       ScionAs *as_node = dynamic_cast<ScionAs *> (PeekPointer (as_nodes.Get (i)));
-      std::cerr << "Beacon Store on Node: " << real_to_alias_as_no.at (as_node->as_number)
+      std::cerr << "Beacon Store on Node: " << alias_to_real_as_no.at (as_node->as_number)
                 << std::endl;
       for (auto const &src_as_beacons_pair : as_node->GetBeaconServer ()->GetBeaconStore ())
         {
@@ -1344,7 +1879,7 @@ PostSimulationEvaluations::PrintNumberOfValidBeaconEntriesInBeaconStore ()
                     }
                 }
             }
-          std::cerr << "\t" << real_to_alias_as_no.at (src_as) << ":" << count << std::endl;
+          std::cerr << "\t" << alias_to_real_as_no.at (src_as) << ":" << count << std::endl;
         }
       std::cerr << std::endl;
     }
@@ -1389,9 +1924,16 @@ PostSimulationEvaluations::InvestigateAffectedTimeServers ()
           std::set<ia_t> new_inherently_malicious;
           std::set<ia_t> new_benign;
 
-          std::sample (benign_ases.begin (), benign_ases.end (),
-                       std::inserter (new_inherently_malicious, new_inherently_malicious.begin ()),
-                       malicious_incremental_step, std::random_device{});
+          std::vector<ia_t> benign_ases_vector (benign_ases.begin (), benign_ases.end ());
+          std::mt19937 generator (std::random_device{}());
+          std::shuffle (benign_ases_vector.begin (), benign_ases_vector.end (), generator);
+
+          uint32_t sample_size =
+              std::min (malicious_incremental_step, (uint32_t) benign_ases_vector.size ());
+          for (uint32_t sample_index = 0; sample_index < sample_size; ++sample_index)
+            {
+              new_inherently_malicious.insert (benign_ases_vector.at (sample_index));
+            }
 
           std::set_difference (std::make_move_iterator (benign_ases.begin ()),
                                std::make_move_iterator (benign_ases.end ()),
@@ -1439,8 +1981,7 @@ PostSimulationEvaluations::InvestigateAffectedTimeServers ()
 #pragma omp parallel for
                   for (uint32_t i = 0; i < num_all_ases; ++i)
                     {
-                      ScionAs *scion_as =
-                          dynamic_cast<ScionAs *> (PeekPointer (as_nodes.Get (i)));
+                      ScionAs *scion_as = dynamic_cast<ScionAs *> (PeekPointer (as_nodes.Get (i)));
 
                       if (inherently_and_transitive_malicious.find (scion_as->ia_addr) !=
                           inherently_and_transitive_malicious.end ())
@@ -1506,8 +2047,7 @@ PostSimulationEvaluations::InvestigateAffectedTimeServers ()
 
                   for (uint32_t i = 0; i < num_all_ases; ++i)
                     {
-                      ScionAs *scion_as =
-                          dynamic_cast<ScionAs *> (PeekPointer (as_nodes.Get (i)));
+                      ScionAs *scion_as = dynamic_cast<ScionAs *> (PeekPointer (as_nodes.Get (i)));
 
                       if (inherently_and_transitive_malicious.find (scion_as->ia_addr) !=
                           inherently_and_transitive_malicious.end ())

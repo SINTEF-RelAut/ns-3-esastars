@@ -70,7 +70,7 @@ GreenBeaconing::AlgSpecificImportPolicy (Beacon &the_beacon, uint16_t sender_as,
 {
   uint16_t dst_as = UPPER_16_BITS (the_beacon.the_path.at (0));
 
-  if (beacons_per_dst_per_ing_if_sorted_by_pollution.at (dst_as).at (self_ingress_if_no).size () <
+  if (beacons_per_dst_per_ing_if_sorted_by_pollution.at (dst_as).at (self_ingress_if_no - 1).size () <
       MAX_BEACONS_TO_STORE_PER_IFACE)
     {
       return std::tuple<bool, bool, bool, Beacon *, ld> (true, false, false, NULL, 0);
@@ -79,7 +79,7 @@ GreenBeaconing::AlgSpecificImportPolicy (Beacon &the_beacon, uint16_t sender_as,
   ld pollution_index = the_beacon.static_info_extension.at (StaticInfoType::CO2);
 
   std::multimap<ld, Beacon *>::reverse_iterator highest_previous_pollution_iterator =
-      beacons_per_dst_per_ing_if_sorted_by_pollution.at (dst_as).at (self_ingress_if_no).rbegin ();
+      beacons_per_dst_per_ing_if_sorted_by_pollution.at (dst_as).at (self_ingress_if_no - 1).rbegin ();
   ld highest_previous_pollution = highest_previous_pollution_iterator->first;
   if (highest_previous_pollution > pollution_index)
     {
@@ -96,7 +96,7 @@ GreenBeaconing::DeleteFromAlgorithmDataStructures (Beacon *the_beacon, ld replac
   uint16_t dst_as = UPPER_16_BITS (the_beacon->the_path.at (0));
   uint16_t self_ingress_if = LOWER_16_BITS (the_beacon->the_path.back ());
   auto &beacon_container =
-      beacons_per_dst_per_ing_if_sorted_by_pollution.at (dst_as).at (self_ingress_if);
+      beacons_per_dst_per_ing_if_sorted_by_pollution.at (dst_as).at (self_ingress_if - 1);
   for (auto it = beacon_container.lower_bound (replacement_key);
        it != beacon_container.upper_bound (replacement_key); ++it)
     {
@@ -117,7 +117,7 @@ GreenBeaconing::InsertToAlgorithmDataStructures (Beacon *the_beacon, uint16_t se
   uint16_t self_ingress_if = LOWER_16_BITS (the_beacon->the_path.back ());
   ld pollution_index = the_beacon->static_info_extension.at (StaticInfoType::CO2);
   beacons_per_dst_per_ing_if_sorted_by_pollution.at (dst_as)
-      .at (self_ingress_if)
+      .at (self_ingress_if - 1)
       .insert (std::make_pair (pollution_index, the_beacon));
 }
 
@@ -242,8 +242,8 @@ GreenBeaconing::SelectBeaconsToDisseminatePerDstPerNbr (
 
           ld latency =
               the_beacon->static_info_extension.at (StaticInfoType::LATENCY) +
-              as->latencies_between_interfaces.at (LOWER_16_BITS (the_beacon->the_path.back ()))
-                  .at (self_egress_if_no);
+                as->latencies_between_interfaces.at (LOWER_16_BITS (the_beacon->the_path.back ()) - 1)
+                  .at (self_egress_if_no - 1);
 
           static_info_extension_t static_info_extension;
           static_info_extension.insert (std::make_pair (StaticInfoType::LATENCY, latency));
@@ -262,7 +262,7 @@ ld
 GreenBeaconing::CalculatePollutionBetweenBorderRouters (uint16_t ingress_if, uint16_t egress_if)
 {
   ld energy_resource_carbon_intensity = dirty_energy_ratio * 700 / 3.6e6; // gr/Joule
-  ld path_energy_intensity = intra_as_energies.at (ingress_if).at (egress_if);
+  ld path_energy_intensity = intra_as_energies.at (ingress_if - 1).at (egress_if - 1);
 
   ld pollution = path_energy_intensity * energy_resource_carbon_intensity;
 

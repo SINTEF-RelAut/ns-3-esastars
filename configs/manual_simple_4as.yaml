@@ -1,0 +1,83 @@
+time_resolution: NS
+topology: topology/manual_simple_4as_topology.xml
+output: results/manual_simple_4as.txt
+simulation_duration: 600s
+NUM_CORE: 1
+post_eval_max_paths_per_dst: 10
+post_eval_max_beacon_periods: 20
+events_file: user_defined_events/manual_simple_4as_events.json
+beacon_service:
+  policy: baseline
+  write_beacons_directory: ./
+  period: 20s
+  expiration_period: 600s
+  first_beaconing: 0min
+  last_beaconing: 600s
+path_service: {}
+border_router: {}
+post_eval:
+- func: PrintAllDiscoveredPaths
+- func: PrintAllPathsAttributes
+- func: PrintNoBeaconsPerInterface
+- func: PrintNoBeaconsPerInterfacePerDstOrOpt
+probes:
+- src_as: 103
+  src_host: 10
+  dst_as: 104
+  dst_host: 10
+  interval: 1s
+  timeout: 2s
+  retry_delay: 300ms
+  count: 560
+  csv: results/manual_simple_terr_103_104.csv
+  log_csv: results/manual_simple_terr_103_104_log.csv
+- src_as: 102
+  src_host: 10
+  dst_as: 105
+  dst_host: 10
+  interval: 1s
+  timeout: 2s
+  retry_delay: 300ms
+  count: 560
+  csv: results/manual_simple_terr_102_105.csv
+  log_csv: results/manual_simple_terr_102_105_log.csv
+- src_as: 101
+  src_host: 10
+  dst_as: 106
+  dst_host: 10
+  interval: 1s
+  timeout: 2s
+  retry_delay: 300ms
+  count: 560
+  csv: results/manual_simple_terr_101_106.csv
+  log_csv: results/manual_simple_terr_101_106_log.csv
+- src_as: 1
+  src_host: 11
+  dst_as: 2
+  dst_host: 22
+  interval: 1s
+  timeout: 2s
+  retry_delay: 300ms
+  count: 560
+  csv: results/manual_simple_probe_1_2.csv
+  log_csv: results/manual_simple_probe_1_2_log.csv
+- src_as: 2
+  src_host: 22
+  dst_as: 4
+  dst_host: 44
+  interval: 1s
+  timeout: 2s
+  retry_delay: 300ms
+  count: 560
+  csv: results/manual_simple_probe_2_4.csv
+  log_csv: results/manual_simple_probe_2_4_log.csv
+- src_as: 3
+  src_host: 33
+  dst_as: 4
+  dst_host: 44
+  interval: 1s
+  timeout: 2s
+  retry_delay: 300ms
+  count: 560
+  csv: results/manual_simple_probe_3_4.csv
+  log_csv: results/manual_simple_probe_3_4_log.csv

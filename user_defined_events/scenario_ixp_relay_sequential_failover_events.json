@@ -1,0 +1,45 @@
+{
+    "description": "Sequential IXP ISL failovers on AS102-AS105 every 27s. Each satellite AS has ONE link to the IXP relay (AS110). When it fails, SCION must reroute via the backbone. No backup IXP link exists.",
+    "events": [
+        {
+            "time": "50s",
+            "type": "link_down",
+            "args": [
+                "1",
+                "102",
+                "1020002"
+            ],
+            "description": "AS102 IXP ISL down; SCION reroutes via backbone (101 or 104)"
+        },
+        {
+            "time": "77s",
+            "type": "link_down",
+            "args": [
+                "1",
+                "103",
+                "1030002"
+            ],
+            "description": "AS103 IXP ISL down; SCION reroutes via backbone (101 or 105)"
+        },
+        {
+            "time": "104s",
+            "type": "link_down",
+            "args": [
+                "1",
+                "104",
+                "1040002"
+            ],
+            "description": "AS104 IXP ISL down; SCION reroutes via backbone (102 or 106)"
+        },
+        {
+            "time": "131s",
+            "type": "link_down",
+            "args": [
+                "1",
+                "105",
+                "1050002"
+            ],
+            "description": "AS105 IXP ISL down; SCION reroutes via backbone (103 or 106)"
+        }
+    ]
+}

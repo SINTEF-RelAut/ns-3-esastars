@@ -1,0 +1,3137 @@
+{
+  "description": "Direct-link switch events (no fan-out): each source gateway event toggles exactly one primary/backup direct ISL between AS102-105.",
+  "source_file": "user_defined_events/30_links.json",
+  "gateway_link_map": {
+    "1": {
+      "primary": 1020100,
+      "backup": 1020101,
+      "description": "AS102-AS103 loc-A"
+    },
+    "2": {
+      "primary": 1030120,
+      "backup": 1030121,
+      "description": "AS103-AS105 loc-A"
+    },
+    "3": {
+      "primary": 1040220,
+      "backup": 1040221,
+      "description": "AS104-AS105 loc-B"
+    },
+    "4": {
+      "primary": 1020210,
+      "backup": 1020211,
+      "description": "AS102-AS104 loc-B"
+    }
+  },
+  "switch_delta_s": 0.001,
+  "event_count_source": 183,
+  "event_count_generated": 310,
+  "final_active_if_per_gateway": {
+    "1": 1020100,
+    "2": 1030120,
+    "3": 1040221,
+    "4": 1020210
+  },
+  "events": [
+    {
+      "time": "0.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: down 1020100 (was active)"
+    },
+    {
+      "time": "0.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: up 1020101 (new active)"
+    },
+    {
+      "time": "0.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: down 1030120 (was active)"
+    },
+    {
+      "time": "0.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: up 1030121 (new active)"
+    },
+    {
+      "time": "0.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: down 1040220 (was active)"
+    },
+    {
+      "time": "0.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: up 1040221 (new active)"
+    },
+    {
+      "time": "0.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "1020210"
+      ],
+      "description": "DirectLink: gateway=4 link_up \u2192 AS102-AS104 loc-B: down 1020210 (was active)"
+    },
+    {
+      "time": "0.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "1020211"
+      ],
+      "description": "DirectLink: gateway=4 link_up \u2192 AS102-AS104 loc-B: up 1020211 (new active)"
+    },
+    {
+      "time": "80.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: down 1030121 (was active)"
+    },
+    {
+      "time": "80.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: up 1030120 (new active)"
+    },
+    {
+      "time": "80.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: down 1040221 (was active)"
+    },
+    {
+      "time": "80.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: up 1040220 (new active)"
+    },
+    {
+      "time": "130.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: down 1040220 (was active)"
+    },
+    {
+      "time": "130.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: up 1040221 (new active)"
+    },
+    {
+      "time": "170.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: down 1020101 (was active)"
+    },
+    {
+      "time": "170.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: up 1020100 (new active)"
+    },
+    {
+      "time": "170.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: down 1040221 (was active)"
+    },
+    {
+      "time": "170.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: up 1040220 (new active)"
+    },
+    {
+      "time": "260.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: down 1040220 (was active)"
+    },
+    {
+      "time": "260.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: up 1040221 (new active)"
+    },
+    {
+      "time": "310.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: down 1020100 (was active)"
+    },
+    {
+      "time": "310.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: up 1020101 (new active)"
+    },
+    {
+      "time": "310.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: down 1030120 (was active)"
+    },
+    {
+      "time": "310.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: up 1030121 (new active)"
+    },
+    {
+      "time": "490.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "1020211"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: down 1020211 (was active)"
+    },
+    {
+      "time": "490.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "1020210"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: up 1020210 (new active)"
+    },
+    {
+      "time": "580.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: down 1020101 (was active)"
+    },
+    {
+      "time": "580.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: up 1020100 (new active)"
+    },
+    {
+      "time": "580.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: down 1030121 (was active)"
+    },
+    {
+      "time": "580.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: up 1030120 (new active)"
+    },
+    {
+      "time": "580.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "1020210"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: down 1020210 (was active)"
+    },
+    {
+      "time": "580.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "1020211"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: up 1020211 (new active)"
+    },
+    {
+      "time": "760.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "1020211"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: down 1020211 (was active)"
+    },
+    {
+      "time": "760.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "1020210"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: up 1020210 (new active)"
+    },
+    {
+      "time": "860.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: down 1020100 (was active)"
+    },
+    {
+      "time": "860.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: up 1020101 (new active)"
+    },
+    {
+      "time": "860.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "1020210"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: down 1020210 (was active)"
+    },
+    {
+      "time": "860.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "1020211"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: up 1020211 (new active)"
+    },
+    {
+      "time": "1140.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: down 1030120 (was active)"
+    },
+    {
+      "time": "1140.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: up 1030121 (new active)"
+    },
+    {
+      "time": "1210.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: down 1040221 (was active)"
+    },
+    {
+      "time": "1210.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: up 1040220 (new active)"
+    },
+    {
+      "time": "1210.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "1020211"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: down 1020211 (was active)"
+    },
+    {
+      "time": "1210.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "1020210"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: up 1020210 (new active)"
+    },
+    {
+      "time": "1260.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: down 1030121 (was active)"
+    },
+    {
+      "time": "1260.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: up 1030120 (new active)"
+    },
+    {
+      "time": "1260.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: down 1040220 (was active)"
+    },
+    {
+      "time": "1260.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: up 1040221 (new active)"
+    },
+    {
+      "time": "1370.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: down 1030120 (was active)"
+    },
+    {
+      "time": "1370.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: up 1030121 (new active)"
+    },
+    {
+      "time": "1370.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: down 1040221 (was active)"
+    },
+    {
+      "time": "1370.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: up 1040220 (new active)"
+    },
+    {
+      "time": "1450.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: down 1020101 (was active)"
+    },
+    {
+      "time": "1450.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: up 1020100 (new active)"
+    },
+    {
+      "time": "1450.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: down 1030121 (was active)"
+    },
+    {
+      "time": "1450.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: up 1030120 (new active)"
+    },
+    {
+      "time": "1460.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: down 1020100 (was active)"
+    },
+    {
+      "time": "1460.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: up 1020101 (new active)"
+    },
+    {
+      "time": "1460.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: down 1040220 (was active)"
+    },
+    {
+      "time": "1460.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: up 1040221 (new active)"
+    },
+    {
+      "time": "1520.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: down 1030120 (was active)"
+    },
+    {
+      "time": "1520.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: up 1030121 (new active)"
+    },
+    {
+      "time": "1620.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: down 1030121 (was active)"
+    },
+    {
+      "time": "1620.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: up 1030120 (new active)"
+    },
+    {
+      "time": "1790.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: down 1020101 (was active)"
+    },
+    {
+      "time": "1790.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: up 1020100 (new active)"
+    },
+    {
+      "time": "1790.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "1020210"
+      ],
+      "description": "DirectLink: gateway=4 link_up \u2192 AS102-AS104 loc-B: down 1020210 (was active)"
+    },
+    {
+      "time": "1790.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "1020211"
+      ],
+      "description": "DirectLink: gateway=4 link_up \u2192 AS102-AS104 loc-B: up 1020211 (new active)"
+    },
+    {
+      "time": "1990.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: down 1020100 (was active)"
+    },
+    {
+      "time": "1990.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: up 1020101 (new active)"
+    },
+    {
+      "time": "1990.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "1020211"
+      ],
+      "description": "DirectLink: gateway=4 link_up \u2192 AS102-AS104 loc-B: down 1020211 (was active)"
+    },
+    {
+      "time": "1990.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "1020210"
+      ],
+      "description": "DirectLink: gateway=4 link_up \u2192 AS102-AS104 loc-B: up 1020210 (new active)"
+    },
+    {
+      "time": "2080.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: down 1020101 (was active)"
+    },
+    {
+      "time": "2080.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: up 1020100 (new active)"
+    },
+    {
+      "time": "2080.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "1020210"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: down 1020210 (was active)"
+    },
+    {
+      "time": "2080.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "1020211"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: up 1020211 (new active)"
+    },
+    {
+      "time": "2100.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: down 1020100 (was active)"
+    },
+    {
+      "time": "2100.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: up 1020101 (new active)"
+    },
+    {
+      "time": "2100.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: down 1040221 (was active)"
+    },
+    {
+      "time": "2100.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: up 1040220 (new active)"
+    },
+    {
+      "time": "2500.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: down 1020101 (was active)"
+    },
+    {
+      "time": "2500.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: up 1020100 (new active)"
+    },
+    {
+      "time": "2500.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: down 1030120 (was active)"
+    },
+    {
+      "time": "2500.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: up 1030121 (new active)"
+    },
+    {
+      "time": "2740.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: down 1020100 (was active)"
+    },
+    {
+      "time": "2740.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: up 1020101 (new active)"
+    },
+    {
+      "time": "2740.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: down 1030121 (was active)"
+    },
+    {
+      "time": "2740.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: up 1030120 (new active)"
+    },
+    {
+      "time": "2910.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: down 1020101 (was active)"
+    },
+    {
+      "time": "2910.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: up 1020100 (new active)"
+    },
+    {
+      "time": "2910.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: down 1040220 (was active)"
+    },
+    {
+      "time": "2910.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: up 1040221 (new active)"
+    },
+    {
+      "time": "2920.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: down 1040221 (was active)"
+    },
+    {
+      "time": "2920.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: up 1040220 (new active)"
+    },
+    {
+      "time": "2920.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "1020211"
+      ],
+      "description": "DirectLink: gateway=4 link_up \u2192 AS102-AS104 loc-B: down 1020211 (was active)"
+    },
+    {
+      "time": "2920.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "1020210"
+      ],
+      "description": "DirectLink: gateway=4 link_up \u2192 AS102-AS104 loc-B: up 1020210 (new active)"
+    },
+    {
+      "time": "2970.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: down 1030120 (was active)"
+    },
+    {
+      "time": "2970.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: up 1030121 (new active)"
+    },
+    {
+      "time": "2970.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: down 1040220 (was active)"
+    },
+    {
+      "time": "2970.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: up 1040221 (new active)"
+    },
+    {
+      "time": "3000.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: down 1030121 (was active)"
+    },
+    {
+      "time": "3000.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: up 1030120 (new active)"
+    },
+    {
+      "time": "3000.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: down 1040221 (was active)"
+    },
+    {
+      "time": "3000.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: up 1040220 (new active)"
+    },
+    {
+      "time": "3130.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "1020210"
+      ],
+      "description": "DirectLink: gateway=4 link_up \u2192 AS102-AS104 loc-B: down 1020210 (was active)"
+    },
+    {
+      "time": "3130.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "1020211"
+      ],
+      "description": "DirectLink: gateway=4 link_up \u2192 AS102-AS104 loc-B: up 1020211 (new active)"
+    },
+    {
+      "time": "3190.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: down 1020100 (was active)"
+    },
+    {
+      "time": "3190.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: up 1020101 (new active)"
+    },
+    {
+      "time": "3190.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: down 1030120 (was active)"
+    },
+    {
+      "time": "3190.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: up 1030121 (new active)"
+    },
+    {
+      "time": "3340.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: down 1030121 (was active)"
+    },
+    {
+      "time": "3340.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: up 1030120 (new active)"
+    },
+    {
+      "time": "3340.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: down 1040220 (was active)"
+    },
+    {
+      "time": "3340.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: up 1040221 (new active)"
+    },
+    {
+      "time": "3370.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: down 1030120 (was active)"
+    },
+    {
+      "time": "3370.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: up 1030121 (new active)"
+    },
+    {
+      "time": "3400.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "1020211"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: down 1020211 (was active)"
+    },
+    {
+      "time": "3400.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "1020210"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: up 1020210 (new active)"
+    },
+    {
+      "time": "3440.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: down 1030121 (was active)"
+    },
+    {
+      "time": "3440.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: up 1030120 (new active)"
+    },
+    {
+      "time": "3940.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: down 1040221 (was active)"
+    },
+    {
+      "time": "3940.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: up 1040220 (new active)"
+    },
+    {
+      "time": "3970.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: down 1020101 (was active)"
+    },
+    {
+      "time": "3970.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: up 1020100 (new active)"
+    },
+    {
+      "time": "3970.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "1020210"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: down 1020210 (was active)"
+    },
+    {
+      "time": "3970.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "1020211"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: up 1020211 (new active)"
+    },
+    {
+      "time": "4050.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: down 1020100 (was active)"
+    },
+    {
+      "time": "4050.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: up 1020101 (new active)"
+    },
+    {
+      "time": "4050.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: down 1040220 (was active)"
+    },
+    {
+      "time": "4050.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: up 1040221 (new active)"
+    },
+    {
+      "time": "4120.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: down 1040221 (was active)"
+    },
+    {
+      "time": "4120.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: up 1040220 (new active)"
+    },
+    {
+      "time": "4120.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "1020211"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: down 1020211 (was active)"
+    },
+    {
+      "time": "4120.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "1020210"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: up 1020210 (new active)"
+    },
+    {
+      "time": "4130.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: down 1030120 (was active)"
+    },
+    {
+      "time": "4130.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: up 1030121 (new active)"
+    },
+    {
+      "time": "4140.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: down 1040220 (was active)"
+    },
+    {
+      "time": "4140.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: up 1040221 (new active)"
+    },
+    {
+      "time": "4270.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: down 1030121 (was active)"
+    },
+    {
+      "time": "4270.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: up 1030120 (new active)"
+    },
+    {
+      "time": "4270.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: down 1040221 (was active)"
+    },
+    {
+      "time": "4270.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: up 1040220 (new active)"
+    },
+    {
+      "time": "4320.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: down 1020101 (was active)"
+    },
+    {
+      "time": "4320.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: up 1020100 (new active)"
+    },
+    {
+      "time": "4320.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: down 1040220 (was active)"
+    },
+    {
+      "time": "4320.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: up 1040221 (new active)"
+    },
+    {
+      "time": "4330.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: down 1020100 (was active)"
+    },
+    {
+      "time": "4330.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: up 1020101 (new active)"
+    },
+    {
+      "time": "4330.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: down 1030120 (was active)"
+    },
+    {
+      "time": "4330.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: up 1030121 (new active)"
+    },
+    {
+      "time": "4380.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: down 1030121 (was active)"
+    },
+    {
+      "time": "4380.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: up 1030120 (new active)"
+    },
+    {
+      "time": "4400.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: down 1030120 (was active)"
+    },
+    {
+      "time": "4400.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: up 1030121 (new active)"
+    },
+    {
+      "time": "4420.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: down 1030121 (was active)"
+    },
+    {
+      "time": "4420.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: up 1030120 (new active)"
+    },
+    {
+      "time": "4710.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: down 1020101 (was active)"
+    },
+    {
+      "time": "4710.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: up 1020100 (new active)"
+    },
+    {
+      "time": "4710.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: down 1040221 (was active)"
+    },
+    {
+      "time": "4710.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: up 1040220 (new active)"
+    },
+    {
+      "time": "4770.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: down 1020100 (was active)"
+    },
+    {
+      "time": "4770.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: up 1020101 (new active)"
+    },
+    {
+      "time": "4770.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "1020210"
+      ],
+      "description": "DirectLink: gateway=4 link_up \u2192 AS102-AS104 loc-B: down 1020210 (was active)"
+    },
+    {
+      "time": "4770.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "1020211"
+      ],
+      "description": "DirectLink: gateway=4 link_up \u2192 AS102-AS104 loc-B: up 1020211 (new active)"
+    },
+    {
+      "time": "4780.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: down 1020101 (was active)"
+    },
+    {
+      "time": "4780.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: up 1020100 (new active)"
+    },
+    {
+      "time": "4780.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: down 1040220 (was active)"
+    },
+    {
+      "time": "4780.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: up 1040221 (new active)"
+    },
+    {
+      "time": "4810.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: down 1020100 (was active)"
+    },
+    {
+      "time": "4810.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: up 1020101 (new active)"
+    },
+    {
+      "time": "4810.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "1020211"
+      ],
+      "description": "DirectLink: gateway=4 link_up \u2192 AS102-AS104 loc-B: down 1020211 (was active)"
+    },
+    {
+      "time": "4810.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "1020210"
+      ],
+      "description": "DirectLink: gateway=4 link_up \u2192 AS102-AS104 loc-B: up 1020210 (new active)"
+    },
+    {
+      "time": "4920.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: down 1020101 (was active)"
+    },
+    {
+      "time": "4920.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: up 1020100 (new active)"
+    },
+    {
+      "time": "4920.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "1020210"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: down 1020210 (was active)"
+    },
+    {
+      "time": "4920.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "1020211"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: up 1020211 (new active)"
+    },
+    {
+      "time": "4940.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: down 1020100 (was active)"
+    },
+    {
+      "time": "4940.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: up 1020101 (new active)"
+    },
+    {
+      "time": "4940.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: down 1040221 (was active)"
+    },
+    {
+      "time": "4940.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: up 1040220 (new active)"
+    },
+    {
+      "time": "5100.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: down 1040220 (was active)"
+    },
+    {
+      "time": "5100.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: up 1040221 (new active)"
+    },
+    {
+      "time": "5890.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: down 1040221 (was active)"
+    },
+    {
+      "time": "5890.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: up 1040220 (new active)"
+    },
+    {
+      "time": "6200.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: down 1020101 (was active)"
+    },
+    {
+      "time": "6200.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: up 1020100 (new active)"
+    },
+    {
+      "time": "6200.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: down 1040220 (was active)"
+    },
+    {
+      "time": "6200.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: up 1040221 (new active)"
+    },
+    {
+      "time": "6230.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: down 1030120 (was active)"
+    },
+    {
+      "time": "6230.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: up 1030121 (new active)"
+    },
+    {
+      "time": "6230.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: down 1040221 (was active)"
+    },
+    {
+      "time": "6230.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: up 1040220 (new active)"
+    },
+    {
+      "time": "6260.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: down 1030121 (was active)"
+    },
+    {
+      "time": "6260.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: up 1030120 (new active)"
+    },
+    {
+      "time": "6290.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: down 1030120 (was active)"
+    },
+    {
+      "time": "6290.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: up 1030121 (new active)"
+    },
+    {
+      "time": "6320.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: down 1030121 (was active)"
+    },
+    {
+      "time": "6320.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: up 1030120 (new active)"
+    },
+    {
+      "time": "6590.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: down 1040220 (was active)"
+    },
+    {
+      "time": "6590.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: up 1040221 (new active)"
+    },
+    {
+      "time": "6590.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "1020211"
+      ],
+      "description": "DirectLink: gateway=4 link_up \u2192 AS102-AS104 loc-B: down 1020211 (was active)"
+    },
+    {
+      "time": "6590.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "1020210"
+      ],
+      "description": "DirectLink: gateway=4 link_up \u2192 AS102-AS104 loc-B: up 1020210 (new active)"
+    },
+    {
+      "time": "6820.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: down 1040221 (was active)"
+    },
+    {
+      "time": "6820.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: up 1040220 (new active)"
+    },
+    {
+      "time": "6910.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: down 1020100 (was active)"
+    },
+    {
+      "time": "6910.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: up 1020101 (new active)"
+    },
+    {
+      "time": "6910.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: down 1040220 (was active)"
+    },
+    {
+      "time": "6910.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: up 1040221 (new active)"
+    },
+    {
+      "time": "6950.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: down 1020101 (was active)"
+    },
+    {
+      "time": "6950.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: up 1020100 (new active)"
+    },
+    {
+      "time": "6950.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "1020210"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: down 1020210 (was active)"
+    },
+    {
+      "time": "6950.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "1020211"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: up 1020211 (new active)"
+    },
+    {
+      "time": "7000.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: down 1030120 (was active)"
+    },
+    {
+      "time": "7000.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: up 1030121 (new active)"
+    },
+    {
+      "time": "7030.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: down 1040221 (was active)"
+    },
+    {
+      "time": "7030.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: up 1040220 (new active)"
+    },
+    {
+      "time": "7040.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: down 1040220 (was active)"
+    },
+    {
+      "time": "7040.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: up 1040221 (new active)"
+    },
+    {
+      "time": "7040.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "1020211"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: down 1020211 (was active)"
+    },
+    {
+      "time": "7040.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "1020210"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: up 1020210 (new active)"
+    },
+    {
+      "time": "7110.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: down 1020100 (was active)"
+    },
+    {
+      "time": "7110.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: up 1020101 (new active)"
+    },
+    {
+      "time": "7110.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: down 1040221 (was active)"
+    },
+    {
+      "time": "7110.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: up 1040220 (new active)"
+    },
+    {
+      "time": "7160.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: down 1030121 (was active)"
+    },
+    {
+      "time": "7160.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: up 1030120 (new active)"
+    },
+    {
+      "time": "7160.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: down 1040220 (was active)"
+    },
+    {
+      "time": "7160.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: up 1040221 (new active)"
+    },
+    {
+      "time": "7170.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: down 1020101 (was active)"
+    },
+    {
+      "time": "7170.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: up 1020100 (new active)"
+    },
+    {
+      "time": "7170.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: down 1040221 (was active)"
+    },
+    {
+      "time": "7170.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: up 1040220 (new active)"
+    },
+    {
+      "time": "7280.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: down 1030120 (was active)"
+    },
+    {
+      "time": "7280.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: up 1030121 (new active)"
+    },
+    {
+      "time": "7620.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: down 1020100 (was active)"
+    },
+    {
+      "time": "7620.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: up 1020101 (new active)"
+    },
+    {
+      "time": "7620.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: down 1040220 (was active)"
+    },
+    {
+      "time": "7620.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: up 1040221 (new active)"
+    },
+    {
+      "time": "7630.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: down 1020101 (was active)"
+    },
+    {
+      "time": "7630.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: up 1020100 (new active)"
+    },
+    {
+      "time": "7630.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "1020210"
+      ],
+      "description": "DirectLink: gateway=4 link_up \u2192 AS102-AS104 loc-B: down 1020210 (was active)"
+    },
+    {
+      "time": "7630.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "1020211"
+      ],
+      "description": "DirectLink: gateway=4 link_up \u2192 AS102-AS104 loc-B: up 1020211 (new active)"
+    },
+    {
+      "time": "7650.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: down 1020100 (was active)"
+    },
+    {
+      "time": "7650.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: up 1020101 (new active)"
+    },
+    {
+      "time": "7650.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "1020211"
+      ],
+      "description": "DirectLink: gateway=4 link_up \u2192 AS102-AS104 loc-B: down 1020211 (was active)"
+    },
+    {
+      "time": "7650.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "1020210"
+      ],
+      "description": "DirectLink: gateway=4 link_up \u2192 AS102-AS104 loc-B: up 1020210 (new active)"
+    },
+    {
+      "time": "7760.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: down 1020101 (was active)"
+    },
+    {
+      "time": "7760.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: up 1020100 (new active)"
+    },
+    {
+      "time": "7760.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "1020210"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: down 1020210 (was active)"
+    },
+    {
+      "time": "7760.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "1020211"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: up 1020211 (new active)"
+    },
+    {
+      "time": "7780.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: down 1020100 (was active)"
+    },
+    {
+      "time": "7780.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: up 1020101 (new active)"
+    },
+    {
+      "time": "7780.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: down 1040221 (was active)"
+    },
+    {
+      "time": "7780.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: up 1040220 (new active)"
+    },
+    {
+      "time": "7810.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: down 1040220 (was active)"
+    },
+    {
+      "time": "7810.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: up 1040221 (new active)"
+    },
+    {
+      "time": "7810.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "1020211"
+      ],
+      "description": "DirectLink: gateway=4 link_up \u2192 AS102-AS104 loc-B: down 1020211 (was active)"
+    },
+    {
+      "time": "7810.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "1020210"
+      ],
+      "description": "DirectLink: gateway=4 link_up \u2192 AS102-AS104 loc-B: up 1020210 (new active)"
+    },
+    {
+      "time": "7980.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: down 1020101 (was active)"
+    },
+    {
+      "time": "7980.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: up 1020100 (new active)"
+    },
+    {
+      "time": "7980.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: down 1030121 (was active)"
+    },
+    {
+      "time": "7980.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: up 1030120 (new active)"
+    },
+    {
+      "time": "8110.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: down 1020100 (was active)"
+    },
+    {
+      "time": "8110.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: up 1020101 (new active)"
+    },
+    {
+      "time": "8110.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: down 1040221 (was active)"
+    },
+    {
+      "time": "8110.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: up 1040220 (new active)"
+    },
+    {
+      "time": "8300.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: down 1020101 (was active)"
+    },
+    {
+      "time": "8300.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: up 1020100 (new active)"
+    },
+    {
+      "time": "8300.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: down 1040220 (was active)"
+    },
+    {
+      "time": "8300.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: up 1040221 (new active)"
+    },
+    {
+      "time": "8730.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: down 1020100 (was active)"
+    },
+    {
+      "time": "8730.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: up 1020101 (new active)"
+    },
+    {
+      "time": "8730.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: down 1040221 (was active)"
+    },
+    {
+      "time": "8730.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: up 1040220 (new active)"
+    },
+    {
+      "time": "8930.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: down 1020101 (was active)"
+    },
+    {
+      "time": "8930.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: up 1020100 (new active)"
+    },
+    {
+      "time": "8930.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: down 1030120 (was active)"
+    },
+    {
+      "time": "8930.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: up 1030121 (new active)"
+    },
+    {
+      "time": "9090.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: down 1030121 (was active)"
+    },
+    {
+      "time": "9090.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: up 1030120 (new active)"
+    },
+    {
+      "time": "9130.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: down 1030120 (was active)"
+    },
+    {
+      "time": "9130.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: up 1030121 (new active)"
+    },
+    {
+      "time": "9130.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: down 1040220 (was active)"
+    },
+    {
+      "time": "9130.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: up 1040221 (new active)"
+    },
+    {
+      "time": "9150.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: down 1030121 (was active)"
+    },
+    {
+      "time": "9150.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: up 1030120 (new active)"
+    },
+    {
+      "time": "9160.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: down 1030120 (was active)"
+    },
+    {
+      "time": "9160.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: up 1030121 (new active)"
+    },
+    {
+      "time": "9290.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: down 1020100 (was active)"
+    },
+    {
+      "time": "9290.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_up \u2192 AS102-AS103 loc-A: up 1020101 (new active)"
+    },
+    {
+      "time": "9290.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: down 1040221 (was active)"
+    },
+    {
+      "time": "9290.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: up 1040220 (new active)"
+    },
+    {
+      "time": "9520.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: down 1030121 (was active)"
+    },
+    {
+      "time": "9520.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_up \u2192 AS103-AS105 loc-A: up 1030120 (new active)"
+    },
+    {
+      "time": "9770.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: down 1040220 (was active)"
+    },
+    {
+      "time": "9770.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_up \u2192 AS104-AS105 loc-B: up 1040221 (new active)"
+    },
+    {
+      "time": "9780.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: down 1030120 (was active)"
+    },
+    {
+      "time": "9780.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: up 1030121 (new active)"
+    },
+    {
+      "time": "9860.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "1030121"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: down 1030121 (was active)"
+    },
+    {
+      "time": "9860.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "1030120"
+      ],
+      "description": "DirectLink: gateway=2 link_down \u2192 AS103-AS105 loc-A: up 1030120 (new active)"
+    },
+    {
+      "time": "9920.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: down 1040221 (was active)"
+    },
+    {
+      "time": "9920.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: up 1040220 (new active)"
+    },
+    {
+      "time": "9950.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "1040220"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: down 1040220 (was active)"
+    },
+    {
+      "time": "9950.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "1040221"
+      ],
+      "description": "DirectLink: gateway=3 link_down \u2192 AS104-AS105 loc-B: up 1040221 (new active)"
+    },
+    {
+      "time": "9950.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "1020210"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: down 1020210 (was active)"
+    },
+    {
+      "time": "9950.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "1020211"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: up 1020211 (new active)"
+    },
+    {
+      "time": "9980.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "1020101"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: down 1020101 (was active)"
+    },
+    {
+      "time": "9980.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "1020100"
+      ],
+      "description": "DirectLink: gateway=1 link_down \u2192 AS102-AS103 loc-A: up 1020100 (new active)"
+    },
+    {
+      "time": "9980.000s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "1020211"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: down 1020211 (was active)"
+    },
+    {
+      "time": "9980.001s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "1020210"
+      ],
+      "description": "DirectLink: gateway=4 link_down \u2192 AS102-AS104 loc-B: up 1020210 (new active)"
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "description": "Scenario C: Same link failure (AS101-AS102) at 3 different times with 200s outages to measure recovery latency variance",
+  "events": [
+    {
+      "time": "30s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "101",
+        "1010000"
+      ],
+      "description": "First failure: AS101-AS102 down"
+    },
+    {
+      "time": "230s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "101",
+        "1010000"
+      ],
+      "description": "First recovery: AS101-AS102 up"
+    },
+    {
+      "time": "320s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "101",
+        "1010000"
+      ],
+      "description": "Second failure: AS101-AS102 down (at different epoch/state)"
+    },
+    {
+      "time": "520s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "101",
+        "1010000"
+      ],
+      "description": "Second recovery: AS101-AS102 up"
+    },
+    {
+      "time": "610s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "101",
+        "1010000"
+      ],
+      "description": "Third failure: AS101-AS102 down (after convergence settle)"
+    },
+    {
+      "time": "810s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "101",
+        "1010000"
+      ],
+      "description": "Third recovery: AS101-AS102 up"
+    }
+  ]
+}

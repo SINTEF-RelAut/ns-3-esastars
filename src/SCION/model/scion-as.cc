@@ -88,7 +88,13 @@ ScionAs::DoInitializations (uint32_t num_ases, rapidxml::xml_node<> *xml_node,
 std::pair<uint16_t, ScionAs *>
 ScionAs::GetRemoteAsInfo (uint16_t egress_interface_no)
 {
-  return remote_as_info.at (egress_interface_no);
+  return remote_as_info.at (egress_interface_no - 1); // SCION IF IDs are 1-based; vector is 0-based
+}
+
+bool
+ScionAs::IsInterfaceUp (uint16_t interface_no) const
+{
+  return interface_to_neighbor_map.find (interface_no) != interface_to_neighbor_map.end ();
 }
 
 void
@@ -189,7 +195,7 @@ ScionAs::ConnectInternalNodes (bool only_propagation_delay)
         {
           border_router_to_if.insert (std::make_pair (br, std::set<uint16_t> ()));
         }
-      border_router_to_if.at (br).insert (i);
+      border_router_to_if.at (br).insert (i + 1); // SCION IF IDs are 1-based
     }
 
   std::set<BorderRouter *> border_routers_set (border_routers.begin (), border_routers.end ());
@@ -366,12 +372,14 @@ ScionAs::ConnectInternalNodes (bool only_propagation_delay)
     }
 
   // Connect hosts to each other
-  for (uint32_t i = 0; i < hosts.size () - 1; ++i)
+  if (hosts.size () > 1)
     {
-      ScionHost *h1 = hosts.at (i);
-      for (uint32_t j = i + 1; j < hosts.size (); ++j)
+      for (uint32_t i = 0; i < hosts.size () - 1; ++i)
         {
-          ScionHost *h2 = hosts.at (j);
+          ScionHost *h1 = hosts.at (i);
+          for (uint32_t j = i + 1; j < hosts.size (); ++j)
+            {
+              ScionHost *h2 = hosts.at (j);
 
           Time propagation_delay = NanoSeconds ((int64_t) floor (
               1e6 * CalculateGreatCircleLatency ((ld) h1->GetLatitude (), (ld) h1->GetLogitude (),
@@ -397,8 +405,9 @@ ScionAs::ConnectInternalNodes (bool only_propagation_delay)
           h1->AddToRemoteNodesInfo (h2, h2->GetNDevices () - 1, isd_number, as_number);
           h2->AddToRemoteNodesInfo (h1, h1->GetNDevices () - 1, isd_number, as_number);
 
-          h1->AddToAddressForwardingTable (h2->GetLocalAddress (), h1->GetNDevices () - 1);
-          h2->AddToAddressForwardingTable (h1->GetLocalAddress (), h2->GetNDevices () - 1);
+              h1->AddToAddressForwardingTable (h2->GetLocalAddress (), h1->GetNDevices () - 1);
+              h2->AddToAddressForwardingTable (h1->GetLocalAddress (), h2->GetNDevices () - 1);
+            }
         }
     }
 }

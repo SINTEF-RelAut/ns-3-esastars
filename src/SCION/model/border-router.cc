@@ -19,6 +19,7 @@
  */
 
 #include "border-router.h"
+#include "scion-as.h"
 #include "scion-packet.h"
 
 namespace ns3 {
@@ -48,10 +49,15 @@ BorderRouter::ProcessReceivedPacket (uint16_t if_rcv, ScionPacket *packet, Time 
 
   if (packet->dst_ia == ia_addr)
     {
-      NS_ASSERT (GET_HOP_ISD (packet->path.at (packet->curr_inf)->hops.at (packet->cur_hopf)) ==
-                 isd_number);
-      NS_ASSERT (GET_HOP_AS (packet->path.at (packet->curr_inf)->hops.at (packet->cur_hopf)) ==
-                 as_number);
+      uint64_t local_hopf = packet->path.at (packet->curr_inf)->hops.at (packet->cur_hopf);
+      if (GET_HOP_ISD (local_hopf) != isd_number || GET_HOP_AS (local_hopf) != as_number)
+        {
+          NS_LOG_FUNCTION ("Drop local-dst packet due to hop context mismatch isd="
+                           << GET_HOP_ISD (local_hopf) << " as=" << GET_HOP_AS (local_hopf)
+                           << " expected=" << isd_number << ":" << as_number);
+          packet->packet_originator->DestroyScionPacket (packet);
+          return;
+        }
 
       if (forwarding_table_to_addresses_inside_as.find (packet->dst_host) ==
           forwarding_table_to_addresses_inside_as.end ())
@@ -102,8 +108,14 @@ BorderRouter::ProcessReceivedPacket (uint16_t if_rcv, ScionPacket *packet, Time 
   NS_ASSERT (packet->curr_inf < packet->path.size ());
 
   uint64_t hopf = packet->path.at (packet->curr_inf)->hops.at (packet->cur_hopf);
-  NS_ASSERT (GET_HOP_ISD (hopf) == isd_number);
-  NS_ASSERT (GET_HOP_AS (hopf) == as_number);
+  if (GET_HOP_ISD (hopf) != isd_number || GET_HOP_AS (hopf) != as_number)
+    {
+      NS_LOG_FUNCTION ("Drop transit packet due to hop context mismatch isd="
+                       << GET_HOP_ISD (hopf) << " as=" << GET_HOP_AS (hopf)
+                       << " expected=" << isd_number << ":" << as_number);
+      packet->packet_originator->DestroyScionPacket (packet);
+      return;
+    }
   bool reverse = packet->path_reversed ^ packet->path.at (packet->curr_inf)->reverse;
 
   uint16_t as_if_to_send;
@@ -130,6 +142,14 @@ BorderRouter::ProcessReceivedPacket (uint16_t if_rcv, ScionPacket *packet, Time 
 
   NS_ASSERT (packet->cur_hopf >= 0);
   NS_ASSERT (packet->cur_hopf < packet->path.at (packet->curr_inf)->hops.size ());
+
+  // Interface state can change at runtime via user-defined events; do not forward on down links.
+  if (as != NULL && !as->IsInterfaceUp (as_if_to_send))
+    {
+      NS_LOG_FUNCTION ("Drop transit packet due to down egress AS interface " << as_if_to_send);
+      packet->packet_originator->DestroyScionPacket (packet);
+      return;
+    }
 
   uint16_t local_if_to_send = forwarding_table_to_other_as_ifaces.at (as_if_to_send);
   ScheduleForSend (local_if_to_send, packet);

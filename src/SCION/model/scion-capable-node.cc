@@ -161,7 +161,14 @@ ScionCapableNode::SendScionPacket (ScionPacket *packet)
   if (packet->dst_ia != ia_addr)
     {
       uint64_t hopf = packet->path.at (packet->curr_inf)->hops.at (packet->cur_hopf);
-      NS_ASSERT (GET_HOP_ISD (hopf) == isd_number && GET_HOP_AS (hopf) == as_number);
+      if (GET_HOP_ISD (hopf) != isd_number || GET_HOP_AS (hopf) != as_number)
+        {
+          NS_LOG_FUNCTION ("Drop packet at source due to hop context mismatch isd="
+                           << GET_HOP_ISD (hopf) << " as=" << GET_HOP_AS (hopf)
+                           << " expected=" << isd_number << ":" << as_number);
+          DestroyScionPacket (packet);
+          return;
+        }
       bool reverse = packet->path_reversed ^ packet->path.at (packet->curr_inf)->reverse;
 
       NS_LOG_FUNCTION (reverse << " " << packet->path_reversed << " "
@@ -185,6 +192,14 @@ ScionCapableNode::SendScionPacket (ScionPacket *packet)
           << ", eg:"
           << GET_HOP_EG_IF (packet->path.at (packet->curr_inf)->hops.at (packet->cur_hopf)));
       NS_LOG_FUNCTION ("as_if_to_send: " << as_if_to_send);
+
+      // Interface state can change at runtime via user-defined events; do not send on down links.
+      if (as != NULL && !as->IsInterfaceUp (as_if_to_send))
+        {
+          NS_LOG_FUNCTION ("Drop packet due to down egress AS interface " << as_if_to_send);
+          DestroyScionPacket (packet);
+          return;
+        }
 
       local_if_to_send = forwarding_table_to_other_as_ifaces.at (as_if_to_send);
     }

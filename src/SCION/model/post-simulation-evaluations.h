@@ -141,5 +141,9 @@ void SortBeaconsByPollutionByLatency (
     NodeContainer &as_nodes, ScionAs *as1, ScionAs *as2, std::string beaconing_policy_str,
     std::map<double, std::map<double, std::set<Beacon *>>> &sorted_beacons_by_pollution_by_latency);
 
+void WarmPathRequestsForSnapshot ();
+void LogPathSnapshotCsv (const std::string &output_path, uint32_t max_paths_per_dst,
+                         double snapshot_time_s, bool discover_all_pairs);
+
 } // namespace ns3
 #endif //SCION_SIMULATOR_POST_SIMULATION_EVALUATIONS_H

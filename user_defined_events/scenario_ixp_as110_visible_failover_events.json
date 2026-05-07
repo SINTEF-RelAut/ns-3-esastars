@@ -1,0 +1,75 @@
+{
+    "description": "Scenario 2 (separate IXP AS110): keep one active IXP link per AS at a time, then perform visible failovers",
+    "events": [
+        {
+            "time": "0.1s",
+            "type": "link_down",
+            "args": [
+                "1",
+                "102",
+                "1020002"
+            ],
+            "description": "Disable AS102 backup IXP link at startup"
+        },
+        {
+            "time": "0.1s",
+            "type": "link_down",
+            "args": [
+                "1",
+                "103",
+                "1030002"
+            ],
+            "description": "Disable AS103 backup IXP link at startup"
+        },
+        {
+            "time": "0.1s",
+            "type": "link_down",
+            "args": [
+                "1",
+                "104",
+                "1040002"
+            ],
+            "description": "Disable AS104 backup IXP link at startup"
+        },
+        {
+            "time": "0.1s",
+            "type": "link_down",
+            "args": [
+                "1",
+                "105",
+                "1050002"
+            ],
+            "description": "Disable AS105 backup IXP link at startup"
+        },
+        {
+            "time": "50s",
+            "type": "link_down",
+            "args": [
+                "1",
+                "102",
+                "1020001"
+            ],
+            "description": "AS102 active IXP link down (visible control-plane failure)"
+        },
+        {
+            "time": "55s",
+            "type": "link_up",
+            "args": [
+                "1",
+                "102",
+                "1020002"
+            ],
+            "description": "AS102 backup IXP link up (new SCION/BGP path establishment)"
+        },
+        {
+            "time": "120s",
+            "type": "link_down",
+            "args": [
+                "1",
+                "101",
+                "1010000"
+            ],
+            "description": "AS101->AS102 direct link down; expected reroute via AS103 and AS110"
+        }
+    ]
+}
