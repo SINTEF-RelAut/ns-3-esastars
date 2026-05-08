@@ -608,9 +608,8 @@ ScionHost::SearchInCachedSegments (ia_t dst_ia, std::vector<const PathSegment *>
         {
           if (cached_up_path_segments.find (core_seg_src_ia) != cached_up_path_segments.end ())
             {
-              const PathSegment *up =
-                  SelectPreferredSegment (cached_up_path_segments.at (core_seg_src_ia)
-                                              ->begin ()->second);
+              const PathSegment *up = SelectPreferredSegment (
+                  cached_up_path_segments.at (core_seg_src_ia)->begin ()->second);
               if (up == NULL)
                 {
                   continue;
@@ -677,8 +676,8 @@ ScionHost::SearchInCachedSegments (ia_t dst_ia, std::vector<const PathSegment *>
 
       for (auto const &[down_seg_src_ia, down_path_segs] : *cached_down_path_segments.at (dst_ia))
         {
-          if (skip_segments != nullptr && !down_path_segs->empty ()
-              && skip_segments->count (down_path_segs->begin ()->second) > 0)
+          if (skip_segments != nullptr && !down_path_segs->empty () &&
+              skip_segments->count (down_path_segs->begin ()->second) > 0)
             {
               continue;
             }
@@ -743,9 +742,8 @@ ScionHost::SearchInCachedSegments (ia_t dst_ia, std::vector<const PathSegment *>
                                     << std::endl;
                         }
 
-                      const PathSegment *up =
-                          SelectPreferredSegment (cached_up_path_segments.at (core_seg_src_ia)
-                                                      ->begin ()->second);
+                      const PathSegment *up = SelectPreferredSegment (
+                          cached_up_path_segments.at (core_seg_src_ia)->begin ()->second);
                       if (up == NULL)
                         {
                           continue;

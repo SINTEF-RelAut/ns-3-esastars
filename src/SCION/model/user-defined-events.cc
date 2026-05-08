@@ -460,7 +460,8 @@ UserDefinedEvents::LinkDown (std::string isd_number, std::string real_as_no, std
           host->ClearProbeSessionBlacklists ();
         }
       target_as->path_server->RevokeSegmentsContainingLink (scion_as->as_number, scion_if);
-    }}
+    }
+}
 void
 UserDefinedEvents::LinkUp (std::string isd_number, std::string real_as_no, std::string if_id)
 {

@@ -31,11 +31,19 @@ import matplotlib.pyplot as plt
 
 STARTUP_CUTOFF_S = 10.0
 MIN_REPLY_RATE = 0.01
-SCION_COLOR = "#1f77b4"
-SCION_MARKER = "o"
+
+# Mode display settings: color and marker per mode
+MODE_STYLE = {
+    "ixp":    {"color": "#1f77b4", "marker": "o", "label": "SCION IXP"},
+    "direct": {"color": "#ff7f0e", "marker": "s", "label": "SCION Direct"},
+    # Legacy runs with no mode prefix are treated as "ixp"
+    "legacy": {"color": "#1f77b4", "marker": "o", "label": "SCION"},
+}
 
 _DIR_RE = re.compile(
-    r"sweep_scion_(?P<scenario>visible|hidden)_mrai(?P<mrai>\d+)_clk(?P<clk>\d+)_bcn(?P<bcn>\d+)"
+    r"sweep_scion_"
+    r"(?:(?P<mode>ixp|direct)_)?"
+    r"(?P<scenario>visible|hidden)_mrai(?P<mrai>\d+)_clk(?P<clk>\d+)_bcn(?P<bcn>\d+)"
 )
 
 
@@ -44,16 +52,22 @@ def load_csv_rows(path: Path) -> List[Dict[str, str]]:
         return list(csv.DictReader(handle))
 
 
-def discover_runs(build_dir: Path, scenario: str) -> Dict[int, Path]:
-    runs: Dict[int, Path] = {}
+def discover_runs(build_dir: Path, scenario: str, modes: List[str]) -> Dict[str, Dict[int, Path]]:
+    """Return {mode: {beacon_s: run_dir}} for all matching sweep output directories."""
+    runs: Dict[str, Dict[int, Path]] = {}
     for path in sorted(build_dir.iterdir()):
         if not path.is_dir():
             continue
         match = _DIR_RE.fullmatch(path.name)
         if not match or match.group("scenario") != scenario:
             continue
+        mode = match.group("mode") or "legacy"
+        if mode not in modes and mode != "legacy":
+            continue
+        # Treat legacy (no mode prefix) as "ixp" for display purposes when both modes are present
+        display_mode = mode
         beacon_s = int(match.group("bcn"))
-        runs[beacon_s] = path
+        runs.setdefault(display_mode, {})[beacon_s] = path
     return runs
 
 
@@ -166,24 +180,31 @@ def compute_packet_loss(run_dir: Path) -> Optional[float]:
 
 
 def save_line_plot(
-    data: Dict[int, Optional[float]],
+    data_by_mode: Dict[str, Dict[int, Optional[float]]],
     ylabel: str,
     title: str,
     out_path: Path,
 ) -> None:
-    xs = sorted(x for x, y in data.items() if y is not None)
-    ys = [data[x] for x in xs]
+    """Plot one line per mode onto the same axes."""
     fig, ax = plt.subplots(figsize=(7, 4))
-    if xs:
+    any_data = False
+    for mode, data in sorted(data_by_mode.items()):
+        style = MODE_STYLE.get(mode, MODE_STYLE["legacy"])
+        xs = sorted(x for x, y in data.items() if y is not None)
+        ys = [data[x] for x in xs]
+        if not xs:
+            continue
+        any_data = True
         ax.plot(
             xs,
             ys,
-            marker=SCION_MARKER,
-            color=SCION_COLOR,
+            marker=style["marker"],
+            color=style["color"],
             linewidth=1.8,
             markersize=6,
-            label="SCION",
+            label=style["label"],
         )
+    if any_data:
         ax.legend(framealpha=0.85)
     ax.set_xlabel("Beacon / expiration timer setting (s)")
     ax.set_ylabel(ylabel)
@@ -204,6 +225,13 @@ def main() -> int:
         help="Which sweep scenario to plot (default: visible)",
     )
     parser.add_argument(
+        "--modes",
+        nargs="+",
+        choices=["ixp", "direct"],
+        default=["ixp", "direct"],
+        help="SCION topology modes to include (default: ixp direct)",
+    )
+    parser.add_argument(
         "--build-dir",
         default="build",
         help="Build directory containing sweep outputs (default: build)",
@@ -220,24 +248,29 @@ def main() -> int:
     out_dir = repo_root / args.out_dir
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    runs = discover_runs(build_dir, args.scenario)
-    if not runs:
+    runs_by_mode = discover_runs(build_dir, args.scenario, args.modes)
+    if not runs_by_mode:
         print(f"No SCION sweep directories found in {build_dir} for scenario={args.scenario}.")
         return 1
 
     print(f"Found SCION sweep runs for scenario={args.scenario}:")
-    for beacon_s, run_dir in sorted(runs.items()):
-        print(f"  beacon={beacon_s:2d}s  {run_dir.name}")
+    for mode, runs in sorted(runs_by_mode.items()):
+        for beacon_s, run_dir in sorted(runs.items()):
+            print(f"  [{mode:6s}] beacon={beacon_s:2d}s  {run_dir.name}")
 
-    convergence_data: Dict[int, Optional[float]] = {}
-    cp_overhead_data: Dict[int, Optional[float]] = {}
-    packet_loss_data: Dict[int, Optional[float]] = {}
+    convergence_data: Dict[str, Dict[int, Optional[float]]] = {}
+    cp_overhead_data: Dict[str, Dict[int, Optional[float]]] = {}
+    packet_loss_data: Dict[str, Dict[int, Optional[float]]] = {}
 
-    for beacon_s, run_dir in sorted(runs.items()):
-        print(f"  Computing metrics for {run_dir.name} ...")
-        convergence_data[beacon_s] = compute_convergence_time(run_dir, args.scenario, repo_root)
-        cp_overhead_data[beacon_s] = float(compute_cp_overhead(run_dir))
-        packet_loss_data[beacon_s] = compute_packet_loss(run_dir)
+    for mode, runs in sorted(runs_by_mode.items()):
+        convergence_data[mode] = {}
+        cp_overhead_data[mode] = {}
+        packet_loss_data[mode] = {}
+        for beacon_s, run_dir in sorted(runs.items()):
+            print(f"  [{mode}] Computing metrics for {run_dir.name} ...")
+            convergence_data[mode][beacon_s] = compute_convergence_time(run_dir, args.scenario, repo_root)
+            cp_overhead_data[mode][beacon_s] = float(compute_cp_overhead(run_dir))
+            packet_loss_data[mode][beacon_s] = compute_packet_loss(run_dir)
 
     scenario_label = args.scenario.capitalize()
     print("\nPlotting ...")
@@ -260,19 +293,27 @@ def main() -> int:
         out_path=out_dir / f"scion_{args.scenario}_packet_loss.png",
     )
 
-    print(f"\n{'Beacon(s)':>10}  {'Conv(s)':>10}  {'CP events':>10}  {'Loss%':>8}")
-    print("-" * 46)
-    for beacon_s in sorted(runs):
-        conv = convergence_data.get(beacon_s)
-        cp = cp_overhead_data.get(beacon_s)
-        loss = packet_loss_data.get(beacon_s)
+    all_beacon_s = sorted({b for runs in runs_by_mode.values() for b in runs})
+    all_modes = sorted(runs_by_mode.keys())
+    header_modes = "  ".join(f"{m:>7}" for m in all_modes)
+    print(f"\n{'Beacon(s)':>10}  {header_modes} {'Conv(s)':>10}  {'CP events':>10}  {'Loss%':>8}")
+    print("-" * (12 + len(all_modes) * 9 + 32))
+    for beacon_s in all_beacon_s:
+        row = f"{beacon_s:>10}"
+        for mode in all_modes:
+            loss = packet_loss_data.get(mode, {}).get(beacon_s)
+            row += f"  {f'{loss:.1f}%' if loss is not None else 'n/a':>7}"
+        # Show convergence and CP from first available mode
+        first_mode = all_modes[0]
+        conv = convergence_data.get(first_mode, {}).get(beacon_s)
+        cp = cp_overhead_data.get(first_mode, {}).get(beacon_s)
         conv_text = f"{conv:.2f}" if conv is not None else "n/a"
         cp_text = f"{cp:.0f}" if cp is not None else "n/a"
-        loss_text = f"{loss:.2f}" if loss is not None else "n/a"
-        print(f"{beacon_s:>10}  {conv_text:>10}  {cp_text:>10}  {loss_text:>8}")
+        print(f"{row}  {conv_text:>10}  {cp_text:>10}")
 
+    modes_found = sorted(runs_by_mode.keys())
     print(f"\nPlots written to {out_dir}")
-    print("Note: raw SCION sweep outputs were present; only the derived per-run control-plane CSVs were missing.")
+    print(f"Modes plotted: {', '.join(modes_found)}")
     return 0
 
 

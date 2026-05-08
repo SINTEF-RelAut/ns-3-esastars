@@ -76,8 +76,8 @@ protected:
     uint32_t consecutive_timeouts;
     bool force_path_refresh;
     bool started;
-    const PathSegment* last_sent_segment;
-    std::set<const PathSegment*> timed_out_segments;
+    const PathSegment *last_sent_segment;
+    std::set<const PathSegment *> timed_out_segments;
 
     ProbeSession ()
         : dst_ia (0),

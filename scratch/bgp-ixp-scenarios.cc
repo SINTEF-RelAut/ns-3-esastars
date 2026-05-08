@@ -134,13 +134,13 @@ GetDualIxpQuality (uint32_t if_id)
   switch (if_id % 10)
     {
     case 1:
-      return 1.0;   // AS120 primary interface
+      return 1.0; // AS120 primary interface
     case 2:
-      return 0.8;   // AS120 backup interface
+      return 0.8; // AS120 backup interface
     case 3:
-      return 0.95;  // AS121 primary interface
+      return 0.95; // AS121 primary interface
     case 4:
-      return 0.75;  // AS121 backup interface
+      return 0.75; // AS121 backup interface
     default:
       return 1.0;
     }
@@ -153,7 +153,7 @@ GetDualIxpQuality (uint32_t if_id)
 int32_t
 GetDirectLinkWeight (uint16_t local_as, uint16_t /*peer_as*/, uint32_t local_if_id)
 {
-  uint32_t loc = (local_if_id / 100) % 10;   // 1 = loc A, 2 = loc B
+  uint32_t loc = (local_if_id / 100) % 10; // 1 = loc A, 2 = loc B
   bool primary = (local_if_id % 2) == 0;
   bool prefers_loc_a = (local_as == 102 || local_as == 103);
   bool local_loc = (prefers_loc_a && loc == 1) || (!prefers_loc_a && loc == 2);
@@ -643,39 +643,39 @@ BuildTopologyLinksDirect ()
   std::vector<LinkSpec> links;
 
   // Backbone (same as dual-IXP non-split)
-  links.push_back ((LinkSpec){101, 102, 0.0020, 300, 1010000, 1020000, false});
-  links.push_back ((LinkSpec){105, 106, 0.0020, 300, 1050000, 1060001, false});
-  links.push_back ((LinkSpec){107, 103, 0.0015, 150, 1070000, 1030000, false});
-  links.push_back ((LinkSpec){108, 106, 0.0015, 150, 1080000, 1060002, false});
-  links.push_back ((LinkSpec){104, 108, 0.0015, 150, 1040000, 1080001, false});
+  links.push_back ((LinkSpec) {101, 102, 0.0020, 300, 1010000, 1020000, false});
+  links.push_back ((LinkSpec) {105, 106, 0.0020, 300, 1050000, 1060001, false});
+  links.push_back ((LinkSpec) {107, 103, 0.0015, 150, 1070000, 1030000, false});
+  links.push_back ((LinkSpec) {108, 106, 0.0015, 150, 1080000, 1060002, false});
+  links.push_back ((LinkSpec) {104, 108, 0.0015, 150, 1040000, 1080001, false});
 
   // Location A full mesh — 6 pairs × 2 links (primary + backup)
-  links.push_back ((LinkSpec){102, 103, 0.0010, 300, 1020100, 1030100, false}); // primary
-  links.push_back ((LinkSpec){102, 103, 0.0010, 300, 1020101, 1030101, false}); // backup
-  links.push_back ((LinkSpec){102, 104, 0.0010, 300, 1020110, 1040100, false});
-  links.push_back ((LinkSpec){102, 104, 0.0010, 300, 1020111, 1040101, false});
-  links.push_back ((LinkSpec){102, 105, 0.0010, 300, 1020120, 1050100, false});
-  links.push_back ((LinkSpec){102, 105, 0.0010, 300, 1020121, 1050101, false});
-  links.push_back ((LinkSpec){103, 104, 0.0010, 300, 1030110, 1040110, false});
-  links.push_back ((LinkSpec){103, 104, 0.0010, 300, 1030111, 1040111, false});
-  links.push_back ((LinkSpec){103, 105, 0.0010, 300, 1030120, 1050110, false});
-  links.push_back ((LinkSpec){103, 105, 0.0010, 300, 1030121, 1050111, false});
-  links.push_back ((LinkSpec){104, 105, 0.0010, 300, 1040120, 1050120, false});
-  links.push_back ((LinkSpec){104, 105, 0.0010, 300, 1040121, 1050121, false});
+  links.push_back ((LinkSpec) {102, 103, 0.0010, 300, 1020100, 1030100, false}); // primary
+  links.push_back ((LinkSpec) {102, 103, 0.0010, 300, 1020101, 1030101, false}); // backup
+  links.push_back ((LinkSpec) {102, 104, 0.0010, 300, 1020110, 1040100, false});
+  links.push_back ((LinkSpec) {102, 104, 0.0010, 300, 1020111, 1040101, false});
+  links.push_back ((LinkSpec) {102, 105, 0.0010, 300, 1020120, 1050100, false});
+  links.push_back ((LinkSpec) {102, 105, 0.0010, 300, 1020121, 1050101, false});
+  links.push_back ((LinkSpec) {103, 104, 0.0010, 300, 1030110, 1040110, false});
+  links.push_back ((LinkSpec) {103, 104, 0.0010, 300, 1030111, 1040111, false});
+  links.push_back ((LinkSpec) {103, 105, 0.0010, 300, 1030120, 1050110, false});
+  links.push_back ((LinkSpec) {103, 105, 0.0010, 300, 1030121, 1050111, false});
+  links.push_back ((LinkSpec) {104, 105, 0.0010, 300, 1040120, 1050120, false});
+  links.push_back ((LinkSpec) {104, 105, 0.0010, 300, 1040121, 1050121, false});
 
   // Location B full mesh — same 6 pairs
-  links.push_back ((LinkSpec){102, 103, 0.0010, 300, 1020200, 1030200, false});
-  links.push_back ((LinkSpec){102, 103, 0.0010, 300, 1020201, 1030201, false});
-  links.push_back ((LinkSpec){102, 104, 0.0010, 300, 1020210, 1040200, false});
-  links.push_back ((LinkSpec){102, 104, 0.0010, 300, 1020211, 1040201, false});
-  links.push_back ((LinkSpec){102, 105, 0.0010, 300, 1020220, 1050200, false});
-  links.push_back ((LinkSpec){102, 105, 0.0010, 300, 1020221, 1050201, false});
-  links.push_back ((LinkSpec){103, 104, 0.0010, 300, 1030210, 1040210, false});
-  links.push_back ((LinkSpec){103, 104, 0.0010, 300, 1030211, 1040211, false});
-  links.push_back ((LinkSpec){103, 105, 0.0010, 300, 1030220, 1050210, false});
-  links.push_back ((LinkSpec){103, 105, 0.0010, 300, 1030221, 1050211, false});
-  links.push_back ((LinkSpec){104, 105, 0.0010, 300, 1040220, 1050220, false});
-  links.push_back ((LinkSpec){104, 105, 0.0010, 300, 1040221, 1050221, false});
+  links.push_back ((LinkSpec) {102, 103, 0.0010, 300, 1020200, 1030200, false});
+  links.push_back ((LinkSpec) {102, 103, 0.0010, 300, 1020201, 1030201, false});
+  links.push_back ((LinkSpec) {102, 104, 0.0010, 300, 1020210, 1040200, false});
+  links.push_back ((LinkSpec) {102, 104, 0.0010, 300, 1020211, 1040201, false});
+  links.push_back ((LinkSpec) {102, 105, 0.0010, 300, 1020220, 1050200, false});
+  links.push_back ((LinkSpec) {102, 105, 0.0010, 300, 1020221, 1050201, false});
+  links.push_back ((LinkSpec) {103, 104, 0.0010, 300, 1030210, 1040210, false});
+  links.push_back ((LinkSpec) {103, 104, 0.0010, 300, 1030211, 1040211, false});
+  links.push_back ((LinkSpec) {103, 105, 0.0010, 300, 1030220, 1050210, false});
+  links.push_back ((LinkSpec) {103, 105, 0.0010, 300, 1030221, 1050211, false});
+  links.push_back ((LinkSpec) {104, 105, 0.0010, 300, 1040220, 1050220, false});
+  links.push_back ((LinkSpec) {104, 105, 0.0010, 300, 1040221, 1050221, false});
 
   return links;
 }
@@ -790,8 +790,7 @@ main (int argc, char *argv[])
   cmd.AddValue ("outDir", "Output directory for probe and event CSV files", outDir);
   cmd.AddValue ("scenario", "Scenario ID: visible or hidden", scenario);
   cmd.AddValue ("clockInterval", "BGP FSM clock interval in seconds", clock_interval_s);
-  cmd.AddValue ("mrai", "Minimum Route Advertisement Interval for UPDATE pacing (seconds)",
-                mrai_s);
+  cmd.AddValue ("mrai", "Minimum Route Advertisement Interval for UPDATE pacing (seconds)", mrai_s);
   cmd.AddValue ("simTime", "Simulation duration in seconds", sim_time_s);
   cmd.AddValue ("virtualIxpPortCount", "Virtual IXP port count", virtual_ixp_port_count);
   cmd.AddValue ("virtualIxpRebalance", "Virtual IXP rebalance period (seconds)",
@@ -889,10 +888,9 @@ main (int argc, char *argv[])
   std::map<uint32_t, IxpLinkId> ixpLinkByIfId;
   std::map<uint32_t, double> ixpQualityByIfId;
 
-  std::vector<LinkSpec> links =
-      direct_links    ? BuildTopologyLinksDirect ()
-      : (dual_ixp     ? BuildTopologyLinksDual (split_edge_as)
-                      : BuildTopologyLinksSingle ());
+  std::vector<LinkSpec> links = direct_links ? BuildTopologyLinksDirect ()
+                                             : (dual_ixp ? BuildTopologyLinksDual (split_edge_as)
+                                                         : BuildTopologyLinksSingle ());
   uint32_t subnetId = 0;
   for (uint32_t i = 0; i < links.size (); ++i)
     {
@@ -938,8 +936,8 @@ main (int argc, char *argv[])
           nextIxpLinkIndex[spec.as_a]++;
           IxpLinkId linkId = {spec.as_a, nextIxpLinkIndex[spec.as_a]};
           ixpLinkByIfId[spec.if_id_a] = linkId;
-          ixpQualityByIfId[spec.if_id_a] = dual_ixp ? GetDualIxpQuality (spec.if_id_a)
-                                                    : ((spec.if_id_a % 10 == 1) ? 1.0 : 0.9);
+          ixpQualityByIfId[spec.if_id_a] =
+              dual_ixp ? GetDualIxpQuality (spec.if_id_a) : ((spec.if_id_a % 10 == 1) ? 1.0 : 0.9);
         }
 
       subnetId++;
@@ -949,9 +947,8 @@ main (int argc, char *argv[])
   for (std::map<uint16_t, Ptr<Node>>::const_iterator it = asNodes.begin (); it != asNodes.end ();
        ++it)
     {
-      Ptr<Bgp> bgp =
-          InstallBgpOnNode (it->first, it->second, Seconds (clock_interval_s), Seconds (mrai_s),
-                            outDir);
+      Ptr<Bgp> bgp = InstallBgpOnNode (it->first, it->second, Seconds (clock_interval_s),
+                                       Seconds (mrai_s), outDir);
       bgpApps[it->first] = bgp;
     }
 
@@ -969,8 +966,8 @@ main (int argc, char *argv[])
         {
           aToB.weight = GetDualIxpInterfaceWeight (rt.spec.as_a, rt.spec.as_b, rt.spec.if_id_a);
         }
-      else if (direct_links && rt.spec.as_a >= 102 && rt.spec.as_a <= 105
-               && rt.spec.as_b >= 102 && rt.spec.as_b <= 105)
+      else if (direct_links && rt.spec.as_a >= 102 && rt.spec.as_a <= 105 && rt.spec.as_b >= 102 &&
+               rt.spec.as_b <= 105)
         {
           aToB.weight = GetDirectLinkWeight (rt.spec.as_a, rt.spec.as_b, rt.spec.if_id_a);
         }
@@ -987,8 +984,8 @@ main (int argc, char *argv[])
         {
           bToA.weight = GetDualIxpInterfaceWeight (rt.spec.as_b, rt.spec.as_a, rt.spec.if_id_b);
         }
-      else if (direct_links && rt.spec.as_a >= 102 && rt.spec.as_a <= 105
-               && rt.spec.as_b >= 102 && rt.spec.as_b <= 105)
+      else if (direct_links && rt.spec.as_a >= 102 && rt.spec.as_a <= 105 && rt.spec.as_b >= 102 &&
+               rt.spec.as_b <= 105)
         {
           bToA.weight = GetDirectLinkWeight (rt.spec.as_b, rt.spec.as_a, rt.spec.if_id_b);
         }
@@ -1046,17 +1043,13 @@ main (int argc, char *argv[])
     {
       probePairs.push_back (std::make_pair (101, MakeSplitAsn (102, true)));
       probePairs.push_back (std::make_pair (MakeSplitAsn (102, true), MakeSplitAsn (103, true)));
-      probePairs.push_back (
-          std::make_pair (MakeSplitAsn (102, false), MakeSplitAsn (103, false)));
+      probePairs.push_back (std::make_pair (MakeSplitAsn (102, false), MakeSplitAsn (103, false)));
       probePairs.push_back (std::make_pair (MakeSplitAsn (102, true), MakeSplitAsn (104, true)));
-      probePairs.push_back (
-          std::make_pair (MakeSplitAsn (102, false), MakeSplitAsn (104, false)));
+      probePairs.push_back (std::make_pair (MakeSplitAsn (102, false), MakeSplitAsn (104, false)));
       probePairs.push_back (std::make_pair (MakeSplitAsn (103, true), MakeSplitAsn (105, true)));
-      probePairs.push_back (
-          std::make_pair (MakeSplitAsn (103, false), MakeSplitAsn (105, false)));
+      probePairs.push_back (std::make_pair (MakeSplitAsn (103, false), MakeSplitAsn (105, false)));
       probePairs.push_back (std::make_pair (MakeSplitAsn (104, true), MakeSplitAsn (105, true)));
-      probePairs.push_back (
-          std::make_pair (MakeSplitAsn (104, false), MakeSplitAsn (105, false)));
+      probePairs.push_back (std::make_pair (MakeSplitAsn (104, false), MakeSplitAsn (105, false)));
     }
   else
     {

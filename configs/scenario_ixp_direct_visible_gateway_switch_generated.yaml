@@ -1,5 +1,5 @@
 time_resolution: NS
-topology: topology/ixp_as110_dual_satellites_topology.xml
+topology: topology/ixp_scion_direct_peers_topology.xml
 output: build/scenario_ixp_dual_sat_visible_gateway_switch_generated.txt
 simulation_duration: 10000.000s
 NUM_CORE: 1
