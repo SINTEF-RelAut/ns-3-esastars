@@ -97,6 +97,7 @@
     <property name="from_if_id" type="int">1070000</property>
     <property name="to_if_id" type="int">1030000</property>
   </link>
+    <!-- This one is wrong 
   <link>
     <from>108</from>
     <to>106</to>
@@ -107,7 +108,7 @@
     <property name="latency" type="float">0.0015</property>
     <property name="from_if_id" type="int">1080000</property>
     <property name="to_if_id" type="int">1060002</property>
-  </link>
+  </link> -->
   <link>
     <from>104</from>
     <to>108</to>

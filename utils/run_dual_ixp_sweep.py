@@ -206,6 +206,8 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    repo_root = Path(__file__).resolve().parent.parent
+
     selected_points = [SWEEP_POINTS[i - 1] for i in args.sweep_points]
 
     if not args.skip_build:
@@ -268,7 +270,7 @@ def main() -> int:
                             f" --outDir=build/sweep_bgp_{mode}_{scenario}_{pt.label}"
                         )
 
-                    cmd = ["./waf", "--run", run_args]
+                    cmd = [str(repo_root / "build/scratch/bgp-ixp-scenarios")] + shlex.split(run_args)
                     print(f"  BGP {mode}:")
                     run_or_record(f"bgp/{scenario}/{mode}/{pt.label}", cmd)
 
@@ -305,7 +307,7 @@ def main() -> int:
 
                     run_or_record(
                         f"scion/{scion_mode}/{scenario}/{pt.label}",
-                        ["./waf", "--run", f"scion {out_cfg}"],
+                        [str(repo_root / "build/src/SCION/ns3.30.1-scion-debug"), str(out_cfg)],
                     )
 
             done += 1
