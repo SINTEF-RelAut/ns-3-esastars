@@ -8,11 +8,13 @@
        loc B: hundreds digit of last 3 digits = 2  (e.g. 1020210)
        primary: units digit = 0 ; backup: units digit = 1
 
-     Direct link mapping:
+     Direct link mapping (full 6-pair mesh):
        gateway 1 → AS102-AS103 loc-A  (from_if_id primary=1020100, backup=1020101)
        gateway 2 → AS103-AS105 loc-A  (from_if_id primary=1030120, backup=1030121)
        gateway 3 → AS104-AS105 loc-B  (from_if_id primary=1040220, backup=1040221)
        gateway 4 → AS102-AS104 loc-B  (from_if_id primary=1020210, backup=1020211)
+       gateway 5 → AS102-AS105 loc-B  (from_if_id primary=1020220, backup=1020221)
+       gateway 6 → AS103-AS104 loc-A  (from_if_id primary=1030110, backup=1030111)
 
      Backbone direct core links: 101-102, 107-103, 105-106, 108-106, 104-108.
 -->
@@ -95,7 +97,7 @@
     <property name="from_if_id" type="int">1070000</property>
     <property name="to_if_id" type="int">1030000</property>
   </link>
-  <link>
+<!--   <link>
     <from>108</from>
     <to>106</to>
     <property name="capacity" type="int">150</property>
@@ -105,7 +107,7 @@
     <property name="latency" type="float">0.0015</property>
     <property name="from_if_id" type="int">1080000</property>
     <property name="to_if_id" type="int">1060002</property>
-  </link>
+  </link> -->
   <link>
     <from>104</from>
     <to>108</to>
@@ -212,6 +214,54 @@
     <property name="latency" type="float">0.0020</property>
     <property name="from_if_id" type="int">1020211</property>
     <property name="to_if_id" type="int">1040211</property>
+  </link>
+
+  <!-- ===== Gateway 5: AS102-AS105 loc-B (primary + backup) ===== -->
+  <link>
+    <from>102</from>
+    <to>105</to>
+    <property name="capacity" type="int">300</property>
+    <property name="rel" type="string">core</property>
+    <property name="latitude" type="float">0.0</property>
+    <property name="longitude" type="float">0.0</property>
+    <property name="latency" type="float">0.0020</property>
+    <property name="from_if_id" type="int">1020220</property>
+    <property name="to_if_id" type="int">1050200</property>
+  </link>
+  <link>
+    <from>102</from>
+    <to>105</to>
+    <property name="capacity" type="int">300</property>
+    <property name="rel" type="string">core</property>
+    <property name="latitude" type="float">0.0</property>
+    <property name="longitude" type="float">0.0</property>
+    <property name="latency" type="float">0.0020</property>
+    <property name="from_if_id" type="int">1020221</property>
+    <property name="to_if_id" type="int">1050201</property>
+  </link>
+
+  <!-- ===== Gateway 6: AS103-AS104 loc-A (primary + backup) ===== -->
+  <link>
+    <from>103</from>
+    <to>104</to>
+    <property name="capacity" type="int">300</property>
+    <property name="rel" type="string">core</property>
+    <property name="latitude" type="float">0.0</property>
+    <property name="longitude" type="float">0.0</property>
+    <property name="latency" type="float">0.0020</property>
+    <property name="from_if_id" type="int">1030110</property>
+    <property name="to_if_id" type="int">1040110</property>
+  </link>
+  <link>
+    <from>103</from>
+    <to>104</to>
+    <property name="capacity" type="int">300</property>
+    <property name="rel" type="string">core</property>
+    <property name="latitude" type="float">0.0</property>
+    <property name="longitude" type="float">0.0</property>
+    <property name="latency" type="float">0.0020</property>
+    <property name="from_if_id" type="int">1030111</property>
+    <property name="to_if_id" type="int">1040111</property>
   </link>
 
 </topology>

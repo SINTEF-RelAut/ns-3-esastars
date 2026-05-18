@@ -612,7 +612,7 @@ BuildTopologyLinksSingle ()
   links.push_back ((LinkSpec) {104, 106, 0.0020, 300, 1040000, 1060000, false});
   links.push_back ((LinkSpec) {105, 106, 0.0020, 300, 1050000, 1060001, false});
   links.push_back ((LinkSpec) {101, 107, 0.0015, 150, 1010002, 1070000, false});
-  links.push_back ((LinkSpec) {106, 108, 0.0015, 150, 1060002, 1080000, false});
+  // links.push_back ((LinkSpec) {106, 108, 0.0015, 150, 1060002, 1080000, false}); // Removed to match SCION single-IXP topology
   // IXP satellite AS110
   links.push_back ((LinkSpec) {102, 110, 0.0010, 300, 1020001, 1100000, true});
   links.push_back ((LinkSpec) {102, 110, 0.0010, 300, 1020002, 1100001, true});
@@ -635,7 +635,7 @@ BuildTopologyLinksDual (bool split_edge_as)
       links.push_back ((LinkSpec) {101, 102, 0.0020, 300, 1010000, 1020000, false});
       links.push_back ((LinkSpec) {105, 106, 0.0020, 300, 1050000, 1060001, false});
       links.push_back ((LinkSpec) {107, 103, 0.0015, 150, 1070000, 1030000, false});
-      links.push_back ((LinkSpec) {108, 106, 0.0015, 150, 1080000, 1060002, false});
+      // links.push_back ((LinkSpec) {108, 106, 0.0015, 150, 1080000, 1060002, false}); // Removed to match SCION topology
       links.push_back ((LinkSpec) {104, 108, 0.0015, 150, 1040000, 1080001, false});
       // IXP satellite A (AS120)
       links.push_back ((LinkSpec) {102, 120, 0.0010, 300, 1020001, 1200000, true});
@@ -722,7 +722,7 @@ BuildTopologyLinksDirect ()
   links.push_back ((LinkSpec) {101, 102, 0.0020, 300, 1010000, 1020000, false});
   links.push_back ((LinkSpec) {105, 106, 0.0020, 300, 1050000, 1060001, false});
   links.push_back ((LinkSpec) {107, 103, 0.0015, 150, 1070000, 1030000, false});
-  links.push_back ((LinkSpec) {108, 106, 0.0015, 150, 1080000, 1060002, false});
+  // links.push_back ((LinkSpec) {108, 106, 0.0015, 150, 1080000, 1060002, false}); // Removed to match SCION topology
   links.push_back ((LinkSpec) {104, 108, 0.0015, 150, 1040000, 1080001, false});
 
   // Location A full mesh — 6 pairs × 2 links (primary + backup)
