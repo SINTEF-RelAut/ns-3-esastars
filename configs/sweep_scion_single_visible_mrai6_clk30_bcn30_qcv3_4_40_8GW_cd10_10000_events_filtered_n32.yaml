@@ -1,0 +1,68 @@
+time_resolution: NS
+topology: topology/ixp_as110_dual_links_topology.xml
+output: build/sweep_scion_single_visible_mrai6_clk30_bcn30_qcv3_4_40_8GW_cd10_10000_events_filtered_n32.txt
+simulation_duration: 10000.000s
+NUM_CORE: 1
+
+events_file: build/generated_events/filtered_sweep/qcv3_4_40_8GW_cd10_10000_events_filtered_n32_single.json
+
+beacon_service:
+  policy: baseline
+  period: 30s
+  expiration_period: 4050s
+  first_beaconing: 0s
+  last_beaconing: 10000.000s
+
+path_service: {}
+border_router: {}
+
+control_plane_logging:
+  beacon_events: false
+  path_server_updates: false
+  host_cache_updates: false
+  log_file: build/sweep_scion_single_visible_mrai6_clk30_bcn30_qcv3_4_40_8GW_cd10_10000_events_filtered_n32_control_plane.log
+
+path_snapshot_logger:
+  period: 300s
+  output: build/sweep_scion_single_visible_mrai6_clk30_bcn30_qcv3_4_40_8GW_cd10_10000_events_filtered_n32_path_snapshots.csv
+  max_paths_per_dst: 5
+  discover_all_pairs: true
+  request_lead_time: 500ms
+
+data_plane_probing:
+  start: 10s
+  period: 1s
+  timeout: 2s
+  count: 9990
+  pairs:
+    - src_as: 101
+      dst_as: 102
+      src_host: 2
+      dst_host: 2
+    - src_as: 102
+      dst_as: 103
+      src_host: 2
+      dst_host: 2
+    - src_as: 102
+      dst_as: 104
+      src_host: 2
+      dst_host: 2
+    - src_as: 102
+      dst_as: 105
+      src_host: 2
+      dst_host: 2
+    - src_as: 103
+      dst_as: 104
+      src_host: 2
+      dst_host: 2
+    - src_as: 103
+      dst_as: 105
+      src_host: 2
+      dst_host: 2
+    - src_as: 104
+      dst_as: 105
+      src_host: 2
+      dst_host: 2
+
+# Scenario 2 (separate IXP AS): no VIXP hiding.
+# Link events directly alter SCION interfaces; failures are visible and trigger reconvergence.

@@ -1,0 +1,9441 @@
+{
+  "metadata": {
+    "description": "Gateway links active at t=0, selected for low post-t0 correlation",
+    "input_file": "user_defined_events/qcv3_4_40_16GW_cd30_10000_events.json",
+    "n_links_requested": 32,
+    "selected_links": [
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 3,
+        "Interface_ID": 30133,
+        "event_count": 11,
+        "post_t0_events": 10
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 4,
+        "Interface_ID": 40011,
+        "event_count": 10,
+        "post_t0_events": 9
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 1,
+        "Interface_ID": 10134,
+        "event_count": 10,
+        "post_t0_events": 9
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 2,
+        "Interface_ID": 20084,
+        "event_count": 10,
+        "post_t0_events": 9
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 3,
+        "Interface_ID": 30002,
+        "event_count": 9,
+        "post_t0_events": 8
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 4,
+        "Interface_ID": 40054,
+        "event_count": 9,
+        "post_t0_events": 8
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 1,
+        "Interface_ID": 10104,
+        "event_count": 8,
+        "post_t0_events": 7
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 2,
+        "Interface_ID": 20070,
+        "event_count": 8,
+        "post_t0_events": 7
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 3,
+        "Interface_ID": 30137,
+        "event_count": 8,
+        "post_t0_events": 7
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 4,
+        "Interface_ID": 40130,
+        "event_count": 8,
+        "post_t0_events": 7
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 1,
+        "Interface_ID": 10076,
+        "event_count": 8,
+        "post_t0_events": 7
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 2,
+        "Interface_ID": 20091,
+        "event_count": 8,
+        "post_t0_events": 7
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 3,
+        "Interface_ID": 30074,
+        "event_count": 8,
+        "post_t0_events": 7
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 4,
+        "Interface_ID": 40059,
+        "event_count": 8,
+        "post_t0_events": 7
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 1,
+        "Interface_ID": 10046,
+        "event_count": 7,
+        "post_t0_events": 6
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 2,
+        "Interface_ID": 20108,
+        "event_count": 8,
+        "post_t0_events": 7
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 3,
+        "Interface_ID": 30103,
+        "event_count": 7,
+        "post_t0_events": 6
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 4,
+        "Interface_ID": 40119,
+        "event_count": 7,
+        "post_t0_events": 6
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 1,
+        "Interface_ID": 10096,
+        "event_count": 6,
+        "post_t0_events": 5
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 2,
+        "Interface_ID": 20052,
+        "event_count": 6,
+        "post_t0_events": 5
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 3,
+        "Interface_ID": 30019,
+        "event_count": 9,
+        "post_t0_events": 8
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 4,
+        "Interface_ID": 40035,
+        "event_count": 6,
+        "post_t0_events": 5
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 1,
+        "Interface_ID": 10117,
+        "event_count": 6,
+        "post_t0_events": 5
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 2,
+        "Interface_ID": 20022,
+        "event_count": 6,
+        "post_t0_events": 5
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 3,
+        "Interface_ID": 30100,
+        "event_count": 8,
+        "post_t0_events": 7
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 4,
+        "Interface_ID": 40049,
+        "event_count": 6,
+        "post_t0_events": 5
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 1,
+        "Interface_ID": 10011,
+        "event_count": 6,
+        "post_t0_events": 5
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 2,
+        "Interface_ID": 20005,
+        "event_count": 8,
+        "post_t0_events": 7
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 3,
+        "Interface_ID": 30083,
+        "event_count": 8,
+        "post_t0_events": 7
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 4,
+        "Interface_ID": 40065,
+        "event_count": 7,
+        "post_t0_events": 6
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 1,
+        "Interface_ID": 10098,
+        "event_count": 7,
+        "post_t0_events": 6
+      },
+      {
+        "AS_ID": 1,
+        "Gateway_AS_ID": 2,
+        "Interface_ID": 20139,
+        "event_count": 10,
+        "post_t0_events": 9
+      }
+    ],
+    "pairwise_similarity": [
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          4,
+          40011
+        ],
+        "jaccard_all": 0.05,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          1,
+          10134
+        ],
+        "jaccard_all": 0.05,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          2,
+          20084
+        ],
+        "jaccard_all": 0.05,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          3,
+          30002
+        ],
+        "jaccard_all": 0.0526,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          4,
+          40054
+        ],
+        "jaccard_all": 0.0526,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          1,
+          10104
+        ],
+        "jaccard_all": 0.0556,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          2,
+          20070
+        ],
+        "jaccard_all": 0.0556,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          3,
+          30137
+        ],
+        "jaccard_all": 0.0556,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          4,
+          40130
+        ],
+        "jaccard_all": 0.0556,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          1,
+          10076
+        ],
+        "jaccard_all": 0.0556,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          2,
+          20091
+        ],
+        "jaccard_all": 0.0556,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          3,
+          30074
+        ],
+        "jaccard_all": 0.0556,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          4,
+          40059
+        ],
+        "jaccard_all": 0.0556,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          1,
+          10046
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          2,
+          20108
+        ],
+        "jaccard_all": 0.0556,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          3,
+          30103
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          4,
+          40119
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          1,
+          10096
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          2,
+          20052
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          3,
+          30019
+        ],
+        "jaccard_all": 0.0526,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          4,
+          40035
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          1,
+          10117
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          2,
+          20022
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          3,
+          30100
+        ],
+        "jaccard_all": 0.0556,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          4,
+          40049
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          1,
+          10011
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          2,
+          20005
+        ],
+        "jaccard_all": 0.0556,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.0556,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30133
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.05,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          1,
+          10134
+        ],
+        "jaccard_all": 0.0526,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          2,
+          20084
+        ],
+        "jaccard_all": 0.0526,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          3,
+          30002
+        ],
+        "jaccard_all": 0.0556,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          4,
+          40054
+        ],
+        "jaccard_all": 0.0556,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          1,
+          10104
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          2,
+          20070
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          3,
+          30137
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          4,
+          40130
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          1,
+          10076
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          2,
+          20091
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          3,
+          30074
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          4,
+          40059
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          1,
+          10046
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          2,
+          20108
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          3,
+          30103
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          4,
+          40119
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          1,
+          10096
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          2,
+          20052
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          3,
+          30019
+        ],
+        "jaccard_all": 0.0556,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          4,
+          40035
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          1,
+          10117
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          2,
+          20022
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          3,
+          30100
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          4,
+          40049
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          1,
+          10011
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          2,
+          20005
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40011
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.1111,
+        "jaccard_post_t0": 0.0588
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          2,
+          20084
+        ],
+        "jaccard_all": 0.0526,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          3,
+          30002
+        ],
+        "jaccard_all": 0.0556,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          4,
+          40054
+        ],
+        "jaccard_all": 0.0556,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          1,
+          10104
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          2,
+          20070
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          3,
+          30137
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          4,
+          40130
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          1,
+          10076
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          2,
+          20091
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          3,
+          30074
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          4,
+          40059
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          1,
+          10046
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          2,
+          20108
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          3,
+          30103
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          4,
+          40119
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          1,
+          10096
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          2,
+          20052
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          3,
+          30019
+        ],
+        "jaccard_all": 0.0556,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          4,
+          40035
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          1,
+          10117
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          2,
+          20022
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          3,
+          30100
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          4,
+          40049
+        ],
+        "jaccard_all": 0.1429,
+        "jaccard_post_t0": 0.0769
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          1,
+          10011
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          2,
+          20005
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10134
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.1111,
+        "jaccard_post_t0": 0.0588
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          3,
+          30002
+        ],
+        "jaccard_all": 0.0556,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          4,
+          40054
+        ],
+        "jaccard_all": 0.0556,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          1,
+          10104
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          2,
+          20070
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          3,
+          30137
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          4,
+          40130
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          1,
+          10076
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          2,
+          20091
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          3,
+          30074
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          4,
+          40059
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          1,
+          10046
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          2,
+          20108
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          3,
+          30103
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          4,
+          40119
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          1,
+          10096
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          2,
+          20052
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          3,
+          30019
+        ],
+        "jaccard_all": 0.1176,
+        "jaccard_post_t0": 0.0625
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          4,
+          40035
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          1,
+          10117
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          2,
+          20022
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          3,
+          30100
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          4,
+          40049
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          1,
+          10011
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          2,
+          20005
+        ],
+        "jaccard_all": 0.125,
+        "jaccard_post_t0": 0.0667
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20084
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.1111,
+        "jaccard_post_t0": 0.0588
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30002
+        ],
+        "link_b": [
+          1,
+          4,
+          40054
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30002
+        ],
+        "link_b": [
+          1,
+          1,
+          10104
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30002
+        ],
+        "link_b": [
+          1,
+          2,
+          20070
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30002
+        ],
+        "link_b": [
+          1,
+          3,
+          30137
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30002
+        ],
+        "link_b": [
+          1,
+          4,
+          40130
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30002
+        ],
+        "link_b": [
+          1,
+          1,
+          10076
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30002
+        ],
+        "link_b": [
+          1,
+          2,
+          20091
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30002
+        ],
+        "link_b": [
+          1,
+          3,
+          30074
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30002
+        ],
+        "link_b": [
+          1,
+          4,
+          40059
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30002
+        ],
+        "link_b": [
+          1,
+          1,
+          10046
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30002
+        ],
+        "link_b": [
+          1,
+          2,
+          20108
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30002
+        ],
+        "link_b": [
+          1,
+          3,
+          30103
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30002
+        ],
+        "link_b": [
+          1,
+          4,
+          40119
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30002
+        ],
+        "link_b": [
+          1,
+          1,
+          10096
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30002
+        ],
+        "link_b": [
+          1,
+          2,
+          20052
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30002
+        ],
+        "link_b": [
+          1,
+          3,
+          30019
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30002
+        ],
+        "link_b": [
+          1,
+          4,
+          40035
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30002
+        ],
+        "link_b": [
+          1,
+          1,
+          10117
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30002
+        ],
+        "link_b": [
+          1,
+          2,
+          20022
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30002
+        ],
+        "link_b": [
+          1,
+          3,
+          30100
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30002
+        ],
+        "link_b": [
+          1,
+          4,
+          40049
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30002
+        ],
+        "link_b": [
+          1,
+          1,
+          10011
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30002
+        ],
+        "link_b": [
+          1,
+          2,
+          20005
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30002
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30002
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30002
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30002
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.0556,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40054
+        ],
+        "link_b": [
+          1,
+          1,
+          10104
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40054
+        ],
+        "link_b": [
+          1,
+          2,
+          20070
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40054
+        ],
+        "link_b": [
+          1,
+          3,
+          30137
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40054
+        ],
+        "link_b": [
+          1,
+          4,
+          40130
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40054
+        ],
+        "link_b": [
+          1,
+          1,
+          10076
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40054
+        ],
+        "link_b": [
+          1,
+          2,
+          20091
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40054
+        ],
+        "link_b": [
+          1,
+          3,
+          30074
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40054
+        ],
+        "link_b": [
+          1,
+          4,
+          40059
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40054
+        ],
+        "link_b": [
+          1,
+          1,
+          10046
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40054
+        ],
+        "link_b": [
+          1,
+          2,
+          20108
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40054
+        ],
+        "link_b": [
+          1,
+          3,
+          30103
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40054
+        ],
+        "link_b": [
+          1,
+          4,
+          40119
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40054
+        ],
+        "link_b": [
+          1,
+          1,
+          10096
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40054
+        ],
+        "link_b": [
+          1,
+          2,
+          20052
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40054
+        ],
+        "link_b": [
+          1,
+          3,
+          30019
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40054
+        ],
+        "link_b": [
+          1,
+          4,
+          40035
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40054
+        ],
+        "link_b": [
+          1,
+          1,
+          10117
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40054
+        ],
+        "link_b": [
+          1,
+          2,
+          20022
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40054
+        ],
+        "link_b": [
+          1,
+          3,
+          30100
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40054
+        ],
+        "link_b": [
+          1,
+          4,
+          40049
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40054
+        ],
+        "link_b": [
+          1,
+          1,
+          10011
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40054
+        ],
+        "link_b": [
+          1,
+          2,
+          20005
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40054
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40054
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40054
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40054
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.0556,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10104
+        ],
+        "link_b": [
+          1,
+          2,
+          20070
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10104
+        ],
+        "link_b": [
+          1,
+          3,
+          30137
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10104
+        ],
+        "link_b": [
+          1,
+          4,
+          40130
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10104
+        ],
+        "link_b": [
+          1,
+          1,
+          10076
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10104
+        ],
+        "link_b": [
+          1,
+          2,
+          20091
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10104
+        ],
+        "link_b": [
+          1,
+          3,
+          30074
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10104
+        ],
+        "link_b": [
+          1,
+          4,
+          40059
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10104
+        ],
+        "link_b": [
+          1,
+          1,
+          10046
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10104
+        ],
+        "link_b": [
+          1,
+          2,
+          20108
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10104
+        ],
+        "link_b": [
+          1,
+          3,
+          30103
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10104
+        ],
+        "link_b": [
+          1,
+          4,
+          40119
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10104
+        ],
+        "link_b": [
+          1,
+          1,
+          10096
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10104
+        ],
+        "link_b": [
+          1,
+          2,
+          20052
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10104
+        ],
+        "link_b": [
+          1,
+          3,
+          30019
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10104
+        ],
+        "link_b": [
+          1,
+          4,
+          40035
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10104
+        ],
+        "link_b": [
+          1,
+          1,
+          10117
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10104
+        ],
+        "link_b": [
+          1,
+          2,
+          20022
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10104
+        ],
+        "link_b": [
+          1,
+          3,
+          30100
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10104
+        ],
+        "link_b": [
+          1,
+          4,
+          40049
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10104
+        ],
+        "link_b": [
+          1,
+          1,
+          10011
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10104
+        ],
+        "link_b": [
+          1,
+          2,
+          20005
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10104
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10104
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10104
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10104
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20070
+        ],
+        "link_b": [
+          1,
+          3,
+          30137
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20070
+        ],
+        "link_b": [
+          1,
+          4,
+          40130
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20070
+        ],
+        "link_b": [
+          1,
+          1,
+          10076
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20070
+        ],
+        "link_b": [
+          1,
+          2,
+          20091
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20070
+        ],
+        "link_b": [
+          1,
+          3,
+          30074
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20070
+        ],
+        "link_b": [
+          1,
+          4,
+          40059
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20070
+        ],
+        "link_b": [
+          1,
+          1,
+          10046
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20070
+        ],
+        "link_b": [
+          1,
+          2,
+          20108
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20070
+        ],
+        "link_b": [
+          1,
+          3,
+          30103
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20070
+        ],
+        "link_b": [
+          1,
+          4,
+          40119
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20070
+        ],
+        "link_b": [
+          1,
+          1,
+          10096
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20070
+        ],
+        "link_b": [
+          1,
+          2,
+          20052
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20070
+        ],
+        "link_b": [
+          1,
+          3,
+          30019
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20070
+        ],
+        "link_b": [
+          1,
+          4,
+          40035
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20070
+        ],
+        "link_b": [
+          1,
+          1,
+          10117
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20070
+        ],
+        "link_b": [
+          1,
+          2,
+          20022
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20070
+        ],
+        "link_b": [
+          1,
+          3,
+          30100
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20070
+        ],
+        "link_b": [
+          1,
+          4,
+          40049
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20070
+        ],
+        "link_b": [
+          1,
+          1,
+          10011
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20070
+        ],
+        "link_b": [
+          1,
+          2,
+          20005
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20070
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20070
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20070
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20070
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30137
+        ],
+        "link_b": [
+          1,
+          4,
+          40130
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30137
+        ],
+        "link_b": [
+          1,
+          1,
+          10076
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30137
+        ],
+        "link_b": [
+          1,
+          2,
+          20091
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30137
+        ],
+        "link_b": [
+          1,
+          3,
+          30074
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30137
+        ],
+        "link_b": [
+          1,
+          4,
+          40059
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30137
+        ],
+        "link_b": [
+          1,
+          1,
+          10046
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30137
+        ],
+        "link_b": [
+          1,
+          2,
+          20108
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30137
+        ],
+        "link_b": [
+          1,
+          3,
+          30103
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30137
+        ],
+        "link_b": [
+          1,
+          4,
+          40119
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30137
+        ],
+        "link_b": [
+          1,
+          1,
+          10096
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30137
+        ],
+        "link_b": [
+          1,
+          2,
+          20052
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30137
+        ],
+        "link_b": [
+          1,
+          3,
+          30019
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30137
+        ],
+        "link_b": [
+          1,
+          4,
+          40035
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30137
+        ],
+        "link_b": [
+          1,
+          1,
+          10117
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30137
+        ],
+        "link_b": [
+          1,
+          2,
+          20022
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30137
+        ],
+        "link_b": [
+          1,
+          3,
+          30100
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30137
+        ],
+        "link_b": [
+          1,
+          4,
+          40049
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30137
+        ],
+        "link_b": [
+          1,
+          1,
+          10011
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30137
+        ],
+        "link_b": [
+          1,
+          2,
+          20005
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30137
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30137
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.1538,
+        "jaccard_post_t0": 0.0833
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30137
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30137
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40130
+        ],
+        "link_b": [
+          1,
+          1,
+          10076
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40130
+        ],
+        "link_b": [
+          1,
+          2,
+          20091
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40130
+        ],
+        "link_b": [
+          1,
+          3,
+          30074
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40130
+        ],
+        "link_b": [
+          1,
+          4,
+          40059
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40130
+        ],
+        "link_b": [
+          1,
+          1,
+          10046
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40130
+        ],
+        "link_b": [
+          1,
+          2,
+          20108
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40130
+        ],
+        "link_b": [
+          1,
+          3,
+          30103
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40130
+        ],
+        "link_b": [
+          1,
+          4,
+          40119
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40130
+        ],
+        "link_b": [
+          1,
+          1,
+          10096
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40130
+        ],
+        "link_b": [
+          1,
+          2,
+          20052
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40130
+        ],
+        "link_b": [
+          1,
+          3,
+          30019
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40130
+        ],
+        "link_b": [
+          1,
+          4,
+          40035
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40130
+        ],
+        "link_b": [
+          1,
+          1,
+          10117
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40130
+        ],
+        "link_b": [
+          1,
+          2,
+          20022
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40130
+        ],
+        "link_b": [
+          1,
+          3,
+          30100
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40130
+        ],
+        "link_b": [
+          1,
+          4,
+          40049
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40130
+        ],
+        "link_b": [
+          1,
+          1,
+          10011
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40130
+        ],
+        "link_b": [
+          1,
+          2,
+          20005
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40130
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.1429,
+        "jaccard_post_t0": 0.0769
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40130
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40130
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40130
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10076
+        ],
+        "link_b": [
+          1,
+          2,
+          20091
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10076
+        ],
+        "link_b": [
+          1,
+          3,
+          30074
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10076
+        ],
+        "link_b": [
+          1,
+          4,
+          40059
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10076
+        ],
+        "link_b": [
+          1,
+          1,
+          10046
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10076
+        ],
+        "link_b": [
+          1,
+          2,
+          20108
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10076
+        ],
+        "link_b": [
+          1,
+          3,
+          30103
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10076
+        ],
+        "link_b": [
+          1,
+          4,
+          40119
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10076
+        ],
+        "link_b": [
+          1,
+          1,
+          10096
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10076
+        ],
+        "link_b": [
+          1,
+          2,
+          20052
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10076
+        ],
+        "link_b": [
+          1,
+          3,
+          30019
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10076
+        ],
+        "link_b": [
+          1,
+          4,
+          40035
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10076
+        ],
+        "link_b": [
+          1,
+          1,
+          10117
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10076
+        ],
+        "link_b": [
+          1,
+          2,
+          20022
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10076
+        ],
+        "link_b": [
+          1,
+          3,
+          30100
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10076
+        ],
+        "link_b": [
+          1,
+          4,
+          40049
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10076
+        ],
+        "link_b": [
+          1,
+          1,
+          10011
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10076
+        ],
+        "link_b": [
+          1,
+          2,
+          20005
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10076
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10076
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10076
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10076
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20091
+        ],
+        "link_b": [
+          1,
+          3,
+          30074
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20091
+        ],
+        "link_b": [
+          1,
+          4,
+          40059
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20091
+        ],
+        "link_b": [
+          1,
+          1,
+          10046
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20091
+        ],
+        "link_b": [
+          1,
+          2,
+          20108
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20091
+        ],
+        "link_b": [
+          1,
+          3,
+          30103
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20091
+        ],
+        "link_b": [
+          1,
+          4,
+          40119
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20091
+        ],
+        "link_b": [
+          1,
+          1,
+          10096
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20091
+        ],
+        "link_b": [
+          1,
+          2,
+          20052
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20091
+        ],
+        "link_b": [
+          1,
+          3,
+          30019
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20091
+        ],
+        "link_b": [
+          1,
+          4,
+          40035
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20091
+        ],
+        "link_b": [
+          1,
+          1,
+          10117
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20091
+        ],
+        "link_b": [
+          1,
+          2,
+          20022
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20091
+        ],
+        "link_b": [
+          1,
+          3,
+          30100
+        ],
+        "jaccard_all": 0.1429,
+        "jaccard_post_t0": 0.0769
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20091
+        ],
+        "link_b": [
+          1,
+          4,
+          40049
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20091
+        ],
+        "link_b": [
+          1,
+          1,
+          10011
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20091
+        ],
+        "link_b": [
+          1,
+          2,
+          20005
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20091
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20091
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20091
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20091
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30074
+        ],
+        "link_b": [
+          1,
+          4,
+          40059
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30074
+        ],
+        "link_b": [
+          1,
+          1,
+          10046
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30074
+        ],
+        "link_b": [
+          1,
+          2,
+          20108
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30074
+        ],
+        "link_b": [
+          1,
+          3,
+          30103
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30074
+        ],
+        "link_b": [
+          1,
+          4,
+          40119
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30074
+        ],
+        "link_b": [
+          1,
+          1,
+          10096
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30074
+        ],
+        "link_b": [
+          1,
+          2,
+          20052
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30074
+        ],
+        "link_b": [
+          1,
+          3,
+          30019
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30074
+        ],
+        "link_b": [
+          1,
+          4,
+          40035
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30074
+        ],
+        "link_b": [
+          1,
+          1,
+          10117
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30074
+        ],
+        "link_b": [
+          1,
+          2,
+          20022
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30074
+        ],
+        "link_b": [
+          1,
+          3,
+          30100
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30074
+        ],
+        "link_b": [
+          1,
+          4,
+          40049
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30074
+        ],
+        "link_b": [
+          1,
+          1,
+          10011
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30074
+        ],
+        "link_b": [
+          1,
+          2,
+          20005
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30074
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30074
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30074
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30074
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40059
+        ],
+        "link_b": [
+          1,
+          1,
+          10046
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40059
+        ],
+        "link_b": [
+          1,
+          2,
+          20108
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40059
+        ],
+        "link_b": [
+          1,
+          3,
+          30103
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40059
+        ],
+        "link_b": [
+          1,
+          4,
+          40119
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40059
+        ],
+        "link_b": [
+          1,
+          1,
+          10096
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40059
+        ],
+        "link_b": [
+          1,
+          2,
+          20052
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40059
+        ],
+        "link_b": [
+          1,
+          3,
+          30019
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40059
+        ],
+        "link_b": [
+          1,
+          4,
+          40035
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40059
+        ],
+        "link_b": [
+          1,
+          1,
+          10117
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40059
+        ],
+        "link_b": [
+          1,
+          2,
+          20022
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40059
+        ],
+        "link_b": [
+          1,
+          3,
+          30100
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40059
+        ],
+        "link_b": [
+          1,
+          4,
+          40049
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40059
+        ],
+        "link_b": [
+          1,
+          1,
+          10011
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40059
+        ],
+        "link_b": [
+          1,
+          2,
+          20005
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40059
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40059
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40059
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40059
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10046
+        ],
+        "link_b": [
+          1,
+          2,
+          20108
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10046
+        ],
+        "link_b": [
+          1,
+          3,
+          30103
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10046
+        ],
+        "link_b": [
+          1,
+          4,
+          40119
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10046
+        ],
+        "link_b": [
+          1,
+          1,
+          10096
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10046
+        ],
+        "link_b": [
+          1,
+          2,
+          20052
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10046
+        ],
+        "link_b": [
+          1,
+          3,
+          30019
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10046
+        ],
+        "link_b": [
+          1,
+          4,
+          40035
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10046
+        ],
+        "link_b": [
+          1,
+          1,
+          10117
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10046
+        ],
+        "link_b": [
+          1,
+          2,
+          20022
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10046
+        ],
+        "link_b": [
+          1,
+          3,
+          30100
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10046
+        ],
+        "link_b": [
+          1,
+          4,
+          40049
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10046
+        ],
+        "link_b": [
+          1,
+          1,
+          10011
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10046
+        ],
+        "link_b": [
+          1,
+          2,
+          20005
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10046
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10046
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10046
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.1667,
+        "jaccard_post_t0": 0.0909
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10046
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20108
+        ],
+        "link_b": [
+          1,
+          3,
+          30103
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20108
+        ],
+        "link_b": [
+          1,
+          4,
+          40119
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20108
+        ],
+        "link_b": [
+          1,
+          1,
+          10096
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20108
+        ],
+        "link_b": [
+          1,
+          2,
+          20052
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20108
+        ],
+        "link_b": [
+          1,
+          3,
+          30019
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20108
+        ],
+        "link_b": [
+          1,
+          4,
+          40035
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20108
+        ],
+        "link_b": [
+          1,
+          1,
+          10117
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20108
+        ],
+        "link_b": [
+          1,
+          2,
+          20022
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20108
+        ],
+        "link_b": [
+          1,
+          3,
+          30100
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20108
+        ],
+        "link_b": [
+          1,
+          4,
+          40049
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20108
+        ],
+        "link_b": [
+          1,
+          1,
+          10011
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20108
+        ],
+        "link_b": [
+          1,
+          2,
+          20005
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20108
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20108
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20108
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20108
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30103
+        ],
+        "link_b": [
+          1,
+          4,
+          40119
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30103
+        ],
+        "link_b": [
+          1,
+          1,
+          10096
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30103
+        ],
+        "link_b": [
+          1,
+          2,
+          20052
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30103
+        ],
+        "link_b": [
+          1,
+          3,
+          30019
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30103
+        ],
+        "link_b": [
+          1,
+          4,
+          40035
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30103
+        ],
+        "link_b": [
+          1,
+          1,
+          10117
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30103
+        ],
+        "link_b": [
+          1,
+          2,
+          20022
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30103
+        ],
+        "link_b": [
+          1,
+          3,
+          30100
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30103
+        ],
+        "link_b": [
+          1,
+          4,
+          40049
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30103
+        ],
+        "link_b": [
+          1,
+          1,
+          10011
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30103
+        ],
+        "link_b": [
+          1,
+          2,
+          20005
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30103
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30103
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30103
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30103
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40119
+        ],
+        "link_b": [
+          1,
+          1,
+          10096
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40119
+        ],
+        "link_b": [
+          1,
+          2,
+          20052
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40119
+        ],
+        "link_b": [
+          1,
+          3,
+          30019
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40119
+        ],
+        "link_b": [
+          1,
+          4,
+          40035
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40119
+        ],
+        "link_b": [
+          1,
+          1,
+          10117
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40119
+        ],
+        "link_b": [
+          1,
+          2,
+          20022
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40119
+        ],
+        "link_b": [
+          1,
+          3,
+          30100
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40119
+        ],
+        "link_b": [
+          1,
+          4,
+          40049
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40119
+        ],
+        "link_b": [
+          1,
+          1,
+          10011
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40119
+        ],
+        "link_b": [
+          1,
+          2,
+          20005
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40119
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40119
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40119
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40119
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10096
+        ],
+        "link_b": [
+          1,
+          2,
+          20052
+        ],
+        "jaccard_all": 0.0909,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10096
+        ],
+        "link_b": [
+          1,
+          3,
+          30019
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10096
+        ],
+        "link_b": [
+          1,
+          4,
+          40035
+        ],
+        "jaccard_all": 0.0909,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10096
+        ],
+        "link_b": [
+          1,
+          1,
+          10117
+        ],
+        "jaccard_all": 0.0909,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10096
+        ],
+        "link_b": [
+          1,
+          2,
+          20022
+        ],
+        "jaccard_all": 0.0909,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10096
+        ],
+        "link_b": [
+          1,
+          3,
+          30100
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10096
+        ],
+        "link_b": [
+          1,
+          4,
+          40049
+        ],
+        "jaccard_all": 0.0909,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10096
+        ],
+        "link_b": [
+          1,
+          1,
+          10011
+        ],
+        "jaccard_all": 0.0909,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10096
+        ],
+        "link_b": [
+          1,
+          2,
+          20005
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10096
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10096
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10096
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10096
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20052
+        ],
+        "link_b": [
+          1,
+          3,
+          30019
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20052
+        ],
+        "link_b": [
+          1,
+          4,
+          40035
+        ],
+        "jaccard_all": 0.0909,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20052
+        ],
+        "link_b": [
+          1,
+          1,
+          10117
+        ],
+        "jaccard_all": 0.0909,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20052
+        ],
+        "link_b": [
+          1,
+          2,
+          20022
+        ],
+        "jaccard_all": 0.0909,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20052
+        ],
+        "link_b": [
+          1,
+          3,
+          30100
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20052
+        ],
+        "link_b": [
+          1,
+          4,
+          40049
+        ],
+        "jaccard_all": 0.0909,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20052
+        ],
+        "link_b": [
+          1,
+          1,
+          10011
+        ],
+        "jaccard_all": 0.0909,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20052
+        ],
+        "link_b": [
+          1,
+          2,
+          20005
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20052
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20052
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20052
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20052
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30019
+        ],
+        "link_b": [
+          1,
+          4,
+          40035
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30019
+        ],
+        "link_b": [
+          1,
+          1,
+          10117
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30019
+        ],
+        "link_b": [
+          1,
+          2,
+          20022
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30019
+        ],
+        "link_b": [
+          1,
+          3,
+          30100
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30019
+        ],
+        "link_b": [
+          1,
+          4,
+          40049
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30019
+        ],
+        "link_b": [
+          1,
+          1,
+          10011
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30019
+        ],
+        "link_b": [
+          1,
+          2,
+          20005
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30019
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30019
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30019
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.1429,
+        "jaccard_post_t0": 0.0769
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30019
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.0556,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40035
+        ],
+        "link_b": [
+          1,
+          1,
+          10117
+        ],
+        "jaccard_all": 0.0909,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40035
+        ],
+        "link_b": [
+          1,
+          2,
+          20022
+        ],
+        "jaccard_all": 0.0909,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40035
+        ],
+        "link_b": [
+          1,
+          3,
+          30100
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40035
+        ],
+        "link_b": [
+          1,
+          4,
+          40049
+        ],
+        "jaccard_all": 0.0909,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40035
+        ],
+        "link_b": [
+          1,
+          1,
+          10011
+        ],
+        "jaccard_all": 0.0909,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40035
+        ],
+        "link_b": [
+          1,
+          2,
+          20005
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40035
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40035
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40035
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40035
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10117
+        ],
+        "link_b": [
+          1,
+          2,
+          20022
+        ],
+        "jaccard_all": 0.0909,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10117
+        ],
+        "link_b": [
+          1,
+          3,
+          30100
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10117
+        ],
+        "link_b": [
+          1,
+          4,
+          40049
+        ],
+        "jaccard_all": 0.0909,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10117
+        ],
+        "link_b": [
+          1,
+          1,
+          10011
+        ],
+        "jaccard_all": 0.0909,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10117
+        ],
+        "link_b": [
+          1,
+          2,
+          20005
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10117
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10117
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10117
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10117
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20022
+        ],
+        "link_b": [
+          1,
+          3,
+          30100
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20022
+        ],
+        "link_b": [
+          1,
+          4,
+          40049
+        ],
+        "jaccard_all": 0.0909,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20022
+        ],
+        "link_b": [
+          1,
+          1,
+          10011
+        ],
+        "jaccard_all": 0.0909,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20022
+        ],
+        "link_b": [
+          1,
+          2,
+          20005
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20022
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20022
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20022
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20022
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30100
+        ],
+        "link_b": [
+          1,
+          4,
+          40049
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30100
+        ],
+        "link_b": [
+          1,
+          1,
+          10011
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30100
+        ],
+        "link_b": [
+          1,
+          2,
+          20005
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30100
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30100
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30100
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30100
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40049
+        ],
+        "link_b": [
+          1,
+          1,
+          10011
+        ],
+        "jaccard_all": 0.0909,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40049
+        ],
+        "link_b": [
+          1,
+          2,
+          20005
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40049
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40049
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40049
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40049
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10011
+        ],
+        "link_b": [
+          1,
+          2,
+          20005
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10011
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10011
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10011
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0833,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10011
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20005
+        ],
+        "link_b": [
+          1,
+          3,
+          30083
+        ],
+        "jaccard_all": 0.0667,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20005
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20005
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          2,
+          20005
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30083
+        ],
+        "link_b": [
+          1,
+          4,
+          40065
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30083
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0714,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          3,
+          30083
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.0588,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40065
+        ],
+        "link_b": [
+          1,
+          1,
+          10098
+        ],
+        "jaccard_all": 0.0769,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          4,
+          40065
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      },
+      {
+        "link_a": [
+          1,
+          1,
+          10098
+        ],
+        "link_b": [
+          1,
+          2,
+          20139
+        ],
+        "jaccard_all": 0.0625,
+        "jaccard_post_t0": 0.0
+      }
+    ],
+    "total_events": 251
+  },
+  "events": [
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40119"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20052"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10096"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30074"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10134"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30133"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40035"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10117"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40049"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20005"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30137"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40011"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10011"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20091"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30083"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40054"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40065"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20139"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10104"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40059"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10046"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30100"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20108"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10098"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30019"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10076"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20022"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30002"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40130"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30103"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20070"
+      ]
+    },
+    {
+      "time": "0s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20084"
+      ]
+    },
+    {
+      "time": "20s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20091"
+      ]
+    },
+    {
+      "time": "50s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30100"
+      ]
+    },
+    {
+      "time": "80s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10011"
+      ]
+    },
+    {
+      "time": "90s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30002"
+      ]
+    },
+    {
+      "time": "100s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20005"
+      ]
+    },
+    {
+      "time": "100s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20084"
+      ]
+    },
+    {
+      "time": "140s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30019"
+      ]
+    },
+    {
+      "time": "150s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30074"
+      ]
+    },
+    {
+      "time": "180s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30133"
+      ]
+    },
+    {
+      "time": "190s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30019"
+      ]
+    },
+    {
+      "time": "310s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40035"
+      ]
+    },
+    {
+      "time": "360s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10076"
+      ]
+    },
+    {
+      "time": "390s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20108"
+      ]
+    },
+    {
+      "time": "410s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40049"
+      ]
+    },
+    {
+      "time": "420s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10134"
+      ]
+    },
+    {
+      "time": "420s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20139"
+      ]
+    },
+    {
+      "time": "440s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20052"
+      ]
+    },
+    {
+      "time": "500s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30137"
+      ]
+    },
+    {
+      "time": "510s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10096"
+      ]
+    },
+    {
+      "time": "570s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10104"
+      ]
+    },
+    {
+      "time": "600s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40130"
+      ]
+    },
+    {
+      "time": "640s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30083"
+      ]
+    },
+    {
+      "time": "730s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20022"
+      ]
+    },
+    {
+      "time": "820s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30002"
+      ]
+    },
+    {
+      "time": "820s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10117"
+      ]
+    },
+    {
+      "time": "850s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40035"
+      ]
+    },
+    {
+      "time": "990s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40011"
+      ]
+    },
+    {
+      "time": "1040s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30133"
+      ]
+    },
+    {
+      "time": "1090s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40035"
+      ]
+    },
+    {
+      "time": "1240s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20070"
+      ]
+    },
+    {
+      "time": "1280s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20084"
+      ]
+    },
+    {
+      "time": "1310s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20084"
+      ]
+    },
+    {
+      "time": "1540s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30103"
+      ]
+    },
+    {
+      "time": "1570s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20139"
+      ]
+    },
+    {
+      "time": "1710s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20139"
+      ]
+    },
+    {
+      "time": "1740s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40119"
+      ]
+    },
+    {
+      "time": "1770s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40119"
+      ]
+    },
+    {
+      "time": "1800s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10096"
+      ]
+    },
+    {
+      "time": "1810s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30133"
+      ]
+    },
+    {
+      "time": "1960s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20070"
+      ]
+    },
+    {
+      "time": "1960s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10098"
+      ]
+    },
+    {
+      "time": "2070s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30074"
+      ]
+    },
+    {
+      "time": "2110s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40065"
+      ]
+    },
+    {
+      "time": "2240s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40059"
+      ]
+    },
+    {
+      "time": "2250s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10046"
+      ]
+    },
+    {
+      "time": "2400s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40054"
+      ]
+    },
+    {
+      "time": "2440s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40011"
+      ]
+    },
+    {
+      "time": "2450s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20005"
+      ]
+    },
+    {
+      "time": "2590s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40054"
+      ]
+    },
+    {
+      "time": "2640s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10076"
+      ]
+    },
+    {
+      "time": "2650s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20091"
+      ]
+    },
+    {
+      "time": "2680s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30100"
+      ]
+    },
+    {
+      "time": "2750s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30083"
+      ]
+    },
+    {
+      "time": "2750s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40054"
+      ]
+    },
+    {
+      "time": "2770s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30103"
+      ]
+    },
+    {
+      "time": "2800s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30137"
+      ]
+    },
+    {
+      "time": "2840s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40049"
+      ]
+    },
+    {
+      "time": "2910s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10134"
+      ]
+    },
+    {
+      "time": "2910s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20091"
+      ]
+    },
+    {
+      "time": "2920s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30100"
+      ]
+    },
+    {
+      "time": "2940s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40065"
+      ]
+    },
+    {
+      "time": "2960s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40059"
+      ]
+    },
+    {
+      "time": "2970s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30002"
+      ]
+    },
+    {
+      "time": "2980s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40130"
+      ]
+    },
+    {
+      "time": "2980s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20005"
+      ]
+    },
+    {
+      "time": "3020s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30019"
+      ]
+    },
+    {
+      "time": "3040s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30074"
+      ]
+    },
+    {
+      "time": "3050s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30019"
+      ]
+    },
+    {
+      "time": "3050s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10098"
+      ]
+    },
+    {
+      "time": "3130s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40054"
+      ]
+    },
+    {
+      "time": "3140s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20108"
+      ]
+    },
+    {
+      "time": "3220s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10076"
+      ]
+    },
+    {
+      "time": "3250s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10046"
+      ]
+    },
+    {
+      "time": "3280s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20108"
+      ]
+    },
+    {
+      "time": "3310s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20022"
+      ]
+    },
+    {
+      "time": "3310s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10134"
+      ]
+    },
+    {
+      "time": "3310s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40049"
+      ]
+    },
+    {
+      "time": "3380s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10096"
+      ]
+    },
+    {
+      "time": "3410s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10104"
+      ]
+    },
+    {
+      "time": "3410s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30137"
+      ]
+    },
+    {
+      "time": "3460s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10104"
+      ]
+    },
+    {
+      "time": "3480s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10117"
+      ]
+    },
+    {
+      "time": "3520s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40130"
+      ]
+    },
+    {
+      "time": "3540s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30083"
+      ]
+    },
+    {
+      "time": "3560s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40035"
+      ]
+    },
+    {
+      "time": "3610s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20022"
+      ]
+    },
+    {
+      "time": "3690s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10117"
+      ]
+    },
+    {
+      "time": "3700s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30002"
+      ]
+    },
+    {
+      "time": "3740s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40011"
+      ]
+    },
+    {
+      "time": "3950s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40035"
+      ]
+    },
+    {
+      "time": "3960s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30133"
+      ]
+    },
+    {
+      "time": "4140s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20070"
+      ]
+    },
+    {
+      "time": "4190s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20084"
+      ]
+    },
+    {
+      "time": "4200s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20084"
+      ]
+    },
+    {
+      "time": "4360s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10134"
+      ]
+    },
+    {
+      "time": "4410s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30103"
+      ]
+    },
+    {
+      "time": "4480s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20139"
+      ]
+    },
+    {
+      "time": "4600s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10011"
+      ]
+    },
+    {
+      "time": "4620s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20139"
+      ]
+    },
+    {
+      "time": "4630s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10134"
+      ]
+    },
+    {
+      "time": "4640s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40119"
+      ]
+    },
+    {
+      "time": "4670s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10096"
+      ]
+    },
+    {
+      "time": "4700s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30133"
+      ]
+    },
+    {
+      "time": "4710s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40119"
+      ]
+    },
+    {
+      "time": "4830s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10098"
+      ]
+    },
+    {
+      "time": "4950s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30074"
+      ]
+    },
+    {
+      "time": "5010s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40065"
+      ]
+    },
+    {
+      "time": "5110s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40059"
+      ]
+    },
+    {
+      "time": "5120s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10046"
+      ]
+    },
+    {
+      "time": "5140s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10134"
+      ]
+    },
+    {
+      "time": "5230s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20084"
+      ]
+    },
+    {
+      "time": "5240s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20070"
+      ]
+    },
+    {
+      "time": "5280s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10046"
+      ]
+    },
+    {
+      "time": "5300s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40054"
+      ]
+    },
+    {
+      "time": "5320s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30133"
+      ]
+    },
+    {
+      "time": "5500s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20005"
+      ]
+    },
+    {
+      "time": "5540s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10076"
+      ]
+    },
+    {
+      "time": "5580s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30100"
+      ]
+    },
+    {
+      "time": "5630s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20091"
+      ]
+    },
+    {
+      "time": "5660s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30103"
+      ]
+    },
+    {
+      "time": "5720s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40065"
+      ]
+    },
+    {
+      "time": "5720s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30137"
+      ]
+    },
+    {
+      "time": "5770s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20052"
+      ]
+    },
+    {
+      "time": "5800s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30100"
+      ]
+    },
+    {
+      "time": "5800s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20091"
+      ]
+    },
+    {
+      "time": "5840s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30002"
+      ]
+    },
+    {
+      "time": "5850s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40059"
+      ]
+    },
+    {
+      "time": "5850s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20005"
+      ]
+    },
+    {
+      "time": "5860s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10011"
+      ]
+    },
+    {
+      "time": "5870s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40130"
+      ]
+    },
+    {
+      "time": "5890s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30019"
+      ]
+    },
+    {
+      "time": "5890s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20084"
+      ]
+    },
+    {
+      "time": "5910s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10098"
+      ]
+    },
+    {
+      "time": "5930s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30019"
+      ]
+    },
+    {
+      "time": "5930s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30074"
+      ]
+    },
+    {
+      "time": "5980s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30133"
+      ]
+    },
+    {
+      "time": "6020s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20108"
+      ]
+    },
+    {
+      "time": "6060s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10104"
+      ]
+    },
+    {
+      "time": "6090s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10076"
+      ]
+    },
+    {
+      "time": "6100s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30083"
+      ]
+    },
+    {
+      "time": "6150s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40049"
+      ]
+    },
+    {
+      "time": "6150s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20052"
+      ]
+    },
+    {
+      "time": "6160s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10096"
+      ]
+    },
+    {
+      "time": "6170s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40049"
+      ]
+    },
+    {
+      "time": "6180s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20108"
+      ]
+    },
+    {
+      "time": "6200s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10134"
+      ]
+    },
+    {
+      "time": "6220s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40011"
+      ]
+    },
+    {
+      "time": "6320s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30002"
+      ]
+    },
+    {
+      "time": "6330s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30137"
+      ]
+    },
+    {
+      "time": "6340s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10104"
+      ]
+    },
+    {
+      "time": "6420s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40059"
+      ]
+    },
+    {
+      "time": "6430s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40130"
+      ]
+    },
+    {
+      "time": "6430s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30083"
+      ]
+    },
+    {
+      "time": "6510s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40011"
+      ]
+    },
+    {
+      "time": "6550s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40054"
+      ]
+    },
+    {
+      "time": "6920s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30133"
+      ]
+    },
+    {
+      "time": "7030s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20070"
+      ]
+    },
+    {
+      "time": "7160s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10134"
+      ]
+    },
+    {
+      "time": "7280s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30133"
+      ]
+    },
+    {
+      "time": "7290s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30103"
+      ]
+    },
+    {
+      "time": "7310s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20084"
+      ]
+    },
+    {
+      "time": "7390s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20139"
+      ]
+    },
+    {
+      "time": "7520s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20084"
+      ]
+    },
+    {
+      "time": "7520s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20139"
+      ]
+    },
+    {
+      "time": "7540s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40119"
+      ]
+    },
+    {
+      "time": "7550s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10134"
+      ]
+    },
+    {
+      "time": "7630s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40119"
+      ]
+    },
+    {
+      "time": "7680s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10011"
+      ]
+    },
+    {
+      "time": "7700s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10098"
+      ]
+    },
+    {
+      "time": "7810s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40011"
+      ]
+    },
+    {
+      "time": "7810s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20139"
+      ]
+    },
+    {
+      "time": "7830s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30074"
+      ]
+    },
+    {
+      "time": "7900s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40065"
+      ]
+    },
+    {
+      "time": "7990s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10046"
+      ]
+    },
+    {
+      "time": "8070s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20070"
+      ]
+    },
+    {
+      "time": "8080s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40011"
+      ]
+    },
+    {
+      "time": "8190s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40054"
+      ]
+    },
+    {
+      "time": "8400s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20091"
+      ]
+    },
+    {
+      "time": "8410s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20005"
+      ]
+    },
+    {
+      "time": "8430s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10076"
+      ]
+    },
+    {
+      "time": "8460s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10104"
+      ]
+    },
+    {
+      "time": "8480s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30100"
+      ]
+    },
+    {
+      "time": "8510s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30103"
+      ]
+    },
+    {
+      "time": "8600s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40065"
+      ]
+    },
+    {
+      "time": "8660s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20052"
+      ]
+    },
+    {
+      "time": "8680s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30137"
+      ]
+    },
+    {
+      "time": "8680s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30100"
+      ]
+    },
+    {
+      "time": "8690s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20091"
+      ]
+    },
+    {
+      "time": "8710s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30002"
+      ]
+    },
+    {
+      "time": "8720s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20005"
+      ]
+    },
+    {
+      "time": "8750s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10011"
+      ]
+    },
+    {
+      "time": "8760s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30019"
+      ]
+    },
+    {
+      "time": "8770s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10098"
+      ]
+    },
+    {
+      "time": "8770s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10046"
+      ]
+    },
+    {
+      "time": "8800s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40059"
+      ]
+    },
+    {
+      "time": "8810s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30019"
+      ]
+    },
+    {
+      "time": "8810s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30074"
+      ]
+    },
+    {
+      "time": "8820s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40130"
+      ]
+    },
+    {
+      "time": "8890s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20022"
+      ]
+    },
+    {
+      "time": "8910s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "2",
+        "20108"
+      ]
+    },
+    {
+      "time": "8920s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40054"
+      ]
+    },
+    {
+      "time": "8960s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10076"
+      ]
+    },
+    {
+      "time": "8990s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30083"
+      ]
+    },
+    {
+      "time": "9010s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20052"
+      ]
+    },
+    {
+      "time": "9060s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40059"
+      ]
+    },
+    {
+      "time": "9070s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20108"
+      ]
+    },
+    {
+      "time": "9110s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "4",
+        "40011"
+      ]
+    },
+    {
+      "time": "9110s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20139"
+      ]
+    },
+    {
+      "time": "9170s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40011"
+      ]
+    },
+    {
+      "time": "9200s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "1",
+        "10117"
+      ]
+    },
+    {
+      "time": "9210s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10117"
+      ]
+    },
+    {
+      "time": "9230s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "1",
+        "10104"
+      ]
+    },
+    {
+      "time": "9250s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30137"
+      ]
+    },
+    {
+      "time": "9320s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30002"
+      ]
+    },
+    {
+      "time": "9330s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "3",
+        "30083"
+      ]
+    },
+    {
+      "time": "9340s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "4",
+        "40130"
+      ]
+    },
+    {
+      "time": "9380s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20022"
+      ]
+    },
+    {
+      "time": "9840s",
+      "type": "link_up",
+      "args": [
+        "1",
+        "3",
+        "30133"
+      ]
+    },
+    {
+      "time": "9930s",
+      "type": "link_down",
+      "args": [
+        "1",
+        "2",
+        "20070"
+      ]
+    }
+  ]
+}

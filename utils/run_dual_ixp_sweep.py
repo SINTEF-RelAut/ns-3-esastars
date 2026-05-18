@@ -26,6 +26,22 @@ from pathlib import Path
 from typing import List, Tuple
 
 
+DEFAULT_STOCHASTIC_LATENCY = {
+    "enabled": True,
+    "R_eff_m": 1_400_000.0,
+    "alpha": 1.3,
+    "mu_link_s": 5.5e-3,
+    "sigma_link_s": 1.2e-3,
+    "delta_s": 0.4e-3,
+    "beta": 0.08,
+    "omega_rad_s": 2.0 * 3.141592653589793 / 1500.0,
+    "R_L_m": 600_000.0,
+    "R_M_m": 6_000_000.0,
+    "P": 6,
+    "N_p": 12,
+}
+
+
 @dataclass
 class SweepPoint:
     """A single sweep configuration."""
@@ -83,6 +99,7 @@ def generate_scion_config(
     output_path: Path,
     beacon_period_s: int,
     run_prefix: str,
+    stochastic_latency: dict[str, object],
 ) -> None:
     """Write a SCION config derived from template with beacon_period substituted.
 
@@ -137,6 +154,27 @@ def generate_scion_config(
         r"(      output:\s*)build/[^/\n]+/(scion_probe_\S+\.csv)",
         rf"\g<1>build/{run_prefix}/\g<2>",
         text,
+    )
+
+    text = re.sub(
+        r"(?ms)^stochastic_latency_model:\n(?:  .*\n)*?(?=^[^ \n]|\Z)",
+        (
+            "stochastic_latency_model:\n"
+            f"  enabled: {'true' if stochastic_latency['enabled'] else 'false'}\n"
+            f"  R_eff_m: {stochastic_latency['R_eff_m']}\n"
+            f"  alpha: {stochastic_latency['alpha']}\n"
+            f"  mu_link_s: {stochastic_latency['mu_link_s']}\n"
+            f"  sigma_link_s: {stochastic_latency['sigma_link_s']}\n"
+            f"  delta_s: {stochastic_latency['delta_s']}\n"
+            f"  beta: {stochastic_latency['beta']}\n"
+            f"  omega_rad_s: {stochastic_latency['omega_rad_s']}\n"
+            f"  R_L_m: {stochastic_latency['R_L_m']}\n"
+            f"  R_M_m: {stochastic_latency['R_M_m']}\n"
+            f"  P: {stochastic_latency['P']}\n"
+            f"  N_p: {stochastic_latency['N_p']}\n\n"
+        ),
+        text,
+        count=1,
     )
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -204,7 +242,35 @@ def main() -> int:
         action="store_true",
         help="Abort sweep on first failed run (default: continue and report failures)",
     )
+    parser.add_argument("--stochastic-latency-model", dest="stochastic_latency_model", action="store_true", default=True)
+    parser.add_argument("--no-stochastic-latency-model", dest="stochastic_latency_model", action="store_false")
+    parser.add_argument("--stochastic-r-eff-m", type=float, default=DEFAULT_STOCHASTIC_LATENCY["R_eff_m"])
+    parser.add_argument("--stochastic-alpha", type=float, default=DEFAULT_STOCHASTIC_LATENCY["alpha"])
+    parser.add_argument("--stochastic-mu-link-s", type=float, default=DEFAULT_STOCHASTIC_LATENCY["mu_link_s"])
+    parser.add_argument("--stochastic-sigma-link-s", type=float, default=DEFAULT_STOCHASTIC_LATENCY["sigma_link_s"])
+    parser.add_argument("--stochastic-delta-s", type=float, default=DEFAULT_STOCHASTIC_LATENCY["delta_s"])
+    parser.add_argument("--stochastic-beta", type=float, default=DEFAULT_STOCHASTIC_LATENCY["beta"])
+    parser.add_argument("--stochastic-omega-rad-s", type=float, default=DEFAULT_STOCHASTIC_LATENCY["omega_rad_s"])
+    parser.add_argument("--stochastic-r-l-m", type=float, default=DEFAULT_STOCHASTIC_LATENCY["R_L_m"])
+    parser.add_argument("--stochastic-r-m-m", type=float, default=DEFAULT_STOCHASTIC_LATENCY["R_M_m"])
+    parser.add_argument("--stochastic-p", type=int, default=DEFAULT_STOCHASTIC_LATENCY["P"])
+    parser.add_argument("--stochastic-n-p", type=int, default=DEFAULT_STOCHASTIC_LATENCY["N_p"])
     args = parser.parse_args()
+
+    stochastic_latency = {
+        "enabled": args.stochastic_latency_model,
+        "R_eff_m": args.stochastic_r_eff_m,
+        "alpha": args.stochastic_alpha,
+        "mu_link_s": args.stochastic_mu_link_s,
+        "sigma_link_s": args.stochastic_sigma_link_s,
+        "delta_s": args.stochastic_delta_s,
+        "beta": args.stochastic_beta,
+        "omega_rad_s": args.stochastic_omega_rad_s,
+        "R_L_m": args.stochastic_r_l_m,
+        "R_M_m": args.stochastic_r_m_m,
+        "P": args.stochastic_p,
+        "N_p": args.stochastic_n_p,
+    }
 
     repo_root = Path(__file__).resolve().parent.parent
 
@@ -253,6 +319,18 @@ def main() -> int:
                             f" --simTime={args.sim_time}"
                             f" --clockInterval={pt.bgp_clock_s}"
                             f" --mrai={pt.mrai_s}"
+                            f" --stochasticLatencyModel={1 if args.stochastic_latency_model else 0}"
+                            f" --stochasticR_eff_m={args.stochastic_r_eff_m}"
+                            f" --stochasticAlpha={args.stochastic_alpha}"
+                            f" --stochasticMuLink_s={args.stochastic_mu_link_s}"
+                            f" --stochasticSigmaLink_s={args.stochastic_sigma_link_s}"
+                            f" --stochasticDelta_s={args.stochastic_delta_s}"
+                            f" --stochasticBeta={args.stochastic_beta}"
+                            f" --stochasticOmega_rad_s={args.stochastic_omega_rad_s}"
+                            f" --stochasticR_L_m={args.stochastic_r_l_m}"
+                            f" --stochasticR_M_m={args.stochastic_r_m_m}"
+                            f" --stochasticP={args.stochastic_p}"
+                            f" --stochasticN_p={args.stochastic_n_p}"
                             f" --eventFile={DIRECT_EVENT_FILE}"
                             f" --outDir=build/sweep_bgp_{mode}_{scenario}_{pt.label}"
                         )
@@ -266,6 +344,18 @@ def main() -> int:
                             f" --simTime={args.sim_time}"
                             f" --clockInterval={pt.bgp_clock_s}"
                             f" --mrai={pt.mrai_s}"
+                            f" --stochasticLatencyModel={1 if args.stochastic_latency_model else 0}"
+                            f" --stochasticR_eff_m={args.stochastic_r_eff_m}"
+                            f" --stochasticAlpha={args.stochastic_alpha}"
+                            f" --stochasticMuLink_s={args.stochastic_mu_link_s}"
+                            f" --stochasticSigmaLink_s={args.stochastic_sigma_link_s}"
+                            f" --stochasticDelta_s={args.stochastic_delta_s}"
+                            f" --stochasticBeta={args.stochastic_beta}"
+                            f" --stochasticOmega_rad_s={args.stochastic_omega_rad_s}"
+                            f" --stochasticR_L_m={args.stochastic_r_l_m}"
+                            f" --stochasticR_M_m={args.stochastic_r_m_m}"
+                            f" --stochasticP={args.stochastic_p}"
+                            f" --stochasticN_p={args.stochastic_n_p}"
                             f" --eventFile={EVENT_FILE}"
                             f" --outDir=build/sweep_bgp_{mode}_{scenario}_{pt.label}"
                         )
@@ -300,7 +390,13 @@ def main() -> int:
                         # Write the modified template to a temporary version
                         temp_template = Path(f"{template}.tmp")
                         temp_template.write_text(text)
-                        generate_scion_config(temp_template, out_cfg, pt.beacon_period_s, run_prefix)
+                        generate_scion_config(
+                            temp_template,
+                            out_cfg,
+                            pt.beacon_period_s,
+                            run_prefix,
+                            stochastic_latency,
+                        )
                         temp_template.unlink()  # Clean up temp file
                         # Ensure probe output directory exists
                         Path(f"build/{run_prefix}").mkdir(parents=True, exist_ok=True)

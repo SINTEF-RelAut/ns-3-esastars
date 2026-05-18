@@ -1,0 +1,175 @@
+time_resolution: NS
+topology: topology/ixp_as110_dual_satellites_topology.xml
+output: build/sweep_scion_dual_hidden_mrai6_clk30_bcn30_qcv3_4_40_16GW_10000_events_filtered_n32.txt
+simulation_duration: 10000.000s
+NUM_CORE: 1
+
+events_file: build/generated_events/filtered_sweep/qcv3_4_40_16GW_10000_events_filtered_n32_dual.json
+
+beacon_service:
+  policy: baseline
+  period: 30s
+  expiration_period: 4050s
+  first_beaconing: 0s
+  last_beaconing: 10000.000s
+
+path_service: {}
+border_router: {}
+
+control_plane_logging:
+  beacon_events: false
+  path_server_updates: false
+  host_cache_updates: false
+  log_file: build/sweep_scion_dual_hidden_mrai6_clk30_bcn30_qcv3_4_40_16GW_10000_events_filtered_n32_control_plane.log
+
+path_snapshot_logger:
+  period: 300s
+  output: build/sweep_scion_dual_hidden_mrai6_clk30_bcn30_qcv3_4_40_16GW_10000_events_filtered_n32_path_snapshots.csv
+  max_paths_per_dst: 5
+  discover_all_pairs: true
+  request_lead_time: 500ms
+
+data_plane_probing:
+  start: 10s
+  period: 300s
+  timeout: 2s
+  count: 9990
+  source_path_policy:
+    - src_as: 102
+      src_host: 2
+      preferred_first_hop_as: 120
+      backup_first_hop_as: 121
+    - src_as: 102
+      src_host: 3
+      preferred_first_hop_as: 121
+      backup_first_hop_as: 120
+    - src_as: 103
+      src_host: 2
+      preferred_first_hop_as: 120
+      backup_first_hop_as: 121
+    - src_as: 103
+      src_host: 3
+      preferred_first_hop_as: 121
+      backup_first_hop_as: 120
+    - src_as: 104
+      src_host: 2
+      preferred_first_hop_as: 120
+      backup_first_hop_as: 121
+    - src_as: 104
+      src_host: 3
+      preferred_first_hop_as: 121
+      backup_first_hop_as: 120
+    - src_as: 105
+      src_host: 2
+      preferred_first_hop_as: 120
+      backup_first_hop_as: 121
+    - src_as: 105
+      src_host: 3
+      preferred_first_hop_as: 121
+      backup_first_hop_as: 120
+  pairs:
+    - src_as: 101
+      dst_as: 102
+      src_host: 2
+      dst_host: 2
+      output: build/sweep_scion_dual_hidden_mrai6_clk30_bcn30_qcv3_4_40_16GW_10000_events_filtered_n32/scion_probe_101_102.csv
+    - src_as: 102
+      dst_as: 103
+      src_host: 2
+      dst_host: 2
+      output: build/sweep_scion_dual_hidden_mrai6_clk30_bcn30_qcv3_4_40_16GW_10000_events_filtered_n32/scion_probe_102_103.csv
+    - src_as: 102
+      dst_as: 104
+      src_host: 2
+      dst_host: 2
+      output: build/sweep_scion_dual_hidden_mrai6_clk30_bcn30_qcv3_4_40_16GW_10000_events_filtered_n32/scion_probe_102_104.csv
+    - src_as: 102
+      dst_as: 105
+      src_host: 2
+      dst_host: 2
+      output: build/sweep_scion_dual_hidden_mrai6_clk30_bcn30_qcv3_4_40_16GW_10000_events_filtered_n32/scion_probe_102_105.csv
+    - src_as: 103
+      dst_as: 104
+      src_host: 2
+      dst_host: 2
+      output: build/sweep_scion_dual_hidden_mrai6_clk30_bcn30_qcv3_4_40_16GW_10000_events_filtered_n32/scion_probe_103_104.csv
+    - src_as: 103
+      dst_as: 105
+      src_host: 2
+      dst_host: 2
+      output: build/sweep_scion_dual_hidden_mrai6_clk30_bcn30_qcv3_4_40_16GW_10000_events_filtered_n32/scion_probe_103_105.csv
+    - src_as: 104
+      dst_as: 105
+      src_host: 2
+      dst_host: 2
+      output: build/sweep_scion_dual_hidden_mrai6_clk30_bcn30_qcv3_4_40_16GW_10000_events_filtered_n32/scion_probe_104_105.csv
+
+# Scenario: Hidden dual IXP satellites (120/121, VIXP manages one active per AS)
+# Virtual IXP fabric controls which satellite (120 or 121) is active for each satellite AS.
+# One active IXP attachment per AS; fast 1s rebalance.
+virtual_ixp:
+  enabled: true
+  port_count: 4
+  rebalance_period: 1s
+  hold_down: 0s
+  max_active_links_per_as:
+    102: 2
+    103: 2
+    104: 2
+    105: 2
+  # Quality ordering keeps both locations active when feasible:
+  # AS120-primary(1.00), AS121-primary(0.95), AS120-backup(0.80), AS121-backup(0.75).
+  # This removes the global "AS121 is backup for AS120" behavior while preserving per-satellite backup links.
+  links:
+    # IXP satellite A (AS 120) — location A, interface-1 primary / interface-2 backup
+    - real_as: 102
+      if_id: 1020001
+      quality: 1.0
+    - real_as: 102
+      if_id: 1020002
+      quality: 0.8
+    - real_as: 103
+      if_id: 1030001
+      quality: 1.0
+    - real_as: 103
+      if_id: 1030002
+      quality: 0.8
+    - real_as: 104
+      if_id: 1040001
+      quality: 1.0
+    - real_as: 104
+      if_id: 1040002
+      quality: 0.8
+    - real_as: 105
+      if_id: 1050001
+      quality: 1.0
+    - real_as: 105
+      if_id: 1050002
+      quality: 0.8
+    # IXP satellite B (AS 121) — location B, interface-1 primary / interface-2 backup
+    - real_as: 102
+      if_id: 1020003
+      quality: 0.95
+    - real_as: 102
+      if_id: 1020004
+      quality: 0.75
+    - real_as: 103
+      if_id: 1030003
+      quality: 0.95
+    - real_as: 103
+      if_id: 1030004
+      quality: 0.75
+    - real_as: 104
+      if_id: 1040003
+      quality: 0.95
+    - real_as: 104
+      if_id: 1040004
+      quality: 0.75
+    - real_as: 105
+      if_id: 1050003
+      quality: 0.95
+    - real_as: 105
+      if_id: 1050004
+      quality: 0.75
+
+cp_summary_output: build/scenario_ixp_as110_dual_sat_hidden_cp_summary.csv

@@ -4,9 +4,11 @@
 
 #include <errno.h>
 #include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <iomanip>
 #include <map>
+#include <random>
 #include <regex>
 #include <set>
 #include <sstream>
@@ -57,6 +59,80 @@ struct LinkRuntime
   Ipv4Address ip_a;
   Ipv4Address ip_b;
 };
+
+struct StochasticLatencyParams
+{
+  bool enabled = true;
+  double R_eff_m = 1.4e6;            // 1400 km
+  double alpha = 1.3;
+  double mu_link_s = 5.5e-3;         // 5.5 ms
+  double sigma_link_s = 1.2e-3;      // 1.2 ms
+  double delta_s = 0.4e-3;           // 0.4 ms
+  double beta = 0.08;
+  double omega_rad_s = 2.0 * M_PI / 1500.0;
+  double R_L_m = 600000.0;
+  double R_M_m = 6000000.0;
+  uint32_t P = 6;
+  uint32_t N_p = 12;
+};
+
+uint32_t
+GetIxpRankKForLink (const LinkSpec &spec)
+{
+  // k=1 when closest/preferred IXP link is used; k=2 for fallback IXP.
+  if (spec.as_a == 121 || spec.as_b == 121)
+    {
+      return 2;
+    }
+  return 1;
+}
+
+double
+SampleIxpLatencySeconds (uint32_t k, double now_s, const StochasticLatencyParams &p)
+{
+  static std::mt19937 rng (4242);
+
+  const double phi_max = M_PI / (2.0 * static_cast<double> (std::max<uint32_t> (1, p.P)));
+  const double theta_min = (static_cast<double> (k) - 1.0) * M_PI /
+                           static_cast<double> (std::max<uint32_t> (1, p.N_p));
+  const double theta_max = static_cast<double> (k) * M_PI /
+                           static_cast<double> (std::max<uint32_t> (1, p.N_p));
+
+  std::uniform_real_distribution<double> uni_phi (0.0, phi_max);
+  std::uniform_real_distribution<double> uni_theta (theta_min, theta_max);
+  std::uniform_real_distribution<double> uni_phase (0.0, 2.0 * M_PI);
+
+  const double phi_p = uni_phi (rng);
+  const double theta_k = uni_theta (rng);
+  const double delta_angle = std::sqrt (phi_p * phi_p + theta_k * theta_k);
+  const double D = std::sqrt (p.R_L_m * p.R_L_m + p.R_M_m * p.R_M_m -
+                              2.0 * p.R_L_m * p.R_M_m * std::cos (delta_angle));
+
+  const double lambda = p.alpha * (D / p.R_eff_m);
+  std::poisson_distribution<uint32_t> poisson_hops (std::max (0.0, lambda));
+  uint32_t H = poisson_hops (rng);
+  if (H == 0)
+    {
+      H = 1;
+    }
+
+  double total_latency = 0.0;
+  for (uint32_t i = 0; i < H; ++i)
+    {
+      const double phase = uni_phase (rng);
+      const double periodic = p.beta * std::sin (p.omega_rad_s * now_s + phase);
+      const double link_mean = p.mu_link_s * (1.0 + periodic);
+      std::normal_distribution<double> normal_link (link_mean, p.sigma_link_s);
+      const double link_delay = std::max (0.0, normal_link (rng));
+      total_latency += (link_delay + p.delta_s);
+    }
+
+  if (!std::isfinite (total_latency))
+    {
+      return std::max (1e-6, p.mu_link_s + p.delta_s);
+    }
+  return std::max (1e-6, total_latency);
+}
 
 uint16_t
 NormalizeEdgeAs (uint16_t asn)
@@ -785,6 +861,8 @@ main (int argc, char *argv[])
   bool dual_ixp = false;
   bool split_edge_as = false;
   bool direct_links = false;
+  bool stochastic_latency_model = true;
+  StochasticLatencyParams stochastic_params;
 
   CommandLine cmd;
   cmd.AddValue ("outDir", "Output directory for probe and event CSV files", outDir);
@@ -808,7 +886,33 @@ main (int argc, char *argv[])
   cmd.AddValue ("directLinks",
                 "Use direct peer links between AS102-105 at two geographic locations (no IXP)",
                 direct_links);
+  cmd.AddValue ("stochasticLatencyModel", "Enable stochastic IXP latency model",
+                stochastic_latency_model);
+  cmd.AddValue ("stochasticR_eff_m", "Effective ISL reach in metres",
+                stochastic_params.R_eff_m);
+  cmd.AddValue ("stochasticAlpha", "Routing inefficiency factor",
+                stochastic_params.alpha);
+  cmd.AddValue ("stochasticMuLink_s", "Mean per-hop link delay in seconds",
+                stochastic_params.mu_link_s);
+  cmd.AddValue ("stochasticSigmaLink_s", "Per-hop delay jitter in seconds",
+                stochastic_params.sigma_link_s);
+  cmd.AddValue ("stochasticDelta_s", "Per-hop processing overhead in seconds",
+                stochastic_params.delta_s);
+  cmd.AddValue ("stochasticBeta", "Sinusoidal variation amplitude",
+                stochastic_params.beta);
+  cmd.AddValue ("stochasticOmega_rad_s", "Sinusoidal angular frequency in rad/s",
+                stochastic_params.omega_rad_s);
+  cmd.AddValue ("stochasticR_L_m", "LEO orbital radius in metres",
+                stochastic_params.R_L_m);
+  cmd.AddValue ("stochasticR_M_m", "MEO orbital radius in metres",
+                stochastic_params.R_M_m);
+  cmd.AddValue ("stochasticP", "Number of orbital planes",
+                stochastic_params.P);
+  cmd.AddValue ("stochasticN_p", "Satellites per plane",
+                stochastic_params.N_p);
   cmd.Parse (argc, argv);
+
+  stochastic_params.enabled = stochastic_latency_model;
 
   if (!dual_ixp && split_edge_as)
     {
@@ -821,6 +925,10 @@ main (int argc, char *argv[])
   if (direct_links && scenario == "hidden")
     {
       NS_ABORT_MSG ("directLinks does not support the hidden scenario");
+    }
+  if (sim_time_s <= 10.0)
+    {
+      NS_ABORT_MSG ("simTime must be > 10s because routing stop time is simTime - 10s guard");
     }
 
   if (!verbose)
@@ -901,9 +1009,21 @@ main (int argc, char *argv[])
       std::ostringstream rate;
       rate << spec.capacity_mbps << "Mbps";
 
+      double link_delay_s = spec.latency_s;
+      if (stochastic_params.enabled && spec.ixp_managed)
+        {
+          uint32_t k = GetIxpRankKForLink (spec);
+          link_delay_s = SampleIxpLatencySeconds (k, Simulator::Now ().GetSeconds (),
+                                                  stochastic_params);
+        }
+      if (!std::isfinite (link_delay_s) || link_delay_s <= 0.0)
+        {
+          link_delay_s = std::max (1e-6, spec.latency_s);
+        }
+
       PointToPointHelper p2p;
       p2p.SetDeviceAttribute ("DataRate", StringValue (rate.str ()));
-      p2p.SetChannelAttribute ("Delay", TimeValue (Seconds (spec.latency_s)));
+      p2p.SetChannelAttribute ("Delay", TimeValue (Seconds (link_delay_s)));
 
       NetDeviceContainer devs = p2p.Install (nodeA, nodeB);
 

@@ -20,6 +20,119 @@
 
 #include "pre-simulation-setup.h"
 
+namespace {
+
+struct StochasticLatencyParams
+{
+  bool enabled = true;
+  double R_eff_m = 1.4e6;            // 1400 km
+  double alpha = 1.3;
+  double mu_link_s = 5.5e-3;         // 5.5 ms
+  double sigma_link_s = 1.2e-3;      // 1.2 ms
+  double delta_s = 0.4e-3;           // 0.4 ms
+  double beta = 0.08;
+  double omega_rad_s = 2.0 * M_PI / 1500.0;
+  double R_L_m = 600000.0;
+  double R_M_m = 6000000.0;
+  uint32_t P = 6;
+  uint32_t N_p = 12;
+};
+
+StochasticLatencyParams
+LoadStochasticLatencyParams (const YAML::Node &config)
+{
+  StochasticLatencyParams p;
+  if (!config["stochastic_latency_model"])
+    {
+      return p;
+    }
+
+  YAML::Node cfg = config["stochastic_latency_model"];
+  p.enabled = cfg["enabled"].as<bool> (true);
+  p.R_eff_m = cfg["R_eff_m"].as<double> (p.R_eff_m);
+  p.alpha = cfg["alpha"].as<double> (p.alpha);
+  p.mu_link_s = cfg["mu_link_s"].as<double> (p.mu_link_s);
+  p.sigma_link_s = cfg["sigma_link_s"].as<double> (p.sigma_link_s);
+  p.delta_s = cfg["delta_s"].as<double> (p.delta_s);
+  p.beta = cfg["beta"].as<double> (p.beta);
+  p.omega_rad_s = cfg["omega_rad_s"].as<double> (p.omega_rad_s);
+  p.R_L_m = cfg["R_L_m"].as<double> (p.R_L_m);
+  p.R_M_m = cfg["R_M_m"].as<double> (p.R_M_m);
+  p.P = cfg["P"].as<uint32_t> (p.P);
+  p.N_p = cfg["N_p"].as<uint32_t> (p.N_p);
+  return p;
+}
+
+bool
+IsIxpAs (int32_t asn)
+{
+  return asn == 110 || asn == 120 || asn == 121;
+}
+
+uint32_t
+GetIxpRankK (int32_t from, int32_t to)
+{
+  // k=1 for closest/preferred IXP (AS110 or AS120), k=2 for backup/second-best (AS121).
+  if (from == 121 || to == 121)
+    {
+      return 2;
+    }
+  if (from == 110 || to == 110 || from == 120 || to == 120)
+    {
+      return 1;
+    }
+  return 1;
+}
+
+double
+SampleIxpLatencySeconds (uint32_t k, double now_s, const StochasticLatencyParams &p)
+{
+  static std::mt19937 rng (1337);
+
+  const double phi_max = M_PI / (2.0 * static_cast<double> (std::max<uint32_t> (1, p.P)));
+  const double theta_min = (static_cast<double> (k) - 1.0) * M_PI /
+                           static_cast<double> (std::max<uint32_t> (1, p.N_p));
+  const double theta_max = static_cast<double> (k) * M_PI /
+                           static_cast<double> (std::max<uint32_t> (1, p.N_p));
+
+  std::uniform_real_distribution<double> uni_phi (0.0, phi_max);
+  std::uniform_real_distribution<double> uni_theta (theta_min, theta_max);
+  std::uniform_real_distribution<double> uni_phase (0.0, 2.0 * M_PI);
+
+  const double phi_p = uni_phi (rng);
+  const double theta_k = uni_theta (rng);
+  const double delta_angle = std::sqrt (phi_p * phi_p + theta_k * theta_k);
+  const double D = std::sqrt (p.R_L_m * p.R_L_m + p.R_M_m * p.R_M_m -
+                              2.0 * p.R_L_m * p.R_M_m * std::cos (delta_angle));
+
+  const double lambda = p.alpha * (D / p.R_eff_m);
+  std::poisson_distribution<uint32_t> poisson_hops (std::max (0.0, lambda));
+  uint32_t H = poisson_hops (rng);
+  if (H == 0)
+    {
+      H = 1;
+    }
+
+  double total_latency = 0.0;
+  for (uint32_t i = 0; i < H; ++i)
+    {
+      const double phase = uni_phase (rng);
+      const double periodic = p.beta * std::sin (p.omega_rad_s * now_s + phase);
+      const double link_mean = p.mu_link_s * (1.0 + periodic);
+      std::normal_distribution<double> normal_link (link_mean, p.sigma_link_s);
+      const double link_delay = std::max (0.0, normal_link (rng));
+      total_latency += (link_delay + p.delta_s);
+    }
+
+  if (!std::isfinite (total_latency))
+    {
+      return std::max (1e-6, p.mu_link_s + p.delta_s);
+    }
+  return std::max (1e-6, total_latency);
+}
+
+} // namespace
+
 namespace ns3 {
 void
 SetTimeResolution (const std::string &time_res_str)
@@ -424,6 +537,7 @@ InstantiateLinksFromTopo (rapidxml::xml_node<> *xml_root, NodeContainer &as_node
                           const YAML::Node &config)
 {
   bool only_propagation_delay = OnlyPropagationDelay (config);
+  const StochasticLatencyParams stoch = LoadStochasticLatencyParams (config);
 
   rapidxml::xml_node<> *curr_xml_node = xml_root->first_node ("link");
   while (curr_xml_node)
@@ -474,6 +588,17 @@ InstantiateLinksFromTopo (rapidxml::xml_node<> *xml_root, NodeContainer &as_node
       assert (from_as->as_number == from_alias_as_no);
 
       PointToPointHelper helper;
+      double link_delay_s = p.HasProperty ("latency") ? std::stod (p.GetProperty ("latency")) : 0.0;
+      if (stoch.enabled && (IsIxpAs (from) || IsIxpAs (to)))
+        {
+          uint32_t k = GetIxpRankK (from, to);
+          link_delay_s = SampleIxpLatencySeconds (k, Simulator::Now ().GetSeconds (), stoch);
+        }
+      if (!std::isfinite (link_delay_s) || link_delay_s <= 0.0)
+        {
+          link_delay_s = 1e-6;
+        }
+      helper.SetChannelAttribute ("Delay", TimeValue (Seconds (link_delay_s)));
       helper.Install (from_as, to_as);
 
       const uint16_t to_dev_idx = (uint16_t) (to_as->GetNDevices () - 1);

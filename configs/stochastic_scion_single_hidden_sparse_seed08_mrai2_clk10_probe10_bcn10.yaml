@@ -1,0 +1,32 @@
+time_resolution: NS
+topology: topology/ixp_as110_dual_links_topology.xml
+output: build/stochastic_scion_single_hidden_sparse_seed08_mrai2_clk10_probe10_bcn10.txt
+simulation_duration: 5000s
+NUM_CORE: 1
+
+events_file: build/generated_events/stochastic_interval_timing_sweep/sparse_seed08_mrai2_clk10_probe10_bcn10_single.json
+
+beacon_service:
+  policy: baseline
+  period: 10s
+  expiration_period: 1350s
+  first_beaconing: 0s
+  last_beaconing: 5000s
+
+path_service: {}
+border_router: {}
+
+stochastic_latency_model:
+  enabled: true
+  R_eff_m: 1400000.0
+  alpha: 1.3
+  mu_link_s: 0.0055
+  sigma_link_s: 0.0012
+  delta_s: 0.0004
+  beta: 0.08
+  omega_rad_s: 0.0041887902047863905
+  R_L_m: 600000.0
+  R_M_m: 6000000.0
+  P: 6
+  N_p: 12
+

@@ -16,6 +16,20 @@ beacon_service:
 path_service: {}
 border_router: {}
 
+stochastic_latency_model:
+  enabled: true
+  R_eff_m: 1400000.0
+  alpha: 1.3
+  mu_link_s: 0.0055
+  sigma_link_s: 0.0012
+  delta_s: 0.0004
+  beta: 0.08
+  omega_rad_s: 0.0041887902047863905
+  R_L_m: 600000.0
+  R_M_m: 6000000.0
+  P: 6
+  N_p: 12
+
 control_plane_logging:
   beacon_events: false
   path_server_updates: false

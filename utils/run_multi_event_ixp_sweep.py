@@ -14,12 +14,29 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shlex
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
+
+
+DEFAULT_STOCHASTIC_LATENCY = {
+    "enabled": True,
+    "R_eff_m": 1_400_000.0,
+    "alpha": 1.3,
+    "mu_link_s": 5.5e-3,
+    "sigma_link_s": 1.2e-3,
+    "delta_s": 0.4e-3,
+    "beta": 0.08,
+    "omega_rad_s": 2.0 * 3.141592653589793 / 1500.0,
+    "R_L_m": 600_000.0,
+    "R_M_m": 6_000_000.0,
+    "P": 6,
+    "N_p": 12,
+}
 
 
 @dataclass
@@ -102,7 +119,11 @@ def run_cmd(cmd: List[str], dry_run: bool = False) -> int:
     print(f"  $ {' '.join(shlex.quote(str(c)) for c in cmd)}")
     if dry_run:
         return 0
-    result = subprocess.run(cmd, text=True)
+    env = os.environ.copy()
+    build_lib = str(Path(__file__).resolve().parent.parent / "build" / "lib")
+    current_ld = env.get("LD_LIBRARY_PATH", "")
+    env["LD_LIBRARY_PATH"] = build_lib if not current_ld else f"{build_lib}:{current_ld}"
+    result = subprocess.run(cmd, text=True, env=env)
     return result.returncode
 
 
@@ -309,12 +330,45 @@ def write_json(path: Path, data: Dict[str, object]) -> None:
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
+def replace_top_level_block(text: str, key: str, replacement_block: str) -> str:
+    """Replace a top-level YAML mapping block while preserving following sections."""
+    lines = text.splitlines(keepends=True)
+    out: List[str] = []
+    i = 0
+    replaced = False
+    key_prefix = f"{key}:"
+
+    while i < len(lines):
+        line = lines[i]
+        if not replaced and line.startswith(key_prefix):
+            out.append(replacement_block)
+            replaced = True
+            i += 1
+            while i < len(lines):
+                curr = lines[i]
+                if curr.startswith("  ") or curr.strip() == "":
+                    i += 1
+                    continue
+                break
+            continue
+
+        out.append(line)
+        i += 1
+
+    if replaced:
+        return "".join(out)
+
+    suffix = "" if text.endswith("\n") else "\n"
+    return text + suffix + replacement_block
+
+
 def generate_scion_config(
     template_path: Path,
     output_path: Path,
     beacon_period_s: int,
     run_prefix: str,
     events_file_rel: str,
+    stochastic_latency: Dict[str, object],
 ) -> None:
     text = template_path.read_text(encoding="utf-8")
     expiration_s = beacon_period_s * EXPIRATION_RATIO
@@ -328,6 +382,12 @@ def generate_scion_config(
 
     # Output files.
     text = re.sub(r"^(output:\s*)build/\S+", rf"\g<1>build/{run_prefix}.txt", text, flags=re.MULTILINE)
+    text = re.sub(
+        r"^(cp_summary_output:\s*)build/\S+",
+        rf"\g<1>build/{run_prefix}_cp_summary.csv",
+        text,
+        flags=re.MULTILINE,
+    )
     text = re.sub(r"(log_file:\s*)build/\S+", rf"\g<1>build/{run_prefix}_control_plane.log", text)
     text = re.sub(
         r"(  output:\s*)build/\S+_path_snapshots\.csv",
@@ -335,10 +395,49 @@ def generate_scion_config(
         text,
     )
     text = re.sub(
-        r"(      output:\s*)build/[^/\n]+/(scion_probe_\S+\.csv)",
+        r"(      output:\s*)build/(?:[^\n]*/)?(scion_probe_\S+\.csv)",
         rf"\g<1>build/{run_prefix}/\g<2>",
         text,
     )
+
+    # Some templates (notably single-mode) omit cp/probe outputs; inject deterministic paths.
+    if not re.search(r"^cp_summary_output:\s*\S+", text, flags=re.MULTILINE):
+        suffix = "" if text.endswith("\n") else "\n"
+        text = text + f"{suffix}cp_summary_output: build/{run_prefix}_cp_summary.csv\n"
+
+    pair_output_pattern = re.compile(
+        r"(?m)(^(\s*)-\s*src_as:\s*(\d+)\s*\n"
+        r"\2\s+dst_as:\s*(\d+)\s*\n"
+        r"\2\s+src_host:\s*\d+\s*\n"
+        r"\2\s+dst_host:\s*\d+\s*\n)(?!\2\s+output:)")
+
+    def _add_pair_output(match: re.Match[str]) -> str:
+        block = match.group(1)
+        indent = match.group(2)
+        src_as = match.group(3)
+        dst_as = match.group(4)
+        output_line = f"{indent}  output: build/{run_prefix}/scion_probe_{src_as}_{dst_as}.csv\n"
+        return block + output_line
+
+    text = pair_output_pattern.sub(_add_pair_output, text)
+
+    # Stochastic latency block.
+    stochastic_block = (
+        "stochastic_latency_model:\n"
+        f"  enabled: {'true' if stochastic_latency['enabled'] else 'false'}\n"
+        f"  R_eff_m: {stochastic_latency['R_eff_m']}\n"
+        f"  alpha: {stochastic_latency['alpha']}\n"
+        f"  mu_link_s: {stochastic_latency['mu_link_s']}\n"
+        f"  sigma_link_s: {stochastic_latency['sigma_link_s']}\n"
+        f"  delta_s: {stochastic_latency['delta_s']}\n"
+        f"  beta: {stochastic_latency['beta']}\n"
+        f"  omega_rad_s: {stochastic_latency['omega_rad_s']}\n"
+        f"  R_L_m: {stochastic_latency['R_L_m']}\n"
+        f"  R_M_m: {stochastic_latency['R_M_m']}\n"
+        f"  P: {stochastic_latency['P']}\n"
+        f"  N_p: {stochastic_latency['N_p']}\n"
+    )
+    text = replace_top_level_block(text, "stochastic_latency_model", stochastic_block)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(text, encoding="utf-8")
@@ -413,7 +512,35 @@ def main() -> int:
         action="store_true",
         help="Abort on first failed run (default: continue and summarize failures)",
     )
+    parser.add_argument("--stochastic-latency-model", dest="stochastic_latency_model", action="store_true", default=True, help="Enable stochastic IXP latency model")
+    parser.add_argument("--no-stochastic-latency-model", dest="stochastic_latency_model", action="store_false", help="Disable stochastic IXP latency model")
+    parser.add_argument("--stochastic-r-eff-m", type=float, default=DEFAULT_STOCHASTIC_LATENCY["R_eff_m"])
+    parser.add_argument("--stochastic-alpha", type=float, default=DEFAULT_STOCHASTIC_LATENCY["alpha"])
+    parser.add_argument("--stochastic-mu-link-s", type=float, default=DEFAULT_STOCHASTIC_LATENCY["mu_link_s"])
+    parser.add_argument("--stochastic-sigma-link-s", type=float, default=DEFAULT_STOCHASTIC_LATENCY["sigma_link_s"])
+    parser.add_argument("--stochastic-delta-s", type=float, default=DEFAULT_STOCHASTIC_LATENCY["delta_s"])
+    parser.add_argument("--stochastic-beta", type=float, default=DEFAULT_STOCHASTIC_LATENCY["beta"])
+    parser.add_argument("--stochastic-omega-rad-s", type=float, default=DEFAULT_STOCHASTIC_LATENCY["omega_rad_s"])
+    parser.add_argument("--stochastic-r-l-m", type=float, default=DEFAULT_STOCHASTIC_LATENCY["R_L_m"])
+    parser.add_argument("--stochastic-r-m-m", type=float, default=DEFAULT_STOCHASTIC_LATENCY["R_M_m"])
+    parser.add_argument("--stochastic-p", type=int, default=DEFAULT_STOCHASTIC_LATENCY["P"])
+    parser.add_argument("--stochastic-n-p", type=int, default=DEFAULT_STOCHASTIC_LATENCY["N_p"])
     args = parser.parse_args()
+
+    stochastic_latency = {
+        "enabled": args.stochastic_latency_model,
+        "R_eff_m": args.stochastic_r_eff_m,
+        "alpha": args.stochastic_alpha,
+        "mu_link_s": args.stochastic_mu_link_s,
+        "sigma_link_s": args.stochastic_sigma_link_s,
+        "delta_s": args.stochastic_delta_s,
+        "beta": args.stochastic_beta,
+        "omega_rad_s": args.stochastic_omega_rad_s,
+        "R_L_m": args.stochastic_r_l_m,
+        "R_M_m": args.stochastic_r_m_m,
+        "P": args.stochastic_p,
+        "N_p": args.stochastic_n_p,
+    }
 
     repo_root = Path(__file__).resolve().parent.parent
     event_dir = repo_root / args.event_dir
@@ -518,6 +645,18 @@ def main() -> int:
                                     f" --simTime={args.sim_time}"
                                     f" --clockInterval={pt.bgp_clock_s}"
                                     f" --mrai={pt.mrai_s}"
+                                    f" --stochasticLatencyModel={1 if args.stochastic_latency_model else 0}"
+                                    f" --stochasticR_eff_m={args.stochastic_r_eff_m}"
+                                    f" --stochasticAlpha={args.stochastic_alpha}"
+                                    f" --stochasticMuLink_s={args.stochastic_mu_link_s}"
+                                    f" --stochasticSigmaLink_s={args.stochastic_sigma_link_s}"
+                                    f" --stochasticDelta_s={args.stochastic_delta_s}"
+                                    f" --stochasticBeta={args.stochastic_beta}"
+                                    f" --stochasticOmega_rad_s={args.stochastic_omega_rad_s}"
+                                    f" --stochasticR_L_m={args.stochastic_r_l_m}"
+                                    f" --stochasticR_M_m={args.stochastic_r_m_m}"
+                                    f" --stochasticP={args.stochastic_p}"
+                                    f" --stochasticN_p={args.stochastic_n_p}"
                                     f" --eventFile={event_rel_bgp}"
                                     f" --outDir=build/sweep_bgp_direct_{scenario}_{pt.label}_{event_key}"
                                 )
@@ -541,6 +680,18 @@ def main() -> int:
                                     f" --simTime={args.sim_time}"
                                     f" --clockInterval={pt.bgp_clock_s}"
                                     f" --mrai={pt.mrai_s}"
+                                    f" --stochasticLatencyModel={1 if args.stochastic_latency_model else 0}"
+                                    f" --stochasticR_eff_m={args.stochastic_r_eff_m}"
+                                    f" --stochasticAlpha={args.stochastic_alpha}"
+                                    f" --stochasticMuLink_s={args.stochastic_mu_link_s}"
+                                    f" --stochasticSigmaLink_s={args.stochastic_sigma_link_s}"
+                                    f" --stochasticDelta_s={args.stochastic_delta_s}"
+                                    f" --stochasticBeta={args.stochastic_beta}"
+                                    f" --stochasticOmega_rad_s={args.stochastic_omega_rad_s}"
+                                    f" --stochasticR_L_m={args.stochastic_r_l_m}"
+                                    f" --stochasticR_M_m={args.stochastic_r_m_m}"
+                                    f" --stochasticP={args.stochastic_p}"
+                                    f" --stochasticN_p={args.stochastic_n_p}"
                                     f" --eventFile={event_rel_bgp}"
                                     f" --outDir=build/sweep_bgp_{family}_{bgp_mode}_{scenario}_{pt.label}_{event_key}"
                                 )
@@ -563,6 +714,7 @@ def main() -> int:
                                 beacon_period_s=pt.beacon_period_s,
                                 run_prefix=run_prefix,
                                 events_file_rel=event_rel_scion,
+                                stochastic_latency=stochastic_latency,
                             )
                             (repo_root / "build" / run_prefix).mkdir(parents=True, exist_ok=True)
 
