@@ -381,7 +381,7 @@ def main() -> int:
                             ]
                             if family == "dual":
                                 bgp_flags.append("--dualIxp=1")
-                                bgp_flags.append("--splitEdgeAs=0")
+                                bgp_flags.append("--splitEdgeAs=1")
                             elif family == "single":
                                 bgp_flags.append("--dualIxp=0")
                                 bgp_flags.append("--splitEdgeAs=0")

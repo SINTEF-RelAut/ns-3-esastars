@@ -63,11 +63,11 @@ struct LinkRuntime
 struct StochasticLatencyParams
 {
   bool enabled = true;
-  double R_eff_m = 1.4e6;            // 1400 km
+  double R_eff_m = 1.4e6; // 1400 km
   double alpha = 1.3;
-  double mu_link_s = 5.5e-3;         // 5.5 ms
-  double sigma_link_s = 1.2e-3;      // 1.2 ms
-  double delta_s = 0.4e-3;           // 0.4 ms
+  double mu_link_s = 5.5e-3; // 5.5 ms
+  double sigma_link_s = 1.2e-3; // 1.2 ms
+  double delta_s = 0.4e-3; // 0.4 ms
   double beta = 0.08;
   double omega_rad_s = 2.0 * M_PI / 1500.0;
   double R_L_m = 600000.0;
@@ -93,10 +93,10 @@ SampleIxpLatencySeconds (uint32_t k, double now_s, const StochasticLatencyParams
   static std::mt19937 rng (4242);
 
   const double phi_max = M_PI / (2.0 * static_cast<double> (std::max<uint32_t> (1, p.P)));
-  const double theta_min = (static_cast<double> (k) - 1.0) * M_PI /
-                           static_cast<double> (std::max<uint32_t> (1, p.N_p));
-  const double theta_max = static_cast<double> (k) * M_PI /
-                           static_cast<double> (std::max<uint32_t> (1, p.N_p));
+  const double theta_min =
+      (static_cast<double> (k) - 1.0) * M_PI / static_cast<double> (std::max<uint32_t> (1, p.N_p));
+  const double theta_max =
+      static_cast<double> (k) * M_PI / static_cast<double> (std::max<uint32_t> (1, p.N_p));
 
   std::uniform_real_distribution<double> uni_phi (0.0, phi_max);
   std::uniform_real_distribution<double> uni_theta (theta_min, theta_max);
@@ -249,6 +249,61 @@ struct ExternalEvent
   bool up;
   uint16_t asn;
   uint32_t if_id;
+};
+
+struct HiddenIxpLinkBinding
+{
+  Ptr<VirtualIxpFabric> fabric;
+  IxpLinkId linkId;
+  double quality;
+  uint16_t remoteIxpAs;
+};
+
+class BgpHiddenIxpEndpointAdapter : public IxpEndpointAdapter
+{
+public:
+  static TypeId
+  GetTypeId (void)
+  {
+    static TypeId tid = TypeId ("ns3::BgpHiddenIxpEndpointAdapter")
+                            .SetParent<IxpEndpointAdapter> ()
+                            .AddConstructor<BgpHiddenIxpEndpointAdapter> ();
+    return tid;
+  }
+
+  BgpHiddenIxpEndpointAdapter ()
+  {
+  }
+
+  ~BgpHiddenIxpEndpointAdapter () override
+  {
+  }
+
+  void
+  OnInterfaceUp (const IxpLinkId &link, uint32_t portId, Time now) override
+  {
+    (void) link;
+    (void) portId;
+    (void) now;
+    // Hidden-mode semantics for BGP: local IXP forwarding choice changes,
+    // but control-plane interface state stays stable to avoid BGP churn.
+  }
+
+  void
+  OnInterfaceDown (const IxpLinkId &link, uint32_t portId, Time now) override
+  {
+    (void) link;
+    (void) portId;
+    (void) now;
+    // Hidden-mode semantics for BGP: no interface down on the node.
+  }
+
+  void
+  DeliverFromFabric (const IxpLinkId &dst, Ptr<Packet> packet) override
+  {
+    (void) dst;
+    (void) packet;
+  }
 };
 
 class UdpEchoResponder : public Application
@@ -578,28 +633,28 @@ SetSatelliteIxpInterfaceState (LinkRuntime *link, bool up, std::ofstream *events
 }
 
 void
-SetVirtualIxpLinkState (Ptr<VirtualIxpFabric> fabric, IxpLinkId linkId, double quality, bool up,
-                        uint16_t asn, std::ofstream *eventsOut)
+SetVirtualIxpLinkState (HiddenIxpLinkBinding binding, bool up, uint16_t asn,
+                        std::ofstream *eventsOut)
 {
-  if (fabric == 0)
+  if (binding.fabric == 0)
     {
       return;
     }
 
   if (up)
     {
-      fabric->SetFeasibleUp (linkId, quality);
+      binding.fabric->SetFeasibleUp (binding.linkId, binding.quality);
     }
   else
     {
-      fabric->SetFeasibleDown (linkId);
+      binding.fabric->SetFeasibleDown (binding.linkId);
     }
 
   if (eventsOut && eventsOut->is_open ())
     {
       (*eventsOut) << std::fixed << std::setprecision (6) << Simulator::Now ().GetSeconds () << ","
-                   << (up ? "link_up" : "link_down") << "," << asn << ",110," << linkId.linkIndex
-                   << std::endl;
+                   << (up ? "link_up" : "link_down") << "," << asn << ","
+                   << binding.remoteIxpAs << "," << binding.linkId.linkIndex << std::endl;
     }
 }
 
@@ -888,28 +943,21 @@ main (int argc, char *argv[])
                 direct_links);
   cmd.AddValue ("stochasticLatencyModel", "Enable stochastic IXP latency model",
                 stochastic_latency_model);
-  cmd.AddValue ("stochasticR_eff_m", "Effective ISL reach in metres",
-                stochastic_params.R_eff_m);
-  cmd.AddValue ("stochasticAlpha", "Routing inefficiency factor",
-                stochastic_params.alpha);
+  cmd.AddValue ("stochasticR_eff_m", "Effective ISL reach in metres", stochastic_params.R_eff_m);
+  cmd.AddValue ("stochasticAlpha", "Routing inefficiency factor", stochastic_params.alpha);
   cmd.AddValue ("stochasticMuLink_s", "Mean per-hop link delay in seconds",
                 stochastic_params.mu_link_s);
   cmd.AddValue ("stochasticSigmaLink_s", "Per-hop delay jitter in seconds",
                 stochastic_params.sigma_link_s);
   cmd.AddValue ("stochasticDelta_s", "Per-hop processing overhead in seconds",
                 stochastic_params.delta_s);
-  cmd.AddValue ("stochasticBeta", "Sinusoidal variation amplitude",
-                stochastic_params.beta);
+  cmd.AddValue ("stochasticBeta", "Sinusoidal variation amplitude", stochastic_params.beta);
   cmd.AddValue ("stochasticOmega_rad_s", "Sinusoidal angular frequency in rad/s",
                 stochastic_params.omega_rad_s);
-  cmd.AddValue ("stochasticR_L_m", "LEO orbital radius in metres",
-                stochastic_params.R_L_m);
-  cmd.AddValue ("stochasticR_M_m", "MEO orbital radius in metres",
-                stochastic_params.R_M_m);
-  cmd.AddValue ("stochasticP", "Number of orbital planes",
-                stochastic_params.P);
-  cmd.AddValue ("stochasticN_p", "Satellites per plane",
-                stochastic_params.N_p);
+  cmd.AddValue ("stochasticR_L_m", "LEO orbital radius in metres", stochastic_params.R_L_m);
+  cmd.AddValue ("stochasticR_M_m", "MEO orbital radius in metres", stochastic_params.R_M_m);
+  cmd.AddValue ("stochasticP", "Number of orbital planes", stochastic_params.P);
+  cmd.AddValue ("stochasticN_p", "Satellites per plane", stochastic_params.N_p);
   cmd.Parse (argc, argv);
 
   stochastic_params.enabled = stochastic_latency_model;
@@ -995,6 +1043,7 @@ main (int argc, char *argv[])
   std::map<uint16_t, uint32_t> nextIxpLinkIndex;
   std::map<uint32_t, IxpLinkId> ixpLinkByIfId;
   std::map<uint32_t, double> ixpQualityByIfId;
+  std::map<uint32_t, uint16_t> ixpRemoteAsByIfId;
 
   std::vector<LinkSpec> links = direct_links ? BuildTopologyLinksDirect ()
                                              : (dual_ixp ? BuildTopologyLinksDual (split_edge_as)
@@ -1013,8 +1062,8 @@ main (int argc, char *argv[])
       if (stochastic_params.enabled && spec.ixp_managed)
         {
           uint32_t k = GetIxpRankKForLink (spec);
-          link_delay_s = SampleIxpLatencySeconds (k, Simulator::Now ().GetSeconds (),
-                                                  stochastic_params);
+          link_delay_s =
+              SampleIxpLatencySeconds (k, Simulator::Now ().GetSeconds (), stochastic_params);
         }
       if (!std::isfinite (link_delay_s) || link_delay_s <= 0.0)
         {
@@ -1058,6 +1107,7 @@ main (int argc, char *argv[])
           ixpLinkByIfId[spec.if_id_a] = linkId;
           ixpQualityByIfId[spec.if_id_a] =
               dual_ixp ? GetDualIxpQuality (spec.if_id_a) : ((spec.if_id_a % 10 == 1) ? 1.0 : 0.9);
+          ixpRemoteAsByIfId[spec.if_id_a] = spec.as_b;
         }
 
       subnetId++;
@@ -1204,32 +1254,57 @@ main (int argc, char *argv[])
   linkEvents << "time_s,event,as_a,as_b,if_id" << std::endl;
 
   Ptr<VirtualIxpFabric> fabric = 0;
+  Ptr<VirtualIxpFabric> fabricA = 0;
+  Ptr<VirtualIxpFabric> fabricB = 0;
+  std::map<uint32_t, HiddenIxpLinkBinding> hiddenLinkByIfId;
   if (scenario == "hidden")
     {
-      fabric = CreateObject<VirtualIxpFabric> ();
+      auto configureCaps = [&] (IxpConfig &cfg) {
+        if (split_edge_as)
+          {
+            cfg.maxActiveLinksPerAs[MakeSplitAsn (102, true)] = 1;
+            cfg.maxActiveLinksPerAs[MakeSplitAsn (102, false)] = 1;
+            cfg.maxActiveLinksPerAs[MakeSplitAsn (103, true)] = 1;
+            cfg.maxActiveLinksPerAs[MakeSplitAsn (103, false)] = 1;
+            cfg.maxActiveLinksPerAs[MakeSplitAsn (104, true)] = 1;
+            cfg.maxActiveLinksPerAs[MakeSplitAsn (104, false)] = 1;
+            cfg.maxActiveLinksPerAs[MakeSplitAsn (105, true)] = 1;
+            cfg.maxActiveLinksPerAs[MakeSplitAsn (105, false)] = 1;
+          }
+        else
+          {
+            // Hidden-mode policy: one active attachment per AS per virtual IXP.
+            cfg.maxActiveLinksPerAs[102] = 1;
+            cfg.maxActiveLinksPerAs[103] = 1;
+            cfg.maxActiveLinksPerAs[104] = 1;
+            cfg.maxActiveLinksPerAs[105] = 1;
+          }
+      };
+
       IxpConfig cfg;
       cfg.portCount = virtual_ixp_port_count;
       cfg.rebalancePeriod = Seconds (virtual_ixp_rebalance_s);
       cfg.holdDown = Seconds (virtual_ixp_hold_down_s);
-      if (split_edge_as)
+
+      if (dual_ixp)
         {
-          cfg.maxActiveLinksPerAs[MakeSplitAsn (102, true)] = 1;
-          cfg.maxActiveLinksPerAs[MakeSplitAsn (102, false)] = 1;
-          cfg.maxActiveLinksPerAs[MakeSplitAsn (103, true)] = 1;
-          cfg.maxActiveLinksPerAs[MakeSplitAsn (103, false)] = 1;
-          cfg.maxActiveLinksPerAs[MakeSplitAsn (104, true)] = 1;
-          cfg.maxActiveLinksPerAs[MakeSplitAsn (104, false)] = 1;
-          cfg.maxActiveLinksPerAs[MakeSplitAsn (105, true)] = 1;
-          cfg.maxActiveLinksPerAs[MakeSplitAsn (105, false)] = 1;
+          fabricA = CreateObject<VirtualIxpFabric> ();
+          fabricB = CreateObject<VirtualIxpFabric> ();
+
+          IxpConfig cfgA = cfg;
+          IxpConfig cfgB = cfg;
+          configureCaps (cfgA);
+          configureCaps (cfgB);
+
+          fabricA->Configure (cfgA);
+          fabricB->Configure (cfgB);
         }
       else
         {
-          cfg.maxActiveLinksPerAs[102] = 2;
-          cfg.maxActiveLinksPerAs[103] = 2;
-          cfg.maxActiveLinksPerAs[104] = 2;
-          cfg.maxActiveLinksPerAs[105] = 2;
+          fabric = CreateObject<VirtualIxpFabric> ();
+          configureCaps (cfg);
+          fabric->Configure (cfg);
         }
-      fabric->Configure (cfg);
 
       for (uint32_t i = 0; i < runtimes.size (); ++i)
         {
@@ -1239,16 +1314,48 @@ main (int argc, char *argv[])
               continue;
             }
 
-          Ptr<BgpIxpEndpointAdapter> endpoint = CreateObject<BgpIxpEndpointAdapter> ();
-          endpoint->Bind (rt.spec.as_a, rt.node_a, rt.iface_a);
-          fabric->RegisterEndpoint (ixpLinkByIfId.at (rt.spec.if_id_a), endpoint);
+          Ptr<BgpHiddenIxpEndpointAdapter> endpoint = CreateObject<BgpHiddenIxpEndpointAdapter> ();
+
+          HiddenIxpLinkBinding binding;
+          binding.linkId = ixpLinkByIfId.at (rt.spec.if_id_a);
+          binding.quality = ixpQualityByIfId.at (rt.spec.if_id_a);
+          binding.remoteIxpAs = ixpRemoteAsByIfId.at (rt.spec.if_id_a);
+
+          if (dual_ixp)
+            {
+              Ptr<VirtualIxpFabric> targetFabric = (rt.spec.as_b == 120) ? fabricA : fabricB;
+              binding.fabric = targetFabric;
+              targetFabric->RegisterEndpoint (binding.linkId, endpoint);
+            }
+          else
+            {
+              binding.fabric = fabric;
+              fabric->RegisterEndpoint (binding.linkId, endpoint);
+            }
+
+          hiddenLinkByIfId[rt.spec.if_id_a] = binding;
         }
 
-      fabric->Start ();
-      for (std::map<uint32_t, IxpLinkId>::const_iterator it = ixpLinkByIfId.begin ();
-           it != ixpLinkByIfId.end (); ++it)
+      if (fabricA != 0)
         {
-          fabric->SetFeasibleUp (it->second, ixpQualityByIfId.at (it->first));
+          fabricA->Start ();
+        }
+      if (fabricB != 0)
+        {
+          fabricB->Start ();
+        }
+      if (fabric != 0)
+        {
+          fabric->Start ();
+        }
+
+      for (std::map<uint32_t, HiddenIxpLinkBinding>::const_iterator it = hiddenLinkByIfId.begin ();
+           it != hiddenLinkByIfId.end (); ++it)
+        {
+          if (it->second.fabric != 0)
+            {
+              it->second.fabric->SetFeasibleUp (it->second.linkId, it->second.quality);
+            }
         }
 
       if (!event_file.empty ())
@@ -1257,30 +1364,34 @@ main (int argc, char *argv[])
           for (uint32_t i = 0; i < extEvents.size (); ++i)
             {
               const ExternalEvent &ev = extEvents.at (i);
-              if (ixpLinkByIfId.find (ev.if_id) == ixpLinkByIfId.end ())
+              if (hiddenLinkByIfId.find (ev.if_id) == hiddenLinkByIfId.end ())
                 {
                   continue;
                 }
 
-              Simulator::Schedule (Seconds (ev.time_s), &SetVirtualIxpLinkState, fabric,
-                                   ixpLinkByIfId.at (ev.if_id), ixpQualityByIfId.at (ev.if_id),
-                                   ev.up, ev.asn, &linkEvents);
+              const HiddenIxpLinkBinding &binding = hiddenLinkByIfId.at (ev.if_id);
+
+              Simulator::Schedule (Seconds (ev.time_s), &SetVirtualIxpLinkState, binding, ev.up,
+                                   ev.asn, &linkEvents);
             }
         }
       else
         {
-          Simulator::Schedule (Seconds (50.0), &SetVirtualIxpLinkState, fabric,
-                               ixpLinkByIfId.at (1020001), ixpQualityByIfId.at (1020001), false,
-                               102, &linkEvents);
-          Simulator::Schedule (Seconds (77.0), &SetVirtualIxpLinkState, fabric,
-                               ixpLinkByIfId.at (1030001), ixpQualityByIfId.at (1030001), false,
-                               103, &linkEvents);
-          Simulator::Schedule (Seconds (104.0), &SetVirtualIxpLinkState, fabric,
-                               ixpLinkByIfId.at (1040001), ixpQualityByIfId.at (1040001), false,
-                               104, &linkEvents);
-          Simulator::Schedule (Seconds (131.0), &SetVirtualIxpLinkState, fabric,
-                               ixpLinkByIfId.at (1050001), ixpQualityByIfId.at (1050001), false,
-                               105, &linkEvents);
+          const uint32_t defaultIfIds[] = {1020001, 1030001, 1040001, 1050001};
+          const double defaultTimes[] = {50.0, 77.0, 104.0, 131.0};
+          const uint16_t defaultAsn[] = {102, 103, 104, 105};
+          for (uint32_t k = 0; k < 4; ++k)
+            {
+              const uint32_t ifId = defaultIfIds[k];
+              if (hiddenLinkByIfId.find (ifId) == hiddenLinkByIfId.end ())
+                {
+                  continue;
+                }
+
+              const HiddenIxpLinkBinding &binding = hiddenLinkByIfId.at (ifId);
+                Simulator::Schedule (Seconds (defaultTimes[k]), &SetVirtualIxpLinkState, binding,
+                           false, defaultAsn[k], &linkEvents);
+            }
         }
     }
   else if (scenario == "visible")
