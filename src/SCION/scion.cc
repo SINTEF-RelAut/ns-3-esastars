@@ -154,17 +154,29 @@ main (int argc, char *argv[])
     {
       std::string cp_out_path = config["cp_summary_output"].as<std::string> ();
       std::ofstream cp_out (cp_out_path);
-      cp_out << "total_beacons_sent,propagation,exploration\n";
+      cp_out << "total_beacons_sent,propagation,exploration,unique_sender_ases\n";
       uint64_t total = 0;
+      uint32_t unique_sender_ases = 0;
       for (uint32_t i = 0; i < nodes.GetN (); ++i)
         {
           ScionAs *as_node = dynamic_cast<ScionAs *> (PeekPointer (nodes.Get (i)));
           if (as_node == nullptr || as_node->GetBeaconServer () == nullptr)
             continue;
+          bool as_sent_beacon = false;
           for (auto const &cnt : as_node->GetBeaconServer ()->GetBeaconsSentPerInterface ())
-            total += cnt;
+            {
+              total += cnt;
+              if (cnt > 0)
+                {
+                  as_sent_beacon = true;
+                }
+            }
+          if (as_sent_beacon)
+            {
+              unique_sender_ases++;
+            }
         }
-      cp_out << total << "," << total << ",0\n";
+      cp_out << total << "," << total << ",0," << unique_sender_ases << "\n";
     }
 
   Simulator::Destroy ();

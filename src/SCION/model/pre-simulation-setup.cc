@@ -25,11 +25,11 @@ namespace {
 struct StochasticLatencyParams
 {
   bool enabled = true;
-  double R_eff_m = 1.4e6;            // 1400 km
+  double R_eff_m = 1.4e6; // 1400 km
   double alpha = 1.3;
-  double mu_link_s = 5.5e-3;         // 5.5 ms
-  double sigma_link_s = 1.2e-3;      // 1.2 ms
-  double delta_s = 0.4e-3;           // 0.4 ms
+  double mu_link_s = 5.5e-3; // 5.5 ms
+  double sigma_link_s = 1.2e-3; // 1.2 ms
+  double delta_s = 0.4e-3; // 0.4 ms
   double beta = 0.08;
   double omega_rad_s = 2.0 * M_PI / 1500.0;
   double R_L_m = 600000.0;
@@ -69,6 +69,18 @@ IsIxpAs (int32_t asn)
   return asn == 110 || asn == 120 || asn == 121;
 }
 
+bool
+IsDirectEdgeAs (int32_t asn)
+{
+  return asn >= 102 && asn <= 105;
+}
+
+bool
+IsDirectPeerLink (int32_t from, int32_t to)
+{
+  return IsDirectEdgeAs (from) && IsDirectEdgeAs (to);
+}
+
 uint32_t
 GetIxpRankK (int32_t from, int32_t to)
 {
@@ -84,16 +96,53 @@ GetIxpRankK (int32_t from, int32_t to)
   return 1;
 }
 
+uint32_t
+GetDirectRankK (int32_t from_if_id, int32_t to_if_id)
+{
+  // Direct-link IF IDs encode location in the hundreds digit of the last three digits:
+  // loc A => 1 (preferred, k=1), loc B => 2 (fallback, k=2).
+  auto RankFromIfId = [] (int32_t if_id) -> uint32_t {
+    if (if_id <= 0)
+      {
+        return 1;
+      }
+    uint32_t loc = (static_cast<uint32_t> (if_id) / 100) % 10;
+    return (loc == 2) ? 2 : 1;
+  };
+
+  return std::max (RankFromIfId (from_if_id), RankFromIfId (to_if_id));
+}
+
+bool
+ShouldApplyStochasticLatency (int32_t from, int32_t to)
+{
+  return IsIxpAs (from) || IsIxpAs (to) || IsDirectPeerLink (from, to);
+}
+
+uint32_t
+GetStochasticRankK (int32_t from, int32_t to, int32_t from_if_id, int32_t to_if_id)
+{
+  if (IsIxpAs (from) || IsIxpAs (to))
+    {
+      return GetIxpRankK (from, to);
+    }
+  if (IsDirectPeerLink (from, to))
+    {
+      return GetDirectRankK (from_if_id, to_if_id);
+    }
+  return 1;
+}
+
 double
 SampleIxpLatencySeconds (uint32_t k, double now_s, const StochasticLatencyParams &p)
 {
   static std::mt19937 rng (1337);
 
   const double phi_max = M_PI / (2.0 * static_cast<double> (std::max<uint32_t> (1, p.P)));
-  const double theta_min = (static_cast<double> (k) - 1.0) * M_PI /
-                           static_cast<double> (std::max<uint32_t> (1, p.N_p));
-  const double theta_max = static_cast<double> (k) * M_PI /
-                           static_cast<double> (std::max<uint32_t> (1, p.N_p));
+  const double theta_min =
+      (static_cast<double> (k) - 1.0) * M_PI / static_cast<double> (std::max<uint32_t> (1, p.N_p));
+  const double theta_max =
+      static_cast<double> (k) * M_PI / static_cast<double> (std::max<uint32_t> (1, p.N_p));
 
   std::uniform_real_distribution<double> uni_phi (0.0, phi_max);
   std::uniform_real_distribution<double> uni_theta (theta_min, theta_max);
@@ -589,9 +638,12 @@ InstantiateLinksFromTopo (rapidxml::xml_node<> *xml_root, NodeContainer &as_node
 
       PointToPointHelper helper;
       double link_delay_s = p.HasProperty ("latency") ? std::stod (p.GetProperty ("latency")) : 0.0;
-      if (stoch.enabled && (IsIxpAs (from) || IsIxpAs (to)))
+      int32_t from_if_id =
+          p.HasProperty ("from_if_id") ? std::stoi (p.GetProperty ("from_if_id")) : -1;
+      int32_t to_if_id = p.HasProperty ("to_if_id") ? std::stoi (p.GetProperty ("to_if_id")) : -1;
+      if (stoch.enabled && ShouldApplyStochasticLatency (from, to))
         {
-          uint32_t k = GetIxpRankK (from, to);
+          uint32_t k = GetStochasticRankK (from, to, from_if_id, to_if_id);
           link_delay_s = SampleIxpLatencySeconds (k, Simulator::Now ().GetSeconds (), stoch);
         }
       if (!std::isfinite (link_delay_s) || link_delay_s <= 0.0)

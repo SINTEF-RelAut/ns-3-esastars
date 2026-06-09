@@ -48,9 +48,23 @@ METRICS: Dict[str, str] = {
     "convergence_time_s": "Mean convergence time (s)",
     "cp_overhead": "Control-plane overhead (messages/s)",
     "packet_loss_percent": "Packet loss (%)",
+    "updates_per_event_window": "UPDATEs per link-event window",
+    "withdraws_per_event_window": "Withdraw UPDATEs per link-event window",
+    "event_windows_with_withdraw_percent": "Link-event windows with >=1 withdraw (%)",
+    "withdraw_trigger_link_down_percent": "Withdraws triggered after link_down (%)",
+    "withdraw_trigger_link_up_percent": "Withdraws triggered after link_up (%)",
+    "withdraw_trigger_unattributed_percent": "Withdraws unattributed to link events (%)",
     "rtt_mean_ms": "RTT mean (ms)",
     "rtt_p95_ms": "RTT p95 (ms)",
     "rtt_p99_ms": "RTT p99 (ms)",
+}
+
+KNOWN_BGP_CP_EVENTS = {
+    "UPDATE",
+    "KEEPALIVE",
+    "STATE_CHANGE",
+    "NOTIFICATION",
+    "OPEN",
 }
 
 PROTOCOL_COLORS = {
@@ -124,6 +138,12 @@ class RunSample:
     cp_overhead: Optional[float]
     cp_overhead_source: str
     packet_loss_percent: Optional[float]
+    updates_per_event_window: Optional[float]
+    withdraws_per_event_window: Optional[float]
+    event_windows_with_withdraw_percent: Optional[float]
+    withdraw_trigger_link_down_percent: Optional[float]
+    withdraw_trigger_link_up_percent: Optional[float]
+    withdraw_trigger_unattributed_percent: Optional[float]
     rtt_mean_ms: Optional[float]
     rtt_p95_ms: Optional[float]
     rtt_p99_ms: Optional[float]
@@ -199,8 +219,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--metrics",
-        default="convergence_time_s,cp_overhead,packet_loss_percent",
-        help="Comma-separated metrics to plot (default: convergence_time_s,cp_overhead,packet_loss_percent)",
+        default="convergence_time_s,cp_overhead,packet_loss_percent,rtt_mean_ms,rtt_p95_ms,rtt_p99_ms",
+        help="Comma-separated metrics to plot (default: convergence_time_s,cp_overhead,packet_loss_percent,rtt_mean_ms,rtt_p95_ms,rtt_p99_ms)",
     )
     parser.add_argument(
         "--plot-stat",
@@ -578,6 +598,140 @@ def compute_scion_packet_loss(run_dir: Path) -> Optional[float]:
     return 100.0 * total_timeout / total_terminal
 
 
+def _normalize_bgp_cp_event_detail(row: Dict[str, str]) -> Tuple[str, str]:
+    """Normalize event/detail for mixed-width BGP CP CSV rows.
+
+    Some CP rows are emitted with 5 fields:
+      time_s,local_asn,peer_asn,STATE_CHANGE,IDLE->OPEN_SENT
+    while UPDATE/OPEN rows use 6 fields including size_bytes. With a 6-column
+    header, DictReader maps 5-field rows as size_bytes=<event>, event=<detail>.
+    """
+    event = (row.get("event") or "").strip().upper()
+    detail = (row.get("detail") or "").strip().lower()
+    if event in KNOWN_BGP_CP_EVENTS:
+        return event, detail
+
+    fallback_event = (row.get("size_bytes") or "").strip().upper()
+    if fallback_event in KNOWN_BGP_CP_EVENTS:
+        fallback_detail = (row.get("event") or "").strip().lower()
+        return fallback_event, fallback_detail
+
+    return event, detail
+
+
+def _load_bgp_link_events(run_dir) -> List[Tuple[float, str]]:
+    """Load sorted link events >= startup cutoff as (time_s, event_name)."""
+    build_dir = run_dir.parent if hasattr(run_dir, "parent") else run_dir.parent
+    run_name = run_dir.name if hasattr(run_dir, "name") else run_dir.name
+    link_events_path = build_dir / run_name / "link_events.csv"
+    if not link_events_path.exists():
+        return []
+
+    out: List[Tuple[float, str]] = []
+    for row in parse_csv_rows(link_events_path):
+        event = (row.get("event") or "").strip()
+        if event not in {"link_down", "link_up"}:
+            continue
+        try:
+            time_s = float(row["time_s"])
+        except (KeyError, ValueError):
+            continue
+        if time_s < STARTUP_CUTOFF_S:
+            continue
+        out.append((time_s, event))
+
+    out.sort(key=lambda item: item[0])
+    return out
+
+
+def compute_bgp_churn_metrics(run_dir) -> Dict[str, Optional[float]]:
+    """Compute BGP churn and withdrawal trigger attribution metrics.
+
+    Attribution is window-based: each UPDATE is attributed to the most recent
+    link event whose timestamp is <= update time.
+    """
+    metrics: Dict[str, Optional[float]] = {
+        "updates_per_event_window": None,
+        "withdraws_per_event_window": None,
+        "event_windows_with_withdraw_percent": None,
+        "withdraw_trigger_link_down_percent": None,
+        "withdraw_trigger_link_up_percent": None,
+        "withdraw_trigger_unattributed_percent": None,
+    }
+
+    link_events = _load_bgp_link_events(run_dir)
+    if not link_events:
+        return metrics
+
+    event_times = [time_s for time_s, _ in link_events]
+    window_count = len(link_events)
+    windows_with_withdraw = [False] * window_count
+
+    updates_total = 0
+    withdraw_total = 0
+    trigger_counts = {"link_down": 0, "link_up": 0, "unattributed": 0}
+
+    build_dir = run_dir.parent if hasattr(run_dir, "parent") else run_dir.parent
+    run_name = run_dir.name if hasattr(run_dir, "name") else run_dir.name
+    is_flat_file = hasattr(run_dir, "is_flat_file") and run_dir.is_flat_file
+    cp_dirs = [build_dir / run_name, build_dir] if is_flat_file else [build_dir / run_name]
+
+    for cp_dir in cp_dirs:
+        if not cp_dir.exists():
+            continue
+        for cp_file in sorted(cp_dir.glob("bgp_cp_as*.csv")):
+            for row in parse_csv_rows(cp_file):
+                event, detail = _normalize_bgp_cp_event_detail(row)
+                if event != "UPDATE":
+                    continue
+                try:
+                    time_s = float(row["time_s"])
+                except (KeyError, ValueError):
+                    continue
+                if time_s < STARTUP_CUTOFF_S:
+                    continue
+
+                updates_total += 1
+                if detail != "withdraw":
+                    continue
+
+                withdraw_total += 1
+                event_index = bisect.bisect_right(event_times, time_s) - 1
+                if event_index < 0:
+                    trigger_counts["unattributed"] += 1
+                    continue
+
+                trigger = link_events[event_index][1]
+                if trigger in {"link_down", "link_up"}:
+                    trigger_counts[trigger] += 1
+                else:
+                    trigger_counts["unattributed"] += 1
+                windows_with_withdraw[event_index] = True
+
+    metrics["updates_per_event_window"] = updates_total / window_count
+    metrics["withdraws_per_event_window"] = withdraw_total / window_count
+    metrics["event_windows_with_withdraw_percent"] = (
+        100.0 * sum(1 for value in windows_with_withdraw if value) / window_count
+    )
+
+    if withdraw_total > 0:
+        metrics["withdraw_trigger_link_down_percent"] = (
+            100.0 * trigger_counts["link_down"] / withdraw_total
+        )
+        metrics["withdraw_trigger_link_up_percent"] = (
+            100.0 * trigger_counts["link_up"] / withdraw_total
+        )
+        metrics["withdraw_trigger_unattributed_percent"] = (
+            100.0 * trigger_counts["unattributed"] / withdraw_total
+        )
+    else:
+        metrics["withdraw_trigger_link_down_percent"] = 0.0
+        metrics["withdraw_trigger_link_up_percent"] = 0.0
+        metrics["withdraw_trigger_unattributed_percent"] = 0.0
+
+    return metrics
+
+
 def compute_bgp_convergence_time(run_dir) -> Optional[float]:
     """Compute BGP convergence time. Accepts Path or RunRef."""
     # Handle both Path and RunRef objects
@@ -618,14 +772,12 @@ def compute_bgp_convergence_time(run_dir) -> Optional[float]:
         return None
 
     update_times: List[float] = []
-    cp_files_found = False
     # For flat files, check parent dir too
     for check_dir in [build_dir / run_name, build_dir] if (hasattr(run_dir, 'is_flat_file') and run_dir.is_flat_file) else [build_dir / run_name]:
         if check_dir.exists():
             for cp_file in sorted(check_dir.glob("bgp_cp_as*.csv")):
-                cp_files_found = True
                 for row in parse_csv_rows(cp_file):
-                    event = (row.get("event") or "").strip().upper()
+                    event, _ = _normalize_bgp_cp_event_detail(row)
                     if event in {"UPDATE", "NOTIFICATION"}:
                         try:
                             update_times.append(float(row["time_s"]))
@@ -689,7 +841,7 @@ def compute_bgp_cp_overhead(run_dir) -> Tuple[Optional[float], str]:
                         max_time_s = max(max_time_s, float(row.get("time_s", "0")))
                     except ValueError:
                         pass
-                    event = (row.get("event") or "").strip().upper()
+                    event, _ = _normalize_bgp_cp_event_detail(row)
                     if event in {"UPDATE", "NOTIFICATION", "KEEPALIVE", "OPEN"}:
                         total_messages += 1
 
@@ -984,11 +1136,20 @@ def load_run_samples(
             convergence_time_s = compute_bgp_convergence_time(run_dir)
             cp_overhead, cp_overhead_source = compute_bgp_cp_overhead(run_dir)
             packet_loss_percent = compute_bgp_packet_loss(run_dir)
+            churn_metrics = compute_bgp_churn_metrics(run_dir)
             rtt_mean_ms, rtt_p95_ms, rtt_p99_ms = compute_bgp_rtt_stats(run_dir)
         else:
             convergence_time_s = compute_scion_convergence_time(run_dir, repo_root)
             cp_overhead, cp_overhead_source = compute_scion_cp_overhead(run_dir, repo_root)
             packet_loss_percent = compute_scion_packet_loss(run_dir)
+            churn_metrics = {
+                "updates_per_event_window": None,
+                "withdraws_per_event_window": None,
+                "event_windows_with_withdraw_percent": None,
+                "withdraw_trigger_link_down_percent": None,
+                "withdraw_trigger_link_up_percent": None,
+                "withdraw_trigger_unattributed_percent": None,
+            }
             rtt_mean_ms, rtt_p95_ms, rtt_p99_ms = compute_scion_rtt_stats(run_dir)
 
         samples.append(
@@ -1006,6 +1167,12 @@ def load_run_samples(
                 cp_overhead=cp_overhead,
                 cp_overhead_source=cp_overhead_source,
                 packet_loss_percent=packet_loss_percent,
+                updates_per_event_window=churn_metrics["updates_per_event_window"],
+                withdraws_per_event_window=churn_metrics["withdraws_per_event_window"],
+                event_windows_with_withdraw_percent=churn_metrics["event_windows_with_withdraw_percent"],
+                withdraw_trigger_link_down_percent=churn_metrics["withdraw_trigger_link_down_percent"],
+                withdraw_trigger_link_up_percent=churn_metrics["withdraw_trigger_link_up_percent"],
+                withdraw_trigger_unattributed_percent=churn_metrics["withdraw_trigger_unattributed_percent"],
                 rtt_mean_ms=rtt_mean_ms,
                 rtt_p95_ms=rtt_p95_ms,
                 rtt_p99_ms=rtt_p99_ms,
@@ -1074,6 +1241,12 @@ def write_run_csv(samples: Sequence[RunSample], out_path: Path, x_axis: str) -> 
                 "cp_overhead",
                 "cp_overhead_source",
                 "packet_loss_percent",
+                "updates_per_event_window",
+                "withdraws_per_event_window",
+                "event_windows_with_withdraw_percent",
+                "withdraw_trigger_link_down_percent",
+                "withdraw_trigger_link_up_percent",
+                "withdraw_trigger_unattributed_percent",
                 "rtt_mean_ms",
                 "rtt_p95_ms",
                 "rtt_p99_ms",
@@ -1094,6 +1267,12 @@ def write_run_csv(samples: Sequence[RunSample], out_path: Path, x_axis: str) -> 
                     "" if sample.cp_overhead is None else f"{sample.cp_overhead:.6f}",
                     sample.cp_overhead_source,
                     "" if sample.packet_loss_percent is None else f"{sample.packet_loss_percent:.6f}",
+                    "" if sample.updates_per_event_window is None else f"{sample.updates_per_event_window:.6f}",
+                    "" if sample.withdraws_per_event_window is None else f"{sample.withdraws_per_event_window:.6f}",
+                    "" if sample.event_windows_with_withdraw_percent is None else f"{sample.event_windows_with_withdraw_percent:.6f}",
+                    "" if sample.withdraw_trigger_link_down_percent is None else f"{sample.withdraw_trigger_link_down_percent:.6f}",
+                    "" if sample.withdraw_trigger_link_up_percent is None else f"{sample.withdraw_trigger_link_up_percent:.6f}",
+                    "" if sample.withdraw_trigger_unattributed_percent is None else f"{sample.withdraw_trigger_unattributed_percent:.6f}",
                     "" if sample.rtt_mean_ms is None else f"{sample.rtt_mean_ms:.6f}",
                     "" if sample.rtt_p95_ms is None else f"{sample.rtt_p95_ms:.6f}",
                     "" if sample.rtt_p99_ms is None else f"{sample.rtt_p99_ms:.6f}",

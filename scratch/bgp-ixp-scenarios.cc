@@ -87,6 +87,39 @@ GetIxpRankKForLink (const LinkSpec &spec)
   return 1;
 }
 
+bool
+IsDirectPeerLink (const LinkSpec &spec)
+{
+  return spec.as_a >= 102 && spec.as_a <= 105 && spec.as_b >= 102 && spec.as_b <= 105;
+}
+
+uint32_t
+GetDirectRankKForLink (const LinkSpec &spec)
+{
+  // Direct-link IF IDs encode location in the hundreds digit of the last three digits:
+  // loc A => 1 (preferred, k=1), loc B => 2 (fallback, k=2).
+  auto RankFromIfId = [] (uint32_t if_id) -> uint32_t {
+    uint32_t loc = (if_id / 100) % 10;
+    return (loc == 2) ? 2 : 1;
+  };
+
+  return std::max (RankFromIfId (spec.if_id_a), RankFromIfId (spec.if_id_b));
+}
+
+uint32_t
+GetStochasticRankKForLink (const LinkSpec &spec)
+{
+  if (spec.ixp_managed)
+    {
+      return GetIxpRankKForLink (spec);
+    }
+  if (IsDirectPeerLink (spec))
+    {
+      return GetDirectRankKForLink (spec);
+    }
+  return 1;
+}
+
 double
 SampleIxpLatencySeconds (uint32_t k, double now_s, const StochasticLatencyParams &p)
 {
@@ -653,8 +686,8 @@ SetVirtualIxpLinkState (HiddenIxpLinkBinding binding, bool up, uint16_t asn,
   if (eventsOut && eventsOut->is_open ())
     {
       (*eventsOut) << std::fixed << std::setprecision (6) << Simulator::Now ().GetSeconds () << ","
-                   << (up ? "link_up" : "link_down") << "," << asn << ","
-                   << binding.remoteIxpAs << "," << binding.linkId.linkIndex << std::endl;
+                   << (up ? "link_up" : "link_down") << "," << asn << "," << binding.remoteIxpAs
+                   << "," << binding.linkId.linkIndex << std::endl;
     }
 }
 
@@ -941,7 +974,7 @@ main (int argc, char *argv[])
   cmd.AddValue ("directLinks",
                 "Use direct peer links between AS102-105 at two geographic locations (no IXP)",
                 direct_links);
-  cmd.AddValue ("stochasticLatencyModel", "Enable stochastic IXP latency model",
+  cmd.AddValue ("stochasticLatencyModel", "Enable stochastic IXP/direct latency model",
                 stochastic_latency_model);
   cmd.AddValue ("stochasticR_eff_m", "Effective ISL reach in metres", stochastic_params.R_eff_m);
   cmd.AddValue ("stochasticAlpha", "Routing inefficiency factor", stochastic_params.alpha);
@@ -1059,9 +1092,9 @@ main (int argc, char *argv[])
       rate << spec.capacity_mbps << "Mbps";
 
       double link_delay_s = spec.latency_s;
-      if (stochastic_params.enabled && spec.ixp_managed)
+      if (stochastic_params.enabled && (spec.ixp_managed || IsDirectPeerLink (spec)))
         {
-          uint32_t k = GetIxpRankKForLink (spec);
+          uint32_t k = GetStochasticRankKForLink (spec);
           link_delay_s =
               SampleIxpLatencySeconds (k, Simulator::Now ().GetSeconds (), stochastic_params);
         }
@@ -1389,8 +1422,8 @@ main (int argc, char *argv[])
                 }
 
               const HiddenIxpLinkBinding &binding = hiddenLinkByIfId.at (ifId);
-                Simulator::Schedule (Seconds (defaultTimes[k]), &SetVirtualIxpLinkState, binding,
-                           false, defaultAsn[k], &linkEvents);
+              Simulator::Schedule (Seconds (defaultTimes[k]), &SetVirtualIxpLinkState, binding,
+                                   false, defaultAsn[k], &linkEvents);
             }
         }
     }

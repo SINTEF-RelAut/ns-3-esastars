@@ -6,7 +6,7 @@ It keeps the same stochastic event generation model, scenarios, families, and
 protocols, while sweeping these timer points:
   - MRAI: 1, 2, 4, 6, 8 seconds
   - BGP clock interval: 5, 10, 20, 30, 40 seconds
-  - SCION probe interval: 5, 10, 20, 30, 40 seconds
+    - SCION probe interval: 1 second (fixed)
 
 All protocols/families for a given (density, seed) reuse the same shared source
 event timeline to preserve comparability.
@@ -70,11 +70,11 @@ DENSITIES: Dict[str, DensitySpec] = {
 }
 
 TIMING_POINTS: List[TimingPoint] = [
-    TimingPoint(mrai_s=1, bgp_clock_s=5, probe_period_s=5, beacon_period_s=5),
-    TimingPoint(mrai_s=2, bgp_clock_s=10, probe_period_s=10, beacon_period_s=10),
-    TimingPoint(mrai_s=4, bgp_clock_s=20, probe_period_s=20, beacon_period_s=20),
-    TimingPoint(mrai_s=6, bgp_clock_s=30, probe_period_s=30, beacon_period_s=30),
-    TimingPoint(mrai_s=8, bgp_clock_s=40, probe_period_s=40, beacon_period_s=40),
+    TimingPoint(mrai_s=1, bgp_clock_s=5, probe_period_s=1, beacon_period_s=5),
+    TimingPoint(mrai_s=2, bgp_clock_s=10, probe_period_s=1, beacon_period_s=10),
+    TimingPoint(mrai_s=4, bgp_clock_s=20, probe_period_s=1, beacon_period_s=20),
+    TimingPoint(mrai_s=6, bgp_clock_s=30, probe_period_s=1, beacon_period_s=30),
+    TimingPoint(mrai_s=8, bgp_clock_s=40, probe_period_s=1, beacon_period_s=40),
 ]
 
 
@@ -179,8 +179,25 @@ def finalize_scion_config_timing(output_path: Path, sim_time_s: int, probe_perio
 
     text = re.sub(r"^(simulation_duration:\s*)\S+", rf"\g<1>{sim_time_s}s", text, flags=re.MULTILINE)
     text = re.sub(r"^(\s*last_beaconing:\s*)\S+", rf"\g<1>{sim_time_s}s", text, flags=re.MULTILINE)
-    text = re.sub(r"^(\s*period:\s*)\S+", rf"\g<1>{probe_period_s}s", text, count=1, flags=re.MULTILINE)
-    text = re.sub(r"^(\s*count:\s*)\d+", rf"\g<1>{probe_count}", text, flags=re.MULTILINE)
+
+    lines = text.splitlines()
+    in_data_plane_probing = False
+    for idx, line in enumerate(lines):
+        if re.match(r"^\S", line):
+            in_data_plane_probing = False
+
+        if line.startswith("data_plane_probing:"):
+            in_data_plane_probing = True
+            continue
+
+        if in_data_plane_probing and re.match(r"^\s*period:\s*", line):
+            lines[idx] = re.sub(r"^(\s*period:\s*)\S+", rf"\g<1>{probe_period_s}s", line)
+            continue
+
+        if in_data_plane_probing and re.match(r"^\s*count:\s*", line):
+            lines[idx] = re.sub(r"^(\s*count:\s*)\d+", rf"\g<1>{probe_count}", line)
+
+    text = "\n".join(lines) + "\n"
 
     output_path.write_text(text, encoding="utf-8")
 
