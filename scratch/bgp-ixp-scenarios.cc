@@ -21,6 +21,7 @@
 #include "ns3/application-container.h"
 #include "ns3/core-module.h"
 #include "ns3/internet-module.h"
+#include "ns3/output-stream-wrapper.h"
 #include "ns3/ipv4.h"
 #include "ns3/ipv4-address.h"
 #include "ns3/ipv4-interface-address.h"
@@ -28,6 +29,7 @@
 #include "ns3/point-to-point-module.h"
 #include "ns3/socket.h"
 #include "ns3/udp-socket-factory.h"
+#include "ns3/v4traceroute-helper.h"
 #include "ns3/virtual-ixp-fabric.h"
 
 #include "ns3/bgp.h"
@@ -1278,6 +1280,26 @@ main (int argc, char *argv[])
       asNodes.at (srcAs)->AddApplication (probe);
       probe->SetStartTime (Seconds (probeStartS + static_cast<double> (i) * 0.001));
       probe->SetStopTime (Seconds (routingStopS));
+
+      // Keep a traceroute-style path log alongside the probe RTT log so hidden and visible
+      // BGP scenarios can be compared hop-by-hop.
+      V4TraceRouteHelper traceHelper (probeIpPerAs.at (dstAs));
+      traceHelper.SetAttribute ("Verbose", BooleanValue (false));
+      traceHelper.SetAttribute ("Timeout", TimeValue (Seconds (probeTimeoutS)));
+      traceHelper.SetAttribute ("ProbeNum", UintegerValue (3));
+      traceHelper.SetAttribute ("MaxHop", UintegerValue (30));
+
+      ApplicationContainer traceApps = traceHelper.Install (asNodes.at (srcAs));
+      traceApps.Start (Seconds (probeStartS + static_cast<double> (i) * 0.001));
+      traceApps.Stop (Seconds (routingStopS));
+
+      std::ostringstream traceOut;
+      traceOut << outDir << "/traceroute_" << scenario << "_" << srcAs << "_" << dstAs << ".txt";
+      Ptr<OutputStreamWrapper> traceStream =
+          Create<OutputStreamWrapper> (traceOut.str (), std::ios::out | std::ios::trunc);
+      *traceStream->GetStream () << "# scenario=" << scenario << " src_as=" << srcAs
+                                 << " dst_as=" << dstAs << std::endl;
+      V4TraceRouteHelper::PrintTraceRouteAt (asNodes.at (srcAs), traceStream);
     }
 
   std::ofstream linkEvents;

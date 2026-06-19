@@ -21,6 +21,8 @@ def build(bld):
         'helper/radvd-helper.cc',
         'helper/v4ping-helper.cc',
         'helper/dhcp-helper.cc',
+        'model/v4traceroute.cc',
+        'helper/v4traceroute-helper.cc',
         ]
 
     applications_test = bld.create_ns3_module_test_library('internet-apps')
@@ -43,6 +45,8 @@ def build(bld):
         'helper/v4ping-helper.h',
         'helper/radvd-helper.h',
         'helper/dhcp-helper.h',
+        'model/v4traceroute.h',
+        'helper/v4traceroute-helper.h',
         ]
 
     if (bld.env['ENABLE_EXAMPLES']):
