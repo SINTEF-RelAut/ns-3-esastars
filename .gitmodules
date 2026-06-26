@@ -1,3 +1,4 @@
 [submodule "src/bgp"]
 	path = src/bgp
 	url = git@github.com:SINTEF-RelAut/ns3-bgp-STARS.git
+	branch = stars
