@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Dual IXP satellites, ONE link per satellite-IXP AS pair: the visible-handover topology.
+
+  This is the SCION counterpart of BuildTopologyLinksDual(split_edge_as=false,
+  single_link_per_pair=true) in scratch/bgp-ixp-scenarios.cc, link for link, so the two
+  protocols run on the same graph with the same shared event trace.
+
+  Each satellite (102-105) reaches AS120 over exactly one link and AS121 over exactly one
+  link. A handover therefore moves between two *different* IXP ASes and is visible to the
+  control plane, in contrast to the single-IXP topology where both cables share a subnet and
+  the switch happens below IP.
+
+  The satellite-side interface IDs are the ones the generated dual event traces address:
+  X0001 towards AS120 (primary) and X0003 towards AS121 (backup).
+
+  The AS120-AS121 link is essential. Without it a satellite attached to AS120 cannot reach
+  one attached to AS121 at all, and because each satellite hands over independently the two
+  sit on different IXPs roughly half the time; measurements then reflect topological
+  partitioning rather than routing convergence. Two IXP satellites in a constellation would
+  carry an inter-satellite link, so this restores the invariant that every satellite can
+  always reach every other.
+-->
+<topology>
+  <ases>
+    <as id="101">
+      <property name="isd" value="1"/>
+      <property name="type" value="core"/>
+      <hosts>
+        <host id="2"/>
+      </hosts>
+    </as>
+    <as id="102">
+      <property name="isd" value="1"/>
+      <property name="type" value="core"/>
+      <hosts>
+        <host id="2"/>
+      </hosts>
+    </as>
+    <as id="103">
+      <property name="isd" value="1"/>
+      <property name="type" value="core"/>
+      <hosts>
+        <host id="2"/>
+      </hosts>
+    </as>
+    <as id="104">
+      <property name="isd" value="1"/>
+      <property name="type" value="core"/>
+      <hosts>
+        <host id="2"/>
+      </hosts>
+    </as>
+    <as id="105">
+      <property name="isd" value="1"/>
+      <property name="type" value="core"/>
+      <hosts>
+        <host id="2"/>
+      </hosts>
+    </as>
+    <as id="106">
+      <property name="isd" value="1"/>
+      <property name="type" value="core"/>
+      <hosts>
+        <host id="2"/>
+      </hosts>
+    </as>
+    <as id="107">
+      <property name="isd" value="1"/>
+      <property name="type" value="core"/>
+      <hosts>
+        <host id="2"/>
+      </hosts>
+    </as>
+    <as id="108">
+      <property name="isd" value="1"/>
+      <property name="type" value="core"/>
+      <hosts>
+        <host id="2"/>
+      </hosts>
+    </as>
+    <as id="120">
+      <property name="isd" value="1"/>
+      <property name="type" value="core"/>
+      <hosts>
+        <host id="2"/>
+      </hosts>
+    </as>
+    <as id="121">
+      <property name="isd" value="1"/>
+      <property name="type" value="core"/>
+      <hosts>
+        <host id="2"/>
+      </hosts>
+    </as>
+  </ases>
+
+  <!-- Ground station attachments -->
+  <link>
+    <from>101</from>
+    <to>102</to>
+    <property name="capacity" type="int">300</property>
+    <property name="rel" type="string">core</property>
+    <property name="latitude" type="float">0.0</property>
+    <property name="longitude" type="float">0.0</property>
+    <property name="latency" type="float">0.0020</property>
+    <property name="from_if_id" type="int">1010000</property>
+    <property name="to_if_id" type="int">1020000</property>
+  </link>
+  <link>
+    <from>105</from>
+    <to>106</to>
+    <property name="capacity" type="int">300</property>
+    <property name="rel" type="string">core</property>
+    <property name="latitude" type="float">0.0</property>
+    <property name="longitude" type="float">0.0</property>
+    <property name="latency" type="float">0.0020</property>
+    <property name="from_if_id" type="int">1050000</property>
+    <property name="to_if_id" type="int">1060001</property>
+  </link>
+  <link>
+    <from>107</from>
+    <to>103</to>
+    <property name="capacity" type="int">150</property>
+    <property name="rel" type="string">core</property>
+    <property name="latitude" type="float">0.0</property>
+    <property name="longitude" type="float">0.0</property>
+    <property name="latency" type="float">0.0015</property>
+    <property name="from_if_id" type="int">1070000</property>
+    <property name="to_if_id" type="int">1030000</property>
+  </link>
+  <link>
+    <from>104</from>
+    <to>108</to>
+    <property name="capacity" type="int">150</property>
+    <property name="rel" type="string">core</property>
+    <property name="latitude" type="float">0.0</property>
+    <property name="longitude" type="float">0.0</property>
+    <property name="latency" type="float">0.0015</property>
+    <property name="from_if_id" type="int">1040000</property>
+    <property name="to_if_id" type="int">1080001</property>
+  </link>
+
+  <!-- Primary orbit: one link per satellite to AS120 -->
+  <link>
+    <from>102</from>
+    <to>120</to>
+    <property name="capacity" type="int">300</property>
+    <property name="rel" type="string">core</property>
+    <property name="latitude" type="float">0.0</property>
+    <property name="longitude" type="float">0.0</property>
+    <property name="latency" type="float">0.0010</property>
+    <property name="from_if_id" type="int">1020001</property>
+    <property name="to_if_id" type="int">1200000</property>
+  </link>
+  <link>
+    <from>103</from>
+    <to>120</to>
+    <property name="capacity" type="int">300</property>
+    <property name="rel" type="string">core</property>
+    <property name="latitude" type="float">0.0</property>
+    <property name="longitude" type="float">0.0</property>
+    <property name="latency" type="float">0.0010</property>
+    <property name="from_if_id" type="int">1030001</property>
+    <property name="to_if_id" type="int">1200001</property>
+  </link>
+  <link>
+    <from>104</from>
+    <to>120</to>
+    <property name="capacity" type="int">300</property>
+    <property name="rel" type="string">core</property>
+    <property name="latitude" type="float">0.0</property>
+    <property name="longitude" type="float">0.0</property>
+    <property name="latency" type="float">0.0010</property>
+    <property name="from_if_id" type="int">1040001</property>
+    <property name="to_if_id" type="int">1200002</property>
+  </link>
+  <link>
+    <from>105</from>
+    <to>120</to>
+    <property name="capacity" type="int">300</property>
+    <property name="rel" type="string">core</property>
+    <property name="latitude" type="float">0.0</property>
+    <property name="longitude" type="float">0.0</property>
+    <property name="latency" type="float">0.0010</property>
+    <property name="from_if_id" type="int">1050001</property>
+    <property name="to_if_id" type="int">1200003</property>
+  </link>
+
+  <!-- Backup orbit: one link per satellite to AS121 -->
+  <link>
+    <from>102</from>
+    <to>121</to>
+    <property name="capacity" type="int">300</property>
+    <property name="rel" type="string">core</property>
+    <property name="latitude" type="float">0.0</property>
+    <property name="longitude" type="float">0.0</property>
+    <property name="latency" type="float">0.0010</property>
+    <property name="from_if_id" type="int">1020003</property>
+    <property name="to_if_id" type="int">1210000</property>
+  </link>
+  <link>
+    <from>103</from>
+    <to>121</to>
+    <property name="capacity" type="int">300</property>
+    <property name="rel" type="string">core</property>
+    <property name="latitude" type="float">0.0</property>
+    <property name="longitude" type="float">0.0</property>
+    <property name="latency" type="float">0.0010</property>
+    <property name="from_if_id" type="int">1030003</property>
+    <property name="to_if_id" type="int">1210001</property>
+  </link>
+  <link>
+    <from>104</from>
+    <to>121</to>
+    <property name="capacity" type="int">300</property>
+    <property name="rel" type="string">core</property>
+    <property name="latitude" type="float">0.0</property>
+    <property name="longitude" type="float">0.0</property>
+    <property name="latency" type="float">0.0010</property>
+    <property name="from_if_id" type="int">1040003</property>
+    <property name="to_if_id" type="int">1210002</property>
+  </link>
+  <link>
+    <from>105</from>
+    <to>121</to>
+    <property name="capacity" type="int">300</property>
+    <property name="rel" type="string">core</property>
+    <property name="latitude" type="float">0.0</property>
+    <property name="longitude" type="float">0.0</property>
+    <property name="latency" type="float">0.0010</property>
+    <property name="from_if_id" type="int">1050003</property>
+    <property name="to_if_id" type="int">1210003</property>
+  </link>
+
+  <!-- Inter-IXP link, so the two orbits are never partitioned from each other -->
+  <link>
+    <from>120</from>
+    <to>121</to>
+    <property name="capacity" type="int">300</property>
+    <property name="rel" type="string">core</property>
+    <property name="latitude" type="float">0.0</property>
+    <property name="longitude" type="float">0.0</property>
+    <property name="latency" type="float">0.0010</property>
+    <property name="from_if_id" type="int">1200004</property>
+    <property name="to_if_id" type="int">1210004</property>
+  </link>
+</topology>
