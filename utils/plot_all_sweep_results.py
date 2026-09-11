@@ -1053,12 +1053,14 @@ class RunRef:
 def discover_run_dirs(build_dir: Path) -> List[RunRef]:
     """Discover both directory-based (legacy) and flat-file (timing-sweep) runs."""
     dirs: List[RunRef] = []
-    
+
     # Discover traditional directory-based runs
+    dir_run_names: set[str] = set()
     for path in sorted(build_dir.iterdir()):
         if path.is_dir() and parse_run_dir(path) is not None:
+            dir_run_names.add(path.name)
             dirs.append(RunRef(path.name, build_dir, is_flat_file=False))
-    
+
     # Discover flat-file timing-sweep runs (*.txt files)
     flat_file_runs: set[str] = set()
     for txt_file in sorted(build_dir.glob("stochastic_*.txt")):
@@ -1066,11 +1068,19 @@ def discover_run_dirs(build_dir: Path) -> List[RunRef]:
         if pseudo_run_name in flat_file_runs:
             continue
         flat_file_runs.add(pseudo_run_name)
-        
+
+        # Timing-sweep SCION runs emit BOTH a per-run directory (probe CSVs) and flat
+        # sidecar files at the build root, so the two passes above would otherwise
+        # register the same run twice and double its weight in every aggregate.
+        # Prefer the directory form: it resolves the probe CSVs that the flat form,
+        # globbing at the build root, cannot find (leaving its RTT metrics empty).
+        if pseudo_run_name in dir_run_names:
+            continue
+
         # Check if this parses as a valid STOCH_* run
         if parse_run_dir(Path(pseudo_run_name)) is not None:
             dirs.append(RunRef(pseudo_run_name, build_dir, is_flat_file=True))
-    
+
     return dirs
 
 

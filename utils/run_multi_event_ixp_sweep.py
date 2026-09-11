@@ -67,6 +67,10 @@ SCION_TEMPLATE_PATHS: Dict[str, Dict[str, Path]] = {
     },
     "visible": {
         "dual": Path("configs/scenario_ixp_dual_sat_visible_gateway_switch_generated.yaml"),
+        # Dual IXP with one link per satellite-IXP AS pair: the visible-handover family. A
+        # handover moves between two different IXP ASes, so it is exposed to the control
+        # plane, unlike the single-IXP family where the switch happens below IP.
+        "dual_vis": Path("configs/scenario_ixp_dual_sat_visible_single_link_generated.yaml"),
         "single": Path("configs/scenario_ixp_single_sat_visible_gateway_switch_generated.yaml"),
         "direct": Path("configs/scenario_ixp_direct_visible_gateway_switch_generated.yaml"),
     },

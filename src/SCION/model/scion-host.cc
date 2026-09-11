@@ -959,10 +959,15 @@ ScionHost::TrySendProbe (uint32_t session_id, uint32_t seq, uint32_t retry_count
 
   if (session.force_path_refresh && retry_count == 0)
     {
-      // Force-refresh invalidates all cache datasets to avoid stale intermediates
-      // surviving under non-destination keys.
-      InvalidateAllCachedPathSegments ();
+      // Refresh only this session's destination. Invalidating every cache dataset here
+      // would also drop segments belonging to unrelated destinations on this host, so a
+      // timeout on one probe session silently blackholed every other session sourced at
+      // the same host until its paths were re-fetched.
+      InvalidateCachedPathsToDestination (session.dst_ia);
       RequestPathsToDestination (session.dst_ia);
+      // Clear the flag once the refresh has been issued; otherwise a permanently
+      // unreachable destination keeps it high and re-triggers on every tick.
+      session.force_path_refresh = false;
       Simulator::Schedule (MilliSeconds (100), &ScionHost::TrySendProbe, this, session_id, seq,
                            retry_count + 1);
       return;
@@ -1137,18 +1142,18 @@ ScionHost::FormatPacketPathForCsv (const ScionPacket *packet) const
                   oss << ";";
                 }
 
-              const uint16_t left_alias = SECOND_LOWER_16_BITS (*hop_it);
-              const uint16_t right_alias = UPPER_16_BITS (*hop_it);
-              const uint16_t left_if = LOWER_16_BITS (*hop_it);
-              const uint16_t right_if = SECOND_UPPER_16_BITS (*hop_it);
+              // A hop field encodes ONE AS with its ingress and egress interface,
+              // packed as [isd | as | ing_if | eg_if] (see beaconing/beacon.cc). It must
+              // be read with the GET_HOP_* macros from path-segment.h, not with the
+              // link_information macros in utils.h, which describe a different layout.
+              const uint16_t as_alias = GET_HOP_AS (*hop_it);
+              const uint16_t ing_if = GET_HOP_ING_IF (*hop_it);
+              const uint16_t eg_if = GET_HOP_EG_IF (*hop_it);
 
-              const int32_t left_real = alias_to_real_as_no.count (left_alias)
-                                            ? alias_to_real_as_no.at (left_alias)
-                                            : left_alias;
-              const int32_t right_real = alias_to_real_as_no.count (right_alias)
-                                             ? alias_to_real_as_no.at (right_alias)
-                                             : right_alias;
-              oss << left_real << ":" << left_if << "->" << right_real << ":" << right_if;
+              const int32_t as_real = alias_to_real_as_no.count (as_alias)
+                                          ? alias_to_real_as_no.at (as_alias)
+                                          : as_alias;
+              oss << as_real << ":" << ing_if << "->" << eg_if;
               first_hop = false;
             }
         }
@@ -1162,24 +1167,60 @@ ScionHost::FormatPacketPathForCsv (const ScionPacket *packet) const
                   oss << ";";
                 }
 
-              const uint16_t left_alias = SECOND_LOWER_16_BITS (*hop_it);
-              const uint16_t right_alias = UPPER_16_BITS (*hop_it);
-              const uint16_t left_if = LOWER_16_BITS (*hop_it);
-              const uint16_t right_if = SECOND_UPPER_16_BITS (*hop_it);
+              // A hop field encodes ONE AS with its ingress and egress interface,
+              // packed as [isd | as | ing_if | eg_if] (see beaconing/beacon.cc). It must
+              // be read with the GET_HOP_* macros from path-segment.h, not with the
+              // link_information macros in utils.h, which describe a different layout.
+              const uint16_t as_alias = GET_HOP_AS (*hop_it);
+              const uint16_t ing_if = GET_HOP_ING_IF (*hop_it);
+              const uint16_t eg_if = GET_HOP_EG_IF (*hop_it);
 
-              const int32_t left_real = alias_to_real_as_no.count (left_alias)
-                                            ? alias_to_real_as_no.at (left_alias)
-                                            : left_alias;
-              const int32_t right_real = alias_to_real_as_no.count (right_alias)
-                                             ? alias_to_real_as_no.at (right_alias)
-                                             : right_alias;
-              oss << left_real << ":" << left_if << "->" << right_real << ":" << right_if;
+              const int32_t as_real = alias_to_real_as_no.count (as_alias)
+                                          ? alias_to_real_as_no.at (as_alias)
+                                          : as_alias;
+              oss << as_real << ":" << ing_if << "->" << eg_if;
               first_hop = false;
             }
         }
     }
 
   return oss.str ();
+}
+
+void
+ScionHost::TrySendProbeReply (Payload reply_payload, ia_t dst_ia, host_addr_t dst_host,
+                              uint32_t retry_count)
+{
+  // A responder that has no cached return path used to drop the request outright, so a
+  // probe arriving while this host's cache was momentarily empty was never answered and
+  // showed up as loss at the sender. Request the paths and retry a bounded number of
+  // times instead; give up quietly once the budget is spent.
+  static const uint32_t max_reply_retries = 3;
+
+  std::vector<const PathSegment *> the_path;
+  std::vector<uint8_t> shortcuts;
+  SearchInCachedSegments (dst_ia, the_path, shortcuts);
+  if (the_path.empty () && dynamic_cast<ScionCoreAs *> (as) == NULL)
+    {
+      TrySynthesizePathFromBeaconStore (dst_ia, the_path);
+    }
+
+  if (the_path.empty ())
+    {
+      RequestPathsToDestination (dst_ia);
+      if (retry_count >= max_reply_retries)
+        {
+          return;
+        }
+      Simulator::Schedule (MilliSeconds (100), &ScionHost::TrySendProbeReply, this, reply_payload,
+                           dst_ia, dst_host, retry_count + 1);
+      return;
+    }
+
+  ScionPacket *reply = CreateScionPacket (reply_payload, PayloadType::SCION_PROBE_REPLY, dst_ia,
+                                          dst_host, sizeof (ScionProbePayload), the_path,
+                                          shortcuts);
+  SendScionPacket (reply);
 }
 
 void
@@ -1209,25 +1250,14 @@ ScionHost::ProcessReceivedPacket (uint16_t local_if, ScionPacket *packet, Time r
       Payload reply_payload;
       reply_payload.scion_probe_payload = packet->payload.scion_probe_payload;
 
-      std::vector<const PathSegment *> the_path;
-      std::vector<uint8_t> shortcuts;
-      SearchInCachedSegments (packet->src_ia, the_path, shortcuts);
-      if (the_path.empty () && dynamic_cast<ScionCoreAs *> (as) == NULL)
-        {
-          TrySynthesizePathFromBeaconStore (packet->src_ia, the_path);
-        }
-      if (the_path.empty ())
-        {
-          RequestPathsToDestination (packet->src_ia);
-          packet->packet_originator->DestroyScionPacket (packet);
-          return;
-        }
-
-      ScionPacket *reply =
-          CreateScionPacket (reply_payload, PayloadType::SCION_PROBE_REPLY, packet->src_ia,
-                             packet->src_host, sizeof (ScionProbePayload), the_path, shortcuts);
-      SendScionPacket (reply);
+      // Everything the reply needs is copied out by value here. The request packet is
+      // destroyed before returning, and the reply may be deferred, so nothing may hold a
+      // ScionPacket* or a PathSegment* across the scheduled retry below.
+      const ia_t reply_ia = packet->src_ia;
+      const host_addr_t reply_host = packet->src_host;
       packet->packet_originator->DestroyScionPacket (packet);
+
+      TrySendProbeReply (reply_payload, reply_ia, reply_host, 0);
       return;
     }
 

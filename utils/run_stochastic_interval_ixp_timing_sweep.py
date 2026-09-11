@@ -20,7 +20,7 @@ import re
 from datetime import date
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 from run_multi_event_ixp_sweep import (
     GATEWAY_TO_AS,
@@ -39,6 +39,10 @@ from run_multi_event_ixp_sweep import (
 
 
 SIM_TIME_S = 5000
+# Measured slowest cold-start convergence across the sweep is SCION at beacon_period=40s,
+# whose first probe reply lands at t=40.3s; BGP converges by t=10.2s at every clock
+# interval. 60s therefore clears the worst case with margin, at both ends of the grid.
+WARMUP_S = 60.0
 DEFAULT_SEEDS = list(range(1, 11))
 
 
@@ -86,18 +90,33 @@ def build_stochastic_source_events(
     density: DensitySpec,
     seed: int,
     sim_time_s: float,
+    warmup_s: float = 0.0,
 ) -> Tuple[List[SourceEvent], Dict[str, object]]:
     """Generate a shared gateway trace for one density/seed pair.
 
     Each gateway drives one independent primary/backup pair and alternates
     between the two states at uniform inter-event intervals.
+
+    Args:
+        density: Inter-event interval distribution to draw from.
+        seed: RNG seed, shared by every protocol so all runs see one trace.
+        sim_time_s: Total simulation duration in seconds.
+        warmup_s: Quiet period at the start of the run during which no link event
+            fires, so both control planes reach steady state before any churn. Without
+            it the first event can land at ``density.min_interval_s`` (50s when dense),
+            which is before SCION has finished its initial beaconing at the longer
+            beacon periods, and the resulting convergence loss is indistinguishable
+            from churn loss.
+
+    Returns:
+        The event list and a metadata dictionary describing how it was generated.
     """
     rng = random.Random(seed)
     events: List[SourceEvent] = []
     per_gateway_counts: Dict[str, int] = {}
 
     for gateway_id in sorted(GATEWAY_TO_AS):
-        current_time = rng.uniform(density.min_interval_s, density.max_interval_s)
+        current_time = warmup_s + rng.uniform(density.min_interval_s, density.max_interval_s)
         event_index = 0
         while current_time < sim_time_s:
             event_type = "link_down" if event_index % 2 == 0 else "link_up"
@@ -120,6 +139,7 @@ def build_stochastic_source_events(
         "density": density.name,
         "seed": seed,
         "sim_time_s": sim_time_s,
+        "warmup_s": warmup_s,
         "interval_uniform_min_s": density.min_interval_s,
         "interval_uniform_max_s": density.max_interval_s,
         "gateways": sorted(GATEWAY_TO_AS),
@@ -167,8 +187,24 @@ def build_source_event_document(
     }
 
 
-def finalize_scion_config_timing(output_path: Path, sim_time_s: int, probe_period_s: int) -> None:
-    """Rewrite generated SCION config to requested simulation/probing timing."""
+def finalize_scion_config_timing(
+    output_path: Path,
+    sim_time_s: int,
+    probe_period_s: int,
+    snapshot_period_s: Optional[int] = None,
+) -> None:
+    """Rewrite generated SCION config to requested simulation/probing timing.
+
+    The SCION convergence metric in utils/plot_all_sweep_results.py is derived from
+    path-snapshot change times, so its resolution is bounded by
+    path_snapshot_logger.period. The templates ship with 300s, which is far coarser
+    than the convergence times of interest (~10-30s) and leaves the metric insensitive
+    to the beacon period being swept. Default the snapshot period to the probe period
+    so snapshots resolve convergence at the same granularity as data-plane probing.
+    """
+    if snapshot_period_s is None:
+        snapshot_period_s = probe_period_s
+
     text = output_path.read_text(encoding="utf-8")
 
     if sim_time_s <= 10:
@@ -182,12 +218,22 @@ def finalize_scion_config_timing(output_path: Path, sim_time_s: int, probe_perio
 
     lines = text.splitlines()
     in_data_plane_probing = False
+    in_path_snapshot_logger = False
     for idx, line in enumerate(lines):
         if re.match(r"^\S", line):
             in_data_plane_probing = False
+            in_path_snapshot_logger = False
 
         if line.startswith("data_plane_probing:"):
             in_data_plane_probing = True
+            continue
+
+        if line.startswith("path_snapshot_logger:"):
+            in_path_snapshot_logger = True
+            continue
+
+        if in_path_snapshot_logger and re.match(r"^\s*period:\s*", line):
+            lines[idx] = re.sub(r"^(\s*period:\s*)\S+", rf"\g<1>{snapshot_period_s}s", line)
             continue
 
         if in_data_plane_probing and re.match(r"^\s*period:\s*", line):
@@ -261,7 +307,7 @@ def main() -> int:
     parser.add_argument(
         "--families",
         nargs="+",
-        choices=["dual", "single", "direct"],
+        choices=["dual", "dual_vis", "single", "direct"],
         default=["dual", "single", "direct"],
         help="Topology families to run (default: dual single direct)",
     )
@@ -284,6 +330,16 @@ def main() -> int:
         type=int,
         default=SIM_TIME_S,
         help=f"Simulation time in seconds (default: {SIM_TIME_S})",
+    )
+    parser.add_argument(
+        "--warmup",
+        type=float,
+        default=WARMUP_S,
+        help=(
+            "Quiet warm-up in seconds before the first link event, so both control planes "
+            "converge before churn starts. Statistics should also exclude this window. "
+            f"(default: {WARMUP_S})"
+        ),
     )
     parser.add_argument(
         "--output-subdir",
@@ -403,7 +459,9 @@ def main() -> int:
                 run_key = sanitize_stem(f"{density.name}_seed{seed:02d}_{timing.label}")
                 print(f"    Seed {seed} -> {run_key}")
 
-                source_events, metadata = build_stochastic_source_events(density, seed, args.sim_time)
+                source_events, metadata = build_stochastic_source_events(
+                    density, seed, args.sim_time, args.warmup
+                )
                 source_path = generated_dir / f"{run_key}_source.json"
                 dual_path = generated_dir / f"{run_key}_dual.json"
                 single_path = generated_dir / f"{run_key}_single.json"
@@ -430,8 +488,15 @@ def main() -> int:
                 for scenario in args.scenarios:
                     print(f"      Scenario: {scenario}")
                     for family in args.families:
-                        event_path_bgp = event_paths["direct_bgp"] if family == "direct" else event_paths[family]
-                        event_path_scion = event_paths["direct_scion"] if family == "direct" else event_paths[family]
+                        # dual_vis reuses the dual trace: its satellite-side interface IDs
+                        # are exactly the X0001/X0003 pair that build_dual_ixp_events emits.
+                        event_family = "dual" if family == "dual_vis" else family
+                        event_path_bgp = (
+                            event_paths["direct_bgp"] if family == "direct" else event_paths[event_family]
+                        )
+                        event_path_scion = (
+                            event_paths["direct_scion"] if family == "direct" else event_paths[event_family]
+                        )
                         event_rel_bgp = str(event_path_bgp.relative_to(repo_root))
                         event_rel_scion = str(event_path_scion.relative_to(repo_root))
                         output_suffix = f"{density.name}_seed{seed:02d}_{timing.label}"
@@ -445,6 +510,12 @@ def main() -> int:
                                     f"--scenario={scenario}",
                                     f"--simTime={args.sim_time}",
                                     f"--clockInterval={timing.bgp_clock_s}",
+                                    # Tie the reconnect backoff to the FSM clock so it moves
+                                    # with the existing timing axis instead of adding a
+                                    # dimension. It dominates handover recovery: at the
+                                    # libbgp default of 45s a visible handover took a 37.3s
+                                    # median to recover, against 14.0s at 5s.
+                                    f"--errorHold={timing.bgp_clock_s}",
                                     f"--mrai={timing.mrai_s}",
                                     f"--eventFile={event_rel_bgp}",
                                     f"--outDir=build/{bgp_run_dir.as_posix()}",
@@ -464,6 +535,9 @@ def main() -> int:
                                 if family == "dual":
                                     bgp_flags.append("--dualIxp=1")
                                     bgp_flags.append("--splitEdgeAs=1")
+                                elif family == "dual_vis":
+                                    bgp_flags.append("--dualIxp=1")
+                                    bgp_flags.append("--singleLinkPerIxpPair=1")
                                 elif family == "single":
                                     bgp_flags.append("--dualIxp=0")
                                     bgp_flags.append("--splitEdgeAs=0")

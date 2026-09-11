@@ -203,7 +203,8 @@ MakeSplitAsn (uint16_t base_as, bool prefer120)
 }
 
 int32_t
-GetDualIxpInterfaceWeight (uint16_t local_as, uint16_t peer_as, uint32_t local_if_id)
+GetDualIxpInterfaceWeight (uint16_t local_as, uint16_t peer_as, uint32_t local_if_id,
+                           bool single_link_per_pair)
 {
   uint16_t local_base = NormalizeEdgeAs (local_as);
   uint16_t peer_base = NormalizeEdgeAs (peer_as);
@@ -226,6 +227,21 @@ GetDualIxpInterfaceWeight (uint16_t local_as, uint16_t peer_as, uint32_t local_i
     }
 
   uint32_t slot = local_if_id % 10;
+
+  // With one cable per satellite-IXP pair the only surviving satellite-side slots are 1
+  // (towards AS120) and 3 (towards AS121). The normal rule calls both "primary" and hands
+  // them the same weight, which would leave no configured preference between the two IXPs.
+  // Here AS120 is the nearer, preferred IXP and AS121 the backup carrying the path stretch,
+  // so the handover has a defined direction.
+  if (single_link_per_pair)
+    {
+      if (local_base >= 102 && local_base <= 105)
+        {
+          return (slot == 1) ? 200 : 100;
+        }
+      return (local_as == 120) ? 200 : 100;
+    }
+
   bool primary = false;
   if (local_base >= 102 && local_base <= 105)
     {
@@ -400,11 +416,13 @@ public:
 
   void
   Configure (uint16_t src_as, uint16_t dst_as, Ipv4Address dst_ip, uint16_t port, uint32_t count,
-             Time interval, Time timeout, const std::string &output_path)
+             Time interval, Time timeout, const std::string &output_path,
+             Ipv4Address src_ip = Ipv4Address::GetAny ())
   {
     m_src_as = src_as;
     m_dst_as = dst_as;
     m_dst_ip = dst_ip;
+    m_src_ip = src_ip;
     m_port = port;
     m_count = count;
     m_interval = interval;
@@ -429,7 +447,18 @@ private:
   StartApplication () override
   {
     m_socket = Socket::CreateSocket (GetNode (), UdpSocketFactory::GetTypeId ());
-    m_socket->Bind ();
+    // Binding to an explicit source address pins the probe's source IP to this AS's
+    // loopback, so the reply is addressed to a prefix that only this AS originates. Left
+    // unbound, the source would be whichever link address the route happened to pick, and
+    // the return path would depend on that link's /30 having propagated.
+    if (m_src_ip != Ipv4Address::GetAny ())
+      {
+        m_socket->Bind (InetSocketAddress (m_src_ip, 0));
+      }
+    else
+      {
+        m_socket->Bind ();
+      }
     m_socket->Connect (InetSocketAddress (m_dst_ip, m_port));
     m_socket->SetRecvCallback (MakeCallback (&UdpProbeApp::HandleRead, this));
 
@@ -547,6 +576,7 @@ private:
   uint16_t m_src_as;
   uint16_t m_dst_as;
   Ipv4Address m_dst_ip;
+  Ipv4Address m_src_ip;
   uint16_t m_port;
 
   uint32_t m_seq;
@@ -559,6 +589,17 @@ private:
   std::map<uint32_t, Time> m_send_times;
   std::map<uint32_t, EventId> m_timeouts;
 };
+
+// A per-AS service address, distinct from every link /30 (those live in 10.0.x.y) and
+// originated by exactly one AS. Used as the probe endpoint so reachability does not depend
+// on any single cable's prefix.
+Ipv4Address
+MakeLoopbackAddress (uint16_t asn)
+{
+  std::ostringstream addr;
+  addr << "10.255." << ((asn >> 8) & 0xff) << "." << (asn & 0xff);
+  return Ipv4Address (addr.str ().c_str ());
+}
 
 bool
 EnsureDirectory (const std::string &path)
@@ -573,7 +614,7 @@ EnsureDirectory (const std::string &path)
 }
 
 Ptr<Bgp>
-InstallBgpOnNode (uint32_t asn, Ptr<Node> node, Time clockInterval, Time mrai,
+InstallBgpOnNode (uint32_t asn, Ptr<Node> node, Time clockInterval, Time mrai, Time errorHold,
                   const std::string &outDir)
 {
   Ptr<Ipv4> ipv4 = node->GetObject<Ipv4> ();
@@ -593,6 +634,10 @@ InstallBgpOnNode (uint32_t asn, Ptr<Node> node, Time clockInterval, Time mrai,
   bgp->SetAttribute ("HoldTimer", TimeValue (Seconds (3.0 * clockInterval.GetSeconds ())));
   bgp->SetAttribute ("Mrai", TimeValue (mrai));
   bgp->SetAttribute ("ClockInterval", TimeValue (clockInterval));
+  // Reconnect backoff after a session error. The 45s default is a blind wait; with a known
+  // orbital schedule both ends know when the link returns, so a long backoff just adds dead
+  // time to every handover.
+  bgp->SetAttribute ("ErrorHold", TimeValue (errorHold));
   bgp->SetAttribute ("LibbgpLogLevel", EnumValue (libbgp::FATAL));
   node->AddApplication (bgp);
 
@@ -693,6 +738,30 @@ SetVirtualIxpLinkState (HiddenIxpLinkBinding binding, bool up, uint16_t asn,
     }
 }
 
+// Calibration topology, transcribed link-for-link from the known-good reference
+// src/bgp/examples/bgp-convergence-first.cc:430-439, which reaches 0.00% loss on 13 of its
+// 16 probe pairs including the four-AS-hop 107->108 path. Running it through THIS file's
+// setup code separates "the topology is the problem" from "this file's setup is the
+// problem": if transit works here, the star/parallel-link topology is at fault; if it
+// fails, the defect is in the code around it.
+// 8 ASes, 10 links, one link and one subnet per AS pair, no IXP node.
+std::vector<LinkSpec>
+BuildTopologyLinksReference ()
+{
+  std::vector<LinkSpec> links;
+  links.push_back ((LinkSpec) {101, 102, 0.0020, 300, 1010000, 1020000, false});
+  links.push_back ((LinkSpec) {102, 104, 0.0020, 300, 1020001, 1040000, false});
+  links.push_back ((LinkSpec) {104, 106, 0.0020, 300, 1040001, 1060000, false});
+  links.push_back ((LinkSpec) {101, 103, 0.0022, 300, 1010001, 1030000, false});
+  links.push_back ((LinkSpec) {103, 105, 0.0022, 300, 1030001, 1050000, false});
+  links.push_back ((LinkSpec) {105, 106, 0.0022, 300, 1050001, 1060001, false});
+  links.push_back ((LinkSpec) {102, 103, 0.0012, 200, 1020002, 1030002, false});
+  links.push_back ((LinkSpec) {104, 105, 0.0012, 200, 1040002, 1050002, false});
+  links.push_back ((LinkSpec) {101, 107, 0.0015, 150, 1010002, 1070000, false});
+  links.push_back ((LinkSpec) {106, 108, 0.0015, 150, 1060002, 1080000, false});
+  return links;
+}
+
 std::vector<LinkSpec>
 BuildTopologyLinksSingle ()
 {
@@ -716,9 +785,42 @@ BuildTopologyLinksSingle ()
 }
 
 std::vector<LinkSpec>
-BuildTopologyLinksDual (bool split_edge_as)
+BuildTopologyLinksDual (bool split_edge_as, bool single_link_per_pair)
 {
   std::vector<LinkSpec> links;
+
+  // Visible-handover topology: each satellite reaches AS120 and AS121 over exactly ONE
+  // cable each, so every AS pair carries a single BGP session. The handover then moves
+  // between two *different* peer ASes, which have different router IDs, so it is fully
+  // visible to the control plane without hitting libbgp's per-router-ID RIB scoping. The
+  // satellite-side if_ids are the ones the generated dual event traces address: X0001
+  // towards AS120 and X0003 towards AS121.
+  if (single_link_per_pair)
+    {
+      NS_ABORT_MSG_IF (split_edge_as, "singleLinkPerIxpPair is incompatible with --splitEdgeAs");
+      links.push_back ((LinkSpec) {101, 102, 0.0020, 300, 1010000, 1020000, false});
+      links.push_back ((LinkSpec) {105, 106, 0.0020, 300, 1050000, 1060001, false});
+      links.push_back ((LinkSpec) {107, 103, 0.0015, 150, 1070000, 1030000, false});
+      links.push_back ((LinkSpec) {104, 108, 0.0015, 150, 1040000, 1080001, false});
+      // Primary orbit, AS120
+      links.push_back ((LinkSpec) {102, 120, 0.0010, 300, 1020001, 1200000, true});
+      links.push_back ((LinkSpec) {103, 120, 0.0010, 300, 1030001, 1200001, true});
+      links.push_back ((LinkSpec) {104, 120, 0.0010, 300, 1040001, 1200002, true});
+      links.push_back ((LinkSpec) {105, 120, 0.0010, 300, 1050001, 1200003, true});
+      // Backup orbit, AS121
+      links.push_back ((LinkSpec) {102, 121, 0.0010, 300, 1020003, 1210000, true});
+      links.push_back ((LinkSpec) {103, 121, 0.0010, 300, 1030003, 1210001, true});
+      links.push_back ((LinkSpec) {104, 121, 0.0010, 300, 1040003, 1210002, true});
+      links.push_back ((LinkSpec) {105, 121, 0.0010, 300, 1050003, 1210003, true});
+      // Inter-IXP link. Without it a satellite attached to AS120 cannot reach one attached
+      // to AS121 at all, and because each satellite hands over independently the two are on
+      // different IXPs roughly half the time. That turns the measurement into one of
+      // topological disconnection rather than of BGP reconvergence. Two IXP satellites in a
+      // constellation would carry an inter-satellite link, so this restores the invariant
+      // that every satellite can always reach every other.
+      links.push_back ((LinkSpec) {120, 121, 0.0010, 300, 1200004, 1210004, false});
+      return links;
+    }
 
   if (!split_edge_as)
     {
@@ -951,6 +1053,15 @@ main (int argc, char *argv[])
   bool dual_ixp = false;
   bool split_edge_as = false;
   bool direct_links = false;
+  bool backup_links_down_at_start = true;
+  bool loopback_probe_targets = false;
+  uint32_t bgp_sessions_per_pair = 1;
+  bool shared_pair_subnet = true;
+  bool reference_topology = false;
+  bool symmetric_link_events = true;
+  bool single_link_per_ixp_pair = false;
+  double error_hold_s = 45.0;
+  double dump_rib_at_s = 0.0;
   bool stochastic_latency_model = true;
   StochasticLatencyParams stochastic_params;
 
@@ -973,6 +1084,41 @@ main (int argc, char *argv[])
   cmd.AddValue ("splitEdgeAs",
                 "Split AS102-105 into two edge routers per AS (x0 prefers AS120, x1 prefers AS121)",
                 split_edge_as);
+  cmd.AddValue ("errorHold",
+                "BGP reconnect backoff after a session error, in seconds (libbgp default 45)",
+                error_hold_s);
+  cmd.AddValue ("singleLinkPerIxpPair",
+                "Dual-IXP visible-handover topology: one cable from each satellite to AS120 and "
+                "one to AS121, so a handover moves between two distinct peer ASes and is visible "
+                "to BGP. Requires --dualIxp=1.",
+                single_link_per_ixp_pair);
+  cmd.AddValue ("symmetricLinkEvents",
+                "Apply each link event to both endpoints. Set 0 for the old behaviour where "
+                "only the satellite-side interface was toggled and the IXP end stayed up.",
+                symmetric_link_events);
+  cmd.AddValue ("referenceTopology",
+                "Run the known-good bgp-convergence-first topology (8 ASes, 10 links, no IXP) "
+                "through this program's setup code, as a calibration control",
+                reference_topology);
+  cmd.AddValue ("sharedPairSubnet",
+                "Give both parallel cables of an AS pair one subnet and the same addresses, so "
+                "only one prefix exists per adjacency (requires --backupLinksDownAtStart)",
+                shared_pair_subnet);
+  cmd.AddValue ("bgpSessionsPerPair",
+                "BGP sessions per ASN pair. 1 peers once per pair (the second parallel cable is "
+                "a physical standby); 2 restores the old one-session-per-cable behaviour.",
+                bgp_sessions_per_pair);
+  cmd.AddValue ("loopbackProbeTargets",
+                "Probe a per-AS /32 service address (10.255.<asn>) instead of the first link "
+                "address, and bind the probe source to it. Set 0 to reproduce older runs.",
+                loopback_probe_targets);
+  cmd.AddValue ("dumpRibAt",
+                "If >0, write every node's routing table to <outDir>/rib.txt at this time",
+                dump_rib_at_s);
+  cmd.AddValue ("backupLinksDownAtStart",
+                "Take each satellite's second (backup) IXP link fully down at t=0.1s, leaving one "
+                "active link per satellite-IXP AS pair",
+                backup_links_down_at_start);
   cmd.AddValue ("directLinks",
                 "Use direct peer links between AS102-105 at two geographic locations (no IXP)",
                 direct_links);
@@ -1014,6 +1160,19 @@ main (int argc, char *argv[])
       NS_ABORT_MSG ("simTime must be > 10s because routing stop time is simTime - 10s guard");
     }
 
+  // The shared-subnet handover model assumes exactly two cables per AS pair, one live at a
+  // time. The direct-link topology has four cables per pair across two locations and the
+  // reference topology has one, so neither can use it.
+  if (direct_links || reference_topology || single_link_per_ixp_pair)
+    {
+      shared_pair_subnet = false;
+      backup_links_down_at_start = false;
+    }
+  if (single_link_per_ixp_pair && !dual_ixp)
+    {
+      NS_ABORT_MSG ("singleLinkPerIxpPair requires --dualIxp=1");
+    }
+
   if (!verbose)
     {
       LogComponentDisableAll (LOG_LEVEL_ALL);
@@ -1042,7 +1201,11 @@ main (int argc, char *argv[])
   asIds.push_back (106);
   asIds.push_back (107);
   asIds.push_back (108);
-  if (direct_links)
+  if (reference_topology)
+    {
+      outDir = outDir + "_reference_" + scenario;
+    }
+  else if (direct_links)
     {
       outDir = outDir + "_direct_" + scenario;
     }
@@ -1080,9 +1243,26 @@ main (int argc, char *argv[])
   std::map<uint32_t, double> ixpQualityByIfId;
   std::map<uint32_t, uint16_t> ixpRemoteAsByIfId;
 
-  std::vector<LinkSpec> links = direct_links ? BuildTopologyLinksDirect ()
-                                             : (dual_ixp ? BuildTopologyLinksDual (split_edge_as)
-                                                         : BuildTopologyLinksSingle ());
+  std::vector<LinkSpec> links =
+      reference_topology
+          ? BuildTopologyLinksReference ()
+          : (direct_links ? BuildTopologyLinksDirect ()
+                          : (dual_ixp ? BuildTopologyLinksDual (split_edge_as,
+                                                                single_link_per_ixp_pair)
+                                      : BuildTopologyLinksSingle ()));
+  // With --sharedPairSubnet, both cables of an AS pair get one subnet and the SAME pair of
+  // addresses, so exactly one subnet exists per adjacency. Giving the standby cable its own
+  // /30 means both endpoints originate a second prefix for the same adjacency, and that is
+  // the configuration that fails to propagate: src/bgp/examples/bgp-convergence-first.cc has
+  // one subnet per pair and reaches 0% loss on multi-hop transit, while the same code with a
+  // second parallel subnet blackholes it. The standby interface is held down so the
+  // duplicate address is never live on two interfaces at once.
+  if (shared_pair_subnet)
+    {
+      Ipv4AddressGenerator::TestMode ();
+    }
+
+  std::map<std::pair<uint16_t, uint16_t>, uint32_t> subnetForPair;
   uint32_t subnetId = 0;
   for (uint32_t i = 0; i < links.size (); ++i)
     {
@@ -1111,8 +1291,25 @@ main (int argc, char *argv[])
 
       NetDeviceContainer devs = p2p.Install (nodeA, nodeB);
 
+      uint32_t thisSubnetId = subnetId;
+      if (shared_pair_subnet)
+        {
+          std::pair<uint16_t, uint16_t> pairKey = std::make_pair (
+              std::min (spec.as_a, spec.as_b), std::max (spec.as_a, spec.as_b));
+          std::map<std::pair<uint16_t, uint16_t>, uint32_t>::const_iterator seen =
+              subnetForPair.find (pairKey);
+          if (seen != subnetForPair.end ())
+            {
+              thisSubnetId = seen->second;
+            }
+          else
+            {
+              subnetForPair[pairKey] = thisSubnetId;
+            }
+        }
+
       std::ostringstream base;
-      base << "10." << (subnetId / 256) << "." << (subnetId % 256) << ".0";
+      base << "10." << (thisSubnetId / 256) << "." << (thisSubnetId % 256) << ".0";
       Ipv4AddressHelper ipv4;
       ipv4.SetBase (base.str ().c_str (), "255.255.255.252");
       Ipv4InterfaceContainer ifaces = ipv4.Assign (devs);
@@ -1153,13 +1350,33 @@ main (int argc, char *argv[])
        ++it)
     {
       Ptr<Bgp> bgp = InstallBgpOnNode (it->first, it->second, Seconds (clock_interval_s),
-                                       Seconds (mrai_s), outDir);
+                                       Seconds (mrai_s), Seconds (error_hold_s), outDir);
       bgpApps[it->first] = bgp;
     }
 
+  // libbgp scopes its RIB by peer router ID, which is per node and not per session. Two
+  // sessions to the same peer node therefore share one RIB scope: they overwrite each
+  // other's entries, and any ESTABLISHED exit on either one calls dropAllRoutes() ->
+  // rib4->discard(peer_bgp_id), deleting the routes the OTHER session installed. With two
+  // parallel cables per satellite-IXP AS pair that happens continuously, which blackholes
+  // transit even with no churn at all. Peer once per ASN pair; the second cable stays a
+  // physical standby with no session of its own.
+  std::set<std::pair<uint16_t, uint16_t>> peeredAsnPairs;
   for (uint32_t i = 0; i < runtimes.size (); ++i)
     {
       LinkRuntime &rt = runtimes.at (i);
+
+      if (bgp_sessions_per_pair == 1)
+        {
+          std::pair<uint16_t, uint16_t> pairKey =
+              std::make_pair (std::min (rt.spec.as_a, rt.spec.as_b),
+                              std::max (rt.spec.as_a, rt.spec.as_b));
+          if (peeredAsnPairs.count (pairKey) > 0)
+            {
+              continue;
+            }
+          peeredAsnPairs.insert (pairKey);
+        }
 
       Peer aToB;
       aToB.local_asn = rt.spec.as_a;
@@ -1169,7 +1386,8 @@ main (int argc, char *argv[])
 
       if (dual_ixp && (rt.spec.as_b == 120 || rt.spec.as_b == 121))
         {
-          aToB.weight = GetDualIxpInterfaceWeight (rt.spec.as_a, rt.spec.as_b, rt.spec.if_id_a);
+          aToB.weight = GetDualIxpInterfaceWeight (rt.spec.as_a, rt.spec.as_b, rt.spec.if_id_a,
+                                                   single_link_per_ixp_pair);
         }
       else if (direct_links && rt.spec.as_a >= 102 && rt.spec.as_a <= 105 && rt.spec.as_b >= 102 &&
                rt.spec.as_b <= 105)
@@ -1187,7 +1405,8 @@ main (int argc, char *argv[])
 
       if (dual_ixp && (rt.spec.as_a == 120 || rt.spec.as_a == 121))
         {
-          bToA.weight = GetDualIxpInterfaceWeight (rt.spec.as_b, rt.spec.as_a, rt.spec.if_id_b);
+          bToA.weight = GetDualIxpInterfaceWeight (rt.spec.as_b, rt.spec.as_a, rt.spec.if_id_b,
+                                                   single_link_per_ixp_pair);
         }
       else if (direct_links && rt.spec.as_a >= 102 && rt.spec.as_a <= 105 && rt.spec.as_b >= 102 &&
                rt.spec.as_b <= 105)
@@ -1205,6 +1424,23 @@ main (int argc, char *argv[])
       AddRoutesForAllInterfaces (bgpApps.at (it->first), it->second);
 
       Ptr<Ipv4> ipv4 = it->second->GetObject<Ipv4> ();
+
+      if (loopback_probe_targets)
+        {
+          // Give the AS a service address of its own and originate it once. Targeting a
+          // link's /30 instead makes the measurement depend on that link's prefix
+          // propagating, and every link /30 here is originated by BOTH of its endpoints,
+          // which is exactly the case that fails to propagate. A /32 with a single
+          // originator removes that dependency and matches how the SCION probes address a
+          // host in an AS rather than one end of a cable.
+          Ipv4Address loopback = MakeLoopbackAddress (it->first);
+          ipv4->AddAddress (0, Ipv4InterfaceAddress (loopback, Ipv4Mask ("255.255.255.255")));
+          ipv4->SetUp (0);
+          bgpApps.at (it->first)->AddRoute (loopback, Ipv4Mask ("255.255.255.255"), loopback);
+          probeIpPerAs[it->first] = loopback;
+          continue;
+        }
+
       Ipv4Address firstAddr = Ipv4Address::GetAny ();
       for (uint32_t iface = 1; iface < ipv4->GetNInterfaces (); ++iface)
         {
@@ -1244,7 +1480,21 @@ main (int argc, char *argv[])
     }
 
   std::vector<std::pair<uint16_t, uint16_t>> probePairs;
-  if (split_edge_as)
+  if (reference_topology)
+    {
+      // The same 16 pairs the reference example probes, so the two runs are directly
+      // comparable number for number: every pair among 101-106, plus the stub pair 107-108
+      // whose path crosses four AS hops.
+      for (uint16_t a = 101; a <= 106; ++a)
+        {
+          for (uint16_t b = a + 1; b <= 106; ++b)
+            {
+              probePairs.push_back (std::make_pair (a, b));
+            }
+        }
+      probePairs.push_back (std::make_pair (107, 108));
+    }
+  else if (split_edge_as)
     {
       probePairs.push_back (std::make_pair (101, MakeSplitAsn (102, true)));
       probePairs.push_back (std::make_pair (MakeSplitAsn (102, true), MakeSplitAsn (103, true)));
@@ -1276,7 +1526,8 @@ main (int argc, char *argv[])
       std::ostringstream out;
       out << outDir << "/probe_" << srcAs << "_" << dstAs << ".csv";
       probe->Configure (srcAs, dstAs, probeIpPerAs.at (dstAs), probePort, probeCount,
-                        Seconds (probeIntervalS), Seconds (probeTimeoutS), out.str ());
+                        Seconds (probeIntervalS), Seconds (probeTimeoutS), out.str (),
+                        loopback_probe_targets ? probeIpPerAs.at (srcAs) : Ipv4Address::GetAny ());
       asNodes.at (srcAs)->AddApplication (probe);
       probe->SetStartTime (Seconds (probeStartS + static_cast<double> (i) * 0.001));
       probe->SetStopTime (Seconds (routingStopS));
@@ -1451,6 +1702,26 @@ main (int argc, char *argv[])
     }
   else if (scenario == "visible")
     {
+      // Single/dual IXP: bring each satellite's backup link to the IXP fully down at startup,
+      // so exactly one link per satellite-IXP AS pair is active and the other is a standby.
+      // Both endpoints are taken down: downing only the satellite side leaves the IXP still
+      // holding the backup /30, which keeps the duplicate parallel subnet in play.
+      // Note the hardcoded schedules further below do this too, but they are in the
+      // "no --eventFile" branch, so sweeps that supply an events file never reach them.
+      if (backup_links_down_at_start && !direct_links)
+        {
+          static const uint32_t kIxpBackupIfIds[] = {1020002, 1030002, 1040002, 1050002};
+          for (uint32_t k = 0; k < 4; ++k)
+            {
+              if (ifIdToRuntimeIdx.count (kIxpBackupIfIds[k]))
+                {
+                  Simulator::Schedule (Seconds (0.1), &SetLinkState,
+                                       &runtimes.at (ifIdToRuntimeIdx.at (kIxpBackupIfIds[k])),
+                                       false, &linkEvents);
+                }
+            }
+        }
+
       // Direct-link mode: bring all backup links down at startup so only primaries are active.
       if (direct_links)
         {
@@ -1488,6 +1759,17 @@ main (int argc, char *argv[])
                                        &runtimes.at (ifIdToRuntimeIdx.at (ev.if_id)), ev.up,
                                        &linkEvents);
                 }
+              else if (symmetric_link_events)
+                {
+                  // Both endpoints. A satellite and an IXP both know the orbital schedule
+                  // in advance, so both know when a link goes down or comes up; modelling
+                  // the event as one-sided leaves the far end forwarding into a black hole
+                  // until its own timers expire, and makes a downed standby impossible to
+                  // restore once it was taken down at both ends.
+                  Simulator::Schedule (Seconds (ev.time_s), &SetLinkState,
+                                       &runtimes.at (ifIdToRuntimeIdx.at (ev.if_id)), ev.up,
+                                       &linkEvents);
+                }
               else
                 {
                   Simulator::Schedule (Seconds (ev.time_s), &SetSatelliteIxpInterfaceState,
@@ -1495,6 +1777,10 @@ main (int argc, char *argv[])
                                        &linkEvents);
                 }
             }
+        }
+      else if (reference_topology)
+        {
+          // Calibration control: static topology, no scheduled events.
         }
       else if (dual_ixp)
         {
@@ -1539,6 +1825,15 @@ main (int argc, char *argv[])
   else
     {
       NS_FATAL_ERROR ("Unsupported scenario: " << scenario << " (expected hidden or visible)");
+    }
+
+  if (dump_rib_at_s > 0.0)
+    {
+      std::ostringstream ribPath;
+      ribPath << outDir << "/rib.txt";
+      Ptr<OutputStreamWrapper> ribStream =
+          Create<OutputStreamWrapper> (ribPath.str (), std::ios::out);
+      Ipv4RoutingHelper::PrintRoutingTableAllAt (Seconds (dump_rib_at_s), ribStream);
     }
 
   Simulator::Stop (Seconds (sim_time_s));

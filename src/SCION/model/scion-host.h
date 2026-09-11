@@ -131,6 +131,8 @@ protected:
   void SendProbeTick (uint32_t session_id);
   void TrySendProbe (uint32_t session_id, uint32_t seq, uint32_t retry_count);
   void OnProbeTimeout (uint32_t session_id, uint32_t seq);
+  void TrySendProbeReply (Payload reply_payload, ia_t dst_ia, host_addr_t dst_host,
+                          uint32_t retry_count);
   void HandleProbeReply (ScionPacket *packet, Time receive_time);
   void WriteProbeRow (ProbeSession &session, uint32_t seq, const std::string &event,
                       const std::string &rtt_ms, const std::string &path_used, Time event_time);
