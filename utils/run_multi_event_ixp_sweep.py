@@ -73,6 +73,13 @@ SCION_TEMPLATE_PATHS: Dict[str, Dict[str, Path]] = {
         "dual_vis": Path("configs/scenario_ixp_dual_sat_visible_single_link_generated.yaml"),
         "single": Path("configs/scenario_ixp_single_sat_visible_gateway_switch_generated.yaml"),
         "direct": Path("configs/scenario_ixp_direct_visible_gateway_switch_generated.yaml"),
+        # Two distant IXP satellites with NO link between them. Each constellation is split in
+        # two, one half homed at each exchange, joined by a 20ms internal link that is the only
+        # path between locations and supplies the path stretch. The handover stays within a
+        # location; the pair differs only in where the backup cable lands, and therefore only in
+        # whether the handover is hidden below IP or visible to the control plane.
+        "splitsame": Path("configs/scenario_ixp_split_samefabric_generated.yaml"),
+        "splitvis": Path("configs/scenario_ixp_split_splitfabric_generated.yaml"),
     },
 }
 
@@ -93,6 +100,11 @@ GATEWAY_TO_DIRECT: Dict[int, Tuple[int, int, str]] = {
 }
 
 SWITCH_DELTA_S = 0.001
+
+# When the split-mode trace downs each half's standby cable to establish the initial state.
+# Matches the time the BGP program uses for its own backup-down-at-start schedule, and is well
+# before BGP starts at t=1s or probing at t=10s.
+STANDBY_DOWN_TIME_S = 0.1
 SIM_TIME_S = 10010
 EXPIRATION_RATIO = 135  # expiration_period = beacon_period * this ratio
 
@@ -229,6 +241,93 @@ def build_single_ixp_events(source_path: Path, source_events: List[SourceEvent])
         "event_count_source": len(source_events),
         "event_count_generated": len(events),
         "final_active_if_per_gateway": final_active,
+        "events": events,
+    }
+
+
+def build_split_ixp_events(
+    source_path: Path,
+    source_events_loc_a: List[SourceEvent],
+    source_events_loc_b: List[SourceEvent],
+) -> Dict[str, object]:
+    """Build a within-location handover trace for the split-edge two-IXP topology.
+
+    Each constellation is split into two ASes, one homed at each exchange satellite, and each
+    half owns a main and a backup cable to its own exchange. A handover toggles between those
+    two cables and never crosses to the other exchange, so this differs from
+    ``build_dual_ixp_events``, which toggles X0001 against X0003 and therefore moves the
+    satellite between locations.
+
+    The two locations get independent source traces. In lockstep both halves of a constellation
+    would hit the break-before-make gap at the same instant, detaching that constellation from
+    both exchanges simultaneously — a partition rather than a handover — and the relative phase
+    of the two locations would never vary across seeds.
+
+    Note the interface IDs derive from the *base* AS while ownership is by *split* ASN: AS1020
+    owns 1020001 and 1020002, AS1021 owns 1020003 and 1020004. ``args[1]`` must name the split
+    ASN, because that is the AS that resolves the interface.
+
+    Args:
+        source_path: Path of the source gateway trace, recorded for provenance.
+        source_events_loc_a: Gateway trace driving the location-A (``*0``) halves.
+        source_events_loc_b: Gateway trace driving the location-B (``*1``) halves.
+
+    Returns:
+        An events document ready to serialise as the run's events JSON.
+    """
+    loc_a_events, loc_a_final = _toggle_events(
+        source_events_loc_a,
+        primary_by_gateway={g: asn * 10000 + 1 for g, asn in GATEWAY_TO_AS.items()},
+        backup_by_gateway={g: asn * 10000 + 2 for g, asn in GATEWAY_TO_AS.items()},
+        arg2_by_gateway={g: str(asn * 10) for g, asn in GATEWAY_TO_AS.items()},
+        description_prefix="Split-IXP loc-A switch",
+    )
+    loc_b_events, loc_b_final = _toggle_events(
+        source_events_loc_b,
+        primary_by_gateway={g: asn * 10000 + 3 for g, asn in GATEWAY_TO_AS.items()},
+        backup_by_gateway={g: asn * 10000 + 4 for g, asn in GATEWAY_TO_AS.items()},
+        arg2_by_gateway={g: str(asn * 10 + 1) for g, asn in GATEWAY_TO_AS.items()},
+        description_prefix="Split-IXP loc-B switch",
+    )
+
+    # Establish the initial state explicitly, in the trace itself.
+    #
+    # The BGP program holds each half's backup cable down from t=0.1s so exactly one cable per
+    # adjacency is live. SCION has no equivalent: its topology XML brings every link up. Without
+    # these events the two protocols start from different states and, worse, SCION never sees a
+    # handover at all — a link_down on the main cable would merely remove one of two live cables
+    # and the paired link_up on the backup would be a no-op. Emitting the downs here makes the
+    # starting state part of the shared trace rather than a per-protocol default. They are
+    # harmless to BGP, which has already downed the same cables by the time these fire.
+    standby_events = [
+        {
+            "time": _format_time_s(STANDBY_DOWN_TIME_S),
+            "type": "link_down",
+            "args": ["1", str(asn * 10 + half), str(asn * 10000 + slot)],
+            "description": (
+                f"Split-IXP initial state: standby cable {asn * 10000 + slot} down so one "
+                f"cable per adjacency is live"
+            ),
+        }
+        for asn in GATEWAY_TO_AS.values()
+        for half, slot in ((0, 2), (1, 4))
+    ]
+
+    events = sorted(
+        standby_events + loc_a_events + loc_b_events,
+        key=lambda e: (float(str(e["time"]).rstrip("s")), e["args"][1], e["args"][2]),
+    )
+
+    return {
+        "description": "Generated IXP switch events (split mode) from two gateway traces",
+        "source_file": str(source_path),
+        "gateway_to_satellite_map": {str(k): v for k, v in GATEWAY_TO_AS.items()},
+        "ixp_mode": "split",
+        "switch_delta_s": SWITCH_DELTA_S,
+        "event_count_source": len(source_events_loc_a) + len(source_events_loc_b),
+        "event_count_generated": len(events),
+        "final_active_if_per_gateway_loc_a": loc_a_final,
+        "final_active_if_per_gateway_loc_b": loc_b_final,
         "events": events,
     }
 

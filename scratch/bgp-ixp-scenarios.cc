@@ -81,8 +81,12 @@ struct StochasticLatencyParams
 uint32_t
 GetIxpRankKForLink (const LinkSpec &spec)
 {
-  // k=1 when closest/preferred IXP link is used; k=2 for fallback IXP.
-  if (spec.as_a == 121 || spec.as_b == 121)
+  // k=1 when closest/preferred IXP link is used; k=2 for fallback IXP. The rank is a property
+  // of the exchange *location*, not of the individual fabric AS: with --splitFabricPerIxp the
+  // backup fabric AS123 sits on the same satellite as AS121, so it must draw from the same
+  // latency distribution. Testing only for 121 would sample AS123 as a near link while its
+  // primary sampled as far, making a backup cable look better than the main one.
+  if (spec.as_a == 121 || spec.as_b == 121 || spec.as_a == 123 || spec.as_b == 123)
     {
       return 2;
     }
@@ -202,6 +206,67 @@ MakeSplitAsn (uint16_t base_as, bool prefer120)
   return static_cast<uint16_t> (base_as * 10 + (prefer120 ? 0 : 1));
 }
 
+// An IXP "location" is one exchange satellite. With --splitFabricPerIxp each location hosts two
+// fabric ASes on the same satellite — a primary and a backup — so that a handover between the
+// two cables of an adjacency changes the peer ASN and therefore the peer router ID. That is what
+// makes the handover visible to BGP without a libbgp change: libbgp scopes its RIB by peer router
+// ID, so two sessions to the *same* peer node share a scope and an ESTABLISHED exit on one wipes
+// the other's routes.
+const uint16_t kIxpLocationNone = 0;
+
+// Ground/customer ASes. These attach to satellite ASes only; see the topology builders for why
+// no two of them may be cabled together.
+bool
+IsGroundAs (uint16_t asn)
+{
+  return asn == 101 || asn == 106 || asn == 107 || asn == 108;
+}
+
+bool
+IsIxpFabricAs (uint16_t asn)
+{
+  return asn >= 120 && asn <= 123;
+}
+
+bool
+IsPrimaryFabricAs (uint16_t asn)
+{
+  return asn == 120 || asn == 121;
+}
+
+// Collapses a fabric ASN to the exchange satellite it sits on. AS110 is the single-IXP
+// topology's only exchange and maps to itself, which is what keeps the standby-cable derivation
+// below working unchanged for that topology.
+uint16_t
+IxpLocationOf (uint16_t ixp_as)
+{
+  if (ixp_as == 110)
+    {
+      return 110;
+    }
+  if (ixp_as == 120 || ixp_as == 122)
+    {
+      return 120;
+    }
+  if (ixp_as == 121 || ixp_as == 123)
+    {
+      return 121;
+    }
+  return kIxpLocationNone;
+}
+
+uint16_t
+PrimaryFabricForLocation (bool location_a)
+{
+  return location_a ? 120 : 121;
+}
+
+uint16_t
+BackupFabricForLocation (bool location_a)
+{
+  return location_a ? 122 : 123;
+}
+
 int32_t
 GetDualIxpInterfaceWeight (uint16_t local_as, uint16_t peer_as, uint32_t local_if_id,
                            bool single_link_per_pair)
@@ -209,21 +274,27 @@ GetDualIxpInterfaceWeight (uint16_t local_as, uint16_t peer_as, uint32_t local_i
   uint16_t local_base = NormalizeEdgeAs (local_as);
   uint16_t peer_base = NormalizeEdgeAs (peer_as);
 
-  if (!((peer_as == 120 || peer_as == 121) && (local_base >= 102 && local_base <= 105)) &&
-      !((local_as == 120 || local_as == 121) && (peer_base >= 102 && peer_base <= 105)))
+  if (!(IsIxpFabricAs (peer_as) && (local_base >= 102 && local_base <= 105)) &&
+      !(IsIxpFabricAs (local_as) && (peer_base >= 102 && peer_base <= 105)))
     {
       return 0;
     }
 
-  // In split-edge mode, enforce location affinity per split half.
-  if (IsSplitEdgeAs (local_as) && (peer_as == 120 || peer_as == 121))
+  // In split-edge mode, enforce location affinity per split half, and — when the location hosts
+  // two fabric ASes — primary fabric over backup fabric. Weight is compared before AS_PATH
+  // length in libbgp's BgpRibEntry::operator> (bgp-rib.h:115-117), so this ordering decides the
+  // path outright: the half uses its own location while any cable there is up, and only falls
+  // back to the 20ms internal link to its sibling half when both local cables are down.
+  if (IsSplitEdgeAs (local_as) && IsIxpFabricAs (peer_as))
     {
-      if ((Prefers120Location (local_as) && peer_as == 120) ||
-          (!Prefers120Location (local_as) && peer_as == 121))
+      const bool local_location_a = Prefers120Location (local_as);
+      const bool peer_location_a = (IxpLocationOf (peer_as) == 120);
+      if (local_location_a != peer_location_a)
         {
-          return 300;
+          // No topology builds such a cable; defensive only.
+          return 50;
         }
-      return 50;
+      return IsPrimaryFabricAs (peer_as) ? 300 : 200;
     }
 
   uint32_t slot = local_if_id % 10;
@@ -255,9 +326,23 @@ GetDualIxpInterfaceWeight (uint16_t local_as, uint16_t peer_as, uint32_t local_i
   return primary ? 200 : 100;
 }
 
+// Quality of a satellite-to-IXP cable, used by the virtual-fabric scenario to rank candidates.
+// Derived from the peer fabric AS when the caller knows it, so the values stay correct when a
+// location hosts two fabric ASes; the if_id digit rule is kept as the fallback because it is what
+// every existing topology encodes (slot 1/2 = location A main/backup, 3/4 = location B).
 double
-GetDualIxpQuality (uint32_t if_id)
+GetDualIxpQuality (uint32_t if_id, uint16_t peer_fabric_as = 0)
 {
+  if (IsIxpFabricAs (peer_fabric_as))
+    {
+      const bool location_a = (IxpLocationOf (peer_fabric_as) == 120);
+      if (IsPrimaryFabricAs (peer_fabric_as))
+        {
+          return location_a ? 1.0 : 0.95;
+        }
+      return location_a ? 0.8 : 0.75;
+    }
+
   switch (if_id % 10)
     {
     case 1:
@@ -757,6 +842,12 @@ BuildTopologyLinksReference ()
   links.push_back ((LinkSpec) {105, 106, 0.0022, 300, 1050001, 1060001, false});
   links.push_back ((LinkSpec) {102, 103, 0.0012, 200, 1020002, 1030002, false});
   links.push_back ((LinkSpec) {104, 105, 0.0012, 200, 1040002, 1050002, false});
+  // EXCEPTION to the no-ground-ground rule that holds everywhere else in this file. This
+  // builder is a calibration control transcribed edge-for-edge from
+  // src/bgp/examples/bgp-convergence-first.cc, and its only job is to be an exact match to that
+  // known-good example so a failure here means "this file's setup is broken" rather than "the
+  // topology is broken". Removing these two links would break that correspondence and destroy
+  // the control. Do not "fix" them.
   links.push_back ((LinkSpec) {101, 107, 0.0015, 150, 1010002, 1070000, false});
   links.push_back ((LinkSpec) {106, 108, 0.0015, 150, 1060002, 1080000, false});
   return links;
@@ -766,12 +857,15 @@ std::vector<LinkSpec>
 BuildTopologyLinksSingle ()
 {
   std::vector<LinkSpec> links;
+  // Ground/customer AS attachments. Each ground AS attaches to exactly one satellite AS and
+  // never to another ground AS: a customer does not provide transit between two others, and a
+  // ground-ground link would give a satellite pair a path that bypasses the IXP entirely, which
+  // is the very thing these scenarios measure. Link order and if_ids match
+  // topology/ixp_as110_dual_links_topology.xml exactly, so BGP and SCION run the same graph.
   links.push_back ((LinkSpec) {101, 102, 0.0020, 300, 1010000, 1020000, false});
-  links.push_back ((LinkSpec) {101, 103, 0.0020, 300, 1010001, 1030000, false});
-  links.push_back ((LinkSpec) {104, 106, 0.0020, 300, 1040000, 1060000, false});
+  links.push_back ((LinkSpec) {103, 107, 0.0020, 300, 1030000, 1070000, false});
+  links.push_back ((LinkSpec) {104, 108, 0.0020, 300, 1040000, 1080000, false});
   links.push_back ((LinkSpec) {105, 106, 0.0020, 300, 1050000, 1060001, false});
-  links.push_back ((LinkSpec) {101, 107, 0.0015, 150, 1010002, 1070000, false});
-  // links.push_back ((LinkSpec) {106, 108, 0.0015, 150, 1060002, 1080000, false}); // Removed to match SCION single-IXP topology
   // IXP satellite AS110
   links.push_back ((LinkSpec) {102, 110, 0.0010, 300, 1020001, 1100000, true});
   links.push_back ((LinkSpec) {102, 110, 0.0010, 300, 1020002, 1100001, true});
@@ -785,9 +879,12 @@ BuildTopologyLinksSingle ()
 }
 
 std::vector<LinkSpec>
-BuildTopologyLinksDual (bool split_edge_as, bool single_link_per_pair)
+BuildTopologyLinksDual (bool split_edge_as, bool single_link_per_pair,
+                        bool split_fabric_per_ixp)
 {
   std::vector<LinkSpec> links;
+  NS_ABORT_MSG_IF (split_fabric_per_ixp && !split_edge_as,
+                   "splitFabricPerIxp requires --splitEdgeAs=1");
 
   // Visible-handover topology: each satellite reaches AS120 and AS121 over exactly ONE
   // cable each, so every AS pair carries a single BGP session. The handover then moves
@@ -827,7 +924,10 @@ BuildTopologyLinksDual (bool split_edge_as, bool single_link_per_pair)
       links.push_back ((LinkSpec) {101, 102, 0.0020, 300, 1010000, 1020000, false});
       links.push_back ((LinkSpec) {105, 106, 0.0020, 300, 1050000, 1060001, false});
       links.push_back ((LinkSpec) {107, 103, 0.0015, 150, 1070000, 1030000, false});
-      // links.push_back ((LinkSpec) {108, 106, 0.0015, 150, 1080000, 1060002, false}); // Removed to match SCION topology
+      // Omitted deliberately: 108 and 106 are both ground/customer ASes and no topology in
+      // this file connects two of them. topology/ixp_as110_dual_satellites_topology.xml has its
+      // 108-106 block commented out for the same reason, so omitting it here keeps mode B an
+      // exact 20-link edge-multiset match against that file.
       links.push_back ((LinkSpec) {104, 108, 0.0015, 150, 1040000, 1080001, false});
       // IXP satellite A (AS120)
       links.push_back ((LinkSpec) {102, 120, 0.0010, 300, 1020001, 1200000, true});
@@ -859,14 +959,17 @@ BuildTopologyLinksDual (bool split_edge_as, bool single_link_per_pair)
   const uint16_t as105_120 = MakeSplitAsn (105, true);
   const uint16_t as105_121 = MakeSplitAsn (105, false);
 
-  // Core/backbone affinity: AS101+AS106 closer to AS120-side, AS107+AS108 closer to AS121-side.
+  // Ground/customer AS attachments. Each ground AS is dual-homed to the two halves of one
+  // constellation, one attachment per IXP location, and never to another ground AS: a customer
+  // does not provide transit between two others, and a ground-ground link would hand a satellite
+  // pair a path bypassing the IXP fabric entirely. The slightly higher latency on the
+  // location-B leg reflects AS101/AS106 sitting nearer location A and AS107/AS108 nearer B.
   links.push_back ((LinkSpec) {101, as102_120, 0.0020, 300, 1010000, 1020000, false});
   links.push_back ((LinkSpec) {101, as102_121, 0.0023, 300, 1010003, 1021000, false});
   links.push_back ((LinkSpec) {107, as103_121, 0.0015, 150, 1070000, 1031000, false});
   links.push_back ((LinkSpec) {107, as103_120, 0.0018, 150, 1070001, 1030000, false});
   links.push_back ((LinkSpec) {as105_120, 106, 0.0020, 300, 1050000, 1060001, false});
   links.push_back ((LinkSpec) {as105_121, 106, 0.0023, 300, 1051000, 1060003, false});
-  links.push_back ((LinkSpec) {108, 106, 0.0015, 150, 1080000, 1060002, false});
   links.push_back ((LinkSpec) {as104_121, 108, 0.0015, 150, 1041000, 1080001, false});
   links.push_back ((LinkSpec) {as104_120, 108, 0.0018, 150, 1040000, 1080002, false});
 
@@ -876,25 +979,72 @@ BuildTopologyLinksDual (bool split_edge_as, bool single_link_per_pair)
   links.push_back ((LinkSpec) {as104_120, as104_121, 0.020, 1000, 1040010, 1041010, false});
   links.push_back ((LinkSpec) {as105_120, as105_121, 0.020, 1000, 1050010, 1051010, false});
 
-  // IXP location A (AS120) links for *120 split halves.
-  links.push_back ((LinkSpec) {as102_120, 120, 0.0010, 300, 1020001, 1200000, true});
-  links.push_back ((LinkSpec) {as102_120, 120, 0.0010, 300, 1020002, 1200001, true});
-  links.push_back ((LinkSpec) {as103_120, 120, 0.0010, 300, 1030001, 1200002, true});
-  links.push_back ((LinkSpec) {as103_120, 120, 0.0010, 300, 1030002, 1200003, true});
-  links.push_back ((LinkSpec) {as104_120, 120, 0.0010, 300, 1040001, 1200004, true});
-  links.push_back ((LinkSpec) {as104_120, 120, 0.0010, 300, 1040002, 1200005, true});
-  links.push_back ((LinkSpec) {as105_120, 120, 0.0010, 300, 1050001, 1200006, true});
-  links.push_back ((LinkSpec) {as105_120, 120, 0.0010, 300, 1050002, 1200007, true});
+  // Satellite-to-IXP cables. Each half has a MAIN and a BACKUP cable to its own exchange
+  // location and the handover toggles between those two; a half never cables to the other
+  // location. The satellite-side if_id slots are frozen — X0001/X0002 are location A main and
+  // backup, X0003/X0004 location B — because every generated event trace addresses them.
+  //
+  // split_fabric_per_ixp decides where the BACKUP cable lands, and that single choice is the
+  // whole difference between a handover hidden from BGP and one visible to it:
+  //
+  //   false  backup lands on the SAME fabric AS as the main. Both cables are one AS pair, so
+  //          sharedPairSubnet gives them one /30 and the peering loop one session; the switch
+  //          happens below IP and the session survives.
+  //   true   backup lands on the location's second fabric AS (A: AS120 -> AS122,
+  //          B: AS121 -> AS123), a separate node with its own router ID. Two AS pairs, two
+  //          /30s, two sessions, so the handover changes peer ASN and is visible. Distinct
+  //          router IDs are what keeps libbgp's per-peer RIB scoping from wiping the surviving
+  //          session's routes.
+  //
+  // The fabric-side port index keeps its original parity rather than being renumbered densely,
+  // so 1200001/1200003/1200005/1200007 simply do not exist when the backups move to AS122. A
+  // trace written for the other variant is then skipped by the if_id guard instead of silently
+  // toggling a different satellite's cable.
+  const uint16_t loc_a_backup_as = split_fabric_per_ixp ? BackupFabricForLocation (true) : 120;
+  const uint16_t loc_b_backup_as = split_fabric_per_ixp ? BackupFabricForLocation (false) : 121;
+  const uint32_t loc_a_backup_port = split_fabric_per_ixp ? 1220000 : 1200000;
+  const uint32_t loc_b_backup_port = split_fabric_per_ixp ? 1230000 : 1210000;
 
-  // IXP location B (AS121) links for *121 split halves.
-  links.push_back ((LinkSpec) {as102_121, 121, 0.0010, 300, 1020003, 1210000, true});
-  links.push_back ((LinkSpec) {as102_121, 121, 0.0010, 300, 1020004, 1210001, true});
-  links.push_back ((LinkSpec) {as103_121, 121, 0.0010, 300, 1030003, 1210002, true});
-  links.push_back ((LinkSpec) {as103_121, 121, 0.0010, 300, 1030004, 1210003, true});
-  links.push_back ((LinkSpec) {as104_121, 121, 0.0010, 300, 1040003, 1210004, true});
-  links.push_back ((LinkSpec) {as104_121, 121, 0.0010, 300, 1040004, 1210005, true});
-  links.push_back ((LinkSpec) {as105_121, 121, 0.0010, 300, 1050003, 1210006, true});
-  links.push_back ((LinkSpec) {as105_121, 121, 0.0010, 300, 1050004, 1210007, true});
+  const uint16_t loc_a_halves[4] = {as102_120, as103_120, as104_120, as105_120};
+  const uint16_t loc_b_halves[4] = {as102_121, as103_121, as104_121, as105_121};
+  const uint16_t base_as[4] = {102, 103, 104, 105};
+
+  // IXP location A: main cables to AS120, backups to AS120 or AS122.
+  for (uint32_t i = 0; i < 4; ++i)
+    {
+      const uint32_t sat_if = static_cast<uint32_t> (base_as[i]) * 10000;
+      links.push_back ((LinkSpec) {loc_a_halves[i], 120, 0.0010, 300, sat_if + 1,
+                                   1200000 + 2 * i, true});
+      links.push_back ((LinkSpec) {loc_a_halves[i], loc_a_backup_as, 0.0010, 300, sat_if + 2,
+                                   loc_a_backup_port + 2 * i + 1, true});
+    }
+
+  // IXP location B: main cables to AS121, backups to AS121 or AS123.
+  for (uint32_t i = 0; i < 4; ++i)
+    {
+      const uint32_t sat_if = static_cast<uint32_t> (base_as[i]) * 10000;
+      links.push_back ((LinkSpec) {loc_b_halves[i], 121, 0.0010, 300, sat_if + 3,
+                                   1210000 + 2 * i, true});
+      links.push_back ((LinkSpec) {loc_b_halves[i], loc_b_backup_as, 0.0010, 300, sat_if + 4,
+                                   loc_b_backup_port + 2 * i + 1, true});
+    }
+
+  if (split_fabric_per_ixp)
+    {
+      // The two fabric ASes of one location sit on the same exchange satellite, so this is a
+      // short intra-site cable, not an inter-satellite link. It is required: halves hand over
+      // independently, so a half already on AS122 must still reach one still on AS120 without
+      // detouring through the other location. ixp_managed is false so the stochastic
+      // inter-satellite latency model leaves it alone, matching how the AS120-AS121 cable is
+      // built in the single-link topology.
+      links.push_back ((LinkSpec) {120, 122, 0.0005, 1000, 1200008, 1220008, false});
+      links.push_back ((LinkSpec) {121, 123, 0.0005, 1000, 1210008, 1230008, false});
+    }
+
+  // NOTE: there is deliberately no cable between location A and location B. The two exchange
+  // satellites are on opposite sides of Earth and are not interconnected; the only path between
+  // them is the 20ms internal link inside each constellation, which is what supplies the path
+  // stretch this scenario measures.
 
   return links;
 }
@@ -914,7 +1064,8 @@ BuildTopologyLinksDirect ()
   links.push_back ((LinkSpec) {101, 102, 0.0020, 300, 1010000, 1020000, false});
   links.push_back ((LinkSpec) {105, 106, 0.0020, 300, 1050000, 1060001, false});
   links.push_back ((LinkSpec) {107, 103, 0.0015, 150, 1070000, 1030000, false});
-  // links.push_back ((LinkSpec) {108, 106, 0.0015, 150, 1080000, 1060002, false}); // Removed to match SCION topology
+  // Omitted deliberately: 108 and 106 are both ground/customer ASes, and no topology in this
+  // file connects two ground ASes.
   links.push_back ((LinkSpec) {104, 108, 0.0015, 150, 1040000, 1080001, false});
 
   // Location A full mesh — 6 pairs × 2 links (primary + backup)
@@ -1060,6 +1211,8 @@ main (int argc, char *argv[])
   bool reference_topology = false;
   bool symmetric_link_events = true;
   bool single_link_per_ixp_pair = false;
+  bool split_fabric_per_ixp = false;
+  std::string dump_topology_path = "";
   double error_hold_s = 45.0;
   double dump_rib_at_s = 0.0;
   bool stochastic_latency_model = true;
@@ -1092,6 +1245,20 @@ main (int argc, char *argv[])
                 "one to AS121, so a handover moves between two distinct peer ASes and is visible "
                 "to BGP. Requires --dualIxp=1.",
                 single_link_per_ixp_pair);
+  cmd.AddValue ("splitFabricPerIxp",
+                "Split-edge topology with TWO fabric ASes per exchange satellite (location A: "
+                "AS120 primary + AS122 backup; location B: AS121 + AS123), joined by a short "
+                "intra-site link. Each satellite half's main cable lands on the primary fabric "
+                "and its backup cable on the backup fabric, so a handover changes peer ASN and "
+                "peer router ID and is visible to BGP. With 0, both cables land on the same "
+                "fabric AS, share one /30 and one session, and the handover is hidden below IP. "
+                "Requires --dualIxp=1 --splitEdgeAs=1.",
+                split_fabric_per_ixp);
+  cmd.AddValue ("dumpTopology",
+                "Write the built link table to this CSV and exit without simulating. Used to "
+                "check that the BGP topology and its SCION XML counterpart are the same graph, "
+                "on interface IDs and latencies rather than just on edges.",
+                dump_topology_path);
   cmd.AddValue ("symmetricLinkEvents",
                 "Apply each link event to both endpoints. Set 0 for the old behaviour where "
                 "only the satellite-side interface was toggled and the IXP end stayed up.",
@@ -1168,9 +1335,31 @@ main (int argc, char *argv[])
       shared_pair_subnet = false;
       backup_links_down_at_start = false;
     }
+  // With a second fabric AS per location the two cables of an adjacency already terminate on
+  // different ASes, so they are two AS pairs and get two /30s by construction. Sharing is not
+  // just unnecessary here, it is what would hide the handover we are trying to expose.
+  if (split_fabric_per_ixp)
+    {
+      shared_pair_subnet = false;
+    }
   if (single_link_per_ixp_pair && !dual_ixp)
     {
       NS_ABORT_MSG ("singleLinkPerIxpPair requires --dualIxp=1");
+    }
+  if (split_fabric_per_ixp && !(dual_ixp && split_edge_as))
+    {
+      NS_ABORT_MSG ("splitFabricPerIxp requires --dualIxp=1 --splitEdgeAs=1");
+    }
+  if (split_fabric_per_ixp && single_link_per_ixp_pair)
+    {
+      NS_ABORT_MSG ("splitFabricPerIxp is incompatible with --singleLinkPerIxpPair");
+    }
+  if (split_fabric_per_ixp && scenario == "hidden")
+    {
+      // The virtual IXP fabric exists to hide a handover from the control plane; this topology
+      // exists to expose one. Running both together is contradictory, and the per-AS active-link
+      // caps the hidden scenario installs assume both cables of a half share one peer AS.
+      NS_ABORT_MSG ("splitFabricPerIxp does not support --scenario=hidden");
     }
 
   if (!verbose)
@@ -1213,7 +1402,14 @@ main (int argc, char *argv[])
     {
       asIds.push_back (120);
       asIds.push_back (121);
-      outDir = outDir + "_dual_ixp_" + scenario;
+      if (split_fabric_per_ixp)
+        {
+          // Appended after 120/121 so every existing AS keeps its ns-3 node id, which is what
+          // PrintRoutingTableAllAt labels its output by.
+          asIds.push_back (122);
+          asIds.push_back (123);
+        }
+      outDir = outDir + (split_fabric_per_ixp ? "_dual_ixp_fabric2_" : "_dual_ixp_") + scenario;
     }
   else
     {
@@ -1248,8 +1444,54 @@ main (int argc, char *argv[])
           ? BuildTopologyLinksReference ()
           : (direct_links ? BuildTopologyLinksDirect ()
                           : (dual_ixp ? BuildTopologyLinksDual (split_edge_as,
-                                                                single_link_per_ixp_pair)
+                                                                single_link_per_ixp_pair,
+                                                                split_fabric_per_ixp)
                                       : BuildTopologyLinksSingle ()));
+
+  // Structural invariants, asserted rather than assumed so a future edit cannot quietly
+  // reintroduce either. Both are load-bearing for what these scenarios claim to measure.
+  for (uint32_t i = 0; i < links.size (); ++i)
+    {
+      const LinkSpec &s = links.at (i);
+      if (!reference_topology)
+        {
+          // A ground/customer AS never provides transit between two others, and a ground-ground
+          // cable would hand a satellite pair a path that bypasses the IXP entirely.
+          NS_ABORT_MSG_IF (IsGroundAs (s.as_a) && IsGroundAs (s.as_b),
+                           "ground-ground link " << s.as_a << "-" << s.as_b
+                                                 << " is not allowed in this topology");
+        }
+      // In the split topology the two exchange satellites are on opposite sides of Earth and
+      // are never cabled to each other; the only path between them runs through a
+      // constellation's internal link. The single-cable-per-pair topology is the deliberate
+      // exception — there the handover moves between locations, so an AS120-AS121 link is
+      // required to keep two satellites on different exchanges from being partitioned.
+      NS_ABORT_MSG_IF (!single_link_per_ixp_pair && IsIxpFabricAs (s.as_a) &&
+                           IsIxpFabricAs (s.as_b) &&
+                           IxpLocationOf (s.as_a) != IxpLocationOf (s.as_b),
+                       "IXP locations " << s.as_a << " and " << s.as_b
+                                        << " must not be directly connected");
+    }
+
+  if (!dump_topology_path.empty ())
+    {
+      // Emitted in link order, because both this program and the SCION setup assign interface
+      // indices by the order links are declared; a reordered XML resolves interface IDs
+      // differently even when the edge multiset matches.
+      std::ofstream dump (dump_topology_path.c_str ());
+      NS_ABORT_MSG_IF (!dump.is_open (), "cannot open " << dump_topology_path);
+      dump << "idx,as_a,as_b,latency_s,capacity_mbps,if_id_a,if_id_b,ixp_managed\n";
+      for (uint32_t i = 0; i < links.size (); ++i)
+        {
+          const LinkSpec &s = links.at (i);
+          dump << i << "," << s.as_a << "," << s.as_b << "," << std::fixed
+               << std::setprecision (6) << s.latency_s << "," << s.capacity_mbps << ","
+               << s.if_id_a << "," << s.if_id_b << "," << (s.ixp_managed ? 1 : 0) << "\n";
+        }
+      dump.close ();
+      std::cout << "wrote " << links.size () << " links to " << dump_topology_path << std::endl;
+      return 0;
+    }
   // With --sharedPairSubnet, both cables of an AS pair get one subnet and the SAME pair of
   // addresses, so exactly one subnet exists per adjacency. Giving the standby cable its own
   // /30 means both endpoints originate a second prefix for the same adjacency, and that is
@@ -1338,7 +1580,8 @@ main (int argc, char *argv[])
           IxpLinkId linkId = {spec.as_a, nextIxpLinkIndex[spec.as_a]};
           ixpLinkByIfId[spec.if_id_a] = linkId;
           ixpQualityByIfId[spec.if_id_a] =
-              dual_ixp ? GetDualIxpQuality (spec.if_id_a) : ((spec.if_id_a % 10 == 1) ? 1.0 : 0.9);
+              dual_ixp ? GetDualIxpQuality (spec.if_id_a, spec.as_b)
+                       : ((spec.if_id_a % 10 == 1) ? 1.0 : 0.9);
           ixpRemoteAsByIfId[spec.if_id_a] = spec.as_b;
         }
 
@@ -1505,6 +1748,22 @@ main (int argc, char *argv[])
       probePairs.push_back (std::make_pair (MakeSplitAsn (103, false), MakeSplitAsn (105, false)));
       probePairs.push_back (std::make_pair (MakeSplitAsn (104, true), MakeSplitAsn (105, true)));
       probePairs.push_back (std::make_pair (MakeSplitAsn (104, false), MakeSplitAsn (105, false)));
+
+      // Cross-location pairs. Every pair above is same-location, so none of them traverses a
+      // constellation's 20ms internal link in steady state and a failure that isolated one
+      // exchange from the other would be invisible to the measurement. The sibling pairs below
+      // ride the internal link directly and must be insensitive to a fabric handover; the
+      // diagonal pairs cross both an exchange and an internal link, so they are what actually
+      // shows the path stretch this topology is built to produce.
+      for (uint16_t base = 102; base <= 105; ++base)
+        {
+          probePairs.push_back (
+              std::make_pair (MakeSplitAsn (base, true), MakeSplitAsn (base, false)));
+        }
+      probePairs.push_back (std::make_pair (MakeSplitAsn (102, true), MakeSplitAsn (103, false)));
+      probePairs.push_back (std::make_pair (MakeSplitAsn (103, true), MakeSplitAsn (104, false)));
+      probePairs.push_back (std::make_pair (MakeSplitAsn (104, true), MakeSplitAsn (105, false)));
+      probePairs.push_back (std::make_pair (MakeSplitAsn (105, true), MakeSplitAsn (102, false)));
     }
   else
     {
@@ -1710,14 +1969,39 @@ main (int argc, char *argv[])
       // "no --eventFile" branch, so sweeps that supply an events file never reach them.
       if (backup_links_down_at_start && !direct_links)
         {
-          static const uint32_t kIxpBackupIfIds[] = {1020002, 1030002, 1040002, 1050002};
-          for (uint32_t k = 0; k < 4; ++k)
+          // Derived from the built link list rather than enumerated. The previous hardcoded set
+          // {1020002, 1030002, 1040002, 1050002} covered only the location-A backups, so in any
+          // dual-IXP topology the location-B backups X0004 stayed up while sharing their
+          // primary's /30 — two live interfaces with identical addresses, which is exactly what
+          // the shared-subnet model exists to prevent and which Ipv4AddressGenerator::TestMode
+          // stops ns-3 from complaining about.
+          //
+          // Keyed on the IXP *location*, not on the peer ASN: with --splitFabricPerIxp a half's
+          // main and backup cables terminate on two different fabric ASes, so an ASN key would
+          // classify both as "first seen" and neither as a standby.
+          std::set<std::pair<uint16_t, uint16_t>> seenMainCable;
+          for (uint32_t i = 0; i < links.size (); ++i)
             {
-              if (ifIdToRuntimeIdx.count (kIxpBackupIfIds[k]))
+              const LinkSpec &spec = links.at (i);
+              if (!spec.ixp_managed)
+                {
+                  continue;
+                }
+              const uint16_t location = IxpLocationOf (spec.as_b);
+              if (location == kIxpLocationNone)
+                {
+                  continue;
+                }
+              const std::pair<uint16_t, uint16_t> key (spec.as_a, location);
+              if (seenMainCable.insert (key).second)
+                {
+                  continue; // first cable at this location is the live main attachment
+                }
+              if (ifIdToRuntimeIdx.count (spec.if_id_a))
                 {
                   Simulator::Schedule (Seconds (0.1), &SetLinkState,
-                                       &runtimes.at (ifIdToRuntimeIdx.at (kIxpBackupIfIds[k])),
-                                       false, &linkEvents);
+                                       &runtimes.at (ifIdToRuntimeIdx.at (spec.if_id_a)), false,
+                                       &linkEvents);
                 }
             }
         }
@@ -1782,44 +2066,91 @@ main (int argc, char *argv[])
         {
           // Calibration control: static topology, no scheduled events.
         }
-      else if (dual_ixp)
-        {
-          // Dual-IXP visible scenario: toggle between AS120 and AS121 for each satellite AS
-          Simulator::Schedule (Seconds (0.1), &SetSatelliteIxpInterfaceState,
-                               &runtimes.at (ifIdToRuntimeIdx.at (1020002)), false, &linkEvents);
-          Simulator::Schedule (Seconds (0.1), &SetSatelliteIxpInterfaceState,
-                               &runtimes.at (ifIdToRuntimeIdx.at (1030002)), false, &linkEvents);
-          Simulator::Schedule (Seconds (0.1), &SetSatelliteIxpInterfaceState,
-                               &runtimes.at (ifIdToRuntimeIdx.at (1040002)), false, &linkEvents);
-          Simulator::Schedule (Seconds (0.1), &SetSatelliteIxpInterfaceState,
-                               &runtimes.at (ifIdToRuntimeIdx.at (1050002)), false, &linkEvents);
-          // Disable AS120 primary links and enable AS121 links (second orbit)
-          Simulator::Schedule (Seconds (50.0), &SetSatelliteIxpInterfaceState,
-                               &runtimes.at (ifIdToRuntimeIdx.at (1020001)), false, &linkEvents);
-          Simulator::Schedule (Seconds (50.001), &SetSatelliteIxpInterfaceState,
-                               &runtimes.at (ifIdToRuntimeIdx.at (1020003)), true, &linkEvents);
-          Simulator::Schedule (Seconds (55.0), &SetSatelliteIxpInterfaceState,
-                               &runtimes.at (ifIdToRuntimeIdx.at (1020003)), false, &linkEvents);
-          Simulator::Schedule (Seconds (55.001), &SetSatelliteIxpInterfaceState,
-                               &runtimes.at (ifIdToRuntimeIdx.at (1020001)), true, &linkEvents);
-        }
       else
         {
-          // Single-IXP visible scenario (original code)
-          Simulator::Schedule (Seconds (0.1), &SetSatelliteIxpInterfaceState,
-                               &runtimes.at (ifIdToRuntimeIdx.at (1020002)), false, &linkEvents);
-          Simulator::Schedule (Seconds (0.1), &SetSatelliteIxpInterfaceState,
-                               &runtimes.at (ifIdToRuntimeIdx.at (1030002)), false, &linkEvents);
-          Simulator::Schedule (Seconds (0.1), &SetSatelliteIxpInterfaceState,
-                               &runtimes.at (ifIdToRuntimeIdx.at (1040002)), false, &linkEvents);
-          Simulator::Schedule (Seconds (0.1), &SetSatelliteIxpInterfaceState,
-                               &runtimes.at (ifIdToRuntimeIdx.at (1050002)), false, &linkEvents);
-          Simulator::Schedule (Seconds (50.0), &SetSatelliteIxpInterfaceState,
-                               &runtimes.at (ifIdToRuntimeIdx.at (1020001)), false, &linkEvents);
-          Simulator::Schedule (Seconds (55.0), &SetSatelliteIxpInterfaceState,
-                               &runtimes.at (ifIdToRuntimeIdx.at (1020002)), true, &linkEvents);
-          Simulator::Schedule (Seconds (120.0), &SetLinkState,
-                               &runtimes.at (ifIdToRuntimeIdx.at (1010000)), false, &linkEvents);
+          // Built-in demo schedules, reached only when no --eventFile is supplied. Every sweep
+          // supplies one, so these exist for interactive runs.
+          //
+          // The interface IDs below are hardcoded and do not exist in every topology mode: for
+          // example 1020002 is absent whenever --singleLinkPerIxpPair builds one cable per
+          // pair. Looking them up with map::at threw std::out_of_range and aborted the run
+          // before Simulator::Run, so those modes were simply unusable without an events file.
+          // Skip a missing interface with a note instead, matching the guarded style used by
+          // the --eventFile path above.
+          auto scheduleIfPresent = [&] (double t, uint32_t ifId, bool up, bool bothEndpoints) {
+            std::map<uint32_t, uint32_t>::const_iterator it = ifIdToRuntimeIdx.find (ifId);
+            if (it == ifIdToRuntimeIdx.end ())
+              {
+                NS_LOG_UNCOND ("built-in schedule: if_id " << ifId
+                                                           << " does not exist in this topology "
+                                                              "mode, skipping");
+                return;
+              }
+            if (bothEndpoints)
+              {
+                Simulator::Schedule (Seconds (t), &SetLinkState, &runtimes.at (it->second), up,
+                                     &linkEvents);
+              }
+            else
+              {
+                Simulator::Schedule (Seconds (t), &SetSatelliteIxpInterfaceState,
+                                     &runtimes.at (it->second), up, &linkEvents);
+              }
+          };
+
+          if (dual_ixp)
+            {
+              // Hand each satellite half over from its main cable to its standby and back,
+              // staggered so the handovers do not overlap. Derived from the built link list so
+              // it covers every half in whichever dual mode is active, rather than only AS102
+              // as the previous hardcoded schedule did.
+              std::map<std::pair<uint16_t, uint16_t>, std::pair<uint32_t, uint32_t>> cables;
+              std::vector<std::pair<uint16_t, uint16_t>> order;
+              for (uint32_t i = 0; i < links.size (); ++i)
+                {
+                  const LinkSpec &spec = links.at (i);
+                  const uint16_t location = IxpLocationOf (spec.as_b);
+                  if (!spec.ixp_managed || location == kIxpLocationNone)
+                    {
+                      continue;
+                    }
+                  const std::pair<uint16_t, uint16_t> key (spec.as_a, location);
+                  if (!cables.count (key))
+                    {
+                      cables[key] = std::make_pair (spec.if_id_a, 0u);
+                      order.push_back (key);
+                    }
+                  else if (cables[key].second == 0u)
+                    {
+                      cables[key].second = spec.if_id_a;
+                    }
+                }
+              double t0 = 50.0;
+              for (uint32_t k = 0; k < order.size (); ++k)
+                {
+                  const std::pair<uint32_t, uint32_t> &pair = cables.at (order.at (k));
+                  if (pair.second == 0u)
+                    {
+                      continue; // only one cable at this location, nothing to hand over to
+                    }
+                  scheduleIfPresent (t0, pair.first, false, true);
+                  scheduleIfPresent (t0 + 0.001, pair.second, true, true);
+                  scheduleIfPresent (t0 + 20.0, pair.second, false, true);
+                  scheduleIfPresent (t0 + 20.001, pair.first, true, true);
+                  t0 += 7.0;
+                }
+            }
+          else
+            {
+              // Single-IXP visible scenario (original schedule).
+              scheduleIfPresent (0.1, 1020002, false, false);
+              scheduleIfPresent (0.1, 1030002, false, false);
+              scheduleIfPresent (0.1, 1040002, false, false);
+              scheduleIfPresent (0.1, 1050002, false, false);
+              scheduleIfPresent (50.0, 1020001, false, false);
+              scheduleIfPresent (55.0, 1020002, true, false);
+              scheduleIfPresent (120.0, 1010000, false, true);
+            }
         }
     }
   else

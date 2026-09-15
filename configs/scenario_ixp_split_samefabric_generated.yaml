@@ -1,0 +1,151 @@
+time_resolution: NS
+topology: topology/ixp_split_samefabric_topology.xml
+output: build/scenario_ixp_split_samefabric_generated.txt
+simulation_duration: 10000.000s
+NUM_CORE: 1
+
+events_file: user_defined_events/scenario_ixp_gateway_switch_30links_dual_generated_events.json
+
+beacon_service:
+  policy: baseline
+  period: 10s
+  expiration_period: 1350s
+  first_beaconing: 0s
+  last_beaconing: 10000.000s
+
+path_service: {}
+border_router: {}
+
+stochastic_latency_model:
+  enabled: true
+  R_eff_m: 1400000.0
+  alpha: 1.3
+  mu_link_s: 0.0055
+  sigma_link_s: 0.0012
+  delta_s: 0.0004
+  beta: 0.08
+  omega_rad_s: 0.0041887902047863905
+  R_L_m: 600000.0
+  R_M_m: 6000000.0
+  P: 6
+  N_p: 12
+
+control_plane_logging:
+  beacon_events: false
+  path_server_updates: false
+  host_cache_updates: false
+  log_file: build/scenario_ixp_split_samefabric_generated_control_plane.log
+
+path_snapshot_logger:
+  period: 300s
+  output: build/scenario_ixp_split_samefabric_generated_path_snapshots.csv
+  max_paths_per_dst: 5
+  discover_all_pairs: true
+  request_lead_time: 500ms
+
+data_plane_probing:
+  start: 10s
+  period: 1s
+  timeout: 2s
+  count: 9990
+  pairs:
+    - src_as: 101
+      dst_as: 1020
+      src_host: 2
+      dst_host: 2
+      output: build/split_samefabric/scion_probe_101_1020.csv
+    - src_as: 1020
+      dst_as: 1030
+      src_host: 2
+      dst_host: 2
+      output: build/split_samefabric/scion_probe_1020_1030.csv
+    - src_as: 1021
+      dst_as: 1031
+      src_host: 2
+      dst_host: 2
+      output: build/split_samefabric/scion_probe_1021_1031.csv
+    - src_as: 1020
+      dst_as: 1040
+      src_host: 2
+      dst_host: 2
+      output: build/split_samefabric/scion_probe_1020_1040.csv
+    - src_as: 1021
+      dst_as: 1041
+      src_host: 2
+      dst_host: 2
+      output: build/split_samefabric/scion_probe_1021_1041.csv
+    - src_as: 1030
+      dst_as: 1050
+      src_host: 2
+      dst_host: 2
+      output: build/split_samefabric/scion_probe_1030_1050.csv
+    - src_as: 1031
+      dst_as: 1051
+      src_host: 2
+      dst_host: 2
+      output: build/split_samefabric/scion_probe_1031_1051.csv
+    - src_as: 1040
+      dst_as: 1050
+      src_host: 2
+      dst_host: 2
+      output: build/split_samefabric/scion_probe_1040_1050.csv
+    - src_as: 1041
+      dst_as: 1051
+      src_host: 2
+      dst_host: 2
+      output: build/split_samefabric/scion_probe_1041_1051.csv
+    - src_as: 1020
+      dst_as: 1021
+      src_host: 2
+      dst_host: 2
+      output: build/split_samefabric/scion_probe_1020_1021.csv
+    - src_as: 1030
+      dst_as: 1031
+      src_host: 2
+      dst_host: 2
+      output: build/split_samefabric/scion_probe_1030_1031.csv
+    - src_as: 1040
+      dst_as: 1041
+      src_host: 2
+      dst_host: 2
+      output: build/split_samefabric/scion_probe_1040_1041.csv
+    - src_as: 1050
+      dst_as: 1051
+      src_host: 2
+      dst_host: 2
+      output: build/split_samefabric/scion_probe_1050_1051.csv
+    - src_as: 1020
+      dst_as: 1031
+      src_host: 2
+      dst_host: 2
+      output: build/split_samefabric/scion_probe_1020_1031.csv
+    - src_as: 1030
+      dst_as: 1041
+      src_host: 2
+      dst_host: 2
+      output: build/split_samefabric/scion_probe_1030_1041.csv
+    - src_as: 1040
+      dst_as: 1051
+      src_host: 2
+      dst_host: 2
+      output: build/split_samefabric/scion_probe_1040_1051.csv
+    - src_as: 1050
+      dst_as: 1021
+      src_host: 2
+      dst_host: 2
+      output: build/split_samefabric/scion_probe_1050_1021.csv
+
+cp_summary_output: build/scenario_ixp_split_samefabric_generated_cp_summary.csv
+# Scenario: two distant IXP satellites, no link between them; handover within a location, both cables on the same fabric AS so it is hidden below IP
+#
+# Deliberately NO source_path_policy. It is inert here twice over: SelectPreferredSegment is
+# unreachable when every AS is type="core", and the per-AS probe-host lookup in
+# pre-simulation-setup.cc keys an alias index against a map of real XML ids, so only host 2 is
+# ever created. Preference comes from the topology instead: each half reaches its own exchange
+# in one hop and the other only across a 20ms internal link.
+#
+# Probe pairs, matching the BGP program's split-mode set exactly:
+#   (101,1020)            ground to satellite
+#   8 same-location pairs four via each exchange satellite
+#   4 sibling pairs       ride a constellation's internal link directly
+#   4 diagonal pairs      cross both an exchange and an internal link, showing the stretch

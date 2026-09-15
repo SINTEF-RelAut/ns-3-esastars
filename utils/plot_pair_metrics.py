@@ -52,8 +52,18 @@ INK_SECONDARY = "#52514e"
 INK_MUTED = "#8a8880"
 GRID = "#d9d7cf"
 
-# Families are distinguished by line style so colour stays free to mean protocol.
-FAMILY_STYLES = ["-", "--", "-.", ":"]
+# Families are distinguished by line style so colour stays free to mean protocol. Six entries,
+# because a sweep can now carry dual, dual_vis, single, direct, splitsame and splitvis at once
+# and the list is indexed modulo its length, so a shorter list silently aliases two families
+# onto the same style.
+FAMILY_STYLES = [
+    "-",
+    "--",
+    "-.",
+    ":",
+    (0, (3, 1, 1, 1, 1, 1)),
+    (0, (5, 1)),
+]
 
 
 @dataclass(frozen=True)
@@ -88,27 +98,43 @@ def _i(value: str) -> int:
 
 
 def load(csv_path: Path) -> List[Row]:
-    """Read pair_metrics.csv, tolerating tables written before the family column existed."""
-    rows: List[Row] = []
+    """Read pair_metrics.csv, tolerating tables written before the family column existed.
+
+    When a table spans more than one scenario, the scenario is folded into the family label so
+    it becomes part of the series key. Family and scenario are orthogonal axes and pooling them
+    would average two different experiments into one line; folding here rather than at each use
+    site keeps every figure consistent without a second grouping dimension.
+    """
     with csv_path.open(newline="", encoding="utf-8") as handle:
-        for raw in csv.DictReader(handle):
-            rows.append(
-                Row(
-                    protocol=raw["protocol"].strip(),
-                    family=(raw.get("family") or "single").strip(),
-                    seed=_i(raw.get("seed", "0")),
-                    beacon_s=_f(raw.get("beacon_s", "")) or 0.0,
-                    path_class=raw["path_class"].strip(),
-                    status=raw["status"].strip(),
-                    loss_pct=_f(raw.get("loss_pct", "")),
-                    loss_pct_churn=_f(raw.get("loss_pct_churn", "")),
-                    recovery_median_s=_f(raw.get("recovery_median_s", "")),
-                    recovery_p90_s=_f(raw.get("recovery_p90_s", "")),
-                    recovery_windows=_i(raw.get("recovery_windows", "0")),
-                    recovery_no_impact=_i(raw.get("recovery_no_impact", "0")),
-                    recovery_censored=_i(raw.get("recovery_censored", "0")),
-                )
+        raw_rows = list(csv.DictReader(handle))
+
+    scenarios = {(r.get("scenario") or "").strip() for r in raw_rows}
+    scenarios.discard("")
+    label_scenario = len(scenarios) > 1
+
+    rows: List[Row] = []
+    for raw in raw_rows:
+        family = (raw.get("family") or "single").strip()
+        scenario = (raw.get("scenario") or "").strip()
+        if label_scenario and scenario:
+            family = f"{family}/{scenario}"
+        rows.append(
+            Row(
+                protocol=raw["protocol"].strip(),
+                family=family,
+                seed=_i(raw.get("seed", "0")),
+                beacon_s=_f(raw.get("beacon_s", "")) or 0.0,
+                path_class=raw["path_class"].strip(),
+                status=raw["status"].strip(),
+                loss_pct=_f(raw.get("loss_pct", "")),
+                loss_pct_churn=_f(raw.get("loss_pct_churn", "")),
+                recovery_median_s=_f(raw.get("recovery_median_s", "")),
+                recovery_p90_s=_f(raw.get("recovery_p90_s", "")),
+                recovery_windows=_i(raw.get("recovery_windows", "0")),
+                recovery_no_impact=_i(raw.get("recovery_no_impact", "0")),
+                recovery_censored=_i(raw.get("recovery_censored", "0")),
             )
+        )
     return rows
 
 

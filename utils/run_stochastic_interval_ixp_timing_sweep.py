@@ -31,6 +31,7 @@ from run_multi_event_ixp_sweep import (
     build_direct_events_scion,
     build_dual_ixp_events,
     build_single_ixp_events,
+    build_split_ixp_events,
     generate_scion_config,
     run_cmd,
     sanitize_stem,
@@ -44,6 +45,10 @@ SIM_TIME_S = 5000
 # interval. 60s therefore clears the worst case with margin, at both ends of the grid.
 WARMUP_S = 60.0
 DEFAULT_SEEDS = list(range(1, 11))
+# Seed offset for the split families' second exchange location. Large enough to stay disjoint
+# from any seed the CLI accepts, so location B draws an independent churn stream while location
+# A keeps the exact trace the other families see at this seed.
+LOCATION_B_SEED_OFFSET = 10_000
 
 
 @dataclass(frozen=True)
@@ -307,7 +312,7 @@ def main() -> int:
     parser.add_argument(
         "--families",
         nargs="+",
-        choices=["dual", "dual_vis", "single", "direct"],
+        choices=["dual", "dual_vis", "single", "direct", "splitsame", "splitvis"],
         default=["dual", "single", "direct"],
         help="Topology families to run (default: dual single direct)",
     )
@@ -467,6 +472,17 @@ def main() -> int:
                 single_path = generated_dir / f"{run_key}_single.json"
                 direct_bgp_path = generated_dir / f"{run_key}_direct_bgp.json"
                 direct_scion_path = generated_dir / f"{run_key}_direct_scion.json"
+                split_path = generated_dir / f"{run_key}_split.json"
+
+                # The split families churn each exchange location independently. Reusing the
+                # same source trace for both would put the two halves of a constellation in
+                # lockstep, so they would hit the break-before-make gap at the same instant and
+                # be detached from both exchanges at once — a partition, not a handover. The
+                # offset seed keeps location A's churn bit-identical to the other families at
+                # this seed, so the comparison to them still holds.
+                source_events_loc_b, metadata_loc_b = build_stochastic_source_events(
+                    density, seed + LOCATION_B_SEED_OFFSET, args.sim_time, args.warmup
+                )
 
                 if not args.dry_run:
                     write_json(
@@ -477,12 +493,17 @@ def main() -> int:
                     write_json(single_path, build_single_ixp_events(source_path, source_events))
                     write_json(direct_bgp_path, build_direct_events_bgp(source_path, source_events))
                     write_json(direct_scion_path, build_direct_events_scion(source_path, source_events))
+                    write_json(
+                        split_path,
+                        build_split_ixp_events(source_path, source_events, source_events_loc_b),
+                    )
 
                 event_paths = {
                     "dual": dual_path,
                     "single": single_path,
                     "direct_bgp": direct_bgp_path,
                     "direct_scion": direct_scion_path,
+                    "split": split_path,
                 }
 
                 for scenario in args.scenarios:
@@ -490,7 +511,14 @@ def main() -> int:
                     for family in args.families:
                         # dual_vis reuses the dual trace: its satellite-side interface IDs
                         # are exactly the X0001/X0003 pair that build_dual_ixp_events emits.
-                        event_family = "dual" if family == "dual_vis" else family
+                        # splitsame and splitvis share the split trace, which toggles within
+                        # each location (X0001/X0002 and X0003/X0004) and names the split ASN
+                        # that owns the interface.
+                        event_family = {
+                            "dual_vis": "dual",
+                            "splitsame": "split",
+                            "splitvis": "split",
+                        }.get(family, family)
                         event_path_bgp = (
                             event_paths["direct_bgp"] if family == "direct" else event_paths[event_family]
                         )
@@ -538,6 +566,24 @@ def main() -> int:
                                 elif family == "dual_vis":
                                     bgp_flags.append("--dualIxp=1")
                                     bgp_flags.append("--singleLinkPerIxpPair=1")
+                                elif family in ("splitsame", "splitvis"):
+                                    # Two distant exchanges, no link between them. The pair
+                                    # differs only in where each half's backup cable lands:
+                                    # same fabric AS (handover hidden below IP, one session
+                                    # survives it) or the location's second fabric AS
+                                    # (handover changes peer ASN and is visible to BGP).
+                                    bgp_flags.append("--dualIxp=1")
+                                    bgp_flags.append("--splitEdgeAs=1")
+                                    if family == "splitvis":
+                                        bgp_flags.append("--splitFabricPerIxp=1")
+                                    # Probe each AS at a loopback rather than at one of its
+                                    # link addresses. With per-link targets the measurement
+                                    # depends on the /30 of a particular cable, and for the
+                                    # cross-location pairs that cable is a held-down standby,
+                                    # so three of the four report 100% loss with no churn at
+                                    # all. Only the split families get this, so the other
+                                    # families' published numbers are unaffected.
+                                    bgp_flags.append("--loopbackProbeTargets=1")
                                 elif family == "single":
                                     bgp_flags.append("--dualIxp=0")
                                     bgp_flags.append("--splitEdgeAs=0")

@@ -52,6 +52,10 @@ class PairResult:
 
     protocol: str
     family: str
+    # The virtual-IXP-fabric axis (visible = plain link events, hidden = VirtualIxpFabric).
+    # RUN_RE has always captured it but nothing carried it through, so hidden and visible rows
+    # were silently pooled in every aggregate and CSV.
+    scenario: str
     seed: int
     mrai_s: int
     beacon_s: int
@@ -77,11 +81,39 @@ class PairResult:
     recovery_p90_s: Optional[float]
 
 
+SPLIT_AS_RE = re.compile(r"^(10[2-5])([01])$")
+
+
+def normalise_as(asn: str) -> Tuple[str, Optional[str]]:
+    """Map a split ASN to its base AS and exchange location; leave any other ASN alone.
+
+    In the split-edge topologies each constellation is two ASes, ``10X0`` homed at exchange A
+    and ``10X1`` at exchange B. Without this, every split ASN fails the three-digit membership
+    tests below and the whole run collapses into "ground-sat direct".
+
+    Ground ASes deliberately get no location even though they attach to both halves: a location
+    label on them would be a fiction, and returning None keeps every pre-split run classifying
+    exactly as it did before.
+    """
+    match = SPLIT_AS_RE.match(asn)
+    if match:
+        return match.group(1), ("A" if match.group(2) == "0" else "B")
+    return asn, None
+
+
 def classify(src_as: str, dst_as: str) -> str:
     """Label a probe pair by the kind of path it exercises."""
-    if src_as in GROUND_ASES and dst_as in GROUND_ASES:
+    src_base, src_loc = normalise_as(src_as)
+    dst_base, dst_loc = normalise_as(dst_as)
+
+    if src_base in GROUND_ASES and dst_base in GROUND_ASES:
         return "ground-ground via IXP"
-    if src_as in SATELLITE_ASES and dst_as in SATELLITE_ASES:
+    if src_base in SATELLITE_ASES and dst_base in SATELLITE_ASES:
+        # A pair whose halves sit at different exchanges cannot use either exchange alone:
+        # the only path between locations is a constellation's internal link, so this class
+        # is what carries the path stretch and it must not be pooled with the others.
+        if src_loc is not None and dst_loc is not None and src_loc != dst_loc:
+            return "sat-sat via internal link"
         return "sat-sat via IXP"
     return "ground-sat direct"
 
@@ -90,10 +122,17 @@ def events_stem(match: "re.Match") -> str:
     """Events-JSON filename for a run, which depends on its topology family.
 
     dual_vis shares the dual trace: its satellite-side interface IDs are the same X0001 and
-    X0003 pair. direct has separate per-protocol traces, so it is not resolvable here.
+    X0003 pair. splitsame and splitvis share the split trace, which toggles within each
+    exchange location. direct has separate per-protocol traces, so it is not resolvable here.
     """
     family = match.group("family")
-    suffix = {"dual": "dual", "dual_vis": "dual", "single": "single"}.get(family)
+    suffix = {
+        "dual": "dual",
+        "dual_vis": "dual",
+        "single": "single",
+        "splitsame": "split",
+        "splitvis": "split",
+    }.get(family)
     if suffix is None:
         return ""
     return (
@@ -278,6 +317,7 @@ def collect(sweep_dir: Path, warmup_s: float) -> List[PairResult]:
                 PairResult(
                     protocol=protocol,
                     family=match.group("family"),
+                    scenario=match.group("scenario"),
                     seed=int(match.group("seed")),
                     mrai_s=int(match.group("mrai")),
                     beacon_s=int(match.group("bcn")),
@@ -319,15 +359,24 @@ def report(results: Sequence[PairResult], warmup_s: float) -> None:
     print(f"\nWarm-up excluded: all statistics computed for t >= {warmup_s:.0f}s")
     print("Denominator: reply + timeout (terminal outcomes), identical for both protocols")
 
-    classes = sorted({(r.family, r.path_class) for r in results})
-    for family, path_class in classes:
-        print(f"\n=== [{family}] {path_class} ===")
+    # Grouped on scenario as well as family: the two are orthogonal axes (scenario selects
+    # whether the virtual IXP fabric absorbs the link events), and pooling them averages two
+    # different experiments into one row.
+    classes = sorted({(r.family, r.scenario, r.path_class) for r in results})
+    for family, scenario, path_class in classes:
+        print(f"\n=== [{family}/{scenario}] {path_class} ===")
         print(
             f"{'mrai/bcn':>9} {'protocol':<7} {'pre-churn':>10} {'churn':>9} {'overall':>9} "
             f"{'unreach':>8} {'pairs':>6} {'rtt p50':>9} {'recov p50':>10} {'recov p90':>10} "
             f"{'no-impact':>10} {'censored':>9}"
         )
-        points = sorted({(r.mrai_s, r.beacon_s) for r in results if r.family == family})
+        points = sorted(
+            {
+                (r.mrai_s, r.beacon_s)
+                for r in results
+                if r.family == family and r.scenario == scenario
+            }
+        )
         for mrai_s, beacon_s in points:
             for protocol in ("BGP", "SCION"):
                 subset = [
@@ -335,6 +384,7 @@ def report(results: Sequence[PairResult], warmup_s: float) -> None:
                     for r in results
                     if r.path_class == path_class
                     and r.family == family
+                    and r.scenario == scenario
                     and r.mrai_s == mrai_s
                     and r.beacon_s == beacon_s
                     and r.protocol == protocol
@@ -386,6 +436,7 @@ def write_csv(results: Sequence[PairResult], out_path: Path) -> None:
             [
                 "protocol",
                 "family",
+                "scenario",
                 "seed",
                 "mrai_s",
                 "beacon_s",
@@ -417,6 +468,7 @@ def write_csv(results: Sequence[PairResult], out_path: Path) -> None:
                 [
                     r.protocol,
                     r.family,
+                    r.scenario,
                     r.seed,
                     r.mrai_s,
                     r.beacon_s,
