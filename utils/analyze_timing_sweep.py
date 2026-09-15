@@ -51,6 +51,7 @@ class PairResult:
     """Outcome of one probe pair in one run, after warm-up exclusion."""
 
     protocol: str
+    family: str
     seed: int
     mrai_s: int
     beacon_s: int
@@ -276,6 +277,7 @@ def collect(sweep_dir: Path, warmup_s: float) -> List[PairResult]:
             results.append(
                 PairResult(
                     protocol=protocol,
+                    family=match.group("family"),
                     seed=int(match.group("seed")),
                     mrai_s=int(match.group("mrai")),
                     beacon_s=int(match.group("bcn")),
@@ -317,21 +319,22 @@ def report(results: Sequence[PairResult], warmup_s: float) -> None:
     print(f"\nWarm-up excluded: all statistics computed for t >= {warmup_s:.0f}s")
     print("Denominator: reply + timeout (terminal outcomes), identical for both protocols")
 
-    classes = sorted({r.path_class for r in results})
-    for path_class in classes:
-        print(f"\n=== {path_class} ===")
+    classes = sorted({(r.family, r.path_class) for r in results})
+    for family, path_class in classes:
+        print(f"\n=== [{family}] {path_class} ===")
         print(
             f"{'mrai/bcn':>9} {'protocol':<7} {'pre-churn':>10} {'churn':>9} {'overall':>9} "
             f"{'unreach':>8} {'pairs':>6} {'rtt p50':>9} {'recov p50':>10} {'recov p90':>10} "
             f"{'no-impact':>10} {'censored':>9}"
         )
-        points = sorted({(r.mrai_s, r.beacon_s) for r in results})
+        points = sorted({(r.mrai_s, r.beacon_s) for r in results if r.family == family})
         for mrai_s, beacon_s in points:
             for protocol in ("BGP", "SCION"):
                 subset = [
                     r
                     for r in results
                     if r.path_class == path_class
+                    and r.family == family
                     and r.mrai_s == mrai_s
                     and r.beacon_s == beacon_s
                     and r.protocol == protocol
@@ -382,6 +385,7 @@ def write_csv(results: Sequence[PairResult], out_path: Path) -> None:
         writer.writerow(
             [
                 "protocol",
+                "family",
                 "seed",
                 "mrai_s",
                 "beacon_s",
@@ -412,6 +416,7 @@ def write_csv(results: Sequence[PairResult], out_path: Path) -> None:
             writer.writerow(
                 [
                     r.protocol,
+                    r.family,
                     r.seed,
                     r.mrai_s,
                     r.beacon_s,
