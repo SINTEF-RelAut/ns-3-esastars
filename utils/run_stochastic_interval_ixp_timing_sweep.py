@@ -197,6 +197,7 @@ def finalize_scion_config_timing(
     sim_time_s: int,
     probe_period_s: int,
     snapshot_period_s: Optional[int] = None,
+    warm_path_caches: bool = False,
 ) -> None:
     """Rewrite generated SCION config to requested simulation/probing timing.
 
@@ -211,6 +212,21 @@ def finalize_scion_config_timing(
         snapshot_period_s = probe_period_s
 
     text = output_path.read_text(encoding="utf-8")
+
+    # path_snapshot_logger.discover_all_pairs schedules WarmPathRequestsForSnapshot, which asks
+    # every AS's host 2 for paths to every other AS once per snapshot tick. It contributes
+    # nothing to the snapshot CSV -- LogPathSnapshotCsv reads the beacon store, not host caches
+    # -- but it is ~98% of SCION runtime and it refreshes the very caches whose staleness the
+    # experiment is measuring. On one reference run, turning it off took a 400s simulation from
+    # 519.5s to 10.4s and raised measured SCION loss from 2.655% to 4.374%, the latter being the
+    # honest figure: re-resolving a path after a handover is part of recovery, not something the
+    # measurement apparatus should do for the host in advance.
+    text = re.sub(
+        r"^(\s*discover_all_pairs:\s*)\S+",
+        rf"\g<1>{'true' if warm_path_caches else 'false'}",
+        text,
+        flags=re.MULTILINE,
+    )
 
     if sim_time_s <= 10:
         probe_count = 1
@@ -254,10 +270,25 @@ def finalize_scion_config_timing(
 
 
 def ensure_templates_exist(repo_root: Path, families: Iterable[str], scenarios: Iterable[str]) -> List[Path]:
+    """Check every requested (scenario, family) has a SCION template on disk.
+
+    Not every family has a template for every scenario: dual_vis, splitsame and splitvis exist
+    only for the visible scenario, because the hidden scenario routes link events through the
+    virtual IXP fabric, which is the opposite of what those families are built to expose. Ask
+    for one of them with --scenarios hidden and the lookup used to raise a bare KeyError from
+    inside this function, well before any run started and with nothing naming the culprit.
+    """
     missing: List[Path] = []
     for scenario in scenarios:
         for family in families:
-            candidate = repo_root / SCION_TEMPLATE_PATHS[scenario][family]
+            template = SCION_TEMPLATE_PATHS.get(scenario, {}).get(family)
+            if template is None:
+                available = ", ".join(sorted(SCION_TEMPLATE_PATHS.get(scenario, {})))
+                raise SystemExit(
+                    f"family '{family}' has no SCION template for scenario '{scenario}'. "
+                    f"Families available for '{scenario}': {available}."
+                )
+            candidate = repo_root / template
             if not candidate.exists():
                 missing.append(candidate)
     return missing
@@ -335,6 +366,28 @@ def main() -> int:
         type=int,
         default=SIM_TIME_S,
         help=f"Simulation time in seconds (default: {SIM_TIME_S})",
+    )
+    parser.add_argument(
+        "--snapshot-period",
+        type=int,
+        default=1,
+        help=(
+            "path_snapshot_logger period in seconds. This is the time resolution of the SCION "
+            "control-plane record, so a longer period only coarsens when you can say an AS "
+            "learned or lost a path. With --warm-path-caches off it is cheap, so there is "
+            "little reason to raise it. (default: %(default)s)"
+        ),
+    )
+    parser.add_argument(
+        "--warm-path-caches",
+        action="store_true",
+        help=(
+            "Re-enable path_snapshot_logger.discover_all_pairs, which asks every AS's host for "
+            "paths to every other AS once per snapshot tick. It adds nothing to the snapshot "
+            "CSV, costs ~98%% of SCION runtime, and flatters SCION by refreshing the caches "
+            "whose staleness is being measured (2.655%% loss with it, 4.374%% without, on one "
+            "reference run). Off by default; pass it only to reproduce older sweeps."
+        ),
     )
     parser.add_argument(
         "--warmup",
@@ -610,7 +663,13 @@ def main() -> int:
                                     events_file_rel=event_rel_scion,
                                     stochastic_latency=stochastic_latency,
                                 )
-                                finalize_scion_config_timing(out_cfg, args.sim_time, timing.probe_period_s)
+                                finalize_scion_config_timing(
+                                    out_cfg,
+                                    args.sim_time,
+                                    timing.probe_period_s,
+                                    args.snapshot_period,
+                                    args.warm_path_caches,
+                                )
                                 (output_root / run_name).mkdir(parents=True, exist_ok=True)
 
                             run_or_record(

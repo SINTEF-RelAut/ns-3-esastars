@@ -109,11 +109,19 @@ def classify(src_as: str, dst_as: str) -> str:
     if src_base in GROUND_ASES and dst_base in GROUND_ASES:
         return "ground-ground via IXP"
     if src_base in SATELLITE_ASES and dst_base in SATELLITE_ASES:
-        # A pair whose halves sit at different exchanges cannot use either exchange alone:
-        # the only path between locations is a constellation's internal link, so this class
-        # is what carries the path stretch and it must not be pooled with the others.
         if src_loc is not None and dst_loc is not None and src_loc != dst_loc:
-            return "sat-sat via internal link"
+            # Both halves of one constellation: the two ASes are directly adjacent over the
+            # 20ms link between exchange locations, and that link never churns. Kept apart
+            # from the diagonal pairs below because the two are not the same measurement —
+            # pooling them hides that this path is completely unaffected by handovers and
+            # makes the pooled class look like the link itself is unreliable.
+            if src_base == dst_base:
+                return "sat-sat cross-location, direct"
+            # Different constellations at different exchanges: the path crosses the 20ms link
+            # AND an exchange, so it is exposed to handovers like any other via-IXP path, but
+            # over more AS hops. This is where the path stretch shows up, in latency and in
+            # how long re-beaconing takes to rebuild the longer path.
+            return "sat-sat cross-location via IXP"
         return "sat-sat via IXP"
     return "ground-sat direct"
 

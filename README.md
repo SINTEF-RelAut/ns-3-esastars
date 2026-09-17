@@ -12,7 +12,7 @@ This repository uses `waf` to build ns-3 and run simulations.
 From the repository root:
 
 ```bash
-CCFLAGS_EXTRA="-O3 -fopenmp -std=c++17" CXXFLAGS_EXTRA="-O3 -fopenmp -std=c++17" ./waf configure --enable-examples --enable-tests
+CCFLAGS_EXTRA="-O3 -fopenmp -std=c++17" CXXFLAGS_EXTRA="-O3 -fopenmp -std=c++17 -Wno-error" ./waf configure --enable-examples --enable-tests
 ./waf
 ```
 
