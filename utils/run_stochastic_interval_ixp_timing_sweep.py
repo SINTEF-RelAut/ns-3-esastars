@@ -31,6 +31,7 @@ from run_multi_event_ixp_sweep import (
     build_direct_events_scion,
     build_dual_ixp_events,
     build_single_ixp_events,
+    reject_mismatched_families,
     build_split_ixp_events,
     generate_scion_config,
     run_cmd,
@@ -216,11 +217,16 @@ def finalize_scion_config_timing(
     # path_snapshot_logger.discover_all_pairs schedules WarmPathRequestsForSnapshot, which asks
     # every AS's host 2 for paths to every other AS once per snapshot tick. It contributes
     # nothing to the snapshot CSV -- LogPathSnapshotCsv reads the beacon store, not host caches
-    # -- but it is ~98% of SCION runtime and it refreshes the very caches whose staleness the
-    # experiment is measuring. On one reference run, turning it off took a 400s simulation from
-    # 519.5s to 10.4s and raised measured SCION loss from 2.655% to 4.374%, the latter being the
-    # honest figure: re-resolving a path after a handover is part of recovery, not something the
-    # measurement apparatus should do for the host in advance.
+    # -- and it is ~98% of SCION runtime: on one reference run, turning it off took a 400s
+    # simulation from 519.5s to 10.4s. Default it off for that reason alone.
+    #
+    # It does NOT measurably bias the result, despite the plausible worry that refreshing host
+    # caches would mask the cache-miss loss a handover causes. A single-run comparison suggested
+    # a large effect (2.655% loss with warming, 4.374% without) but that did not survive the
+    # sweep: across build/2026-09-12 (warming on, seeds 10-19) and build/2026-09-16 (off, seeds
+    # 200-239), on identical SCION topologies, the single and dual_vis families differ by
+    # between -1.0 and +0.45 percentage points with no consistent sign. Treat the earlier
+    # single-run figure as noise, and results taken with warming on as still valid.
     text = re.sub(
         r"^(\s*discover_all_pairs:\s*)\S+",
         rf"\g<1>{'true' if warm_path_caches else 'false'}",
@@ -269,25 +275,41 @@ def finalize_scion_config_timing(
     output_path.write_text(text, encoding="utf-8")
 
 
-def ensure_templates_exist(repo_root: Path, families: Iterable[str], scenarios: Iterable[str]) -> List[Path]:
-    """Check every requested (scenario, family) has a SCION template on disk.
+def has_template(scenario: str, family: str) -> bool:
+    """Whether this family is defined for this scenario at all."""
+    return SCION_TEMPLATE_PATHS.get(scenario, {}).get(family) is not None
 
-    Not every family has a template for every scenario: dual_vis, splitsame and splitvis exist
-    only for the visible scenario, because the hidden scenario routes link events through the
-    virtual IXP fabric, which is the opposite of what those families are built to expose. Ask
-    for one of them with --scenarios hidden and the lookup used to raise a bare KeyError from
-    inside this function, well before any run started and with nothing naming the culprit.
+
+def ensure_templates_exist(repo_root: Path, families: Iterable[str], scenarios: Iterable[str]) -> List[Path]:
+    """Check every requested (scenario, family) that exists has its SCION template on disk.
+
+    Not every family has a template for every scenario. dual_vis, splitsame, splitvis and the
+    three direct families exist only for the visible scenario, because the hidden scenario
+    routes link events through the virtual IXP fabric -- which is either the opposite of what
+    those families are built to expose or, for direct peering, a fabric that is not there at
+    all. Asking for one of them under hidden used to raise a bare KeyError from inside this
+    function, well before any run started and with nothing naming the culprit.
+
+    Such a combination is now skipped rather than fatal, and the run loop prints why. It has to
+    be: --scenarios defaults to "hidden visible", so aborting meant none of these families could
+    be used without also overriding --scenarios. It stays fatal when a family is unknown for
+    EVERY requested scenario, which is what still catches a typo.
     """
     missing: List[Path] = []
+    for family in families:
+        if not any(has_template(scenario, family) for scenario in scenarios):
+            available = sorted(
+                {f for scenario in scenarios for f in SCION_TEMPLATE_PATHS.get(scenario, {})}
+            )
+            raise SystemExit(
+                f"family '{family}' has no SCION template for any requested scenario "
+                f"({', '.join(scenarios)}). Families available: {', '.join(available)}."
+            )
     for scenario in scenarios:
         for family in families:
             template = SCION_TEMPLATE_PATHS.get(scenario, {}).get(family)
             if template is None:
-                available = ", ".join(sorted(SCION_TEMPLATE_PATHS.get(scenario, {})))
-                raise SystemExit(
-                    f"family '{family}' has no SCION template for scenario '{scenario}'. "
-                    f"Families available for '{scenario}': {available}."
-                )
+                continue
             candidate = repo_root / template
             if not candidate.exists():
                 missing.append(candidate)
@@ -343,9 +365,26 @@ def main() -> int:
     parser.add_argument(
         "--families",
         nargs="+",
-        choices=["dual", "dual_vis", "single", "direct", "splitsame", "splitvis"],
-        default=["dual", "single", "direct"],
-        help="Topology families to run (default: dual single direct)",
+        choices=[
+            "dual",
+            "dual_vis",
+            "single",
+            "direct",
+            "directsame",
+            "directvis",
+            "splitsame",
+            "splitvis",
+        ],
+        default=["single", "direct"],
+        help=(
+            "Topology families to run (default: single direct). 'dual' is still accepted by the "
+            "parser but refused at startup: its BGP and SCION sides are different graphs. Use "
+            "splitsame and splitvis instead. directsame and directvis "
+            "are the direct-peering pair: identical topology, differing only in whether the two "
+            "cables of an adjacency share a /30 (handover hidden below IP, the BGP session "
+            "survives) or get one each (handover changes the next-hop, the session re-forms). "
+            "They share one SCION config, since SCION does not model the distinction."
+        ),
     )
     parser.add_argument(
         "--protocols",
@@ -384,9 +423,10 @@ def main() -> int:
         help=(
             "Re-enable path_snapshot_logger.discover_all_pairs, which asks every AS's host for "
             "paths to every other AS once per snapshot tick. It adds nothing to the snapshot "
-            "CSV, costs ~98%% of SCION runtime, and flatters SCION by refreshing the caches "
-            "whose staleness is being measured (2.655%% loss with it, 4.374%% without, on one "
-            "reference run). Off by default; pass it only to reproduce older sweeps."
+            "CSV and costs ~98%% of SCION runtime, which is why it is off by default. It does "
+            "not measurably change measured loss: across two sweeps on identical topologies it "
+            "moved single and dual_vis by under 1 percentage point with no consistent sign, so "
+            "sweeps taken with it on remain valid. Pass it only to reproduce those exactly."
         ),
     )
     parser.add_argument(
@@ -476,6 +516,8 @@ def main() -> int:
         "P": args.stochastic_p,
         "N_p": args.stochastic_n_p,
     }
+
+    reject_mismatched_families(args.families)
 
     missing_templates = ensure_templates_exist(repo_root, args.families, args.scenarios)
     if missing_templates:
@@ -572,19 +614,41 @@ def main() -> int:
                             "splitsame": "split",
                             "splitvis": "split",
                         }.get(family, family)
+                        if not has_template(scenario, family):
+                            # Defined only for the other scenario. Skipping rather than
+                            # aborting is what lets these families run under the default
+                            # --scenarios of "hidden visible". For the direct families this
+                            # also matches bgp-ixp-scenarios, which aborts on --directLinks
+                            # together with --scenario=hidden.
+                            print(
+                                f"        {family}: skipped, not defined for scenario "
+                                f"'{scenario}'"
+                            )
+                            continue
+                        # The direct families share one trace per protocol, split by protocol
+                        # rather than by family: BGP resolves a direct event by interface ID and
+                        # takes a gateway index in args[1], while SCION resolves the AS by real
+                        # AS number. Since directsame and directvis differ only in subnetting,
+                        # the same trace drives both.
+                        is_direct = family in ("direct", "directsame", "directvis")
                         event_path_bgp = (
-                            event_paths["direct_bgp"] if family == "direct" else event_paths[event_family]
+                            event_paths["direct_bgp"] if is_direct else event_paths[event_family]
                         )
                         event_path_scion = (
-                            event_paths["direct_scion"] if family == "direct" else event_paths[event_family]
+                            event_paths["direct_scion"] if is_direct else event_paths[event_family]
                         )
                         event_rel_bgp = str(event_path_bgp.relative_to(repo_root))
                         event_rel_scion = str(event_path_scion.relative_to(repo_root))
                         output_suffix = f"{density.name}_seed{seed:02d}_{timing.label}"
 
                         if "bgp" in args.protocols:
-                            if family == "direct" and scenario == "hidden":
-                                print("        BGP direct: skipped (hidden scenario unsupported by bgp-ixp-scenarios)")
+                            if is_direct and scenario == "hidden":
+                                # Defensive only: the has_template guard above has already
+                                # skipped this combination. Kept because bgp-ixp-scenarios
+                                # aborts outright on --directLinks with --scenario=hidden, and
+                                # a skip here is a better failure than that abort if the
+                                # template table ever grows a hidden direct entry again.
+                                print(f"        BGP {family}: skipped (no hidden counterpart)")
                             else:
                                 bgp_run_dir = output_subdir / f"stochastic_bgp_{family}_{scenario}_{output_suffix}"
                                 bgp_flags = [
@@ -640,8 +704,35 @@ def main() -> int:
                                 elif family == "single":
                                     bgp_flags.append("--dualIxp=0")
                                     bgp_flags.append("--splitEdgeAs=0")
-                                else:
+                                elif family in ("directsame", "directvis"):
+                                    # Direct peering, no exchange satellite. The pair differs
+                                    # only in subnetting. directsame shares one /30 across
+                                    # both cables of an adjacency, so a handover swaps cables
+                                    # under an unchanged next-hop and the session survives it
+                                    # below IP. directvis gives each cable its own /30, so the
+                                    # next-hop changes and the session must go down and
+                                    # re-form -- break-before-make above IP, which is what
+                                    # keeps libbgp's per-router-ID RIB scoping safe: two
+                                    # sessions to one peer node share a scope and would
+                                    # collide.
+                                    #
+                                    # Per-cable /30s make a link-address probe target depend
+                                    # on one particular cable, and for a held-down standby
+                                    # that reads as 100% loss with no churn at all -- the same
+                                    # artefact the split families hit. Both get loopback
+                                    # targets so the two are measured the same way.
                                     bgp_flags.append("--directLinks=1")
+                                    bgp_flags.append("--loopbackProbeTargets=1")
+                                    bgp_flags.append(
+                                        "--sharedPairSubnet=1"
+                                        if family == "directsame"
+                                        else "--sharedPairSubnet=0"
+                                    )
+                                else:
+                                    # Plain `direct`, left as it was so earlier runs stay
+                                    # reproducible: per-cable /30s, link-address probe targets.
+                                    bgp_flags.append("--directLinks=1")
+                                    bgp_flags.append("--sharedPairSubnet=0")
 
                                 run_or_record(
                                     f"bgp/{family}/{scenario}/{output_suffix}",

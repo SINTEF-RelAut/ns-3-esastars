@@ -165,8 +165,70 @@ def series_label(protocol: str, family: str, n_families: int) -> str:
     return protocol if n_families == 1 else f"{protocol} · {family}"
 
 
-def finish(fig: plt.Figure, ax: plt.Axes, out_path: Path, note: Optional[str] = None) -> None:
-    """Attach the legend, optional footnote, and write the file."""
+def place_end_label(
+    ax: plt.Axes, x: float, y: float, text: str, placed: List[Tuple[float, float, str]]
+) -> None:
+    """Record a series' final value for labelling; actual placement happens in finish().
+
+    Placement cannot happen here. finish() sets the x limits afterwards and tight_layout
+    resizes the axes, so any display-space position computed now is stale by the time the
+    figure renders, and labels that were nudged apart end up overlapping again.
+    """
+    placed.append((x, y, text))
+
+
+def draw_end_labels(
+    ax: plt.Axes, labels: Sequence[Tuple[float, float, str]], min_gap_px: float = 13.0
+) -> None:
+    """Draw end-of-line labels, nudged apart so converging series stay readable.
+
+    With up to eight series on one axes, two lines that converge produce labels that overprint
+    into an unreadable smudge — SCION's families land within a couple of seconds of each other
+    at the long beacon periods. Collision is resolved in display space, because two labels far
+    apart in data units can still overlap once the axis is scaled, and this runs after the
+    limits are final so the transform is the one the figure actually renders with.
+    """
+    placed = []
+    for x, y, text in sorted(labels, key=lambda item: item[1]):
+        y_px = ax.transData.transform((x, y))[1]
+        placed.append((x, y, text, y_px))
+
+    # Single upward sweep in ascending order: each label sits at its own position or exactly
+    # one gap above the previous one, whichever is higher. Terminates in one pass by
+    # construction, and keeps the labels in the same vertical order as their series.
+    previous = float("-inf")
+    for x, y, text, y_px in placed:
+        shifted = y_px if y_px - previous >= min_gap_px else previous + min_gap_px
+        previous = shifted
+        offset_pts = (shifted - y_px) * 72.0 / ax.figure.dpi
+        ax.annotate(
+            text, (x, y), textcoords="offset points", xytext=(8, offset_pts),
+            fontsize=9, color=INK_SECONDARY, va="center", annotation_clip=False,
+        )
+
+
+def finish(
+    fig: plt.Figure,
+    ax: plt.Axes,
+    out_path: Path,
+    note: Optional[str] = None,
+    end_labels: Optional[Sequence[Tuple[float, float, str]]] = None,
+) -> None:
+    """Attach the legend, optional footnote, and write the file.
+
+    The end-of-line value labels are annotated at a pixel offset from the last data point,
+    which sits exactly on the right spine, so without headroom they render past the axes and
+    the legend clips them mid-string. Widen the x range rather than shrinking the offset, so
+    the label keeps its breathing room from the marker.
+    """
+    xs = [x for line in ax.get_lines() for x in line.get_xdata()]
+    if xs and max(xs) > min(xs):
+        lo, hi = min(xs), max(xs)
+        ax.set_xlim(lo - 0.03 * (hi - lo), hi + 0.13 * (hi - lo))
+
+    if end_labels:
+        draw_end_labels(ax, end_labels)
+
     handles, labels = ax.get_legend_handles_labels()
     if handles:
         ax.legend(
@@ -200,6 +262,7 @@ def plot_loss(rows: Sequence[Row], path_class: str, out_path: Path) -> bool:
     families = sorted({r.family for r in subset})
     buckets = group_by_point(subset)
     fig, ax = plt.subplots(figsize=(9.4, 5.0))
+    end_labels: List[Tuple[float, float, str]] = []
     fig.patch.set_facecolor(SURFACE)
 
     for protocol in sorted({r.protocol for r in subset}):
@@ -225,10 +288,7 @@ def plot_loss(rows: Sequence[Row], path_class: str, out_path: Path) -> bool:
                 linestyle=family_style(families, family),
                 label=series_label(protocol, family, len(families)),
             )
-            ax.annotate(
-                f"{means[-1]:.1f}%", (xs[-1], means[-1]), textcoords="offset points",
-                xytext=(8, 0), fontsize=9, color=INK_SECONDARY, va="center",
-            )
+            place_end_label(ax, xs[-1], means[-1], f"{means[-1]:.1f}%", end_labels)
 
     style_axes(
         ax,
@@ -238,7 +298,7 @@ def plot_loss(rows: Sequence[Row], path_class: str, out_path: Path) -> bool:
         "steady-state packet loss (%)",
     )
     ax.set_ylim(bottom=0)
-    finish(fig, ax, out_path)
+    finish(fig, ax, out_path, end_labels=end_labels)
     return True
 
 
@@ -253,6 +313,7 @@ def plot_recovery(rows: Sequence[Row], path_class: str, out_path: Path) -> bool:
     families = sorted({r.family for r in subset})
     buckets = group_by_point(subset)
     fig, ax = plt.subplots(figsize=(9.4, 5.0))
+    end_labels: List[Tuple[float, float, str]] = []
     fig.patch.set_facecolor(SURFACE)
 
     for protocol in sorted({r.protocol for r in subset}):
@@ -277,10 +338,7 @@ def plot_recovery(rows: Sequence[Row], path_class: str, out_path: Path) -> bool:
                 label=series_label(protocol, family, len(families)),
             )
             ax.plot(xs, p90s, color=color, linewidth=1.3, alpha=0.45, linestyle=style)
-            ax.annotate(
-                f"{meds[-1]:.1f}s", (xs[-1], meds[-1]), textcoords="offset points",
-                xytext=(8, 0), fontsize=9, color=INK_SECONDARY, va="center",
-            )
+            place_end_label(ax, xs[-1], meds[-1], f"{meds[-1]:.1f}s", end_labels)
 
     style_axes(
         ax,
@@ -293,6 +351,7 @@ def plot_recovery(rows: Sequence[Row], path_class: str, out_path: Path) -> bool:
     finish(
         fig, ax, out_path,
         "A value at the 1 s floor means 'recovered within one probe interval', not a measured duration.",
+        end_labels=end_labels,
     )
     return True
 
@@ -306,6 +365,7 @@ def plot_no_impact(rows: Sequence[Row], path_class: str, out_path: Path) -> bool
     families = sorted({r.family for r in subset})
     buckets = group_by_point(subset)
     fig, ax = plt.subplots(figsize=(9.4, 5.0))
+    end_labels: List[Tuple[float, float, str]] = []
     fig.patch.set_facecolor(SURFACE)
 
     for protocol in sorted({r.protocol for r in subset}):
@@ -327,10 +387,7 @@ def plot_no_impact(rows: Sequence[Row], path_class: str, out_path: Path) -> bool
                 linestyle=family_style(families, family),
                 label=series_label(protocol, family, len(families)),
             )
-            ax.annotate(
-                f"{fracs[-1]:.0f}%", (xs[-1], fracs[-1]), textcoords="offset points",
-                xytext=(8, 0), fontsize=9, color=INK_SECONDARY, va="center",
-            )
+            place_end_label(ax, xs[-1], fracs[-1], f"{fracs[-1]:.0f}%", end_labels)
 
     style_axes(
         ax,
@@ -340,7 +397,7 @@ def plot_no_impact(rows: Sequence[Row], path_class: str, out_path: Path) -> bool
         "handovers with no packet loss (%)",
     )
     ax.set_ylim(0, 105)
-    finish(fig, ax, out_path)
+    finish(fig, ax, out_path, end_labels=end_labels)
     return True
 
 
@@ -356,6 +413,7 @@ def plot_health(rows: Sequence[Row], path_class: str, out_path: Path) -> bool:
     buckets = group_by_point(subset)
 
     fig, ax = plt.subplots(figsize=(9.4, 5.0))
+    end_labels: List[Tuple[float, float, str]] = []
     fig.patch.set_facecolor(SURFACE)
 
     combos = [(p, f) for p in protocols for f in families]
@@ -415,7 +473,7 @@ def plot_health(rows: Sequence[Row], path_class: str, out_path: Path) -> bool:
         "share of pairs / windows (%)",
     )
     ax.set_ylim(bottom=0)
-    finish(fig, ax, out_path)
+    finish(fig, ax, out_path, end_labels=end_labels)
     return True
 
 

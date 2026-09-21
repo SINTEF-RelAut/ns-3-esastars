@@ -1,0 +1,121 @@
+time_resolution: NS
+topology: topology/ixp_direct_peers_topology.xml
+output: build/scenario_ixp_direct_generated.txt
+simulation_duration: 10000.000s
+NUM_CORE: 1
+
+events_file: user_defined_events/scenario_direct_link_gateway_switch_scion_events.json
+
+beacon_service:
+  policy: baseline
+  period: 10s
+  expiration_period: 1350s
+  first_beaconing: 0s
+  last_beaconing: 10000.000s
+
+path_service: {}
+border_router: {}
+
+stochastic_latency_model:
+  enabled: true
+  R_eff_m: 1400000.0
+  alpha: 1.3
+  mu_link_s: 0.0055
+  sigma_link_s: 0.0012
+  delta_s: 0.0004
+  beta: 0.08
+  omega_rad_s: 0.0041887902047863905
+  R_L_m: 600000.0
+  R_M_m: 6000000.0
+  P: 6
+  N_p: 12
+
+control_plane_logging:
+  beacon_events: false
+  path_server_updates: false
+  host_cache_updates: false
+  log_file: build/scenario_ixp_direct_generated_control_plane.log
+
+path_snapshot_logger:
+  period: 300s
+  output: build/scenario_ixp_direct_generated_path_snapshots.csv
+  max_paths_per_dst: 5
+  discover_all_pairs: true
+  request_lead_time: 500ms
+
+data_plane_probing:
+  start: 10s
+  period: 1s
+  timeout: 2s
+  count: 9990
+  pairs:
+    - src_as: 101
+      dst_as: 102
+      src_host: 2
+      dst_host: 2
+      output: build/direct/scion_probe_101_102.csv
+    - src_as: 102
+      dst_as: 103
+      src_host: 2
+      dst_host: 2
+      output: build/direct/scion_probe_102_103.csv
+    - src_as: 102
+      dst_as: 104
+      src_host: 2
+      dst_host: 2
+      output: build/direct/scion_probe_102_104.csv
+    - src_as: 102
+      dst_as: 105
+      src_host: 2
+      dst_host: 2
+      output: build/direct/scion_probe_102_105.csv
+    - src_as: 103
+      dst_as: 104
+      src_host: 2
+      dst_host: 2
+      output: build/direct/scion_probe_103_104.csv
+    - src_as: 103
+      dst_as: 105
+      src_host: 2
+      dst_host: 2
+      output: build/direct/scion_probe_103_105.csv
+    - src_as: 104
+      dst_as: 105
+      src_host: 2
+      dst_host: 2
+      output: build/direct/scion_probe_104_105.csv
+
+cp_summary_output: build/scenario_ixp_direct_generated_cp_summary.csv
+# Scenario: direct peering between constellations, no IXP satellite. The control case for the
+# whole comparison — without it there is no baseline for what an exchange satellite buys.
+#
+# ONE SCION config serves both BGP direct families, deliberately. The BGP contrast between
+# them is an IP-level one: `directsame` gives both cables of an adjacency a single /30 so the
+# session survives a handover, `directvis` gives each its own /30 so the session must re-form.
+# SCION models neither. Its control plane sees interfaces, the topology is identical in both
+# cases, and a handover is the same event either way — one interface down, another up on the
+# same AS pair, requiring re-beaconing. Writing two SCION configs would produce two
+# byte-identical simulations and invite someone to read a difference into them. That SCION is
+# insensitive to the distinction is the finding, not a gap in the setup.
+#
+# Deliberately NO virtual_ixp block. There is no exchange fabric here. The previous
+# direct-hidden config carried one copied from the dual-satellite scenario, listing sixteen
+# interface IDs (1020001..1050004) that do not exist in this topology; ResolveScionIfId's
+# `if_id % 10000` fallback silently remapped them to unrelated interfaces rather than failing.
+#
+# Deliberately NO source_path_policy, for the same two reasons the splitfabric config records:
+# SelectPreferredSegment is unreachable when every AS is type="core", and the per-AS probe-host
+# lookup in pre-simulation-setup.cc keys an alias index against a map of real XML ids, so only
+# host 2 is ever created. The previous direct configs named ASes 120/121, which do not exist
+# here at all.
+#
+# Probe pairs match the BGP program's direct-mode set exactly (the seven-pair `else` branch):
+#   (101,102)             ground to satellite
+#   6 satellite pairs     the full mesh over AS102-105
+# The split families probe seventeen pairs, but their extra classes have no analogue here —
+# there are no split ASNs and so no sibling or diagonal paths. Cross-family comparison joins on
+# analyze_timing_sweep.py's path_class, not on pair identity, so the differing counts are fine.
+#
+# events_file is a placeholder for interactive runs; every sweep rewrites it to a generated
+# per-protocol trace, because BGP takes a gateway index in args[1] while SCION resolves the AS
+# by real AS number.

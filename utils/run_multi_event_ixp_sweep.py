@@ -63,7 +63,11 @@ SCION_TEMPLATE_PATHS: Dict[str, Dict[str, Path]] = {
     "hidden": {
         "dual": Path("configs/scenario_ixp_dual_sat_hidden_gateway_switch_generated.yaml"),
         "single": Path("configs/scenario_ixp_single_sat_hidden_gateway_switch_generated.yaml"),
-        "direct": Path("configs/scenario_ixp_direct_hidden_gateway_switch_generated.yaml"),
+        # No direct entry. The hidden axis routes link events through the VirtualIxpFabric, and
+        # without an exchange satellite there is no fabric to hide behind. The config that used
+        # to sit here was a copy of the dual-satellite one carrying a virtual_ixp block of
+        # sixteen interface IDs absent from the direct topology, which ResolveScionIfId's
+        # `if_id % 10000` fallback silently remapped onto unrelated links.
     },
     "visible": {
         "dual": Path("configs/scenario_ixp_dual_sat_visible_gateway_switch_generated.yaml"),
@@ -72,7 +76,14 @@ SCION_TEMPLATE_PATHS: Dict[str, Dict[str, Path]] = {
         # plane, unlike the single-IXP family where the switch happens below IP.
         "dual_vis": Path("configs/scenario_ixp_dual_sat_visible_single_link_generated.yaml"),
         "single": Path("configs/scenario_ixp_single_sat_visible_gateway_switch_generated.yaml"),
-        "direct": Path("configs/scenario_ixp_direct_visible_gateway_switch_generated.yaml"),
+        # Direct peering, no exchange satellite. All three direct families share ONE SCION
+        # config, because the contrast between directsame and directvis is an IP-level one
+        # (shared /30 versus a /30 per cable) that SCION does not model: same topology, same
+        # interface-level handover, so two configs would mean two byte-identical simulations.
+        # The config's trailer records this in full.
+        "direct": Path("configs/scenario_ixp_direct_generated.yaml"),
+        "directsame": Path("configs/scenario_ixp_direct_generated.yaml"),
+        "directvis": Path("configs/scenario_ixp_direct_generated.yaml"),
         # Two distant IXP satellites with NO link between them. Each constellation is split in
         # two, one half homed at each exchange, joined by a 20ms internal link that is the only
         # path between locations and supplies the path stretch. The handover stays within a
@@ -83,6 +94,37 @@ SCION_TEMPLATE_PATHS: Dict[str, Dict[str, Path]] = {
     },
 }
 
+# Families whose BGP and SCION sides describe different graphs. Any loss, recovery or latency
+# number produced from one of these compares two different experiments, so the sweep runners
+# refuse them outright. They stay in the argparse choices so the refusal can name the problem
+# and the replacement, rather than argparse reporting a bare "invalid choice".
+MISMATCHED_FAMILIES: Dict[str, str] = {
+    "dual": (
+        "BGP builds the split-edge topology (28 links, ASNs 1020/1021/...) while the SCION "
+        "template loads topology/ixp_as110_dual_satellites_topology.xml (20 links, ASNs "
+        "102-105), so the two protocols never ran the same graph. Use splitsame (handover "
+        "hidden below IP) and splitvis (handover visible to the control plane) instead: they "
+        "are the two-IXP families that replaced it, and both are topology-matched by "
+        "construction because their XMLs are generated from the BGP link table."
+    ),
+}
+
+
+def reject_mismatched_families(families: Iterable[str]) -> None:
+    """Abort if any requested family's BGP and SCION sides are not the same topology.
+
+    Args:
+        families: Family names requested on the command line.
+
+    Raises:
+        SystemExit: If a requested family is listed in ``MISMATCHED_FAMILIES``.
+    """
+    for family in families:
+        reason = MISMATCHED_FAMILIES.get(family)
+        if reason is not None:
+            raise SystemExit(f"family '{family}' does not produce a valid comparison.\n{reason}")
+
+
 # Source gateway IDs map to edge AS numbers in IXP scenarios.
 GATEWAY_TO_AS: Dict[int, int] = {
     1: 102,
@@ -92,12 +134,33 @@ GATEWAY_TO_AS: Dict[int, int] = {
 }
 
 # Direct-link mapping: gateway -> (primary_if, backup_if, description)
+#
+# Four gateway streams, deliberately, and not one per mesh adjacency. The source trace carries
+# exactly four (GATEWAY_TO_AS), and in the IXP families each one churns a single satellite-IXP
+# adjacency. Mapping the same four streams onto four of the direct mesh's six adjacencies keeps
+# the perturbation load identical across families, which is the whole point of the comparison.
+# Driving all six would give the direct family half again as much churn as the IXP families and
+# make the loss and convergence figures incomparable. The four chosen pairs touch each of
+# AS102-105 exactly twice, so no satellite is over- or under-exercised.
+#
+# What does differ, unavoidably, is the fraction of a satellite's connectivity under churn: in
+# the IXP families a satellite has one adjacency and it churns, whereas here it has five of
+# which two churn. That is inherent to comparing a mesh against a hub and belongs in the
+# results, not in the event generator.
 GATEWAY_TO_DIRECT: Dict[int, Tuple[int, int, str]] = {
-    1: (1020100, 1020101, "AS102-AS103 loc-A"),
-    2: (1030120, 1030121, "AS103-AS105 loc-A"),
-    3: (1040220, 1040221, "AS104-AS105 loc-B"),
-    4: (1020210, 1020211, "AS102-AS104 loc-B"),
+    1: (1020100, 1020101, "AS102-AS103"),
+    2: (1030120, 1030121, "AS103-AS105"),
+    3: (1040120, 1040121, "AS104-AS105"),
+    4: (1020110, 1020111, "AS102-AS104"),
 }
+
+# Every standby cable in the direct mesh, on the side of the AS that owns the interface ID:
+# six pairs, units digit 1 marking the standby. This mirrors what the BGP program derives from
+# its own link table for --backupLinksDownAtStart, and it must stay in step with
+# BuildTopologyLinksDirect() in scratch/bgp-ixp-scenarios.cc.
+DIRECT_STANDBY_IF_IDS: Tuple[int, ...] = (
+    1020101, 1020111, 1020121, 1030111, 1030121, 1040121,
+)
 
 SWITCH_DELTA_S = 0.001
 
@@ -395,18 +458,88 @@ def build_direct_events_scion(source_path: Path, source_events: List[SourceEvent
 
     UserDefinedEvents::LinkDown/LinkUp resolves AS by real AS number. Using gateway
     IDs (1..4) causes event drops with "AS not found" warnings.
+
+    The trace also has to establish the initial state, exactly as ``build_split_ixp_events``
+    does and for the same reason. The BGP program holds every standby cable down from t=0.1s so
+    one cable per adjacency is live; SCION has no equivalent, because its topology XML brings
+    every link up. Without the standby-down events below the two protocols start from different
+    states, and worse, SCION never observes a handover at all: a ``link_down`` on the main cable
+    merely removes one of two live interfaces, leaves ``interfaces_per_neighbor_as`` non-empty so
+    the AS-level graph is unchanged, and makes the paired ``link_up`` on the standby a no-op.
+    That is why the direct family currently shows no handover impact in SCION.
     """
     primary = {g: v[0] for g, v in GATEWAY_TO_DIRECT.items()}
     backup = {g: v[1] for g, v in GATEWAY_TO_DIRECT.items()}
     # Use the AS encoded in IF-ID prefix (e.g., 1020100 -> AS102).
     arg2 = {g: str(v[0] // 10000) for g, v in GATEWAY_TO_DIRECT.items()}
 
-    events, final_active = _toggle_events(
+    toggles, final_active = _toggle_events(
         source_events,
         primary_by_gateway=primary,
         backup_by_gateway=backup,
         arg2_by_gateway=arg2,
         description_prefix="Direct-link switch",
+    )
+
+    if_to_gateway: Dict[int, int] = {}
+    for gateway, (gw_primary, gw_backup, _desc) in GATEWAY_TO_DIRECT.items():
+        if_to_gateway[gw_primary] = gateway
+        if_to_gateway[gw_backup] = gateway
+
+    # Which cable is live on each churning adjacency by the time the preamble fires. A source
+    # event before STANDBY_DOWN_TIME_S has already handed that adjacency over, so downing its
+    # nominal standby would take down the cable the toggle just brought up and leave the
+    # adjacency with NO live cable until its next event -- a partition rather than a handover.
+    # Down the other cable instead. With a warm-up, as every sweep runner uses, no toggle
+    # precedes the preamble and this reduces to downing the nominal standby.
+    active_at_preamble = {g: v[0] for g, v in GATEWAY_TO_DIRECT.items()}
+    for toggle in toggles:  # already in time order
+        if float(str(toggle["time"]).rstrip("s")) > STANDBY_DOWN_TIME_S:
+            break
+        if toggle["type"] != "link_up":
+            continue
+        toggled_if = int(str(toggle["args"][2]))
+        gateway = if_to_gateway.get(toggled_if)
+        if gateway is not None:
+            active_at_preamble[gateway] = toggled_if
+
+    # Every standby goes down, not just those of the four churning adjacencies, because the BGP
+    # program downs every standby it derives from its link table. Downing only the churning ones
+    # would leave the other eight adjacencies double-cabled in SCION and single-cabled in BGP.
+    standby_events: List[Dict[str, object]] = []
+    for if_id in DIRECT_STANDBY_IF_IDS:
+        gateway = if_to_gateway.get(if_id)
+        if gateway is None:
+            down_if = if_id  # adjacency never churns; its nominal standby is the idle cable
+        else:
+            gw_primary, gw_backup, _desc = GATEWAY_TO_DIRECT[gateway]
+            down_if = gw_backup if active_at_preamble[gateway] == gw_primary else gw_primary
+        standby_events.append(
+            {
+                "time": _format_time_s(STANDBY_DOWN_TIME_S),
+                "type": "link_down",
+                "args": ["1", str(down_if // 10000), str(down_if)],
+                "description": (
+                    f"DirectLink initial state: standby cable {down_if} down so one cable per "
+                    f"adjacency is live"
+                ),
+            }
+        )
+
+    # BGP schedules its backup-down unconditionally at 0.1s, so on a trace with events that
+    # early the two protocols start from different states despite the correction above. Every
+    # sweep runner warms up for 60s, so this is a warning about hand-written traces rather than
+    # about the sweeps.
+    early = [e.time_s for e in source_events if e.time_s < STANDBY_DOWN_TIME_S]
+    if early:
+        print(
+            f"  WARNING: {len(early)} source event(s) at t < {STANDBY_DOWN_TIME_S}s in "
+            f"{source_path.name}; SCION compensates but BGP's backup-down does not"
+        )
+
+    events = sorted(
+        standby_events + toggles,
+        key=lambda e: (float(str(e["time"]).rstrip("s")), e["args"][1], e["args"][2]),
     )
 
     return {
@@ -577,7 +710,7 @@ def main() -> int:
         "--families",
         nargs="+",
         choices=["dual", "single", "direct"],
-        default=["dual", "single", "direct"],
+        default=["single", "direct"],
         help="Topology families to run (default: dual single direct)",
     )
     parser.add_argument(
@@ -629,6 +762,7 @@ def main() -> int:
     parser.add_argument("--stochastic-p", type=int, default=DEFAULT_STOCHASTIC_LATENCY["P"])
     parser.add_argument("--stochastic-n-p", type=int, default=DEFAULT_STOCHASTIC_LATENCY["N_p"])
     args = parser.parse_args()
+    reject_mismatched_families(args.families)
 
     stochastic_latency = {
         "enabled": args.stochastic_latency_model,

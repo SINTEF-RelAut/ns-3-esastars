@@ -32,6 +32,7 @@ from pathlib import Path
 from typing import Dict, Iterable, List, Tuple
 
 from run_multi_event_ixp_sweep import (
+    reject_mismatched_families,
     GATEWAY_TO_AS,
     SCION_TEMPLATE_PATHS,
     SWITCH_DELTA_S,
@@ -209,7 +210,7 @@ def main() -> int:
         "--families",
         nargs="+",
         choices=["dual", "single", "direct"],
-        default=["dual", "single", "direct"],
+        default=["single", "direct"],
         help="Topology families to run (default: dual single direct)",
     )
     parser.add_argument(
@@ -286,6 +287,8 @@ def main() -> int:
         "P": args.stochastic_p,
         "N_p": args.stochastic_n_p,
     }
+
+    reject_mismatched_families(args.families)
 
     missing_templates = ensure_templates_exist(repo_root, args.families, args.scenarios)
     if missing_templates:

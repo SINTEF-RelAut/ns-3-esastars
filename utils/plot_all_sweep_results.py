@@ -86,6 +86,17 @@ DENSITY_STYLES = {
     "na": {"linestyle": "-", "marker": "o"},
 }
 
+# Topology family names, longest first. Alternation is leftmost-first, so listing "dual" ahead
+# of "dual_vis" matches the prefix and leaves "_vis_visible" to fail the scenario group, and
+# the same goes for "direct" ahead of "directsame"/"directvis". Getting the order wrong is
+# silent: the run directory simply never matches and parse_run_dir skips it. That is what hid
+# every dual_vis, splitsame and splitvis run from these plots while the closed alternation
+# below read "dual|single|direct".
+FAMILY_ALT = "dual_vis|dual|single|directsame|directvis|direct|splitsame|splitvis"
+
+# Left deliberately on its own alternation: this pattern matches the older sweep_bgp_ layout,
+# where "mode" is a BGP peering mode (baseline/preferred/split) rather than a topology family,
+# and run_multi_event_ixp_sweep.py only ever emits dual and single there.
 BGP_RE = re.compile(
     r"^sweep_bgp_"
     r"(?:(?P<family>dual|single)_)?(?P<mode>baseline|preferred|split|direct)_"
@@ -96,7 +107,7 @@ BGP_RE = re.compile(
 
 SCION_RE = re.compile(
     r"^sweep_scion_"
-    r"(?P<mode>dual|single|direct)_"
+    rf"(?P<mode>{FAMILY_ALT})_"
     r"(?P<scenario>visible|hidden)_"
     r"mrai(?P<mrai>\d+)_clk(?P<clk>\d+)_bcn(?P<bcn>\d+)"
     r"(?:_(?P<trace>.+))?$"
@@ -104,7 +115,7 @@ SCION_RE = re.compile(
 
 STOCH_BGP_RE = re.compile(
     r"^stochastic_bgp_"
-    r"(?P<mode>dual|single|direct)_"
+    rf"(?P<mode>{FAMILY_ALT})_"
     r"(?P<scenario>visible|hidden)_"
     r"(?P<density>dense|sparse)_seed(?P<seed>\d+)"
     r"(?:_mrai(?P<mrai>\d+)_clk(?P<clk>\d+)_probe(?P<probe>\d+)_bcn(?P<bcn>\d+))?"
@@ -113,7 +124,7 @@ STOCH_BGP_RE = re.compile(
 
 STOCH_SCION_RE = re.compile(
     r"^stochastic_scion_"
-    r"(?P<mode>dual|single|direct)_"
+    rf"(?P<mode>{FAMILY_ALT})_"
     r"(?P<scenario>visible|hidden)_"
     r"(?P<density>dense|sparse)_seed(?P<seed>\d+)"
     r"(?:_mrai(?P<mrai>\d+)_clk(?P<clk>\d+)_probe(?P<probe>\d+)_bcn(?P<bcn>\d+))?"

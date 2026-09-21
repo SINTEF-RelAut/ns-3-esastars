@@ -101,13 +101,20 @@ def normalise_as(asn: str) -> Tuple[str, Optional[str]]:
     return asn, None
 
 
-def classify(src_as: str, dst_as: str) -> str:
-    """Label a probe pair by the kind of path it exercises."""
+def classify(src_as: str, dst_as: str, family: str = "") -> str:
+    """Label a probe pair by the kind of path it exercises.
+
+    ``family`` decides what the transit is called. The direct-peering families have no exchange
+    satellite, so a satellite pair there meets over a direct peer link; labelling it "via IXP"
+    would misreport the exact contrast this whole comparison is built to measure. Every other
+    family keeps its existing label verbatim, so previously written CSVs stay comparable.
+    """
     src_base, src_loc = normalise_as(src_as)
     dst_base, dst_loc = normalise_as(dst_as)
+    transit = "via peer link" if family.startswith("direct") else "via IXP"
 
     if src_base in GROUND_ASES and dst_base in GROUND_ASES:
-        return "ground-ground via IXP"
+        return f"ground-ground {transit}"
     if src_base in SATELLITE_ASES and dst_base in SATELLITE_ASES:
         if src_loc is not None and dst_loc is not None and src_loc != dst_loc:
             # Both halves of one constellation: the two ASes are directly adjacent over the
@@ -121,8 +128,8 @@ def classify(src_as: str, dst_as: str) -> str:
             # AND an exchange, so it is exposed to handovers like any other via-IXP path, but
             # over more AS hops. This is where the path stretch shows up, in latency and in
             # how long re-beaconing takes to rebuild the longer path.
-            return "sat-sat cross-location via IXP"
-        return "sat-sat via IXP"
+            return f"sat-sat cross-location {transit}"
+        return f"sat-sat {transit}"
     return "ground-sat direct"
 
 
@@ -131,7 +138,13 @@ def events_stem(match: "re.Match") -> str:
 
     dual_vis shares the dual trace: its satellite-side interface IDs are the same X0001 and
     X0003 pair. splitsame and splitvis share the split trace, which toggles within each
-    exchange location. direct has separate per-protocol traces, so it is not resolvable here.
+    exchange location.
+
+    The direct families have separate per-protocol traces, because BGP resolves a direct event
+    by interface ID and takes a gateway index in args[1] while SCION resolves the AS by real AS
+    number. That is why they were previously unresolvable here, and the cost was silent: BGP
+    fell back to its own link_events.csv while SCION, which writes none, got an empty link-down
+    list and reported recovery_n = 0 with null median and p90 rather than an error.
     """
     family = match.group("family")
     suffix = {
@@ -140,6 +153,9 @@ def events_stem(match: "re.Match") -> str:
         "single": "single",
         "splitsame": "split",
         "splitvis": "split",
+        "direct": f"direct_{match.group('protocol')}",
+        "directsame": f"direct_{match.group('protocol')}",
+        "directvis": f"direct_{match.group('protocol')}",
     }.get(family)
     if suffix is None:
         return ""
@@ -331,7 +347,7 @@ def collect(sweep_dir: Path, warmup_s: float) -> List[PairResult]:
                     beacon_s=int(match.group("bcn")),
                     src_as=src_as,
                     dst_as=dst_as,
-                    path_class=classify(src_as, dst_as),
+                    path_class=classify(src_as, dst_as, match.group("family")),
                     status=status,
                     reply=reply,
                     timeout=timeout,

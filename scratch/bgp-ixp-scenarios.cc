@@ -103,7 +103,9 @@ uint32_t
 GetDirectRankKForLink (const LinkSpec &spec)
 {
   // Direct-link IF IDs encode location in the hundreds digit of the last three digits:
-  // loc A => 1 (preferred, k=1), loc B => 2 (fallback, k=2).
+  // loc A => 1 (preferred, k=1), loc B => 2 (fallback, k=2). The direct mesh is single-location
+  // (see BuildTopologyLinksDirect), so this returns 1 for every cable it is currently asked
+  // about; the loc-B arm is kept because the ID scheme still encodes it.
   auto RankFromIfId = [] (uint32_t if_id) -> uint32_t {
     uint32_t loc = (if_id / 100) % 10;
     return (loc == 2) ? 2 : 1;
@@ -1049,12 +1051,23 @@ BuildTopologyLinksDual (bool split_edge_as, bool single_link_per_pair,
   return links;
 }
 
-// Direct peer-link topology: two full-mesh locations (A and B) among AS102-105.
-// Each of the 6 pairs has one primary + one backup link at each location.
-// if_id scheme:  primary  units=0, backup units=1;
-//                loc A    hundreds digit of last 3 = 1,
-//                loc B    hundreds digit of last 3 = 2.
+// Direct peer-link topology: one full mesh among AS102-105, main + standby per pair.
+// if_id scheme:  main units=0, standby units=1; hundreds digit of last 3 = location (1).
 // Backbone links identical to dual-IXP (no IXP satellite nodes).
+//
+// SINGLE-LOCATION, deliberately. This mesh was built at two geographic locations, giving each
+// AS pair four cables and two concurrent adjacencies. libbgp scopes its RIB by peer router ID
+// (BgpRib4::insert/discard/lookup take a src_router_id) and router IDs are per node, so two
+// concurrent sessions between the same AS pair share one scope and overwrite each other. The
+// two-location mesh is therefore not representable here: peering both adjacencies blackholed
+// AS102-AS105 and AS103-AS105 at 97-100% probe loss with no churn at all, while peering only
+// one left every location-B handover invisible to BGP -- zero control-plane events for half
+// the generated churn.
+//
+// One location gives each pair exactly one adjacency and one session, the same shape as the
+// single-IXP family, and keeps the full six-pair mesh that makes this the control case for
+// what an exchange satellite buys. Restoring a second location needs a router ID per location,
+// which means a BGP speaker per location per node and redistribution between them.
 std::vector<LinkSpec>
 BuildTopologyLinksDirect ()
 {
@@ -1068,9 +1081,9 @@ BuildTopologyLinksDirect ()
   // file connects two ground ASes.
   links.push_back ((LinkSpec) {104, 108, 0.0015, 150, 1040000, 1080001, false});
 
-  // Location A full mesh — 6 pairs × 2 links (primary + backup)
-  links.push_back ((LinkSpec) {102, 103, 0.0010, 300, 1020100, 1030100, false}); // primary
-  links.push_back ((LinkSpec) {102, 103, 0.0010, 300, 1020101, 1030101, false}); // backup
+  // Full mesh — 6 pairs × 2 cables (main + standby)
+  links.push_back ((LinkSpec) {102, 103, 0.0010, 300, 1020100, 1030100, false}); // main
+  links.push_back ((LinkSpec) {102, 103, 0.0010, 300, 1020101, 1030101, false}); // standby
   links.push_back ((LinkSpec) {102, 104, 0.0010, 300, 1020110, 1040100, false});
   links.push_back ((LinkSpec) {102, 104, 0.0010, 300, 1020111, 1040101, false});
   links.push_back ((LinkSpec) {102, 105, 0.0010, 300, 1020120, 1050100, false});
@@ -1081,20 +1094,6 @@ BuildTopologyLinksDirect ()
   links.push_back ((LinkSpec) {103, 105, 0.0010, 300, 1030121, 1050111, false});
   links.push_back ((LinkSpec) {104, 105, 0.0010, 300, 1040120, 1050120, false});
   links.push_back ((LinkSpec) {104, 105, 0.0010, 300, 1040121, 1050121, false});
-
-  // Location B full mesh — same 6 pairs
-  links.push_back ((LinkSpec) {102, 103, 0.0010, 300, 1020200, 1030200, false});
-  links.push_back ((LinkSpec) {102, 103, 0.0010, 300, 1020201, 1030201, false});
-  links.push_back ((LinkSpec) {102, 104, 0.0010, 300, 1020210, 1040200, false});
-  links.push_back ((LinkSpec) {102, 104, 0.0010, 300, 1020211, 1040201, false});
-  links.push_back ((LinkSpec) {102, 105, 0.0010, 300, 1020220, 1050200, false});
-  links.push_back ((LinkSpec) {102, 105, 0.0010, 300, 1020221, 1050201, false});
-  links.push_back ((LinkSpec) {103, 104, 0.0010, 300, 1030210, 1040210, false});
-  links.push_back ((LinkSpec) {103, 104, 0.0010, 300, 1030211, 1040211, false});
-  links.push_back ((LinkSpec) {103, 105, 0.0010, 300, 1030220, 1050210, false});
-  links.push_back ((LinkSpec) {103, 105, 0.0010, 300, 1030221, 1050211, false});
-  links.push_back ((LinkSpec) {104, 105, 0.0010, 300, 1040220, 1050220, false});
-  links.push_back ((LinkSpec) {104, 105, 0.0010, 300, 1040221, 1050221, false});
 
   return links;
 }
@@ -1327,10 +1326,15 @@ main (int argc, char *argv[])
       NS_ABORT_MSG ("simTime must be > 10s because routing stop time is simTime - 10s guard");
     }
 
-  // The shared-subnet handover model assumes exactly two cables per AS pair, one live at a
-  // time. The direct-link topology has four cables per pair across two locations and the
-  // reference topology has one, so neither can use it.
-  if (direct_links || reference_topology || single_link_per_ixp_pair)
+  // The shared-subnet handover model assumes exactly two cables per adjacency, one live at a
+  // time. The reference topology has a single cable per pair and the single-cable-per-IXP-pair
+  // topology has one per fabric AS, so neither can use it.
+  //
+  // The direct-link topology used to be excluded here too, when it meshed AS102-105 at two
+  // geographic locations and so had four cables per AS pair. It is now single-location with
+  // exactly two, so it can use the model, and it must: four distinct /30s per pair, each
+  // originated by both endpoints, is precisely the configuration that fails to propagate.
+  if (reference_topology || single_link_per_ixp_pair)
     {
       shared_pair_subnet = false;
       backup_links_down_at_start = false;
@@ -1341,6 +1345,16 @@ main (int argc, char *argv[])
   if (split_fabric_per_ixp)
     {
       shared_pair_subnet = false;
+    }
+  // The shared subnet gives both cables of an adjacency the same pair of addresses, which is
+  // only safe while exactly one of them is live. The flag help has always said as much, but
+  // nothing enforced it, and the failure is silent: two live interfaces with identical
+  // addresses, which Ipv4AddressGenerator::TestMode stops ns-3 from even warning about. The
+  // direct families now depend on this pairing, so assert it rather than documenting it.
+  if (shared_pair_subnet && !backup_links_down_at_start)
+    {
+      NS_ABORT_MSG ("sharedPairSubnet requires --backupLinksDownAtStart=1: the shared /30 is "
+                    "only safe while one cable per adjacency is live");
     }
   if (single_link_per_ixp_pair && !dual_ixp)
     {
@@ -1602,14 +1616,31 @@ main (int argc, char *argv[])
   // other's entries, and any ESTABLISHED exit on either one calls dropAllRoutes() ->
   // rib4->discard(peer_bgp_id), deleting the routes the OTHER session installed. With two
   // parallel cables per satellite-IXP AS pair that happens continuously, which blackholes
-  // transit even with no churn at all. Peer once per ASN pair; the second cable stays a
+  // transit even with no churn at all. Peer once per adjacency; the second cable stays a
   // physical standby with no session of its own.
+  //
+  // Per ADJACENCY, not per ASN pair. An ASN-pair key is the same thing for every IXP topology,
+  // where a pair meets at one location, but in the direct-peering mesh each pair meets at two
+  // -- and an ASN key there peers only over whichever cable the builder declares first,
+  // leaving the entire second location without a session. Gateway events that toggle cables at
+  // that location then produce no control-plane activity whatsoever.
   std::set<std::pair<uint16_t, uint16_t>> peeredAsnPairs;
   for (uint32_t i = 0; i < runtimes.size (); ++i)
     {
       LinkRuntime &rt = runtimes.at (i);
 
-      if (bgp_sessions_per_pair == 1)
+      // Deduplicate only when the two cables of an adjacency share a subnet. They then carry
+      // the same pair of addresses, one peer entry serves both, and that is exactly what lets
+      // the session ride through a handover untouched.
+      //
+      // With a subnet per cable there is nothing to share: the standby's addresses appear in no
+      // peer entry at all, so after a handover the session has nowhere to re-form and the
+      // adjacency stays down for the rest of the run. Measured on a four-handover trace, that
+      // left AS102-AS103 and AS103-AS105 at 100% probe loss with no recovery. Peer over every
+      // cable instead. Only one cable of an adjacency is ever live -- the standby is held down
+      // at t=0.1s and every generated trace is break-before-make -- so this still never puts
+      // two sessions of one adjacency into ESTABLISHED at the same time.
+      if (bgp_sessions_per_pair == 1 && shared_pair_subnet)
         {
           std::pair<uint16_t, uint16_t> pairKey =
               std::make_pair (std::min (rt.spec.as_a, rt.spec.as_b),
@@ -1967,7 +1998,7 @@ main (int argc, char *argv[])
       // holding the backup /30, which keeps the duplicate parallel subnet in play.
       // Note the hardcoded schedules further below do this too, but they are in the
       // "no --eventFile" branch, so sweeps that supply an events file never reach them.
-      if (backup_links_down_at_start && !direct_links)
+      if (backup_links_down_at_start)
         {
           // Derived from the built link list rather than enumerated. The previous hardcoded set
           // {1020002, 1030002, 1040002, 1050002} covered only the location-A backups, so in any
@@ -1979,48 +2010,46 @@ main (int argc, char *argv[])
           // Keyed on the IXP *location*, not on the peer ASN: with --splitFabricPerIxp a half's
           // main and backup cables terminate on two different fabric ASes, so an ASN key would
           // classify both as "first seen" and neither as a standby.
+          //
+          // Direct peer cables join the same derivation, keyed on their ASN pair. The direct
+          // mesh is single-location, so an ASN pair names exactly one adjacency of two cables
+          // and the first one seen is its live main. This replaces a hardcoded
+          // {1020101, ..., 1040221} array that only the direct topology used: deriving it
+          // means a topology edit cannot silently leave a standby live, which is what the
+          // shared /30 makes unsafe.
           std::set<std::pair<uint16_t, uint16_t>> seenMainCable;
           for (uint32_t i = 0; i < links.size (); ++i)
             {
               const LinkSpec &spec = links.at (i);
-              if (!spec.ixp_managed)
+              const bool direct_peer = IsDirectPeerLink (spec);
+              if (!spec.ixp_managed && !direct_peer)
                 {
                   continue;
                 }
-              const uint16_t location = IxpLocationOf (spec.as_b);
-              if (location == kIxpLocationNone)
+              std::pair<uint16_t, uint16_t> key;
+              if (direct_peer)
                 {
-                  continue;
+                  key = std::make_pair (std::min (spec.as_a, spec.as_b),
+                                        std::max (spec.as_a, spec.as_b));
                 }
-              const std::pair<uint16_t, uint16_t> key (spec.as_a, location);
+              else
+                {
+                  const uint16_t location = IxpLocationOf (spec.as_b);
+                  if (location == kIxpLocationNone)
+                    {
+                      continue;
+                    }
+                  key = std::make_pair (spec.as_a, location);
+                }
               if (seenMainCable.insert (key).second)
                 {
-                  continue; // first cable at this location is the live main attachment
+                  continue; // first cable of this adjacency is the live main attachment
                 }
               if (ifIdToRuntimeIdx.count (spec.if_id_a))
                 {
                   Simulator::Schedule (Seconds (0.1), &SetLinkState,
                                        &runtimes.at (ifIdToRuntimeIdx.at (spec.if_id_a)), false,
                                        &linkEvents);
-                }
-            }
-        }
-
-      // Direct-link mode: bring all backup links down at startup so only primaries are active.
-      if (direct_links)
-        {
-          static const uint32_t kDirectBackupIfIds[] = {
-              // Loc A backups (units digit = 1)
-              1020101, 1020111, 1020121, 1030111, 1030121, 1040121,
-              // Loc B backups
-              1020201, 1020211, 1020221, 1030211, 1030221, 1040221};
-          for (uint32_t k = 0; k < 12; ++k)
-            {
-              if (ifIdToRuntimeIdx.count (kDirectBackupIfIds[k]))
-                {
-                  Simulator::Schedule (Seconds (0.1), &SetLinkState,
-                                       &runtimes.at (ifIdToRuntimeIdx.at (kDirectBackupIfIds[k])),
-                                       false, &linkEvents);
                 }
             }
         }
