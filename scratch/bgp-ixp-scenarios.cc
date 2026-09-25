@@ -60,6 +60,21 @@ struct LinkRuntime
   uint32_t iface_b;
   Ipv4Address ip_a;
   Ipv4Address ip_b;
+  // Filled in once the BGP applications exist, so a link event can act on the session that
+  // rode this particular cable. See SetLinkState.
+  Ptr<Bgp> bgp_a;
+  Ptr<Bgp> bgp_b;
+  bool drop_session_on_down = false;
+  // The other cable of this adjacency, where an adjacency has two. With a subnet per cable the
+  // single peer entry is repointed between the two as the live cable changes, so that the
+  // adjacency never has more than one session and a teardown can never discard the routes of a
+  // session that is still up. peer_active marks which of the pair currently carries the peer.
+  LinkRuntime *sibling = nullptr;
+  bool repoint_on_down = false;
+  bool peer_active = false;
+  // Where an adjacency has a single cable the standby is a different peer AS, so there is
+  // nothing to repoint: the session is dropped on down and started on up from its own event.
+  bool connect_on_up = false;
 };
 
 struct StochasticLatencyParams
@@ -762,11 +777,71 @@ SetLinkState (LinkRuntime *link, bool up, std::ofstream *eventsOut)
     {
       ipv4_a->SetUp (link->iface_a);
       ipv4_b->SetUp (link->iface_b);
+
+      // Bring the session up on the cable that has just arrived rather than waiting out the
+      // reconnect backoff. Both ends of a satellite link know the orbital schedule, so a
+      // blind wait is not the behaviour being modelled. ConnectPeerAddress is a no-op if a
+      // session already exists, so the backoff retry behind it is harmless.
+      if (link->connect_on_up && (link->peer_active || !link->repoint_on_down))
+        {
+          if (link->bgp_a != nullptr)
+            {
+              link->bgp_a->ConnectPeerAddress (link->ip_b);
+            }
+          if (link->bgp_b != nullptr)
+            {
+              link->bgp_b->ConnectPeerAddress (link->ip_a);
+            }
+        }
     }
   else
     {
       ipv4_a->SetDown (link->iface_a);
       ipv4_b->SetDown (link->iface_b);
+
+      // Tear the session down now rather than leaving it to notice at hold-timer expiry.
+      //
+      // A session only learns a cable is dead when its hold timer runs out, three clock
+      // intervals later. libbgp scopes its RIB by peer router ID and router IDs are per node,
+      // so with one session per cable of an adjacency that late teardown calls
+      // dropAllRoutes() AFTER the standby's session has established and installed its routes
+      // for the same peer node, and discards them: the adjacency then stays dark until the
+      // next handover happens to rebuild it. Dropping here puts the discard before the new
+      // session's UPDATE instead of after it, which is what break-before-make requires above
+      // IP.
+      //
+      // Enabled only where each cable has its own subnet. Under a shared pair subnet both
+      // cables carry the same addresses and a single session serves the adjacency, so there
+      // is no stale session to clear and dropping by peer address would tear down the very
+      // session the hidden-handover model depends on surviving.
+      if (link->repoint_on_down && link->sibling != nullptr && link->peer_active)
+        {
+          // Hand the adjacency's one peer entry over to the standby cable. RepointPeer tears
+          // the old session down first, so the discard of what this neighbour taught us
+          // happens while no other session to it exists; the session that forms on the
+          // standby then repopulates both directions from its own Adj-RIB-Out.
+          if (link->bgp_a != nullptr)
+            {
+              link->bgp_a->RepointPeer (link->ip_b, link->sibling->ip_b);
+            }
+          if (link->bgp_b != nullptr)
+            {
+              link->bgp_b->RepointPeer (link->ip_a, link->sibling->ip_a);
+            }
+          link->peer_active = false;
+          link->sibling->peer_active = true;
+        }
+      else if (link->drop_session_on_down)
+        {
+          if (link->bgp_a != nullptr)
+            {
+              link->bgp_a->DropSessionsToPeer (link->ip_b);
+            }
+          if (link->bgp_b != nullptr)
+            {
+              link->bgp_b->DropSessionsToPeer (link->ip_a);
+            }
+        }
     }
 
   if (eventsOut && eventsOut->is_open ())
@@ -1207,6 +1282,8 @@ main (int argc, char *argv[])
   bool loopback_probe_targets = false;
   uint32_t bgp_sessions_per_pair = 1;
   bool shared_pair_subnet = true;
+  bool drop_session_on_link_down = true;
+  bool explicit_link_failure = false;
   bool reference_topology = false;
   bool symmetric_link_events = true;
   bool single_link_per_ixp_pair = false;
@@ -1274,6 +1351,19 @@ main (int argc, char *argv[])
                 "BGP sessions per ASN pair. 1 peers once per pair (the second parallel cable is "
                 "a physical standby); 2 restores the old one-session-per-cable behaviour.",
                 bgp_sessions_per_pair);
+  cmd.AddValue ("explicitLinkFailure",
+                "Detect a failed cable from the link event rather than from the hold timer, on "
+                "adjacencies that carry a single cable (the dual-IXP and split-fabric visible "
+                "families, where the handover moves to a different peer AS). Adjacencies with "
+                "two cables on separate subnets already do this by repointing their peer entry. "
+                "Off by default so published runs are unaffected.",
+                explicit_link_failure);
+  cmd.AddValue ("dropSessionOnLinkDown",
+                "On a link-down, drop the BGP session that rode that cable instead of waiting "
+                "for its hold timer. Only applies when each cable has its own subnet, where the "
+                "late teardown would otherwise discard the routes of the standby's already "
+                "established session. Set 0 to reproduce runs made before this existed.",
+                drop_session_on_link_down);
   cmd.AddValue ("loopbackProbeTargets",
                 "Probe a per-AS /32 service address (10.255.<asn>) instead of the first link "
                 "address, and bind the probe source to it. Set 0 to reproduce older runs.",
@@ -1625,6 +1715,79 @@ main (int argc, char *argv[])
   // leaving the entire second location without a session. Gateway events that toggle cables at
   // that location then produce no control-plane activity whatsoever.
   std::set<std::pair<uint16_t, uint16_t>> peeredAsnPairs;
+  // A link event can only tear down the session that rode the failing cable once the runtime
+  // knows which speakers sit at its ends, so bind them here, after the applications exist.
+  //
+  // The stale-session hazard needs two conditions together: an adjacency carrying more than one
+  // cable, AND those cables on separate subnets, so each has its own session to the same peer
+  // node and libbgp's per-router-ID RIB scope is shared between them. Derived per adjacency
+  // rather than per family, because the families do not line up with it:
+  //
+  //   direct + per-cable subnet : 2 cables on one ASN pair, separate subnets -> hazard
+  //   direct + shared subnet    : 2 cables, one subnet, one session          -> no hazard
+  //   dual_vis                  : 1 cable per satellite-fabric pair          -> no hazard
+  //   splitvis                  : main and backup land on DIFFERENT fabric
+  //                               ASes, so they are two ASN pairs with two
+  //                               router IDs and two RIB scopes              -> no hazard
+  //
+  // Enabling it where there is no hazard would change those families' results for no reason, so
+  // the condition is the hazard itself and nothing broader.
+  std::map<std::pair<uint16_t, uint16_t>, uint32_t> cablesPerAsnPair;
+  for (uint32_t i = 0; i < links.size (); ++i)
+    {
+      const LinkSpec &spec = links.at (i);
+      cablesPerAsnPair[std::make_pair (std::min (spec.as_a, spec.as_b),
+                                       std::max (spec.as_a, spec.as_b))]++;
+    }
+  for (uint32_t i = 0; i < runtimes.size (); ++i)
+    {
+      LinkRuntime &rt = runtimes.at (i);
+      const std::pair<uint16_t, uint16_t> pairKey =
+          std::make_pair (std::min (rt.spec.as_a, rt.spec.as_b),
+                          std::max (rt.spec.as_a, rt.spec.as_b));
+      const bool two_cables = cablesPerAsnPair.at (pairKey) > 1;
+      rt.repoint_on_down = drop_session_on_link_down && !shared_pair_subnet && two_cables;
+      // One cable per adjacency: the handover moves to a different peer AS, so the session is
+      // simply dropped here and the new peering starts from the other cable's own link-up.
+      rt.drop_session_on_down =
+          rt.repoint_on_down || (explicit_link_failure && !shared_pair_subnet && !two_cables);
+      rt.connect_on_up = rt.drop_session_on_down;
+      if (bgpApps.count (rt.spec.as_a) > 0)
+        {
+          rt.bgp_a = bgpApps.at (rt.spec.as_a);
+        }
+      if (bgpApps.count (rt.spec.as_b) > 0)
+        {
+          rt.bgp_b = bgpApps.at (rt.spec.as_b);
+        }
+    }
+
+  // Join the two cables of each adjacency. Declaration order decides which carries the peer
+  // entry, matching the peering loop below, which takes the first cable it sees for a pair.
+  std::map<std::pair<uint16_t, uint16_t>, uint32_t> firstCableOfPair;
+  for (uint32_t i = 0; i < runtimes.size (); ++i)
+    {
+      LinkRuntime &rt = runtimes.at (i);
+      if (!rt.repoint_on_down)
+        {
+          continue;
+        }
+      const std::pair<uint16_t, uint16_t> key =
+          std::make_pair (std::min (rt.spec.as_a, rt.spec.as_b),
+                          std::max (rt.spec.as_a, rt.spec.as_b));
+      std::map<std::pair<uint16_t, uint16_t>, uint32_t>::iterator seen = firstCableOfPair.find (key);
+      if (seen == firstCableOfPair.end ())
+        {
+          firstCableOfPair[key] = i;
+          rt.peer_active = true; // the main cable holds the adjacency's peer entry at t=0
+        }
+      else
+        {
+          runtimes.at (seen->second).sibling = &rt;
+          rt.sibling = &runtimes.at (seen->second);
+        }
+    }
+
   for (uint32_t i = 0; i < runtimes.size (); ++i)
     {
       LinkRuntime &rt = runtimes.at (i);
@@ -1633,14 +1796,14 @@ main (int argc, char *argv[])
       // the same pair of addresses, one peer entry serves both, and that is exactly what lets
       // the session ride through a handover untouched.
       //
-      // With a subnet per cable there is nothing to share: the standby's addresses appear in no
-      // peer entry at all, so after a handover the session has nowhere to re-form and the
-      // adjacency stays down for the rest of the run. Measured on a four-handover trace, that
-      // left AS102-AS103 and AS103-AS105 at 100% probe loss with no recovery. Peer over every
-      // cable instead. Only one cable of an adjacency is ever live -- the standby is held down
-      // at t=0.1s and every generated trace is break-before-make -- so this still never puts
-      // two sessions of one adjacency into ESTABLISHED at the same time.
-      if (bgp_sessions_per_pair == 1 && shared_pair_subnet)
+      // With a subnet per cable the standby's addresses are different, so the entry is
+      // REPOINTED to them at handover (see SetLinkState) rather than a second entry being
+      // created for the standby. Peering over both cables was tried and is wrong: the two
+      // entries key on the same peer router ID, so tearing one down discards the routes the
+      // other installed, and the adjacency loses its direct route until the neighbour
+      // re-advertises. Measured mid-churn, that left both directions of one mesh pair with no
+      // direct route while a shared subnet showed all twelve present.
+      if (bgp_sessions_per_pair == 1)
         {
           std::pair<uint16_t, uint16_t> pairKey =
               std::make_pair (std::min (rt.spec.as_a, rt.spec.as_b),

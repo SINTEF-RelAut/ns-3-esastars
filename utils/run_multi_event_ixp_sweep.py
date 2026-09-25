@@ -76,6 +76,18 @@ SCION_TEMPLATE_PATHS: Dict[str, Dict[str, Path]] = {
         # plane, unlike the single-IXP family where the switch happens below IP.
         "dual_vis": Path("configs/scenario_ixp_dual_sat_visible_single_link_generated.yaml"),
         "single": Path("configs/scenario_ixp_single_sat_visible_gateway_switch_generated.yaml"),
+        # Explicit-failure-detection variants. They differ from their baselines only in how BGP
+        # learns a cable has failed (from the link event rather than the hold timer) and, for
+        # single_expl, in the subnetting that makes the handover visible at all. Neither changes
+        # the topology, so each shares its baseline's SCION config and SCION results.
+        "single_expl": Path("configs/scenario_ixp_single_sat_visible_gateway_switch_generated.yaml"),
+        # Hidden-handover baseline measured the same way as single_expl, i.e. at a per-AS
+        # loopback rather than at a link address. single_expl cannot use link addresses (with a
+        # subnet per cable the target would sit on whichever cable is down), so comparing it
+        # against plain `single` would vary the measurement point as well as the detection.
+        "single_lo": Path("configs/scenario_ixp_single_sat_visible_gateway_switch_generated.yaml"),
+        "dual_vis_lo": Path("configs/scenario_ixp_dual_sat_visible_single_link_generated.yaml"),
+        "dual_vis_expl": Path("configs/scenario_ixp_dual_sat_visible_single_link_generated.yaml"),
         # Direct peering, no exchange satellite. All three direct families share ONE SCION
         # config, because the contrast between directsame and directvis is an IP-level one
         # (shared /30 versus a /30 per cable) that SCION does not model: same topology, same

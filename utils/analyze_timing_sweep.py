@@ -150,7 +150,11 @@ def events_stem(match: "re.Match") -> str:
     suffix = {
         "dual": "dual",
         "dual_vis": "dual",
+        "dual_vis_expl": "dual",
+        "dual_vis_lo": "dual",
         "single": "single",
+        "single_expl": "single",
+        "single_lo": "single",
         "splitsame": "split",
         "splitvis": "split",
         "direct": f"direct_{match.group('protocol')}",

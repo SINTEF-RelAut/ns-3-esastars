@@ -92,7 +92,8 @@ DENSITY_STYLES = {
 # silent: the run directory simply never matches and parse_run_dir skips it. That is what hid
 # every dual_vis, splitsame and splitvis run from these plots while the closed alternation
 # below read "dual|single|direct".
-FAMILY_ALT = "dual_vis|dual|single|directsame|directvis|direct|splitsame|splitvis"
+FAMILY_ALT = ("dual_vis_expl|dual_vis_lo|dual_vis|dual|single_expl|single_lo|single|"
+              "directsame|directvis|direct|splitsame|splitvis")
 
 # Left deliberately on its own alternation: this pattern matches the older sweep_bgp_ layout,
 # where "mode" is a BGP peering mode (baseline/preferred/split) rather than a topology family,

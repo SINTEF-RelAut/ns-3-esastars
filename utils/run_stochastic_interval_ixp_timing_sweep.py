@@ -368,7 +368,11 @@ def main() -> int:
         choices=[
             "dual",
             "dual_vis",
+            "dual_vis_expl",
+            "dual_vis_lo",
             "single",
+            "single_expl",
+            "single_lo",
             "direct",
             "directsame",
             "directvis",
@@ -611,6 +615,10 @@ def main() -> int:
                         # that owns the interface.
                         event_family = {
                             "dual_vis": "dual",
+                            "dual_vis_expl": "dual",
+                            "dual_vis_lo": "dual",
+                            "single_expl": "single",
+                            "single_lo": "single",
                             "splitsame": "split",
                             "splitvis": "split",
                         }.get(family, family)
@@ -700,6 +708,50 @@ def main() -> int:
                                     # so three of the four report 100% loss with no churn at
                                     # all. Only the split families get this, so the other
                                     # families' published numbers are unaffected.
+                                    bgp_flags.append("--loopbackProbeTargets=1")
+                                elif family == "single_lo":
+                                    # Identical to `single` in topology, subnetting and
+                                    # handover model -- the shared /30 keeps the handover
+                                    # hidden -- and differs only in probing a per-AS loopback.
+                                    # This is the like-for-like baseline for single_expl.
+                                    bgp_flags.append("--dualIxp=0")
+                                    bgp_flags.append("--splitEdgeAs=0")
+                                    bgp_flags.append("--loopbackProbeTargets=1")
+                                elif family == "single_expl":
+                                    # One exchange, handover made visible by giving each cable
+                                    # of the adjacency its own /30, and detected from the link
+                                    # event rather than the hold timer. The peer entry is
+                                    # repointed to the standby, so the adjacency never carries
+                                    # two sessions to one router ID.
+                                    #
+                                    # Loopback probe targets are not optional here: with a
+                                    # subnet per cable a link-address target sits on whichever
+                                    # cable is currently down. That does make this family's
+                                    # measurement differ from plain `single`, which targets
+                                    # link addresses -- see the note in the results section.
+                                    bgp_flags.append("--dualIxp=0")
+                                    bgp_flags.append("--splitEdgeAs=0")
+                                    bgp_flags.append("--sharedPairSubnet=0")
+                                    bgp_flags.append("--loopbackProbeTargets=1")
+                                elif family == "dual_vis_lo":
+                                    # dual_vis measured at a per-AS loopback instead of at a
+                                    # link address, so it sits on the same measurement footing
+                                    # as every other family in the comparison.
+                                    bgp_flags.append("--dualIxp=1")
+                                    bgp_flags.append("--singleLinkPerIxpPair=1")
+                                    bgp_flags.append("--loopbackProbeTargets=1")
+                                elif family == "dual_vis_expl":
+                                    # Same topology and same probe targets as dual_vis_lo, so
+                                    # the only thing that varies is detection: the session is
+                                    # torn down at the link event instead of at hold-timer
+                                    # expiry. That pair is the controlled test of detection
+                                    # speed. Loopback targets, like every other family in the
+                                    # comparison: a link-address target sits on whichever
+                                    # cable the handover has just taken down, which overstates
+                                    # loss by up to 42 points on a visible handover.
+                                    bgp_flags.append("--dualIxp=1")
+                                    bgp_flags.append("--singleLinkPerIxpPair=1")
+                                    bgp_flags.append("--explicitLinkFailure=1")
                                     bgp_flags.append("--loopbackProbeTargets=1")
                                 elif family == "single":
                                     bgp_flags.append("--dualIxp=0")
