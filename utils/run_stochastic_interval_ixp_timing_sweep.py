@@ -4,12 +4,37 @@
 This script is a timing-sweep variant of run_stochastic_interval_ixp_sweep.py.
 It keeps the same stochastic event generation model, scenarios, families, and
 protocols, while sweeping these timer points:
-  - MRAI: 1, 2, 4, 6, 8 seconds
-  - BGP clock interval: 5, 10, 20, 30, 40 seconds
-    - SCION probe interval: 1 second (fixed)
+  - Coupled grid (the default): MRAI 1, 2, 4, 6, 8 s paired one-to-one with a BGP
+    FSM clock and SCION beacon period of 5, 10, 20, 30, 40 s.
+  - Decoupled control: MRAI 0 against each of those five clocks, BGP only.
+  - SCION probe interval: 1 second (fixed).
+
+Everything else the BGP side needs follows from the clock rather than being set
+independently: the runner passes --errorHold equal to the clock, and the scenario
+derives the hold timer as three times the clock (InstallBgpOnNode in
+scratch/bgp-ixp-scenarios.cc). There is no CLI flag for the hold timer. Running the
+scenario binary by hand instead of through this runner picks up its own defaults --
+a 1 s clock and libbgp's 45 s reconnect backoff -- which match no point in either
+grid, so timing results from a hand-run binary are not comparable with these.
+
+Because the default grid is coupled, no aggregate over it can separate MRAI from
+the clock. That is what the MRAI 0 points are for: with pacing disabled, whatever
+still varies across the five clocks is the clock's doing.
 
 All protocols/families for a given (density, seed) reuse the same shared source
 event timeline to preserve comparability.
+
+Examples::
+
+    # The decoupled control, BGP only, on the families that use explicit detection.
+    python3 utils/run_stochastic_interval_ixp_timing_sweep.py \
+        --mrai-values 0 --protocols bgp \
+        --families single_expl dual_vis_expl directvis single_lo \
+        --scenarios visible --densities dense
+
+    # One clock at a time, if splitting the run up.
+    python3 utils/run_stochastic_interval_ixp_timing_sweep.py \
+        --mrai-values 0 --clock-values 5 --protocols bgp
 """
 
 from __future__ import annotations
@@ -80,11 +105,29 @@ DENSITIES: Dict[str, DensitySpec] = {
 }
 
 TIMING_POINTS: List[TimingPoint] = [
+    # The coupled grid. MRAI, the FSM clock and the SCION beacon period move together,
+    # so an effect seen across these five points cannot be attributed to any one of
+    # them on its own.
     TimingPoint(mrai_s=1, bgp_clock_s=5, probe_period_s=1, beacon_period_s=5),
     TimingPoint(mrai_s=2, bgp_clock_s=10, probe_period_s=1, beacon_period_s=10),
     TimingPoint(mrai_s=4, bgp_clock_s=20, probe_period_s=1, beacon_period_s=20),
     TimingPoint(mrai_s=6, bgp_clock_s=30, probe_period_s=1, beacon_period_s=30),
     TimingPoint(mrai_s=8, bgp_clock_s=40, probe_period_s=1, beacon_period_s=40),
+    # MRAI disabled, clock swept over the same range: the control that breaks the
+    # coupling. With --mrai=0 the pacing path is bypassed entirely (BgpNs3SocketOut
+    # ::handleOut tests _mrai > 0 before queueing), so every UPDATE goes straight to
+    # the socket with no queue and no per-prefix compression. Anything that still
+    # varies across these five points is the clock, not MRAI.
+    #
+    # BGP only. The SCION side of a point is fixed by its beacon period, so the
+    # config and events for (mrai 0, bcn B) are identical to those for the coupled
+    # point with the same B, and running it would repeat a simulation already done.
+    # run() skips SCION for these points and says so.
+    TimingPoint(mrai_s=0, bgp_clock_s=5, probe_period_s=1, beacon_period_s=5),
+    TimingPoint(mrai_s=0, bgp_clock_s=10, probe_period_s=1, beacon_period_s=10),
+    TimingPoint(mrai_s=0, bgp_clock_s=20, probe_period_s=1, beacon_period_s=20),
+    TimingPoint(mrai_s=0, bgp_clock_s=30, probe_period_s=1, beacon_period_s=30),
+    TimingPoint(mrai_s=0, bgp_clock_s=40, probe_period_s=1, beacon_period_s=40),
 ]
 
 
@@ -316,15 +359,46 @@ def ensure_templates_exist(repo_root: Path, families: Iterable[str], scenarios: 
     return missing
 
 
-def parse_requested_mrai(raw_values: List[int]) -> List[TimingPoint]:
-    mapping = {point.mrai_s: point for point in TIMING_POINTS}
+def parse_requested_mrai(
+    raw_values: List[int], clock_values: Optional[List[int]] = None
+) -> List[TimingPoint]:
+    """Select timing points by MRAI, optionally narrowed to particular clocks.
+
+    An MRAI value no longer names exactly one point: MRAI 0 is defined against all
+    five clocks so that the clock can be swept with pacing disabled. Selecting an
+    MRAI therefore returns every point carrying it, in table order, and
+    ``clock_values`` narrows that to the clocks asked for.
+    """
+    by_mrai: Dict[int, List[TimingPoint]] = {}
+    for point in TIMING_POINTS:
+        by_mrai.setdefault(point.mrai_s, []).append(point)
+
     selected: List[TimingPoint] = []
     for value in raw_values:
-        if value not in mapping:
-            valid = ", ".join(str(k) for k in sorted(mapping))
+        if value not in by_mrai:
+            valid = ", ".join(str(k) for k in sorted(by_mrai))
             raise ValueError(f"Unsupported MRAI value {value}. Valid values: {valid}")
-        selected.append(mapping[value])
-    return selected
+        selected.extend(by_mrai[value])
+
+    if clock_values:
+        wanted = set(clock_values)
+        narrowed = [p for p in selected if p.bgp_clock_s in wanted]
+        if not narrowed:
+            have = ", ".join(str(c) for c in sorted({p.bgp_clock_s for p in selected}))
+            raise ValueError(
+                f"No timing point matches clock(s) {sorted(wanted)} for the requested "
+                f"MRAI value(s). Available clocks for that selection: {have}"
+            )
+        selected = narrowed
+
+    # Selecting several MRAI values that share a clock is fine, but the same point
+    # twice is not -- it would run the identical simulation into the identical
+    # output directory.
+    deduped: List[TimingPoint] = []
+    for point in selected:
+        if point not in deduped:
+            deduped.append(point)
+    return deduped
 
 
 def main() -> int:
@@ -348,7 +422,22 @@ def main() -> int:
         nargs="+",
         type=int,
         default=[1, 2, 4, 6, 8],
-        help="MRAI values to run (default: 1 2 4 6 8)",
+        help=(
+            "MRAI values to run (default: 1 2 4 6 8, the coupled grid). "
+            "0 selects the decoupled control: pacing disabled at all five clocks, "
+            "BGP only. Narrow it with --clock-values."
+        ),
+    )
+    parser.add_argument(
+        "--clock-values",
+        nargs="+",
+        type=int,
+        default=None,
+        help=(
+            "Restrict the selected timing points to these FSM clock intervals in "
+            "seconds. Only useful with --mrai-values 0, which is defined against "
+            "clocks 5 10 20 30 40; every other MRAI has exactly one clock."
+        ),
     )
     parser.add_argument(
         "--seed-start",
@@ -373,11 +462,13 @@ def main() -> int:
             "single",
             "single_expl",
             "single_lo",
+            "single_timer",
             "direct",
             "directsame",
             "directvis",
             "splitsame",
             "splitvis",
+            "splitvis_expl",
         ],
         default=["single", "direct"],
         help=(
@@ -489,7 +580,7 @@ def main() -> int:
         return 1
 
     try:
-        timing_points = parse_requested_mrai(args.mrai_values)
+        timing_points = parse_requested_mrai(args.mrai_values, args.clock_values)
     except ValueError as exc:
         print(str(exc))
         return 1
@@ -553,10 +644,19 @@ def main() -> int:
                 raise RuntimeError(f"Command failed (exit {rc}): {' '.join(str(part) for part in cmd)}")
 
     for timing in timing_points:
+        # A point with pacing disabled exists to isolate the clock on the BGP side.
+        # Its SCION half is fixed by the beacon period alone, so it would repeat the
+        # coupled point with the same beacon period rather than measure anything new.
+        skip_scion = timing.mrai_s == 0
         print(
             f"\n=== Timing {timing.label}: mrai={timing.mrai_s}s, "
             f"clock={timing.bgp_clock_s}s, probe={timing.probe_period_s}s ==="
         )
+        if skip_scion and "scion" in args.protocols:
+            print(
+                "      SCION skipped at this point: MRAI is a BGP-only parameter, so "
+                f"the SCION run would duplicate mrai*_clk*_bcn{timing.beacon_period_s}."
+            )
         for density in densities:
             print(f"\n  Density {density.name} [{density.min_interval_s:.0f}, {density.max_interval_s:.0f}]")
             for seed in seeds:
@@ -619,8 +719,10 @@ def main() -> int:
                             "dual_vis_lo": "dual",
                             "single_expl": "single",
                             "single_lo": "single",
+                            "single_timer": "single",
                             "splitsame": "split",
                             "splitvis": "split",
+                            "splitvis_expl": "split",
                         }.get(family, family)
                         if not has_template(scenario, family):
                             # Defined only for the other scenario. Skipping rather than
@@ -691,7 +793,7 @@ def main() -> int:
                                 elif family == "dual_vis":
                                     bgp_flags.append("--dualIxp=1")
                                     bgp_flags.append("--singleLinkPerIxpPair=1")
-                                elif family in ("splitsame", "splitvis"):
+                                elif family in ("splitsame", "splitvis", "splitvis_expl"):
                                     # Two distant exchanges, no link between them. The pair
                                     # differs only in where each half's backup cable lands:
                                     # same fabric AS (handover hidden below IP, one session
@@ -699,8 +801,18 @@ def main() -> int:
                                     # (handover changes peer ASN and is visible to BGP).
                                     bgp_flags.append("--dualIxp=1")
                                     bgp_flags.append("--splitEdgeAs=1")
-                                    if family == "splitvis":
+                                    if family in ("splitvis", "splitvis_expl"):
                                         bgp_flags.append("--splitFabricPerIxp=1")
+                                    if family == "splitvis_expl":
+                                        # Each split adjacency carries exactly one cable per
+                                        # ASN pair -- 1020-120 and 1020-122, not two cables to
+                                        # one peer -- so the session is simply dropped at the
+                                        # link event and the replacement starts from the other
+                                        # cable's own link-up. That is the same path
+                                        # --explicitLinkFailure takes for any one-cable
+                                        # adjacency; no repoint and no detectionDelay are
+                                        # involved.
+                                        bgp_flags.append("--explicitLinkFailure=1")
                                     # Probe each AS at a loopback rather than at one of its
                                     # link addresses. With per-link targets the measurement
                                     # depends on the /30 of a particular cable, and for the
@@ -733,6 +845,29 @@ def main() -> int:
                                     bgp_flags.append("--splitEdgeAs=0")
                                     bgp_flags.append("--sharedPairSubnet=0")
                                     bgp_flags.append("--loopbackProbeTargets=1")
+                                elif family == "single_timer":
+                                    # single_expl's topology and probe targets exactly: one
+                                    # exchange AS, a /30 per cable so the handover changes the
+                                    # next-hop, loopback probe targets. The only difference is
+                                    # when the adjacency's peer entry follows the handover.
+                                    # --detectionDelay defers it by the nominal hold time,
+                                    # three clock intervals, so single_expl/single_timer is a
+                                    # controlled test of detection speed on the realistic
+                                    # topology, the way dual_vis_expl/dual_vis_lo is on the
+                                    # two-exchange-AS one.
+                                    #
+                                    # The real hold timer runs from the last keepalive received
+                                    # and is only checked on a tick, so a native expiry lands
+                                    # somewhere in [2, 3] clocks. Three is the nominal value and
+                                    # the upper end of that range, which makes this the
+                                    # conservative choice for the cost of detecting late.
+                                    bgp_flags.append("--dualIxp=0")
+                                    bgp_flags.append("--splitEdgeAs=0")
+                                    bgp_flags.append("--sharedPairSubnet=0")
+                                    bgp_flags.append("--loopbackProbeTargets=1")
+                                    bgp_flags.append(
+                                        f"--detectionDelay={3 * timing.bgp_clock_s}"
+                                    )
                                 elif family == "dual_vis_lo":
                                     # dual_vis measured at a per-AS loopback instead of at a
                                     # link address, so it sits on the same measurement footing
@@ -792,7 +927,7 @@ def main() -> int:
                                 )
                                 total_runs += 1
 
-                        if "scion" in args.protocols:
+                        if "scion" in args.protocols and not skip_scion:
                             template = repo_root / SCION_TEMPLATE_PATHS[scenario][family]
                             run_name = f"stochastic_scion_{family}_{scenario}_{output_suffix}"
                             run_prefix = (output_subdir / run_name).as_posix()

@@ -81,6 +81,14 @@ SCION_TEMPLATE_PATHS: Dict[str, Dict[str, Path]] = {
         # single_expl, in the subnetting that makes the handover visible at all. Neither changes
         # the topology, so each shares its baseline's SCION config and SCION results.
         "single_expl": Path("configs/scenario_ixp_single_sat_visible_gateway_switch_generated.yaml"),
+        # The same next-hop-change topology as single_expl, detected at hold-timer expiry
+        # instead of from the link event. It completes the 2x2 of visibility against detection:
+        # single_lo is hidden, single_expl is visible and detected promptly, dual_vis_lo is
+        # visible by peer ASN and detected late, and this is visible by next-hop and detected
+        # late. BGP-only in practice -- its SCION half is identical to single's, so run it with
+        # --protocols bgp -- but a template has to be registered here or the family is skipped
+        # for both protocols.
+        "single_timer": Path("configs/scenario_ixp_single_sat_visible_gateway_switch_generated.yaml"),
         # Hidden-handover baseline measured the same way as single_expl, i.e. at a per-AS
         # loopback rather than at a link address. single_expl cannot use link addresses (with a
         # subnet per cable the target would sit on whichever cable is down), so comparing it
@@ -103,6 +111,14 @@ SCION_TEMPLATE_PATHS: Dict[str, Dict[str, Path]] = {
         # whether the handover is hidden below IP or visible to the control plane.
         "splitsame": Path("configs/scenario_ixp_split_samefabric_generated.yaml"),
         "splitvis": Path("configs/scenario_ixp_split_splitfabric_generated.yaml"),
+        # Same two-exchange topology as splitvis, detected from the link event rather than at
+        # hold-timer expiry. It completes the two-exchange half of the visibility-by-detection
+        # grid, which until now only the single exchange had, and so lets the MRAI result --
+        # which only bites where detection is prompt -- be tested on a second topology.
+        # BGP-only in practice: its SCION half is identical to splitvis's, so run it with
+        # --protocols bgp. A template still has to be registered or has_template() skips the
+        # family for both protocols.
+        "splitvis_expl": Path("configs/scenario_ixp_split_splitfabric_generated.yaml"),
     },
 }
 

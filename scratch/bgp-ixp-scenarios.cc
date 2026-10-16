@@ -72,6 +72,14 @@ struct LinkRuntime
   LinkRuntime *sibling = nullptr;
   bool repoint_on_down = false;
   bool peer_active = false;
+  // Seconds between this cable's link-down event and the repoint. Zero means repoint at the
+  // event itself, which models a router told immediately that the cable is gone. A positive
+  // value defers it, modelling a router that learns only when its hold timer expires; see
+  // --detectionDelay. pending_repoint lets a link-up cancel a deferred repoint that has not
+  // fired yet, which is what happens in reality when the cable returns before the session
+  // times out.
+  double detection_delay_s = 0.0;
+  EventId pending_repoint;
   // Where an adjacency has a single cable the standby is a different peer AS, so there is
   // nothing to repoint: the session is dropped on down and started on up from its own event.
   bool connect_on_up = false;
@@ -767,6 +775,57 @@ AddRoutesForAllInterfaces (Ptr<Bgp> bgp, Ptr<Node> node)
     }
 }
 
+/**
+ * \brief Hand an adjacency's single peer entry over to its standby cable.
+ *
+ * Split out of SetLinkState so it can either run at the link event or be scheduled for later.
+ * RepointPeer tears the old session down first, so the discard of what this neighbour taught
+ * us happens while no other session to it exists; the session that forms on the standby then
+ * repopulates both directions from its own Adj-RIB-Out.
+ *
+ * The connect at the end matters for comparability. The explicit-detection path reaches
+ * ConnectPeerAddress from the standby's own link-up event, which has already passed by the
+ * time a deferred repoint fires, so without this the deferred case would additionally wait out
+ * the reconnect backoff and the two cases would differ by more than their detection times.
+ *
+ * \param link The cable that went down; its sibling takes over the peer entry.
+ */
+void
+ApplyRepoint (LinkRuntime *link)
+{
+  if (link->sibling == nullptr || !link->peer_active)
+    {
+      return;
+    }
+
+  if (link->bgp_a != nullptr)
+    {
+      link->bgp_a->RepointPeer (link->ip_b, link->sibling->ip_b);
+    }
+  if (link->bgp_b != nullptr)
+    {
+      link->bgp_b->RepointPeer (link->ip_a, link->sibling->ip_a);
+    }
+  link->peer_active = false;
+  link->sibling->peer_active = true;
+
+  // Start the replacement session now. Skipped when the standby is not actually up, which
+  // happens if the trace takes both cables of an adjacency down at once.
+  Ptr<Ipv4> ipv4_a = link->sibling->node_a->GetObject<Ipv4> ();
+  Ptr<Ipv4> ipv4_b = link->sibling->node_b->GetObject<Ipv4> ();
+  if (ipv4_a->IsUp (link->sibling->iface_a) && ipv4_b->IsUp (link->sibling->iface_b))
+    {
+      if (link->sibling->bgp_a != nullptr)
+        {
+          link->sibling->bgp_a->ConnectPeerAddress (link->sibling->ip_b);
+        }
+      if (link->sibling->bgp_b != nullptr)
+        {
+          link->sibling->bgp_b->ConnectPeerAddress (link->sibling->ip_a);
+        }
+    }
+}
+
 void
 SetLinkState (LinkRuntime *link, bool up, std::ofstream *eventsOut)
 {
@@ -777,6 +836,16 @@ SetLinkState (LinkRuntime *link, bool up, std::ofstream *eventsOut)
     {
       ipv4_a->SetUp (link->iface_a);
       ipv4_b->SetUp (link->iface_b);
+
+      // This cable is back before its own repoint fired, so the handover never became visible
+      // to the control plane: a real session would have kept receiving keepalives and never
+      // reached hold-timer expiry. Cancel the deferred repoint and leave the peer entry where
+      // it is. Only reachable with --detectionDelay > 0, where the churn interval can be
+      // shorter than the detection time at the slowest clocks.
+      if (link->pending_repoint.IsRunning ())
+        {
+          link->pending_repoint.Cancel ();
+        }
 
       // Bring the session up on the cable that has just arrived rather than waiting out the
       // reconnect backoff. Both ends of a satellite link know the orbital schedule, so a
@@ -816,20 +885,21 @@ SetLinkState (LinkRuntime *link, bool up, std::ofstream *eventsOut)
       // session the hidden-handover model depends on surviving.
       if (link->repoint_on_down && link->sibling != nullptr && link->peer_active)
         {
-          // Hand the adjacency's one peer entry over to the standby cable. RepointPeer tears
-          // the old session down first, so the discard of what this neighbour taught us
-          // happens while no other session to it exists; the session that forms on the
-          // standby then repopulates both directions from its own Adj-RIB-Out.
-          if (link->bgp_a != nullptr)
+          if (link->detection_delay_s <= 0.0)
             {
-              link->bgp_a->RepointPeer (link->ip_b, link->sibling->ip_b);
+              ApplyRepoint (link);
             }
-          if (link->bgp_b != nullptr)
+          else
             {
-              link->bgp_b->RepointPeer (link->ip_a, link->sibling->ip_a);
+              // Timer-based detection. The peer entry still has to move for the adjacency to
+              // survive at all -- two entries to one peer node share a router ID and a
+              // teardown of either discards the other's routes -- so what varies here is when
+              // it moves, not whether. Deferring it by the hold time reproduces the cost of
+              // learning late while keeping every other mechanism identical to the
+              // explicit-detection runs.
+              link->pending_repoint = Simulator::Schedule (Seconds (link->detection_delay_s),
+                                                           &ApplyRepoint, link);
             }
-          link->peer_active = false;
-          link->sibling->peer_active = true;
         }
       else if (link->drop_session_on_down)
         {
@@ -1284,6 +1354,7 @@ main (int argc, char *argv[])
   bool shared_pair_subnet = true;
   bool drop_session_on_link_down = true;
   bool explicit_link_failure = false;
+  double detection_delay_s = 0.0;
   bool reference_topology = false;
   bool symmetric_link_events = true;
   bool single_link_per_ixp_pair = false;
@@ -1316,6 +1387,19 @@ main (int argc, char *argv[])
   cmd.AddValue ("errorHold",
                 "BGP reconnect backoff after a session error, in seconds (libbgp default 45)",
                 error_hold_s);
+  cmd.AddValue ("detectionDelay",
+                "Seconds between a cable's link-down event and the repoint of the adjacency's "
+                "peer entry onto its standby. 0 (the default) repoints at the event itself, "
+                "modelling a router told immediately that the cable is gone. A positive value "
+                "defers it, modelling a router that only notices at hold-timer expiry; pass "
+                "three times the FSM clock for the nominal hold time. Applies only where an "
+                "adjacency has two cables on separate subnets, which is the only case that "
+                "repoints. Note this emulates the timing of hold-timer detection rather than "
+                "letting the FSM expire: a native expiry would tear the session down from a "
+                "stale FSM after the standby's session had already installed its routes for "
+                "the same peer node, and the routing base's per-router-ID scoping would then "
+                "discard them.",
+                detection_delay_s);
   cmd.AddValue ("singleLinkPerIxpPair",
                 "Dual-IXP visible-handover topology: one cable from each satellite to AS120 and "
                 "one to AS121, so a handover moves between two distinct peer ASes and is visible "
@@ -1752,6 +1836,7 @@ main (int argc, char *argv[])
       rt.drop_session_on_down =
           rt.repoint_on_down || (explicit_link_failure && !shared_pair_subnet && !two_cables);
       rt.connect_on_up = rt.drop_session_on_down;
+      rt.detection_delay_s = rt.repoint_on_down ? detection_delay_s : 0.0;
       if (bgpApps.count (rt.spec.as_a) > 0)
         {
           rt.bgp_a = bgpApps.at (rt.spec.as_a);
